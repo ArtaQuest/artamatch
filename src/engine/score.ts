@@ -1,34 +1,80 @@
 /**
- * score.ts — the two instruments, combined into one number, with the working kept.
+ * score.ts — one score, and what it is worth.
  *
- * ArtaMatch runs two INDEPENDENT compatibility instruments over the same sidereal positions:
+ * ── Why there is only one number now ────────────────────────────────────────────────────────────
  *
- *   1. GUNA MILAN (Ashtakoota) — the canonical Vedic system, 36 points across eight tests, computed
- *      almost entirely from the two Moons. This is the sidereal instrument proper, and it is the one
- *      a date of birth can actually feed.
- *   2. SYNASTRY — the inter-chart aspect picture, weighted for relationship relevance, giving an
- *      EASE reading (does this flow) and a CHARGE reading (is there anything there at all).
+ * An earlier version of this file reported a 0–100 figure blended 60% from the traditional
+ * eight-test score, 30% from an "ease" index and 10% from a "pull" index. Three things killed it,
+ * all measured rather than argued (tools/calibrate.mjs):
  *
- * They are kept separate on screen because they measure different things and can honestly disagree.
- * The combined number exists because the request was for a ranking, and a ranking needs one number.
+ *   · Ranking by the blend correlated with ranking by the traditional score alone at ρ = 0.954.
+ *     The two invented components moved almost nothing while adding two unverifiable numbers to
+ *     the page and a set of weights nobody could check.
+ *   · The "pull" index barely varied — 10th percentile 56, 90th percentile 75. A measurement that
+ *     returns roughly the same answer for everybody is not a measurement.
+ *   · A 0–100 scale invited comparison to marks out of a hundred. 59 was the median. People read
+ *     59 as a fail; it is exactly average.
  *
- * WEIGHTS, AND WHY. Guna Milan carries 60%: it is the sidereal system this tool is built on, it is
- * the most robust to date-only input, and it is the one with 1,500 years of stated rules rather than
- * a weighting somebody chose. Ease carries 30%. Charge carries only 10% — a charged connection is
- * not the same as a compatible one, and letting intensity dominate would rank the most turbulent
- * pairings highest. These are stated here rather than buried so anyone can disagree with them
- * specifically, and every component is reported separately so the blend can be ignored entirely.
+ * So the score is now the tradition's own: a total out of 36. It needs no weights from me, it has
+ * a stated threshold that has been in use for centuries, and every one of its points is traceable
+ * to a rule printed beside it. What was "ease" survives as a tie-break and as plain COUNTS of
+ * helping and rubbing connections — numbers a reader can verify against the list underneath.
+ *
+ * ── And why the score is shown with a percentile ────────────────────────────────────────────────
+ *
+ * "22 out of 36, above the traditional pass mark of 18" reads as good news. It is not: 71% of
+ * randomly paired dates clear 18, and the median pair scores 21. A threshold that four out of five
+ * couples pass tells you almost nothing, and presenting it as an achievement is flattery. So every
+ * score is shown against the distribution it actually comes from.
  */
 
 import { type Chart, type Placement, chartAt, julianDay, parseDate, SIGNS } from "./ephemeris";
 import { nakshatraOf } from "./nakshatra";
-import { type KutaSide, type SymmetricGunaMilan, gunaMilan } from "./kuta";
-import { type SynastrySummary, summariseSynastry } from "./synastry";
+import { type KutaSide, type SymmetricGunaMilan, type KutaKey, gunaMilan } from "./kuta";
+import { type SynAspect, summariseSynastry } from "./synastry";
 import { type BirthSpan, birthSpan } from "./uncertainty";
 
-export const WEIGHT_GUNA = 0.60;
-export const WEIGHT_EASE = 0.30;
-export const WEIGHT_CHARGE = 0.10;
+/**
+ * Share of random pairs scoring BELOW each whole mark, 0…36. Measured over 20,000 random date
+ * pairs spanning 1930–2010 (tools/calibrate.mjs, deterministic seed, reproducible).
+ *
+ * This is what makes a score mean something. Without it, 22/36 is a number in a vacuum.
+ */
+export const PERCENTILE_BELOW = [
+  0, 0, 0, 0, 1, 1, 2, 2, 2, 3, 3, 5, 7, 11, 13, 16, 20, 24, 29, 35,
+  42, 48, 52, 58, 62, 69, 76, 83, 89, 94, 96, 98, 99, 99, 100, 100, 100,
+];
+
+/** The traditional minimum. Reported honestly: it is a low bar, not a badge. */
+export const TRADITIONAL_PASS = 18;
+/** Share of random pairs that clear TRADITIONAL_PASS — the context that makes it honest. */
+export const PASS_RATE = 71;
+/** The median random pair. */
+export const MEDIAN_SCORE = 21;
+
+/** Where a score sits among random pairs, 0–100. Linearly interpolated between whole marks. */
+export function percentileOf(score: number): number {
+  const clamped = Math.max(0, Math.min(36, score));
+  const lo = Math.floor(clamped);
+  const hi = Math.min(36, lo + 1);
+  const t = clamped - lo;
+  return Math.round(PERCENTILE_BELOW[lo] * (1 - t) + PERCENTILE_BELOW[hi] * t);
+}
+
+export type Band = { label: string; note: string; tone: "high" | "mid" | "low" };
+
+/**
+ * Bands set on the MEASURED distribution rather than on the tradition's own flattering thresholds.
+ * "Above average" means above the median pair, which is what those words normally mean.
+ */
+export function bandOf(score: number): Band {
+  const p = percentileOf(score);
+  if (p >= 95) return { label: "Unusually high", tone: "high", note: "Higher than about 95 in 100 random pairs. Scores like this are rare." };
+  if (p >= 75) return { label: "High", tone: "high", note: "In the top quarter of random pairs." };
+  if (p >= 50) return { label: "Above average", tone: "mid", note: "Above the middle of the range, where half of all pairs sit." };
+  if (p >= 25) return { label: "Below average", tone: "mid", note: "Below the middle of the range, but well inside the ordinary spread." };
+  return { label: "Low", tone: "low", note: "In the bottom quarter of random pairs." };
+}
 
 function sideFrom(chart: Chart): KutaSide {
   const moon = chart.byBody.Moon;
@@ -42,129 +88,131 @@ function sideFrom(chart: Chart): KutaSide {
   };
 }
 
-export type MatchComponents = {
-  guna: SymmetricGunaMilan;
-  synastry: SynastrySummary;
-  /** 0…100 */
-  gunaScore: number;
-  easeScore: number;
-  chargeScore: number;
-  overall: number;
+/** The connections between two charts, described in things a reader can count. */
+export type Connections = {
+  /** Every connection found, strongest first. */
+  all: SynAspect[];
+  /** The handful worth leading with. */
+  headline: SynAspect[];
+  /** How many of the significant ones help, and how many rub. Countable against the list. */
+  helps: number;
+  rubs: number;
+  /** helps − rubs. Used only to break ties in the ranking, never shown as a score. */
+  lean: number;
 };
 
-function componentsFor(chartA: Chart, chartB: Chart): MatchComponents {
-  const guna = gunaMilan(sideFrom(chartA), sideFrom(chartB));
-  const synastry = summariseSynastry(chartA, chartB);
-  const gunaScore = (guna.total / guna.maxTotal) * 100;
-  const overall =
-    WEIGHT_GUNA * gunaScore + WEIGHT_EASE * synastry.easeScore + WEIGHT_CHARGE * synastry.chargeScore;
-  return {
-    guna, synastry, gunaScore,
-    easeScore: synastry.easeScore,
-    chargeScore: synastry.chargeScore,
-    overall,
-  };
-}
+/** Tests that can be switched off, with the reason a reader might want to. */
+export const OPTIONAL_TESTS: { key: KutaKey; label: string; why: string }[] = [
+  {
+    key: "varna",
+    label: "the first test",
+    why: "It ranks four temperaments in a fixed order taken from an old caste hierarchy, and scores " +
+      "only when the first person's sits at or above the second's. It is worth one point of " +
+      "thirty-six. Leave it out if you would rather not have it counted.",
+  },
+];
 
-export type Band = { min: number; max: number; spread: number; certain: boolean };
+export type Match = {
+  /** THE score: the traditional total out of 36. */
+  score: number;
+  maxScore: number;
+  /** Where that sits among random pairs. */
+  percentile: number;
+  band: Band;
+  guna: SymmetricGunaMilan;
+  connections: Connections;
+  /** Present only on a full evaluation: every reading the two dates allow, with probabilities. */
+  distribution: Distribution | null;
+  /** The lowest and highest the score could be, given the unknown birth times. */
+  range: { min: number; max: number } | null;
+  /** True when the dates settle the answer outright. */
+  certain: boolean;
+  uncertaintyNote: string;
+  spanA: BirthSpan;
+  spanB: BirthSpan;
+};
 
-/** One possible reading, with how likely it is. */
 export type Outcome = {
-  /** Guna Milan total for this combination of birth stars. */
-  guna: number;
-  overall: number;
-  /** Probability, under a flat prior over birth times within each date. */
+  score: number;
   probability: number;
-  /** What the two Moons would be, for this reading. */
   labelA: string;
   labelB: string;
 };
 
 export type Distribution = {
-  /** Every distinct reading the two dates allow, most likely first. */
   outcomes: Outcome[];
   /** How likely the headline reading is. 1 when the dates settle it. */
   confidence: number;
   certain: boolean;
 };
 
-export type Match = {
-  /** The headline reading, taken at 12:00 UT on both sides — the single best point estimate. */
-  components: MatchComponents;
-  overall: number;
-  /** The range the overall score takes across every birth time the two dates allow. Present only on
-   *  a full (detailed) evaluation. */
-  band: Band | null;
-  gunaBand: Band | null;
-  /** Every reading the dates allow, with probabilities. Present only on a detailed evaluation. */
-  distribution: Distribution | null;
-  /** True when the answer does not depend on the unknown birth times at all. */
-  certain: boolean;
-  /** Plain-language account of what the missing clocks cost, or "" when they cost nothing. */
-  uncertaintyNote: string;
-  spanA: BirthSpan;
-  spanB: BirthSpan;
-};
+function connectionsFrom(A: Chart, B: Chart): Connections {
+  const s = summariseSynastry(A, B);
+  // Count only the significant ones — the minor angles are shown but are too slight to count as
+  // "a thing between them", and padding the tally with them would make the number unverifiable.
+  const significant = s.aspects.filter((x) => x.def.major && x.weight >= 0.25);
+  const helps = significant.filter((x) => x.valence > 0.15).length;
+  const rubs = significant.filter((x) => x.valence < -0.15).length;
+  return { all: s.aspects, headline: s.headline, helps, rubs, lean: helps - rubs };
+}
+
+function scoreOf(guna: SymmetricGunaMilan, excluded: KutaKey[]): number {
+  if (excluded.length === 0) return guna.total;
+  return guna.kutas.filter((k) => !excluded.includes(k.key)).reduce((s, k) => s + k.points, 0);
+}
 
 /** Substitute a Moon longitude into a chart — everything except the Moon moves so little in a day
- *  that noon is a fine estimate for it, while the Moon is the entire question. */
+ *  that one instant serves for all of it, while the Moon is the entire question. */
 function withMoonAt(chart: Chart, jd: number): Chart {
-  const moonChart = chartAt(jd, ["Moon"]);
-  const moon = moonChart.byBody.Moon;
+  const moon = chartAt(jd, ["Moon"]).byBody.Moon;
   const placements = chart.placements.map((p) => (p.body === "Moon" ? moon : p));
   const byBody = { ...chart.byBody, Moon: moon } as Record<Placement["body"], Placement>;
   return { ...chart, placements, byBody };
 }
 
-/** Evenly spaced sample instants across a birth day, always including noon. */
-function sampleHours(steps: number): number[] {
-  return Array.from({ length: steps }, (_, i) => (i * 24) / (steps - 1));
-}
-
-/** A full report samples every three hours on each side — 81 birth-time combinations. Ranking uses
- *  only the noon estimate, because a list of 50 people is 1,225 pairs and the band is reported
- *  separately anyway. The headline number is identical either way. */
-const DETAIL_STEPS = 9;
+export type ScoreOptions = { exclude?: KutaKey[] };
 
 /**
  * Score one pair.
  *
- * `detailed` controls whether the uncertainty band is computed. Ranking a list evaluates only the
- * noon estimate (one evaluation per pair); opening a single report evaluates the 9×9 grid of birth
- * times so the band is real rather than asserted. The headline number is identical either way.
+ * `detailed` controls whether the probability distribution is worked out. Ranking a list evaluates
+ * only the single best estimate; opening a report enumerates every reading the two dates allow.
+ * The headline number is identical either way.
  */
-export function matchPair(isoA: string, isoB: string, detailed = false): Match | null {
+export function matchPair(isoA: string, isoB: string, detailed = false, opts: ScoreOptions = {}): Match | null {
   const spanA = birthSpan(isoA);
   const spanB = birthSpan(isoB);
   if (!spanA || !spanB) return null;
+  const excluded = opts.exclude ?? [];
 
-  const components = componentsFor(spanA.chart, spanB.chart);
+  const guna = gunaMilan(sideFrom(spanA.chart), sideFrom(spanB.chart));
+  const connections = connectionsFrom(spanA.chart, spanB.chart);
+  const score = scoreOf(guna, excluded);
+
+  const base = {
+    score, maxScore: 36 - excluded.reduce((s, k) => s + (guna.kutas.find((x) => x.key === k)?.maxPoints ?? 0), 0),
+    percentile: percentileOf(score), band: bandOf(score), guna, connections, spanA, spanB,
+  };
 
   if (!detailed) {
     return {
-      components, overall: components.overall, band: null, gunaBand: null, distribution: null,
+      ...base, distribution: null, range: null,
       certain: spanA.stable && spanB.stable,
       uncertaintyNote: uncertaintyNote(spanA, spanB, null),
-      spanA, spanB,
     };
   }
 
+  // The eight tests depend on the Moon ONLY through which birth star and sign it is in. Each day
+  // holds at most four such states, and each state's share of the day IS its probability under a
+  // flat prior over birth times — so the possible readings are enumerated exactly, not sampled.
   const a = parseDate(isoA)!, b = parseDate(isoB)!;
-
-  // ── the exact, probabilistic part ──────────────────────────────────────────────────────────
-  // The eight tests depend on the Moon ONLY through which birth star and sign it is in. Each
-  // person's day contains at most four such states, and each state's share of the day IS its
-  // probability under a flat prior over birth times. So the set of possible readings is small and
-  // finite, and can be enumerated exactly rather than sampled — no approximation at all.
   const raw: Outcome[] = [];
   for (const sa of spanA.states) {
     const ca = withMoonAt(spanA.chart, julianDay(a.y, a.m, a.d, (sa.fromHour + sa.toHour) / 2));
     for (const sb of spanB.states) {
       const cb = withMoonAt(spanB.chart, julianDay(b.y, b.m, b.d, (sb.fromHour + sb.toHour) / 2));
-      const c = componentsFor(ca, cb);
       raw.push({
-        guna: c.guna.total,
-        overall: c.overall,
+        score: scoreOf(gunaMilan(sideFrom(ca), sideFrom(cb)), excluded),
         probability: sa.share * sb.share,
         labelA: `${sa.nakshatra.name} in ${sa.rasiName}`,
         labelB: `${sb.nakshatra.name} in ${sb.rasiName}`,
@@ -172,59 +220,29 @@ export function matchPair(isoA: string, isoB: string, detailed = false): Match |
     }
   }
 
-  // Merge readings that come out the same, so "27 of 36" is reported once with its total
-  // probability rather than split across two indistinguishable rows.
+  // Merge readings that come out the same, so one score is reported once with its total chance.
   const merged = new Map<string, Outcome>();
   for (const o of raw) {
-    const key = o.guna.toFixed(3);
-    const prev = merged.get(key);
-    if (prev) {
-      prev.probability += o.probability;
-      if (o.probability > 0) prev.overall = (prev.overall + o.overall) / 2;
-    } else {
-      merged.set(key, { ...o });
-    }
+    const prev = merged.get(o.score.toFixed(3));
+    if (prev) prev.probability += o.probability;
+    else merged.set(o.score.toFixed(3), { ...o });
   }
   const outcomes = [...merged.values()].sort((x, y) => y.probability - x.probability);
-  const distribution: Distribution = {
-    outcomes,
-    confidence: outcomes[0]?.probability ?? 1,
-    certain: outcomes.length === 1,
-  };
-
-  // ── the continuous part ────────────────────────────────────────────────────────────────────
-  // The aspect layer varies smoothly with the Moon rather than in steps, so its range is sampled
-  // on a time grid instead of enumerated.
-  const hours = sampleHours(DETAIL_STEPS);
-  const chartsA = hours.map((h) => withMoonAt(spanA.chart, julianDay(a.y, a.m, a.d, h)));
-  const chartsB = hours.map((h) => withMoonAt(spanB.chart, julianDay(b.y, b.m, b.d, h)));
-
-  let minO = Infinity, maxO = -Infinity, minG = Infinity, maxG = -Infinity;
-  for (const ca of chartsA) {
-    for (const cb of chartsB) {
-      const c = componentsFor(ca, cb);
-      if (c.overall < minO) minO = c.overall;
-      if (c.overall > maxO) maxO = c.overall;
-      if (c.guna.total < minG) minG = c.guna.total;
-      if (c.guna.total > maxG) maxG = c.guna.total;
-    }
-  }
-
-  const band: Band = { min: minO, max: maxO, spread: maxO - minO, certain: maxO - minO < 0.5 };
-  const gunaBand: Band = { min: minG, max: maxG, spread: maxG - minG, certain: maxG - minG < 1e-9 };
+  const scores = outcomes.map((o) => o.score);
 
   return {
-    components, overall: components.overall, band, gunaBand, distribution,
-    certain: gunaBand.certain && band.certain,
-    uncertaintyNote: uncertaintyNote(spanA, spanB, gunaBand),
-    spanA, spanB,
+    ...base,
+    distribution: { outcomes, confidence: outcomes[0]?.probability ?? 1, certain: outcomes.length === 1 },
+    range: { min: Math.min(...scores), max: Math.max(...scores) },
+    certain: outcomes.length === 1,
+    uncertaintyNote: uncertaintyNote(spanA, spanB, outcomes.length === 1 ? null : { min: Math.min(...scores), max: Math.max(...scores) }),
   };
 }
 
 function describeStates(span: BirthSpan): string {
   if (span.stable) return `stayed in ${span.likeliest.nakshatra.name} all day`;
-  // Name the rāśi too whenever the birth star alone would repeat — the Moon can change rāśi while
-  // staying in one nakshatra, and "Punarvasu, then Punarvasu" reads as a bug rather than a fact.
+  // Name the sign too when the birth star alone would repeat — the Moon can change sign while
+  // staying in one birth star, and "Punarvasu, then Punarvasu" reads as a bug rather than a fact.
   const names = span.states.map((s) => s.nakshatra.name);
   const ambiguous = names.some((n, i) => names.indexOf(n) !== i);
   return span.states
@@ -233,7 +251,7 @@ function describeStates(span: BirthSpan): string {
     .join(", then ");
 }
 
-function uncertaintyNote(a: BirthSpan, b: BirthSpan, gunaBand: Band | null): string {
+function uncertaintyNote(a: BirthSpan, b: BirthSpan, range: { min: number; max: number } | null): string {
   if (a.stable && b.stable) {
     return "Both Moons stay in one birth star and one sign for the whole of their birth day, so not " +
       "knowing the time of day changes nothing here. This is as firm as a reading from dates alone gets.";
@@ -243,58 +261,35 @@ function uncertaintyNote(a: BirthSpan, b: BirthSpan, gunaBand: Band | null): str
     !a.stable ? `The first person's Moon ${describeStates(a)}.` : "",
     !b.stable ? `The second person's Moon ${describeStates(b)}.` : "",
   ].filter(Boolean).join(" ");
-  const bandText = gunaBand && !gunaBand.certain
-    ? ` Across every time of day the two dates allow, the score runs from ${gunaBand.min.toFixed(1)} ` +
-      `to ${gunaBand.max.toFixed(1)} out of 36.`
+  const rangeText = range
+    ? ` Across every time of day the two dates allow, the score runs from ${range.min.toFixed(1)} ` +
+      `to ${range.max.toFixed(1)} out of 36.`
     : "";
   return `Without knowing the time of day, ${moving} Moon could have been in more than one birth ` +
-    `star, and six of the eight tests read only where the Moon was. ${detail}${bandText}`;
+    `star, and six of the eight tests read only where the Moon was. ${detail}${rangeText}`;
 }
 
 // ── ranking ─────────────────────────────────────────────────────────────────────────────────────
 
-export type RankedMatch<T> = {
-  other: T;
-  match: Match;
-  overall: number;
-};
+export type RankedMatch<T> = { other: T; match: Match; score: number };
 
-/** Rank everyone against one person. Symmetric scoring means this list agrees with everyone
- *  else's list about any shared pair. */
+/**
+ * Rank everyone against one person.
+ *
+ * Sorted by the traditional score, then by whether the connections between them lean helpful. Both
+ * halves are symmetric, so this list agrees with everyone else's about any shared pair.
+ */
 export function rankAgainst<T extends { id: string; birthday: string }>(
-  self: T, others: T[],
+  self: T, others: T[], opts: ScoreOptions = {},
 ): RankedMatch<T>[] {
   const out: RankedMatch<T>[] = [];
   for (const other of others) {
     if (other.id === self.id) continue;
-    const match = matchPair(self.birthday, other.birthday);
-    if (!match) continue;
-    out.push({ other, match, overall: match.overall });
+    const match = matchPair(self.birthday, other.birthday, false, opts);
+    if (match) out.push({ other, match, score: match.score });
   }
-  return out.sort((x, y) => y.overall - x.overall);
-}
-
-export type MatrixCell = { a: string; b: string; overall: number | null };
-
-/** Every pair in a group — the full matrix, computed once for the grid view. */
-export function pairMatrix<T extends { id: string; birthday: string }>(people: T[]): MatrixCell[] {
-  const out: MatrixCell[] = [];
-  for (let i = 0; i < people.length; i++) {
-    for (let j = i + 1; j < people.length; j++) {
-      const m = matchPair(people[i].birthday, people[j].birthday);
-      out.push({ a: people[i].id, b: people[j].id, overall: m ? m.overall : null });
-    }
-  }
-  return out;
-}
-
-/** A short, plain summary of where a score sits. */
-export function overallBand(score: number): { label: string; tone: "high" | "mid" | "low" } {
-  if (score >= 72) return { label: "Strong", tone: "high" };
-  if (score >= 58) return { label: "Good", tone: "high" };
-  if (score >= 45) return { label: "Mixed", tone: "mid" };
-  if (score >= 32) return { label: "Difficult", tone: "low" };
-  return { label: "Poor", tone: "low" };
+  return out.sort((x, y) =>
+    y.score - x.score || y.match.connections.lean - x.match.connections.lean);
 }
 
 export const signName = (i: number) => SIGNS[i];

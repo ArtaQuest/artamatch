@@ -93,8 +93,9 @@ describe("ArtaMatch app", () => {
 
     const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     const row = within(ranking).getByRole("button", { name: /Turing/ });
-    expect(row.textContent).toMatch(/traditional score \d+(\.\d+)?\/36/i);
-    expect(row.textContent).toMatch(/\d+of 100/);
+    expect(row.textContent).toMatch(/higher than \d+ in 100 random pairs/i);
+    expect(row.textContent).toMatch(/\d+ help, \d+ rub/i);
+    expect(row.textContent).toMatch(/of 36/);
   });
 
   it("opens a full report with every section populated", () => {
@@ -106,13 +107,15 @@ describe("ArtaMatch app", () => {
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
-    expect(screen.getByText(/a summary, not a verdict/i)).toBeDefined();
+    expect(screen.getByText(/randomly paired dates/i)).toBeDefined();
 
     // The eight tests, each with the rule it used and the values it read.
     fireEvent.click(screen.getByRole("tab", { name: /eight tests/i }));
     for (const test of ["Ways of working", "Give and take", "Good for each other",
       "Physical instinct", "Meeting of minds", "Temperament", "Life together", "Underlying makeup"]) {
-      expect(screen.getByText(test), `${test} missing`).toBeDefined();
+      // A test name can legitimately appear twice: once in the three plain answers at the top
+      // (as the strongest or weakest agreement) and once in the list itself.
+      expect(screen.getAllByText(test).length, `${test} missing`).toBeGreaterThan(0);
     }
     expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
     expect(screen.getAllByText(/What was read:/).length).toBe(8);
@@ -124,7 +127,8 @@ describe("ArtaMatch app", () => {
 
     // Where everything was: both charts, all ten bodies each.
     fireEvent.click(screen.getByRole("tab", { name: /Where everything/i }));
-    expect(screen.getAllByText(/Their birth star/i).length).toBe(2);
+    expect(screen.getAllByText(/Everything else/i).length).toBe(2);
+    expect(screen.getAllByText(/Birth star/i).length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText(/☉ Sun/).length).toBe(2);
     expect(screen.getAllByText(/♇ Pluto/).length).toBe(2);
   });
@@ -180,7 +184,7 @@ describe("ArtaMatch app", () => {
     expect(rows.length).toBeGreaterThanOrEqual(2);
     expect(ranking.textContent).toMatch(/Elif Eda Ayan/);
     expect(ranking.textContent).toMatch(/Lana El Jamal/);
-    expect(ranking.textContent).toMatch(/traditional score \d+(\.\d+)?\/36/i);
+    expect(ranking.textContent).toMatch(/higher than \d+ in 100 random pairs/i);
   });
 
   it("shows no astrology jargon anywhere a reader can see it", () => {
@@ -223,7 +227,7 @@ describe("ArtaMatch app", () => {
     addPerson("Curie", "1867-11-07");
 
     fireEvent.click(screen.getByRole("tab", { name: /Everyone vs everyone/i }));
-    const table = screen.getByText(/Every pair, scored out of 100/i).closest(".panel")!
+    const table = screen.getByText(/Every pair, scored out of 36/i).closest(".panel")!
       .querySelector("table")!;
     const rows = [...table.querySelectorAll("tbody tr")];
     expect(rows).toHaveLength(3);

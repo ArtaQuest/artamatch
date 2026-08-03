@@ -3,14 +3,12 @@
 **A sidereal (Vedic) compatibility matcher that works from dates of birth alone — and says out loud
 what a date of birth cannot tell you.**
 
-Two independent instruments run over the same sidereal positions:
+**One score: a total out of 36**, from Ashtakoota Guna Milan — the canonical Vedic system of eight
+tests, computed almost entirely from where the two Moons sat. Every one of its points shows the rule
+that produced it and the exact value it read. Nothing is a black box.
 
-1. **Ashtakoota Guna Milan** — the canonical Vedic system. Eight tests, 36 points, computed almost
-   entirely from the two Moons' nakshatra and rāśi.
-2. **Synastry** — the full inter-chart aspect picture, weighted for relationship relevance, giving an
-   *ease* reading and a *charge* reading.
-
-Every number shows the rule that produced it and the exact values it read. Nothing is a black box.
+Beside it, and deliberately **not** part of the score, sits the inter-chart aspect picture: what runs
+between the two charts, reported as counts you can verify against the list underneath.
 
 **No jargon.** Nothing on screen says *nakshatra*, *kuta*, *dosha*, *ayanamsa*, *orb* or *trine*.
 The eight tests are called things like "Meeting of minds" and "Underlying makeup"; connections read
@@ -124,6 +122,47 @@ silently ignore `height` — so a 6px bar filled its container and overlapped ev
 Every sized element in the stylesheet now states its `display`, and the screenshot tool asserts no
 meter is taller than 12px.
 
+## Why there is only one number
+
+An earlier version reported a 0–100 figure blended 60% from the traditional score, 30% from an "ease"
+index and 10% from a "pull" index. Three measurements killed it (`tools/calibrate.mjs`, 20,000 random
+pairs, deterministic seed):
+
+| | |
+|---|---|
+| Ranking by the blend vs by the traditional score alone | **ρ = 0.954** |
+| "Pull" index, 10th → 90th percentile | **56 → 75** |
+| Median of the 0–100 blend | **59** |
+
+The two invented components moved the ranking almost not at all while adding two unverifiable
+numbers and a set of weights nobody could check. "Pull" returned roughly the same answer for
+everybody, which is not a measurement. And a 0–100 scale invited reading 59 as a fail when it was
+exactly average.
+
+So the score is the tradition's own: out of 36, with a threshold in use for centuries, and no weights
+from me. What was "ease" survives only as a tie-break and as **counts** — "9 connections help, 4 rub"
+— which a reader can check against the list.
+
+## Every score comes with a percentile, because the pass mark flatters
+
+"22 out of 36, above the traditional pass mark of 18" reads as good news. It is not:
+
+- **71%** of randomly paired dates clear 18
+- the **median** pair scores **21**
+- 25.5 is the 75th percentile; 28 is the 90th
+
+A threshold that seven in ten pairs clear tells you almost nothing, and presenting it as an
+achievement is flattery. So every score is shown against the distribution it actually came from, and
+the bands ("Above average", "High") are set on measured percentiles rather than on the tradition's
+own generous cutoffs.
+
+## The one test you can switch off
+
+Varna, worth 1 point of 36, ranks four temperaments in a fixed order taken from an old caste
+hierarchy and scores only when the first person's sits at or above the second's. It is named plainly,
+its rule says exactly what it is doing, and there is a checkbox to leave it out of both the score and
+the ranking.
+
 ## Design decisions worth arguing with
 
 **Scores are symmetric.** `score(A,B) === score(B,A)`, asserted over hundreds of random date pairs.
@@ -139,11 +178,11 @@ those as compatibility scores every pair of age-peers as soulmates and every cro
 as doomed — it measures a birth cohort, not a relationship. This is the largest systematic error
 available here and naive matchers walk straight into it.
 
-**The combined score is 60% Guna Milan, 30% ease, 10% charge.** Guna Milan leads because it is the
-sidereal system this is built on, it is the most robust to date-only input, and its rules were
-written down long before anyone chose a weighting. Charge is deliberately small — a charged
-connection is not a compatible one, and letting intensity dominate would rank the most turbulent
-pairings highest. Every component is reported separately so the blend can be ignored entirely.
+**Aspects are zodiac-independent, so the two halves of the page are not mixing systems.** The angle
+between two planets is the same number whichever zodiac you measure from — the traditions disagree
+about where the zodiac *starts*, which changes which sign something falls in, but it cannot change an
+angle. This is worth stating because applying a Western technique to sidereal positions looks like a
+category error until you notice that it isn't one.
 
 **No chart wheel.** The connection grid is a table, because that is what the data is; it reads on a
 phone and needs no legend.

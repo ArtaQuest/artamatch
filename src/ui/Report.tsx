@@ -1,44 +1,56 @@
 /**
- * Report.tsx — the full compatibility report for one pair.
+ * Report.tsx — the full reading for one pair.
  *
- * Laid out the way a professional synastry report is: the headline first, then the evidence, then
- * the interpretation — never a number without the rule that produced it directly beside it.
+ * Ordered the way a person actually reads: the answer, then how confident it is, then what it is
+ * built from, then everything else. A number never appears without the rule that produced it
+ * somewhere on the same screen.
  *
- * There is deliberately NO chart wheel. The aspect grid is a table, which is what the underlying
- * data actually is, reads on a phone, and does not need a legend.
+ * There is no chart wheel. The connection grid is a table, which is what the data is, reads on a
+ * phone, and needs no legend to interpret.
  */
 
 import { useMemo, useState } from "react";
-import { BODIES, SIGN_GLYPH, BODY_GLYPH, SIGNS, RASI, type Body } from "../engine/ephemeris";
+import { BODIES, SIGN_GLYPH, BODY_GLYPH, SIGNS, type Body } from "../engine/ephemeris";
 import { nakshatraOf, GANA_LABEL, NADI_LABEL, YONI_LABEL } from "../engine/nakshatra";
-import { matchPair, overallBand } from "../engine/score";
+import {
+  matchPair, TRADITIONAL_PASS, PASS_RATE, MEDIAN_SCORE, type Match, type ScoreOptions,
+} from "../engine/score";
 import { synastryAspects, type SynAspect } from "../engine/synastry";
 import {
-  explainAspect, explainKuta, explainDosha, aspectLabel, formatOrb, formatDegree, headlineSummary,
+  explainAspect, explainKuta, explainDosha, aspectLabel, formatOrb, formatDegree,
   closeness, BODY_MEANS, birthStarText, moonSignText,
 } from "../engine/interpret";
 import type { Person } from "../data/people";
 import { messageUrl, profileUrl } from "../data/artaquest";
 import { Avatar, Meter, RangeBar } from "./bits";
 
-type Tab = "summary" | "guna" | "aspects" | "charts";
+type Tab = "short" | "tests" | "between" | "where";
 
-export default function Report({ a, b, onClose }: { a: Person; b: Person; onClose: () => void }) {
-  const [tab, setTab] = useState<Tab>("summary");
-  // The detailed evaluation samples 81 birth-time combinations, so it is memoised on the pair.
-  const match = useMemo(() => matchPair(a.birthday, b.birthday, true), [a.birthday, b.birthday]);
+const TABS: [Tab, string][] = [
+  ["short", "In short"],
+  ["tests", "The eight tests"],
+  ["between", "What runs between them"],
+  ["where", "Where everything was"],
+];
+
+export default function Report({ a, b, options, onClose }: {
+  a: Person; b: Person; options: ScoreOptions; onClose: () => void;
+}) {
+  const [tab, setTab] = useState<Tab>("short");
+  const match = useMemo(
+    () => matchPair(a.birthday, b.birthday, true, options),
+    [a.birthday, b.birthday, options],
+  );
 
   if (!match) {
     return (
       <div className="panel">
-        <p className="error">One of these dates is not a real calendar date, so no chart can be cast.</p>
+        <p className="error">One of these dates is not a real calendar date, so nothing can be worked out from it.</p>
         <button className="ghost" onClick={onClose}>Back</button>
       </div>
     );
   }
 
-  const { components, spanA, spanB } = match;
-  const band = overallBand(match.overall);
   const msg = messageUrl(b) ?? messageUrl(a);
   const prof = profileUrl(b);
 
@@ -52,38 +64,44 @@ export default function Report({ a, b, onClose }: { a: Person; b: Person; onClos
       </div>
 
       <div className="hero">
-        <span className={`num tone-${band.tone}`}>
-          {match.overall.toFixed(0)}
-          <small>out of 100</small>
+        <span className={`num tone-${match.band.tone}`}>
+          {match.score % 1 === 0 ? match.score : match.score.toFixed(1)}
+          <small>out of {match.maxScore}</small>
         </span>
         <span>
-          <span className="verdict">{band.label}</span>
+          <span className="verdict">{match.band.label}</span>
           <span className="because">
-            {headlineSummary(components.guna.total, components.easeScore, components.chargeScore)}
+            Higher than <strong>{match.percentile} in 100</strong> randomly paired dates.{" "}
+            {match.band.note}
           </span>
-          {match.band && !match.band.certain && (
-            <RangeBar min={match.band.min} max={match.band.max} value={match.overall} />
+          {match.range && match.range.max > match.range.min && (
+            <RangeBar min={match.range.min} max={match.range.max} value={match.score}
+              scaleMin={0} scaleMax={match.maxScore} />
           )}
         </span>
       </div>
 
+      <Answers match={match} a={a} b={b} />
+
       {match.distribution && !match.distribution.certain && (
         <div className="note">
-          <strong>
-            This reading is about {Math.round(match.distribution.confidence * 100)}% likely
-          </strong>
-          Nobody told us what time of day either of them was born, and the Moon moves far enough in a
-          day to change the answer. These are all the readings the two dates allow:
+          <strong>Only about {Math.round(match.distribution.confidence * 100)}% sure of this one</strong>
+          Nobody said what time of day either of them was born, and the Moon moves far enough in a day
+          to land in a different birth star. Each row below is a reading the two dates allow, with how
+          likely it is:
           <div className="scroll-x" style={{ marginTop: "0.5rem" }}>
             <table className="data">
               <thead>
-                <tr><th>Chance</th><th>Score out of 36</th><th>{a.name}'s birth star</th><th>{b.name}'s</th></tr>
+                <tr>
+                  <th>Chance</th><th>Score</th>
+                  <th>{a.name}'s birth star</th><th>{b.name}'s birth star</th>
+                </tr>
               </thead>
               <tbody>
                 {match.distribution.outcomes.map((o, i) => (
                   <tr key={i} style={i === 0 ? { color: "var(--yang)" } : undefined}>
                     <td className="num">{Math.round(o.probability * 100)}%</td>
-                    <td className="num">{o.guna.toFixed(1)}</td>
+                    <td className="num">{o.score % 1 === 0 ? o.score : o.score.toFixed(1)}</td>
                     <td>{o.labelA}</td>
                     <td>{o.labelB}</td>
                   </tr>
@@ -91,35 +109,6 @@ export default function Report({ a, b, onClose }: { a: Person; b: Person; onClos
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      <div className="scores">
-        <div className="scorecard">
-          <span className="k">Traditional score</span>
-          <span className="v">{components.guna.total.toFixed(1)} <em>/ 36</em></span>
-          <Meter value={components.guna.total} max={36} gold />
-          <span className="d">{components.guna.band.label}. {components.guna.band.note}</span>
-        </div>
-        <div className="scorecard">
-          <span className="k">How easy</span>
-          <span className="v">{components.easeScore.toFixed(0)}</span>
-          <Meter value={components.easeScore} gold />
-          <span className="d">Whether the connections between them lean supportive or difficult.</span>
-        </div>
-        <div className="scorecard">
-          <span className="k">How much pull</span>
-          <span className="v">{components.chargeScore.toFixed(0)}</span>
-          <Meter value={components.chargeScore} />
-          <span className="d">How much there is between them at all. Intensity, not compatibility.</span>
-        </div>
-      </div>
-
-      {match.certain && (
-        <div className="note blue">
-          <strong>The dates settle this one</strong>
-          Both Moons stay put for the whole of their birth day, so not knowing the time of day
-          changes nothing here.
         </div>
       )}
 
@@ -131,31 +120,72 @@ export default function Report({ a, b, onClose }: { a: Person; b: Person; onClos
       )}
 
       <div className="tabs" role="tablist">
-        {([["summary", "In short"], ["guna", "The eight tests"], ["aspects", "What runs between them"],
-           ["charts", "Where everything was"]] as [Tab, string][])
-          .map(([key, lbl]) => (
-            <button key={key} role="tab" aria-selected={tab === key}
-              className={tab === key ? "on" : ""} onClick={() => setTab(key)}>{lbl}</button>
-          ))}
+        {TABS.map(([key, lbl]) => (
+          <button key={key} role="tab" aria-selected={tab === key}
+            className={tab === key ? "on" : ""} onClick={() => setTab(key)}>{lbl}</button>
+        ))}
       </div>
 
-      {tab === "summary" && <Summary match={match} a={a} b={b} />}
-      {tab === "guna" && <Guna match={match} a={a} b={b} />}
-      {tab === "aspects" && <Aspects match={match} a={a} b={b} />}
-      {tab === "charts" && <Charts a={a} b={b} spanA={spanA} spanB={spanB} />}
+      {tab === "short" && <InShort match={match} a={a} b={b} />}
+      {tab === "tests" && <Tests match={match} a={a} b={b} />}
+      {tab === "between" && <Between match={match} a={a} b={b} />}
+      {tab === "where" && <Where a={a} b={b} match={match} />}
     </div>
   );
 }
 
-type MatchProp = NonNullable<ReturnType<typeof matchPair>>;
+/** The three plain statements that answer what most people came to ask. */
+function Answers({ match, a, b }: { match: Match; a: Person; b: Person }) {
+  const { helps, rubs } = match.connections;
+  const strongest = match.connections.headline[0];
+  const weakest = [...match.guna.kutas].sort((x, y) =>
+    x.points / x.maxPoints - y.points / y.maxPoints)[0];
+  const best = [...match.guna.kutas].sort((x, y) =>
+    y.points / y.maxPoints - x.points / x.maxPoints)[0];
 
-function Summary({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
-  const { components } = match;
-  const top = components.synastry.headline.slice(0, 6);
-  const doshas = components.guna.doshas;
+  return (
+    <div className="answers">
+      <div className="answer">
+        <span className="q">Where do they agree most?</span>
+        <span className="ans">
+          <strong>{best.name}</strong> — {best.points} of {best.maxPoints}. {best.measures}
+        </span>
+      </div>
+      <div className="answer">
+        <span className="q">And least?</span>
+        <span className="ans">
+          <strong>{weakest.name}</strong> — {weakest.points} of {weakest.maxPoints}. {weakest.measures}
+        </span>
+      </div>
+      <div className="answer">
+        <span className="q">What runs between them?</span>
+        <span className="ans">
+          <strong>{helps} connection{helps === 1 ? "" : "s"} help{helps === 1 ? "s" : ""}</strong> and{" "}
+          <strong>{rubs} rub{rubs === 1 ? "s" : ""}</strong>. You can count them in the list.
+          {strongest && <> The strongest is {aspectLabel(strongest, a.name, b.name)}.</>}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function InShort({ match, a, b }: { match: Match; a: Person; b: Person }) {
+  const top = match.connections.headline.slice(0, 5);
+  const doshas = match.guna.doshas;
 
   return (
     <>
+      <div className="note blue">
+        <strong>How this works, in four sentences</strong>
+        Where the Moon sat when each of them was born is the whole basis of this. Eight old tests
+        compare those two positions, each worth a different number of points, adding up to
+        thirty-six. {TRADITIONAL_PASS} is the traditional pass mark, but {PASS_RATE} in 100 random
+        pairs clear it and the middling pair scores about {MEDIAN_SCORE}, so the percentile above
+        tells you far more than the pass mark does. Nobody knows what time of day anyone was born,
+        and the Moon moves about 13 degrees a day, so where that changes the answer this page shows
+        you every answer it could be.
+      </div>
+
       <h3>What stands out</h3>
       {top.length === 0 && <p className="empty">There is very little running between these two either way.</p>}
       {top.map((asp, i) => (
@@ -188,35 +218,33 @@ function Summary({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
   );
 }
 
-function Guna({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
-  const g = match.components.guna;
+function Tests({ match, a, b }: { match: Match; a: Person; b: Person }) {
+  const g = match.guna;
   return (
     <>
       <p className="panel-note">
-        Eight tests, 36 points between them. Six of the eight read only where the Moon was. Each one
-        shows the rule it used and the exact thing it read, so you can check any line by hand.
+        Eight tests, {g.maxTotal} points between them. Six of the eight read only where the Moon was.
+        Each shows the rule it used and the exact thing it read, so any line can be checked by hand.
       </p>
 
       <div className="note blue">
-        <strong>What a date alone can carry</strong><br />
-        The Moon moves about 13 degrees in a day. A Moon sign is 30 degrees wide, so without knowing
-        the time of birth there is roughly an <strong>11% chance of the wrong Moon sign</strong> —
-        which would change four of the eight tests. A birth star is only 13 degrees wide, so there is
-        roughly a <strong>25% chance of the wrong birth star</strong> — which would change the other
-        four, <strong>21 of the 36 points</strong>. Finer divisions than that are not attempted at
-        all: the uncertainty swallows them whole, so they would be guesswork dressed up as arithmetic.
+        <strong>What a date alone can carry</strong>
+        The Moon moves about 13 degrees in a day. A Moon sign is 30 degrees wide, so without the time
+        of birth there is roughly an <strong>11% chance of the wrong Moon sign</strong>, which would
+        change four of the eight tests. A birth star is only 13 degrees wide, so there is roughly a{" "}
+        <strong>25% chance of the wrong birth star</strong>, which would change the other four —{" "}
+        <strong>21 of the 36 points</strong>. Finer divisions than that are not attempted at all,
+        because the uncertainty swallows them whole.
       </div>
 
       {g.orderMatters && (
         <div className="note">
-          <strong>Order matters in this pairing</strong><br />
-          Three of the eight tests were written for a groom and a bride, and they give different
-          answers depending on which way round you read them. Nobody has said who is who here, so
-          both ways are worked out and the average is used:
-          {" "}<strong>{g.forward.total.toFixed(0)}</strong> with {a.name} first,
-          {" "}<strong>{g.reverse.total.toFixed(0)}</strong> with {b.name} first.
-          The ranking uses the average, because otherwise your list and their list would disagree
-          about the same pair.
+          <strong>Order matters in this pairing</strong>
+          Three of the eight were written for a groom and a bride, and give different answers
+          depending which way round you read them. Nobody has said who is who here, so both ways are
+          worked out and the average used: <strong>{g.forward.total}</strong> with {a.name} first,{" "}
+          <strong>{g.reverse.total}</strong> with {b.name} first. The ranking uses the average,
+          because otherwise your list and their list would disagree about the same pair.
         </div>
       )}
 
@@ -234,8 +262,8 @@ function Guna({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
           <span className="detail"><b>How it is scored:</b> {k.rule}</span>
           {k.forwardPoints !== k.reversePoints && (
             <span className="detail">
-              <b>Order matters here:</b> {k.forwardPoints} with {a.name} first,
-              {" "}{k.reversePoints} with {b.name} first. The average is used.
+              <b>Order matters here:</b> {k.forwardPoints} with {a.name} first,{" "}
+              {k.reversePoints} with {b.name} first. The average is used.
             </span>
           )}
         </div>
@@ -243,21 +271,18 @@ function Guna({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
 
       <div className="row" style={{ marginTop: "1rem", justifyContent: "space-between" }}>
         <strong>Total</strong>
-        <strong style={{ fontFamily: "var(--mono)" }}>{g.total.toFixed(1)} / 36 — {g.band.label}</strong>
+        <strong style={{ fontFamily: "var(--mono)" }}>
+          {match.score} / {match.maxScore} — {match.band.label}
+        </strong>
       </div>
-      {match.gunaBand && !match.gunaBand.certain && (
-        <p className="panel-note" style={{ marginTop: "0.5rem" }}>
-          Across every time of day these two dates allow, this total runs from{" "}
-          {match.gunaBand.min.toFixed(1)} to {match.gunaBand.max.toFixed(1)}.
-        </p>
-      )}
     </>
   );
 }
 
 const GRID_BODIES: Body[] = BODIES;
+const OUTERS: Body[] = ["Uranus", "Neptune", "Pluto"];
 
-function Aspects({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
+function Between({ match, a, b }: { match: Match; a: Person; b: Person }) {
   const aspects = useMemo(
     () => synastryAspects(match.spanA.chart, match.spanB.chart),
     [match],
@@ -274,20 +299,28 @@ function Aspects({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
   };
 
   const major = aspects.filter((x) => x.def.major);
-  // Split off the outer-to-outer pairings. They are real, but they are facts about a birth cohort,
-  // not about these two people — giving them the same paragraph treatment as a Sun–Moon contact
-  // would overstate them exactly where the reader is least able to tell.
-  const OUTERS: Body[] = ["Uranus", "Neptune", "Pluto"];
   const isGenerational = (x: SynAspect) => OUTERS.includes(x.a.body) && OUTERS.includes(x.b.body);
   const personal = major.filter((x) => !isGenerational(x));
   const generational = major.filter(isGenerational);
 
   return (
     <>
+      <div className="note blue">
+        <strong>These do not count towards the score</strong>
+        The eight tests are the score. What follows is a second, separate way of looking at the same
+        two people — the angles between where their planets sat. It is here because it says things
+        the eight tests do not, but it is commentary, not arithmetic.
+        <br /><br />
+        One thing worth knowing: an angle between two planets is the same number whichever zodiac you
+        measure from. The two traditions disagree about where the zodiac starts, and that changes
+        which sign something falls in — but it cannot change the angle between two things. So this
+        half of the page is not mixing systems, even though it looks like it might be.
+      </div>
+
       <h3>The connection grid</h3>
       <p className="panel-note">
-        {a.name} down the side, {b.name} across the top. Every filled square is a connection between
-        one thing in each of them. Gold squares help; blue squares rub. Hover a square to see what it is.
+        {a.name} down the side, {b.name} across the top. Every filled square is one connection. Gold
+        helps, blue rubs. Hover any square to read it out in words.
       </p>
       <div className="scroll-x">
         <table className="grid">
@@ -305,11 +338,11 @@ function Aspects({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
                 <th title={`${ba} — ${BODY_MEANS[ba]}`}>{BODY_GLYPH[ba]}</th>
                 {GRID_BODIES.map((bb) => {
                   const asp = lookup.get(`${ba}|${bb}`);
-                  if (!asp) return <td key={bb} className="neutral" />;
-                  const cls = asp.valence > 0.15 ? "ease" : asp.valence < -0.15 ? "friction" : "neutral";
+                  if (!asp) return <td key={bb} className="flat" />;
+                  const cls = asp.valence > 0.15 ? "ease" : asp.valence < -0.15 ? "friction" : "flat";
                   return (
                     <td key={bb} className={cls}
-                      title={`${a.name}'s ${BODY_MEANS[ba]} ${asp.def.plain} ${b.name}'s ${BODY_MEANS[bb]} — ${closeness(asp.exactness)} (${formatOrb(asp.orb)} from exact)`}>
+                      title={`${a.name}'s ${BODY_MEANS[ba]} ${asp.def.plain} ${b.name}'s ${BODY_MEANS[bb]} — ${closeness(asp.exactness)}`}>
                       {glyph[asp.type]}
                     </td>
                   );
@@ -319,7 +352,6 @@ function Aspects({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
           </tbody>
         </table>
       </div>
-
       <div className="legend">
         <span><i style={{ background: "rgba(232,185,35,0.6)" }} /> helps</span>
         <span><i style={{ background: "rgba(74,114,240,0.7)" }} /> rubs</span>
@@ -328,20 +360,21 @@ function Aspects({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
 
       <h3 style={{ marginTop: "1.4rem" }}>Every strong connection, explained</h3>
       <p className="panel-note">
-        {personal.length} of them, strongest first. "Strongest" means the two things involved matter
-        most to a relationship, and the connection sits closest to exact.
+        {personal.length} of them, strongest first — meaning the two things involved matter most to a
+        relationship and the connection sits closest to exact.
         {generational.length > 0 && (
-          <> {generational.length} further connections are left out here: they run between the
-          slowest-moving planets, which take between 84 and 248 years to go round. Almost everybody
-          born in the same few years shares them, so they describe a generation rather than these two
-          — and they are weighted to almost nothing in the score for the same reason.</>
+          <> {generational.length} more are left out: they run between the slowest planets, which take
+          between 84 and 248 years to go round, so almost everybody born in the same few years shares
+          them. They describe a generation, not these two.</>
         )}
       </p>
       {personal.map((asp, i) => (
         <div className="aspect-line" key={i}>
           <span className="top">
             <span className="sym">{aspectLabel(asp, a.name, b.name)}</span>
-            <span className="pill soft" title={`${formatOrb(asp.orb)} from exact`}>{closeness(asp.exactness)}</span>
+            <span className="pill soft" title={`${formatOrb(asp.orb)} from exact`}>
+              {closeness(asp.exactness)}
+            </span>
           </span>
           <span className="txt">{explainAspect(asp, a.name, b.name)}</span>
         </div>
@@ -350,30 +383,67 @@ function Aspects({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
   );
 }
 
-function Charts({ a, b, spanA, spanB }: {
-  a: Person; b: Person; spanA: MatchProp["spanA"]; spanB: MatchProp["spanB"];
-}) {
+function Where({ a, b, match }: { a: Person; b: Person; match: Match }) {
   return (
     <>
       <p className="panel-note">
         Where each planet sat on the day they were born, measured against the constellations — the
-        older of the two zodiacs, and the one this whole tradition is built on. Taken at the most
-        likely moment of the day, given that nobody knows the hour.
+        older of the two zodiacs, and the one this tradition is built on. Taken at the most likely
+        moment of the day, since nobody knows the hour.
       </p>
       <div className="cols">
-        <PersonChart person={a} span={spanA} />
-        <PersonChart person={b} span={spanB} />
+        <PersonChart person={a} span={match.spanA} />
+        <PersonChart person={b} span={match.spanB} />
       </div>
     </>
   );
 }
 
-function PersonChart({ person, span }: { person: Person; span: MatchProp["spanA"] }) {
+function PersonChart({ person, span }: { person: Person; span: Match["spanA"] }) {
   const star = birthStarText(span.likeliest.nakshatra.index);
   const moonSign = moonSignText(span.likeliest.rasi);
   return (
     <div>
-      <h3>{person.name} <span style={{ color: "var(--muted)", fontWeight: 400, fontFamily: "var(--mono)", fontSize: "0.85rem" }}>{person.birthday}</span></h3>
+      <h3>
+        {person.name}{" "}
+        <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: "0.85rem" }}>
+          {person.birthday}
+        </span>
+      </h3>
+
+      {star && (
+        <div className="note blue">
+          <strong>{span.likeliest.nakshatra.name} — {star.title}</strong>
+          {star.summary} <em style={{ opacity: 0.85 }}>{star.inRelationships}</em>
+        </div>
+      )}
+      {moonSign && (
+        <p className="panel-note">
+          <b style={{ color: "var(--muted)" }}>
+            Moon in {SIGNS[span.likeliest.rasi]} — {moonSign.title}.
+          </b>{" "}
+          {moonSign.style}
+        </p>
+      )}
+
+      <table className="data">
+        <tbody>
+          <tr><th>Birth star</th><td>{span.likeliest.nakshatra.name}</td></tr>
+          <tr><th>Its planet</th><td>{span.likeliest.nakshatra.lord}</td></tr>
+          <tr><th>Temperament</th><td>{GANA_LABEL[span.likeliest.nakshatra.gana]}</td></tr>
+          <tr><th>Its animal</th><td>{YONI_LABEL[span.likeliest.nakshatra.yoni]}</td></tr>
+          <tr><th>Built</th><td>{NADI_LABEL[span.likeliest.nakshatra.nadi]}</td></tr>
+          <tr><th>Moon that day</th><td>
+            moved {span.moonArc.toFixed(1)}°
+            {span.stable
+              ? " — stayed in one birth star and one sign all day"
+              : ` — passed through ${span.states.length} different readings: ` +
+                span.states.map((s) => `${s.nakshatra.name} (${Math.round(s.share * 100)}%)`).join(", ")}
+          </td></tr>
+        </tbody>
+      </table>
+
+      <h4 style={{ marginTop: "0.9rem" }}>Everything else</h4>
       <div className="scroll-x">
         <table className="data">
           <thead>
@@ -384,52 +454,23 @@ function PersonChart({ person, span }: { person: Person; span: MatchProp["spanA"
               const nk = nakshatraOf(p.lon);
               return (
                 <tr key={p.body}>
-                  <td title={BODY_MEANS[p.body]}>{BODY_GLYPH[p.body]} {p.body}<br />
-                    <span style={{ color: "var(--dim)", fontSize: "0.72rem" }}>{BODY_MEANS[p.body]}</span></td>
-                  <td>{formatDegree(p.deg)} {SIGN_GLYPH[p.sign]} {SIGNS[p.sign]} <span style={{ color: "var(--muted)" }}>({RASI[p.sign]})</span></td>
-                  {/* The quarter-division is deliberately NOT shown. It is 3°20′ wide and the
-                      unknown birth time moves the Moon by up to ±6.6°, so it would be a number
-                      with no information in it — precision this page has already said it lacks. */}
+                  <td title={BODY_MEANS[p.body]}>
+                    {BODY_GLYPH[p.body]} {p.body}<br />
+                    <span style={{ color: "var(--dim)", fontSize: "0.72rem" }}>{BODY_MEANS[p.body]}</span>
+                  </td>
+                  <td>{formatDegree(p.deg)} {SIGN_GLYPH[p.sign]} {SIGNS[p.sign]}</td>
+                  {/* The quarter-division is deliberately not shown: it is 3°20′ wide against a
+                      ±6.6° uncertainty, so it would be a number with no information in it. */}
                   <td>{nk.info.name}</td>
                   <td className="num" title={`${p.speed.toFixed(2)}° per day`}>
-                    {p.retro ? "backwards" : "forwards"}</td>
+                    {p.retro ? "backwards" : "forwards"}
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-
-      {star && (
-        <div className="note blue" style={{ marginTop: "0.9rem" }}>
-          <strong>{span.likeliest.nakshatra.name} — {star.title}</strong>
-          {star.summary} <em style={{ opacity: 0.85 }}>{star.inRelationships}</em>
-        </div>
-      )}
-      {moonSign && (
-        <p className="panel-note" style={{ marginTop: "0.4rem" }}>
-          <b style={{ color: "var(--muted)" }}>Moon in {SIGNS[span.likeliest.rasi]} — {moonSign.title}.</b>{" "}
-          {moonSign.style}
-        </p>
-      )}
-
-      <h4 style={{ marginTop: "0.9rem" }}>Their birth star</h4>
-      <table className="data">
-        <tbody>
-          <tr><th>Birth star</th><td>{span.likeliest.nakshatra.name}</td></tr>
-          <tr><th>Its planet</th><td>{span.likeliest.nakshatra.lord}</td></tr>
-          <tr><th>Temperament</th><td>{GANA_LABEL[span.likeliest.nakshatra.gana]}</td></tr>
-          <tr><th>Its animal</th><td>{YONI_LABEL[span.likeliest.nakshatra.yoni]}</td></tr>
-          <tr><th>Built</th><td>{NADI_LABEL[span.likeliest.nakshatra.nadi]}</td></tr>
-          <tr><th>Moon that day</th><td>
-            moved {span.moonArc.toFixed(2)}°
-            {span.stable
-              ? " — stayed in one birth star and one sign all day"
-              : ` — passed through ${span.states.length} different readings: ` +
-                span.states.map((s) => `${s.nakshatra.name} (${Math.round(s.share * 100)}%)`).join(", ")}
-          </td></tr>
-        </tbody>
-      </table>
     </div>
   );
 }

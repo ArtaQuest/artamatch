@@ -15,7 +15,8 @@ import {
   type Person, loadPeople, savePeople, newId, loadSelfId, saveSelfId, validatePerson,
 } from "./data/people";
 import { fetchPublicMembers, loadCached, messageUrl, type FetchResult } from "./data/artaquest";
-import { matchPair, rankAgainst, overallBand } from "./engine/score";
+import { matchPair, rankAgainst, OPTIONAL_TESTS, type ScoreOptions } from "./engine/score";
+import type { KutaKey } from "./engine/kuta";
 import { birthSpan } from "./engine/uncertainty";
 import Report from "./ui/Report";
 import { Avatar, Mark, Meter } from "./ui/bits";
@@ -27,6 +28,10 @@ export default function App() {
   const [selfId, setSelfId] = useState<string | null>(() => loadSelfId());
   const [view, setView] = useState<View>("ranking");
   const [pair, setPair] = useState<[string, string] | null>(null);
+  // Tests the reader has chosen to leave out. Kept here rather than inside the report so the
+  // ranking and the report always agree about what is being counted.
+  const [excluded, setExcluded] = useState<KutaKey[]>([]);
+  const options = useMemo<ScoreOptions>(() => ({ exclude: excluded }), [excluded]);
 
   const [name, setName] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -106,8 +111,8 @@ export default function App() {
 
   const self = people.find((p) => p.id === selfId) ?? null;
   const ranked = useMemo(
-    () => (self ? rankAgainst(self, people) : []),
-    [self, people],
+    () => (self ? rankAgainst(self, people, options) : []),
+    [self, people, options],
   );
 
   const pairPeople = useMemo(() => {
@@ -178,6 +183,24 @@ export default function App() {
           </section>
 
           <section className="panel">
+            <h2>What gets counted</h2>
+            <p className="panel-note">
+              One of the eight tests carries something you may not want in your results.
+            </p>
+            {OPTIONAL_TESTS.map((t) => (
+              <label className="opt" key={t.key}>
+                <input type="checkbox" checked={!excluded.includes(t.key)}
+                  onChange={(e) => setExcluded((prev) =>
+                    e.target.checked ? prev.filter((k) => k !== t.key) : [...prev, t.key])} />
+                <span>
+                  <b>Count {t.label}</b>
+                  {t.why}
+                </span>
+              </label>
+            ))}
+          </section>
+
+          <section className="panel">
             <h2>Everyone ({people.length})</h2>
             <p className="panel-note">
               {self ? <>Everyone is being compared against <strong>{self.name}</strong>. Tap a
@@ -194,7 +217,7 @@ export default function App() {
 
         <div>
           {pairPeople ? (
-            <Report a={pairPeople[0]} b={pairPeople[1]} onClose={() => setPair(null)} />
+            <Report a={pairPeople[0]} b={pairPeople[1]} options={options} onClose={() => setPair(null)} />
           ) : (
             <>
               <div className="tabs" role="tablist">
@@ -210,7 +233,7 @@ export default function App() {
 
               {view === "ranking"
                 ? <Ranking self={self} ranked={ranked} onOpen={(id) => self && setPair([self.id, id])} />
-                : <Matrix people={people} onOpen={(x, y) => setPair([x, y])} />}
+                : <Matrix people={people} options={options} onOpen={(x, y) => setPair([x, y])} />}
             </>
           )}
         </div>
@@ -311,8 +334,8 @@ function Ranking({ self, ranked, onOpen }: {
       </p>
       <div className="rank">
         {ranked.map((r, i) => {
-          const band = overallBand(r.overall);
-          const unstable = !r.match.spanA.stable || !r.match.spanB.stable;
+          const m = r.match;
+          const unstable = !m.spanA.stable || !m.spanB.stable;
           const msg = messageUrl(r.other);
           return (
             <button className="rank-row" key={r.other.id} onClick={() => onOpen(r.other.id)}>
@@ -324,14 +347,15 @@ function Ranking({ self, ranked, onOpen }: {
                   {msg && <span className="pill aq" style={{ marginLeft: "0.4rem" }}>can message</span>}
                 </span>
                 <span className="sub">
-                  {band.label} · traditional score {r.match.components.guna.total.toFixed(1)}/36
+                  {m.band.label} · higher than {m.percentile} in 100 random pairs ·{" "}
+                  {m.connections.helps} help, {m.connections.rubs} rub
                   {unstable && " · time of day would change this"}
                 </span>
-                <Meter value={r.overall} gold={band.tone === "high"} />
+                <Meter value={m.score} max={m.maxScore} gold={m.band.tone === "high"} />
               </span>
-              <span className={`sc tone-${band.tone}`}>
-                {r.overall.toFixed(0)}
-                <small>of 100</small>
+              <span className={`sc tone-${m.band.tone}`}>
+                {m.score % 1 === 0 ? m.score : m.score.toFixed(1)}
+                <small>of {m.maxScore}</small>
               </span>
             </button>
           );
@@ -341,20 +365,20 @@ function Ranking({ self, ranked, onOpen }: {
   );
 }
 
-function Matrix({ people, onOpen }: { people: Person[]; onOpen: (a: string, b: string) => void }) {
+function Matrix({ people, options, onOpen }: { people: Person[]; options: ScoreOptions; onOpen: (a: string, b: string) => void }) {
   const cells = useMemo(() => {
     const m = new Map<string, number>();
     for (let i = 0; i < people.length; i++) {
       for (let j = i + 1; j < people.length; j++) {
-        const r = matchPair(people[i].birthday, people[j].birthday);
+        const r = matchPair(people[i].birthday, people[j].birthday, false, options);
         if (r) {
-          m.set(`${people[i].id}|${people[j].id}`, r.overall);
-          m.set(`${people[j].id}|${people[i].id}`, r.overall);
+          m.set(`${people[i].id}|${people[j].id}`, r.score);
+          m.set(`${people[j].id}|${people[i].id}`, r.score);
         }
       }
     }
     return m;
-  }, [people]);
+  }, [people, options]);
 
   if (people.length < 2) {
     return <div className="panel"><p className="empty">Add at least two people to see the grid.</p></div>;
@@ -364,7 +388,7 @@ function Matrix({ people, onOpen }: { people: Person[]; onOpen: (a: string, b: s
     <div className="panel">
       <h2>Everyone against everyone</h2>
       <p className="panel-note">
-        Every pair, scored out of 100. The grid is symmetric by construction. Tap a cell for the report.
+Every pair, scored out of 36. The grid is symmetric by construction, so it reads the same across as it does down. Tap any cell for the full reading.
       </p>
       <div className="scroll-x">
         <table className="data">
@@ -382,12 +406,12 @@ function Matrix({ people, onOpen }: { people: Person[]; onOpen: (a: string, b: s
                   if (row.id === col.id) return <td key={col.id} className="matrix-cell self">—</td>;
                   const v = cells.get(`${row.id}|${col.id}`);
                   if (v === undefined) return <td key={col.id} className="matrix-cell self">·</td>;
-                  const band = overallBand(v);
+                  const tone = v >= 25.5 ? "high" : v >= 17 ? "mid" : "low";
                   return (
                     <td key={col.id} className="matrix-cell">
                       <button className="link" onClick={() => onOpen(row.id, col.id)}
-                        title={`${row.name} & ${col.name}`}>
-                        <span className={`tone-${band.tone}`}>{v.toFixed(0)}</span>
+                        title={`${row.name} & ${col.name} — ${v} of 36`}>
+                        <span className={`tone-${tone}`}>{v % 1 === 0 ? v : v.toFixed(1)}</span>
                       </button>
                     </td>
                   );

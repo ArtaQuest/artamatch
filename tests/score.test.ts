@@ -201,7 +201,7 @@ describe("scoring is symmetric — a ranked list must agree with itself", () => 
       const ba = matchPair(dates[i + 1], dates[i]);
       expect(ab).not.toBeNull();
       expect(ba).not.toBeNull();
-      expect(ab!.overall, `${dates[i]} vs ${dates[i + 1]}`).toBeCloseTo(ba!.overall, 9);
+      expect(ab!.score, `${dates[i]} vs ${dates[i + 1]}`).toBeCloseTo(ba!.score, 9);
     }
   });
 
@@ -226,7 +226,7 @@ describe("scoring is symmetric — a ranked list must agree with itself", () => 
     for (const self of people) {
       for (const r of rankAgainst(self, people)) {
         const theirView = rankAgainst(r.other, people).find((x) => x.other.id === self.id)!;
-        expect(theirView.overall).toBeCloseTo(r.overall, 9);
+        expect(theirView.score).toBeCloseTo(r.score, 9);
       }
     }
   });
@@ -238,15 +238,16 @@ describe("score distribution", () => {
     const scores: number[] = [];
     for (let i = 0; i < 60; i++) {
       const m = matchPair(dates[i], dates[i + 60]);
-      if (m) scores.push(m.overall);
+      if (m) scores.push(m.score);
     }
     const mean = scores.reduce((a, b) => a + b, 0) / scores.length;
     const sd = Math.sqrt(scores.reduce((s, x) => s + (x - mean) ** 2, 0) / scores.length);
-    // A scoring model that gave everyone 85 would be useless for ranking.
-    expect(mean).toBeGreaterThan(30);
-    expect(mean).toBeLessThan(75);
-    expect(sd).toBeGreaterThan(5);
-    expect(Math.max(...scores) - Math.min(...scores)).toBeGreaterThan(25);
+    // Calibrated against tools/calibrate.mjs: 20,000 random pairs give a median near 21 with a
+    // spread of roughly 6 points. A model that gave everyone the same answer could not rank.
+    expect(mean).toBeGreaterThan(17);
+    expect(mean).toBeLessThan(25);
+    expect(sd).toBeGreaterThan(3);
+    expect(Math.max(...scores) - Math.min(...scores)).toBeGreaterThan(12);
   });
 });
 
@@ -290,10 +291,11 @@ describe("the uncertainty model", () => {
       const bothStable = m.spanA.stable && m.spanB.stable;
       if (bothStable) {
         sawStable = true;
-        expect(m.gunaBand!.certain, `${dates[i]} vs ${dates[i + 1]} should be certain`).toBe(true);
+        expect(m.certain, `${dates[i]} vs ${dates[i + 1]} should be certain`).toBe(true);
+        expect(m.range!.max).toBe(m.range!.min);
       } else {
         sawUnstable = true;
-        expect(m.gunaBand!.max).toBeGreaterThanOrEqual(m.gunaBand!.min);
+        expect(m.range!.max).toBeGreaterThanOrEqual(m.range!.min);
       }
     }
     expect(sawStable || sawUnstable).toBe(true);

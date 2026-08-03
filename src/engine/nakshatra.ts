@@ -50,7 +50,7 @@ const ROWS: Row[] = [
   ["Ashlesha",          "Mercury", "rakshasa", "cat",      "male",   "antya"],
   ["Magha",             "Ketu",    "rakshasa", "rat",      "male",   "antya"],
   ["Purva Phalguni",    "Venus",   "manushya", "rat",      "female", "madhya"],
-  ["Uttara Phalguni",   "Sun",     "manushya", "cow",      "female", "adi"],
+  ["Uttara Phalguni",   "Sun",     "manushya", "cow",      "male",   "adi"],
   ["Hasta",             "Moon",    "deva",     "buffalo",  "female", "adi"],
   ["Chitra",            "Mars",    "rakshasa", "tiger",    "female", "madhya"],
   ["Swati",             "Rahu",    "deva",     "buffalo",  "male",   "antya"],
@@ -61,10 +61,10 @@ const ROWS: Row[] = [
   ["Purva Ashadha",     "Venus",   "manushya", "monkey",   "male",   "madhya"],
   ["Uttara Ashadha",    "Sun",     "manushya", "mongoose", "male",   "antya"],
   ["Shravana",          "Moon",    "deva",     "monkey",   "female", "antya"],
-  ["Dhanishta",         "Mars",    "rakshasa", "lion",     "female", "madhya"],
+  ["Dhanishtha",        "Mars",    "rakshasa", "lion",     "female", "madhya"],
   ["Shatabhisha",       "Rahu",    "rakshasa", "horse",    "female", "adi"],
   ["Purva Bhadrapada",  "Jupiter", "manushya", "lion",     "male",   "adi"],
-  ["Uttara Bhadrapada", "Saturn",  "manushya", "cow",      "male",   "madhya"],
+  ["Uttara Bhadrapada", "Saturn",  "manushya", "cow",      "female", "madhya"],
   ["Revati",            "Mercury", "deva",     "elephant", "female", "antya"],
 ];
 

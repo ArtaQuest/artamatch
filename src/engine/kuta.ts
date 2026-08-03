@@ -74,8 +74,8 @@ const VASHYA_MATRIX: number[][] = [
   /* chatush   */ [2, 1, 1, 0, 1],
   /* manava    */ [1, 2, 0.5, 0, 1],
   /* jalachara */ [1, 0.5, 2, 1, 1],
-  /* vanachara */ [0, 0, 1, 2, 1],
-  /* keeta     */ [1, 1, 1, 1, 2],
+  /* vanachara */ [0, 0, 1, 2, 0],
+  /* keeta     */ [1, 1, 1, 0, 2],
 ];
 
 // ── Yoni ────────────────────────────────────────────────────────────────────────────────────────
@@ -87,38 +87,40 @@ export const YONI_ORDER: YoniAnimal[] = [
 ];
 
 /**
- * Yoni compatibility, 0–4. Same animal is 4; the classical MORTAL ENEMY pairs are 0 and everything
- * between is graded 3 (friendly), 2 (neutral) or 1 (unfriendly).
+ * Yoni compatibility, 0–4 — the full classical 14×14 table.
  *
- * The enemy pairs are the memorable part of the system and the part worth checking hardest:
- * horse/buffalo, elephant/sheep, serpent/mongoose, dog/deer, cat/rat, monkey/sheep, cow/tiger,
- * lion/elephant.
+ * Same animal is 4; the seven canonical MORTAL ENEMY pairs are 0; between them the table grades
+ * 3 (friendly), 2 (neutral) and 1 (unfriendly). The table is symmetric, and the diagonal is all 4s.
+ *
+ * This is a real transcribed table, not a rule of thumb. An earlier version of this file computed
+ * the grades from a short list of "enemy / friendly / unfriendly" pairs and defaulted everything
+ * else to neutral — that reproduced only 55% of the actual table, and wrongly made elephant/sheep
+ * mortal enemies when the tradition rates them FRIENDLY (3). Yoni is worth 4 of the 36 points, so
+ * the shortcut was materially wrong. Hence the full grid.
+ *
+ * The seven enemy pairs, which every source agrees on: horse/buffalo, elephant/lion, sheep/monkey,
+ * serpent/mongoose, dog/deer, cat/rat, cow/tiger.
  */
-const YONI_ENEMIES: [YoniAnimal, YoniAnimal][] = [
-  ["horse", "buffalo"], ["elephant", "lion"], ["sheep", "monkey"], ["serpent", "mongoose"],
-  ["dog", "deer"], ["cat", "rat"], ["cow", "tiger"], ["elephant", "sheep"],
+const YONI_MATRIX: number[][] = [
+  //          hor  ele  she  ser  dog  cat  rat  cow  buf  tig  dee  mon  mng  lio
+  /* horse    */ [4, 2, 2, 3, 2, 2, 2, 1, 0, 1, 3, 3, 2, 1],
+  /* elephant */ [2, 4, 3, 3, 2, 2, 2, 2, 3, 1, 2, 3, 2, 0],
+  /* sheep    */ [2, 3, 4, 2, 1, 2, 1, 3, 3, 1, 2, 0, 3, 1],
+  /* serpent  */ [3, 3, 2, 4, 2, 1, 1, 1, 1, 2, 2, 2, 0, 2],
+  /* dog      */ [2, 2, 1, 2, 4, 2, 1, 2, 2, 1, 0, 2, 1, 1],
+  /* cat      */ [2, 2, 2, 1, 2, 4, 0, 2, 2, 1, 3, 3, 2, 1],
+  /* rat      */ [2, 2, 1, 1, 1, 0, 4, 2, 2, 2, 2, 2, 1, 2],
+  /* cow      */ [1, 2, 3, 1, 2, 2, 2, 4, 3, 0, 3, 2, 2, 1],
+  /* buffalo  */ [0, 3, 3, 1, 2, 2, 2, 3, 4, 1, 2, 2, 2, 1],
+  /* tiger    */ [1, 1, 1, 2, 1, 1, 2, 0, 1, 4, 1, 1, 2, 1],
+  /* deer     */ [3, 2, 2, 2, 0, 3, 2, 3, 2, 1, 4, 2, 2, 1],
+  /* monkey   */ [3, 3, 0, 2, 2, 3, 2, 2, 2, 1, 2, 4, 3, 2],
+  /* mongoose */ [2, 2, 3, 0, 1, 2, 1, 2, 2, 2, 2, 3, 4, 2],
+  /* lion     */ [1, 0, 1, 2, 1, 1, 2, 1, 1, 1, 1, 2, 2, 4],
 ];
-
-const YONI_UNFRIENDLY: [YoniAnimal, YoniAnimal][] = [
-  ["horse", "elephant"], ["serpent", "rat"], ["dog", "sheep"], ["cat", "dog"],
-  ["monkey", "lion"], ["cow", "buffalo"], ["deer", "tiger"], ["lion", "deer"],
-];
-
-const YONI_FRIENDLY: [YoniAnimal, YoniAnimal][] = [
-  ["horse", "sheep"], ["elephant", "cow"], ["cow", "buffalo"], ["deer", "monkey"],
-  ["cat", "mongoose"], ["rat", "mongoose"], ["serpent", "cat"], ["tiger", "lion"],
-];
-
-function inPairs(pairs: [YoniAnimal, YoniAnimal][], a: YoniAnimal, b: YoniAnimal): boolean {
-  return pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a));
-}
 
 export function yoniPoints(a: YoniAnimal, b: YoniAnimal): number {
-  if (a === b) return 4;
-  if (inPairs(YONI_ENEMIES, a, b)) return 0;
-  if (inPairs(YONI_UNFRIENDLY, a, b)) return 1;
-  if (inPairs(YONI_FRIENDLY, a, b)) return 3;
-  return 2;
+  return YONI_MATRIX[YONI_ORDER.indexOf(a)][YONI_ORDER.indexOf(b)];
 }
 
 // ── Graha Maitri ────────────────────────────────────────────────────────────────────────────────
@@ -227,6 +229,8 @@ export type KutaSide = {
   degInSign: number;
   /** Sidereal longitude of Mars — used only by the Mangal dosha check. */
   marsLon: number;
+  /** Sidereal longitude of Venus — the third Mangal reference point (see mangalFor). */
+  venusLon: number;
 };
 
 /** Inclusive count from sign a to sign b, 1…12 — the tradition always counts inclusively. */
@@ -368,11 +372,36 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
 
 // ── doshas ──────────────────────────────────────────────────────────────────────────────────────
 
-/** Mangal (Kuja) dosha counted from the MOON, because a birth date gives no Ascendant. */
-function mangalFromMoon(side: KutaSide): boolean {
-  const marsSign = Math.floor(side.marsLon / 30) % 12;
-  const house = countSigns(side.rasi, marsSign); // 1…12, Moon sign as the first house
-  return [1, 2, 4, 7, 8, 12].includes(house);
+/**
+ * Mangal (Kuja) dosha. Mars falling in house 1, 2, 4, 7, 8 or 12 counted whole-sign from a
+ * reference point.
+ *
+ * There are THREE traditional reference points and the standard rule (Drik Panchang) is that a
+ * person is non-Manglik only if none of the three is afflicted:
+ *
+ *   · the ASCENDANT — the primary one, and flatly impossible here. The Lagna advances ~15° an hour,
+ *     a whole sign every two hours, all twelve in a day. Without a birth time it is not even
+ *     probabilistically biased, so it is REFUSED rather than defaulted to noon and presented as
+ *     fact. Defaulting would be inventing the answer.
+ *   · the MOON (chandra-lagna) — degraded but usable: the Moon's ±6.6° date-only uncertainty gives
+ *     roughly an 11% chance of the wrong rāśi.
+ *   · VENUS (shukra) — safe without a time: Venus holds a sign for three to eight weeks, so only a
+ *     birth on an ingress day is ambiguous at all.
+ *
+ * So ArtaMatch computes two of the three and says plainly that the third is unavailable.
+ */
+const MANGAL_HOUSES = [1, 2, 4, 7, 8, 12];
+
+function afflicted(refLon: number, marsLon: number): boolean {
+  const refSign = Math.floor(refLon / 30) % 12;
+  const marsSign = Math.floor(marsLon / 30) % 12;
+  return MANGAL_HOUSES.includes(countSigns(refSign, marsSign));
+}
+
+function mangalFor(side: KutaSide): { moon: boolean; venus: boolean; any: boolean } {
+  const moon = afflicted(side.moonLon, side.marsLon);
+  const venus = afflicted(side.venusLon, side.marsLon);
+  return { moon, venus, any: moon || venus };
 }
 
 function doshas(a: KutaSide, b: KutaSide, kutas: KutaResult[]): Dosha[] {
@@ -412,18 +441,30 @@ function doshas(a: KutaSide, b: KutaSide, kutas: KutaResult[]): Dosha[] {
     });
   }
 
-  const mangalA = mangalFromMoon(a), mangalB = mangalFromMoon(b);
-  if (mangalA || mangalB) {
+  const ma = mangalFor(a), mb = mangalFor(b);
+  if (ma.any || mb.any) {
+    // Dosha Samya, kept as an explicit three-way state rather than a silently-cancelled boolean:
+    // "both" is the traditional mitigation, "one only" is the case that actually matters, and
+    // neither would not be reported at all.
+    const state: "both" | "one_only" = ma.any && mb.any ? "both" : "one_only";
+    const refs = (m: typeof ma) =>
+      [m.moon && "from the Moon", m.venus && "from Venus"].filter(Boolean).join(" and ");
     out.push({
-      key: "mangal", name: "Mangal (Kuja) dosha", present: true, mutual: mangalA && mangalB,
-      cancelled: mangalA && mangalB,
-      detail: mangalA && mangalB
-        ? "Both charts carry Mangal dosha counted from the Moon."
-        : `Mars falls in an afflicted house from the Moon for ${mangalA ? "the first" : "the second"} person only.`,
-      caveat: "Counted from the MOON, not the Ascendant — a birth date gives no Ascendant, so this " +
-        "is the chandra-lagna variant. A birth time would be needed for the standard reading, and " +
-        "the two can disagree." + (mangalA && mangalB
-          ? " Both partners carrying it is traditionally treated as cancelling it." : ""),
+      key: "mangal", name: "Mangal (Kuja) dosha", present: true,
+      mutual: state === "both",
+      cancelled: state === "both",
+      detail: state === "both"
+        ? `Both charts carry it — the first ${refs(ma)}, the second ${refs(mb)}.`
+        : `Only ${ma.any ? "the first" : "the second"} chart carries it, ` +
+          `${refs(ma.any ? ma : mb)}.`,
+      caveat:
+        "Checked from the Moon and from Venus. It is NOT checked from the Ascendant, which is the " +
+        "primary reference: the Ascendant moves a whole sign every two hours, so a birth date " +
+        "cannot even bias a guess at it. That reading is unavailable here rather than assumed." +
+        (state === "both"
+          ? " Both partners carrying the dosha is the mitigation the tradition weights most heavily" +
+            " (dosha samya) — it is treated as balancing out."
+          : ""),
     });
   }
 

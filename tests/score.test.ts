@@ -39,6 +39,7 @@ function sideFor(iso: string): KutaSide {
     rasi: moon.sign,
     degInSign: moon.deg,
     marsLon: chart.byBody.Mars.lon,
+    venusLon: chart.byBody.Venus.lon,
   };
 }
 
@@ -84,7 +85,7 @@ describe("Guna Milan structure", () => {
     const at = (rasi: number): KutaSide => ({
       moonLon: rasi * 30 + 5,
       nakshatra: nakshatraOf(rasi * 30 + 5).info,
-      rasi, degInSign: 5, marsLon: 0,
+      rasi, degInSign: 5, marsLon: 0, venusLon: 0,
     });
     const failing = new Set([1, 4, 5, 7, 8, 11]); // signed distances that make 2/12, 5/9, 6/8
     for (let d = 0; d < 12; d++) {
@@ -97,8 +98,8 @@ describe("Guna Milan structure", () => {
   it("gives Nadi its all-or-nothing 8 points", () => {
     for (const a of NAKSHATRAS) {
       for (const b of NAKSHATRAS) {
-        const sa: KutaSide = { moonLon: 0, nakshatra: a, rasi: 0, degInSign: 0, marsLon: 0 };
-        const sb: KutaSide = { moonLon: 0, nakshatra: b, rasi: 0, degInSign: 0, marsLon: 0 };
+        const sa: KutaSide = { moonLon: 0, nakshatra: a, rasi: 0, degInSign: 0, marsLon: 0, venusLon: 0 };
+        const sb: KutaSide = { moonLon: 0, nakshatra: b, rasi: 0, degInSign: 0, marsLon: 0, venusLon: 0 };
         const nadi = gunaMilanOrdered(sa, sb).kutas.find((k) => k.key === "nadi")!;
         expect(nadi.points).toBe(a.nadi === b.nadi ? 0 : 8);
       }
@@ -126,6 +127,46 @@ describe("kuta lookup tables", () => {
     expect(yoniPoints("cat", "rat")).toBe(0);
     expect(yoniPoints("serpent", "mongoose")).toBe(0);
     expect(yoniPoints("cow", "tiger")).toBe(0);
+  });
+
+  it("has EXACTLY the seven canonical yoni enemy pairs and no others", () => {
+    // An earlier version derived yoni from a hand-written pair list and got 45% of the 196 cells
+    // wrong, including inventing an eighth enemy pair (elephant/sheep) that the tradition actually
+    // rates FRIENDLY. This pins the enemy set exactly so that cannot recur.
+    const canonical = [
+      ["horse", "buffalo"], ["elephant", "lion"], ["sheep", "monkey"], ["serpent", "mongoose"],
+      ["dog", "deer"], ["cat", "rat"], ["cow", "tiger"],
+    ].map((p) => p.slice().sort().join("/")).sort();
+
+    const found: string[] = [];
+    for (let i = 0; i < YONI_ORDER.length; i++) {
+      for (let j = i + 1; j < YONI_ORDER.length; j++) {
+        if (yoniPoints(YONI_ORDER[i], YONI_ORDER[j]) === 0) {
+          found.push([YONI_ORDER[i], YONI_ORDER[j]].sort().join("/"));
+        }
+      }
+    }
+    expect(found.sort()).toEqual(canonical);
+    expect(yoniPoints("elephant", "sheep")).toBe(3); // friendly, NOT enemies
+  });
+
+  it("keeps the Vashya matrix symmetric", () => {
+    const groups: [number, number][] = [
+      [0, 0], [1, 15], [3, 0], [4, 0], [7, 0], [8, 0], [8, 20], [9, 0], [9, 20], [10, 0], [11, 0],
+    ];
+    for (const [rasiA, degA] of groups) {
+      for (const [rasiB, degB] of groups) {
+        const ab = gunaMilanOrdered(
+          { moonLon: rasiA * 30 + degA, nakshatra: nakshatraOf(rasiA * 30 + degA).info, rasi: rasiA, degInSign: degA, marsLon: 0, venusLon: 0 },
+          { moonLon: rasiB * 30 + degB, nakshatra: nakshatraOf(rasiB * 30 + degB).info, rasi: rasiB, degInSign: degB, marsLon: 0, venusLon: 0 },
+        ).kutas.find((k) => k.key === "vashya")!.points;
+        const ba = gunaMilanOrdered(
+          { moonLon: rasiB * 30 + degB, nakshatra: nakshatraOf(rasiB * 30 + degB).info, rasi: rasiB, degInSign: degB, marsLon: 0, venusLon: 0 },
+          { moonLon: rasiA * 30 + degA, nakshatra: nakshatraOf(rasiA * 30 + degA).info, rasi: rasiA, degInSign: degA, marsLon: 0, venusLon: 0 },
+        ).kutas.find((k) => k.key === "vashya")!.points;
+        expect(ab, `${rasiA}@${degA} vs ${rasiB}@${degB}`).toBe(ba);
+      }
+    }
   });
 
   it("gives Graha Maitri 5 for the same lord and stays inside 0–5", () => {

@@ -83,9 +83,31 @@ describe("the 27 nakshatras", () => {
     expect([...counts.values()].reduce((a, b) => a + b, 0)).toBe(27);
   });
 
-  it("gives every nakshatra a yoni gender", () => {
+  it("pairs each yoni animal as one male and one female", () => {
+    // The classical scheme pairs every animal as a consort couple; the mongoose is the sole
+    // exception, whose traditional female is Abhijit — the 28th nakshatra, which this system does
+    // not use. So: 14 male, 13 female, and every paired animal has exactly one of each.
+    const byAnimal = new Map<string, string[]>();
     for (const n of NAKSHATRAS) {
-      expect(["male", "female"]).toContain(n.yoniGender);
+      byAnimal.set(n.yoni, [...(byAnimal.get(n.yoni) ?? []), n.yoniGender]);
     }
+    for (const [animal, genders] of byAnimal) {
+      if (animal === "mongoose") {
+        expect(genders).toEqual(["male"]);
+        continue;
+      }
+      expect([...genders].sort(), animal).toEqual(["female", "male"]);
+    }
+    expect(NAKSHATRAS.filter((n) => n.yoniGender === "male")).toHaveLength(14);
+    expect(NAKSHATRAS.filter((n) => n.yoniGender === "female")).toHaveLength(13);
+  });
+
+  it("assigns nadi by the period-6 zig-zag, which is the actual generating rule", () => {
+    // [Adi, Madhya, Antya, Antya, Madhya, Adi] repeating — a cleaner statement of the same pattern
+    // as the nine-block palindrome above, and the form the classical rule is given in.
+    const cycle: Nadi[] = ["adi", "madhya", "antya", "antya", "madhya", "adi"];
+    NAKSHATRAS.forEach((n, i) => {
+      expect(n.nadi, `${n.name} (#${i + 1})`).toBe(cycle[i % 6]);
+    });
   });
 });

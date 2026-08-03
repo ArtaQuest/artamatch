@@ -40,6 +40,12 @@ export default function App() {
   useEffect(() => { savePeople(people.filter((p) => p.source === "manual")); }, [people]);
   useEffect(() => { saveSelfId(selfId); }, [selfId]);
 
+  // Never sit on a populated list with nobody selected — that shows "pick who you are" where a
+  // ranking could be. Happens on a seeded first visit, and after deleting whoever was selected.
+  useEffect(() => {
+    if (!selfId && people.length > 0) setSelfId(people[0].id);
+  }, [selfId, people]);
+
   // A shared link carries one person in the query string, so two people can compare without either
   // of them uploading anything.
   useEffect(() => {

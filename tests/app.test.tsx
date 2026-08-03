@@ -20,6 +20,9 @@ let consoleError: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
   localStorage.clear();
+  // Most tests want a genuinely empty list, so suppress the first-visit seed. The seed itself has
+  // its own test below, which clears this flag again.
+  localStorage.setItem("artamatch.seeded.v1", "1");
   consoleError = vi.spyOn(console, "error").mockImplementation((...args) => {
     throw new Error(`React logged an error during render: ${args.join(" ")}`);
   });
@@ -88,7 +91,7 @@ describe("ArtaMatch app", () => {
     addPerson("Ada", "1815-12-10");
     addPerson("Turing", "1912-06-23");
 
-    const ranking = screen.getByText(/Ranked against Ada/i).closest(".panel")!;
+    const ranking = screen.getByText(/Ranked against Ada/i).closest(".panel") as HTMLElement;
     const row = within(ranking).getByRole("button", { name: /Turing/ });
     expect(row.textContent).toMatch(/Guna \d+(\.\d+)?\/36/);
     expect(row.textContent).toMatch(/ease \d+/);
@@ -100,7 +103,7 @@ describe("ArtaMatch app", () => {
     addPerson("Ada", "1815-12-10");
     addPerson("Turing", "1912-06-23");
 
-    const ranking = screen.getByText(/Ranked against Ada/i).closest(".panel")!;
+    const ranking = screen.getByText(/Ranked against Ada/i).closest(".panel") as HTMLElement;
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
@@ -148,6 +151,35 @@ describe("ArtaMatch app", () => {
 
     render(<App />);
     expect(screen.getAllByText(/Ada/).length).toBeGreaterThan(0);
+  });
+
+  it("seeds the starting list once, and does not resurrect a deleted seed", () => {
+    localStorage.removeItem("artamatch.seeded.v1");
+    const first = render(<App />);
+    for (const name of ["Ayse Altundal", "Elif Eda Ayan", "Lana El Jamal"]) {
+      expect(screen.getAllByText(new RegExp(name)).length, name).toBeGreaterThan(0);
+    }
+    // Seeds are ordinary manual entries: deletable.
+    fireEvent.click(screen.getByRole("button", { name: /Remove Lana El Jamal/i }));
+    expect(screen.queryByText(/Lana El Jamal/)).toBeNull();
+    first.unmount();
+
+    // …and a deleted seed stays deleted across a reload.
+    render(<App />);
+    expect(screen.queryByText(/Lana El Jamal/)).toBeNull();
+    expect(screen.getAllByText(/Ayse Altundal/).length).toBeGreaterThan(0);
+  });
+
+  it("ranks the seeded people against each other", () => {
+    localStorage.removeItem("artamatch.seeded.v1");
+    render(<App />);
+    const ranking = screen.getByText(/Ranked against Ayse Altundal/i).closest(".panel") as HTMLElement;
+    // Two others, each with a real score.
+    const rows = within(ranking).getAllByRole("button");
+    expect(rows.length).toBeGreaterThanOrEqual(2);
+    expect(ranking.textContent).toMatch(/Elif Eda Ayan/);
+    expect(ranking.textContent).toMatch(/Lana El Jamal/);
+    expect(ranking.textContent).toMatch(/Guna \d+(\.\d+)?\/36/);
   });
 
   it("shows the everyone-against-everyone grid symmetrically", () => {

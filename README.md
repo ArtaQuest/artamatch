@@ -41,6 +41,19 @@ For scale: this engine's Moon is accurate to **1.4 arcminutes** against the Swis
 the unknown birth time moves it by up to **±6.6°** — roughly **290× larger**. The ephemeris is not
 the source of doubt. The missing clock is.
 
+Quantified, assuming a birth time uniform over the day:
+
+| Quantity | Span | Chance of being wrong | Kutas at stake |
+|---|---|---|---|
+| Rāśi (Moon sign) | 30° | ~11% | Varna, Vashya, Graha Maitri, Bhakoot — 15 points |
+| Nakshatra (birth star) | 13°20′ | ~25% | Tara, Yoni, Gana, Nadi — **21 points** |
+| Pada | 3°20′ | unusable | refused, not approximated |
+
+ArtaMatch reports all of this rather than hiding it, and refuses outright the things a date genuinely
+cannot support — most importantly **Mangal dosha from the Ascendant**, since the Lagna moves a whole
+sign every two hours and a date cannot even bias a guess at it. It is checked from the Moon and from
+Venus, and the page says the third reading is unavailable rather than quietly defaulting to noon.
+
 ---
 
 ## Accuracy
@@ -74,6 +87,23 @@ npm run golden        # regenerate tests/golden.json (needs pyswisseph + ~/ephe)
 ```
 
 ---
+
+## Where the Jyotish tables came from
+
+The reference tables are the part of a system like this that fails silently — a transposed row is
+wrong forever and nothing crashes. Every one was reconstructed independently three times, reconciled
+against primary sources (Saravali, BPHS, Muhurta Chintamani lineage, Drik Panchang), and then pinned
+by **structural invariants** in the tests: nine nakshatras per gana, the Vimshottari lord cycle
+repeating three times, the period-6 nadi zig-zag, the yoni animals paired one male and one female
+with the mongoose unpaired, and exactly seven yoni enemy pairs.
+
+That process caught a real error. The Yoni table was first written as a short list of
+enemy/friendly/unfriendly pairs with everything else defaulting to neutral — it reproduced only
+**55% of the actual 14×14 table** and wrongly made elephant/sheep mortal enemies when the tradition
+rates them *friendly*. Yoni is 4 of the 36 points. The full grid is now transcribed, and a test pins
+the enemy set exactly so the shortcut cannot come back.
+
+Graha Maitri (all 7 rows), Gana, Varna, Tara, Bhakoot and Nadi were confirmed unchanged.
 
 ## Design decisions worth arguing with
 

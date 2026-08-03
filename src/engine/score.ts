@@ -32,13 +32,13 @@ export const WEIGHT_CHARGE = 0.10;
 
 function sideFrom(chart: Chart): KutaSide {
   const moon = chart.byBody.Moon;
-  const mars = chart.byBody.Mars;
   return {
     moonLon: moon.lon,
     nakshatra: nakshatraOf(moon.lon).info,
     rasi: moon.sign,
     degInSign: moon.deg,
-    marsLon: mars ? mars.lon : 0,
+    marsLon: chart.byBody.Mars.lon,
+    venusLon: chart.byBody.Venus.lon,
   };
 }
 

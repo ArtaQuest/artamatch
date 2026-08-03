@@ -163,6 +163,16 @@ function Guna({ match, a, b }: { match: MatchProp; a: Person; b: Person }) {
         values read are shown for every one, so each line can be checked by hand.
       </p>
 
+      <div className="note blue">
+        <strong>What a date alone can carry</strong><br />
+        Assuming noon with the true birth time unknown puts the Moon within ±6.6°. Against a 30° rāśi
+        that is roughly an <strong>11% chance of the wrong sign</strong> — which would change Varna,
+        Vashya, Graha Maitri and Bhakoot. Against a 13°20′ birth star it is roughly a{" "}
+        <strong>25% chance of the wrong nakshatra</strong> — which would change Tara, Yoni, Gana and
+        Nadi, <strong>21 of the 36 points</strong>. Pada-level rules are not attempted at all: the
+        error exceeds two whole padas, so they are unusable without a clock rather than approximate.
+      </div>
+
       {g.orderMatters && (
         <div className="note">
           <strong>Order matters in this pairing</strong><br />

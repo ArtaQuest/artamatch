@@ -34,14 +34,44 @@ export type Person = {
 
 const KEY = "artamatch.people.v1";
 const SELF_KEY = "artamatch.self.v1";
+const SEEDED_KEY = "artamatch.seeded.v1";
 
 const canStore = () => typeof localStorage !== "undefined";
+
+/**
+ * People the list starts with on a first visit.
+ *
+ * They are ordinary manual entries in every other respect — deletable, editable, and stored only in
+ * this browser. The seed runs ONCE (guarded by SEEDED_KEY), so deleting one does not bring it back
+ * on the next reload, which is the behaviour anyone would expect from a row with an × on it.
+ */
+export const SEED_PEOPLE: { name: string; birthday: string }[] = [
+  { name: "Ayse Altundal", birthday: "1999-12-06" },
+  { name: "Elif Eda Ayan", birthday: "2004-12-27" },
+  { name: "Lana El Jamal", birthday: "2004-12-21" },
+];
+
+function seeded(): Person[] {
+  return SEED_PEOPLE.map((p) => ({
+    id: newId(), name: p.name, birthday: p.birthday, source: "manual" as const, addedAt: Date.now(),
+  }));
+}
 
 export function loadPeople(): Person[] {
   if (!canStore()) return [];
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
+    if (!raw) {
+      // First visit only. Once the seed has run, an empty list stays empty.
+      if (localStorage.getItem(SEEDED_KEY)) return [];
+      const people = seeded();
+      localStorage.setItem(SEEDED_KEY, "1");
+      // Persist immediately rather than waiting for the save effect. React StrictMode invokes a
+      // useState initialiser twice in development; without this the second call would find no
+      // stored list but a set seed flag, and return an empty one.
+      localStorage.setItem(KEY, JSON.stringify(people));
+      return people;
+    }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     // Re-validate on read: a hand-edited or half-written localStorage entry should degrade to

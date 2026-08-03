@@ -155,18 +155,18 @@ export function relationOf(from: Body, to: Body): Relation {
 
 /** The 5-point ladder from the two lords' mutual view of each other. */
 export function grahaMaitriPoints(lordA: Body, lordB: Body): { points: number; how: string } {
-  if (lordA === lordB) return { points: 5, how: "both Moons are ruled by the same graha" };
+  if (lordA === lordB) return { points: 5, how: "the same planet stands behind both" };
   const ab = relationOf(lordA, lordB);
   const ba = relationOf(lordB, lordA);
   const pair = [ab, ba].sort().join("+");
   switch (pair) {
-    case "friend+friend": return { points: 5, how: "mutual friends" };
-    case "friend+neutral": return { points: 4, how: "one counts the other a friend, the other is neutral" };
-    case "neutral+neutral": return { points: 3, how: "mutually neutral" };
+    case "friend+friend": return { points: 5, how: "the two count each other friends" };
+    case "friend+neutral": return { points: 4, how: "one counts the other a friend, the other is indifferent" };
+    case "neutral+neutral": return { points: 3, how: "each is indifferent to the other" };
     case "enemy+friend": return { points: 1, how: "one counts the other a friend, the other an enemy" };
-    case "enemy+neutral": return { points: 0.5, how: "one is neutral, the other counts them an enemy" };
-    case "enemy+enemy": return { points: 0, how: "mutual enemies" };
-    default: return { points: 3, how: "mutually neutral" };
+    case "enemy+neutral": return { points: 0.5, how: "one is indifferent, the other counts them an enemy" };
+    case "enemy+enemy": return { points: 0, how: "the two count each other enemies" };
+    default: return { points: 3, how: "each is indifferent to the other" };
   }
 }
 

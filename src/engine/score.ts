@@ -222,7 +222,7 @@ export function matchPair(isoA: string, isoB: string, detailed = false): Match |
 }
 
 function describeStates(span: BirthSpan): string {
-  if (span.stable) return `stays in ${span.likeliest.nakshatra.name} all day`;
+  if (span.stable) return `stayed in ${span.likeliest.nakshatra.name} all day`;
   // Name the rāśi too whenever the birth star alone would repeat — the Moon can change rāśi while
   // staying in one nakshatra, and "Punarvasu, then Punarvasu" reads as a bug rather than a fact.
   const names = span.states.map((s) => s.nakshatra.name);
@@ -235,20 +235,20 @@ function describeStates(span: BirthSpan): string {
 
 function uncertaintyNote(a: BirthSpan, b: BirthSpan, gunaBand: Band | null): string {
   if (a.stable && b.stable) {
-    return "Both Moons stay in one birth star and one rāśi for the whole of their birth day, so " +
-      "the missing birth times change nothing here. This reading is as firm as a dated chart gets.";
+    return "Both Moons stay in one birth star and one sign for the whole of their birth day, so not " +
+      "knowing the time of day changes nothing here. This is as firm as a reading from dates alone gets.";
   }
   const moving = [!a.stable && "the first", !b.stable && "the second"].filter(Boolean).join(" and ");
   const detail = [
-    !a.stable ? `First person's Moon: ${describeStates(a)}.` : "",
-    !b.stable ? `Second person's Moon: ${describeStates(b)}.` : "",
+    !a.stable ? `The first person's Moon ${describeStates(a)}.` : "",
+    !b.stable ? `The second person's Moon ${describeStates(b)}.` : "",
   ].filter(Boolean).join(" ");
   const bandText = gunaBand && !gunaBand.certain
-    ? ` Across every birth time the two dates allow, Guna Milan ranges from ${gunaBand.min.toFixed(1)} ` +
-      `to ${gunaBand.max.toFixed(1)} of 36.`
+    ? ` Across every time of day the two dates allow, the score runs from ${gunaBand.min.toFixed(1)} ` +
+      `to ${gunaBand.max.toFixed(1)} out of 36.`
     : "";
-  return `Without a birth time, ${moving} Moon could be in more than one birth star on that date, ` +
-    `and six of the eight kutas are read off the Moon. ${detail}${bandText}`;
+  return `Without knowing the time of day, ${moving} Moon could have been in more than one birth ` +
+    `star, and six of the eight tests read only where the Moon was. ${detail}${bandText}`;
 }
 
 // ── ranking ─────────────────────────────────────────────────────────────────────────────────────

@@ -305,7 +305,7 @@ describe("the uncertainty model", () => {
       if (!span.stable) {
         const m = matchPair(iso, "1990-06-15", true)!;
         expect(m.certain).toBe(false);
-        expect(m.uncertaintyNote).toContain("birth time");
+        expect(m.uncertaintyNote).toContain("time of day");
       }
     }
   });

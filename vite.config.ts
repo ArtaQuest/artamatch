@@ -8,5 +8,5 @@ export default defineConfig({
   base: process.env.AM_BASE ?? "/artamatch/",
   plugins: [react()],
   build: { outDir: "dist", sourcemap: true },
-  test: { environment: "node", include: ["tests/**/*.test.ts"] },
+  test: { environment: "node", include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"] },
 });

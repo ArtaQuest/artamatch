@@ -156,8 +156,13 @@ export function matchPair(isoA: string, isoB: string, detailed = false): Match |
 
 function describeStates(span: BirthSpan): string {
   if (span.stable) return `stays in ${span.likeliest.nakshatra.name} all day`;
+  // Name the rāśi too whenever the birth star alone would repeat — the Moon can change rāśi while
+  // staying in one nakshatra, and "Punarvasu, then Punarvasu" reads as a bug rather than a fact.
+  const names = span.states.map((s) => s.nakshatra.name);
+  const ambiguous = names.some((n, i) => names.indexOf(n) !== i);
   return span.states
-    .map((s) => `${s.nakshatra.name} (${Math.round(s.share * 100)}% of the day)`)
+    .map((s) => `${s.nakshatra.name}${ambiguous ? ` in ${s.rasiName}` : ""} ` +
+      `(${Math.round(s.share * 100)}% of the day)`)
     .join(", then ");
 }
 

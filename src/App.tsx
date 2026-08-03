@@ -72,7 +72,6 @@ export default function App() {
       source: "manual", addedAt: Date.now(),
     };
     setPeople((prev) => [...prev, person]);
-    setPeople((prev) => prev); // keep the effect ordering obvious
     if (!selfId) setSelfId(person.id);
     setName(""); setBirthday("");
   }, [name, birthday, selfId]);

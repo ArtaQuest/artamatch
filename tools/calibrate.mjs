@@ -16,10 +16,6 @@
 
 const mod = await import(process.argv[2] ?? "/tmp/score.mjs");
 const { matchPair } = mod;
-// Optional second module for the three extra systems (numbersMatch/animalsMatch/sunSignsMatch):
-//   npx esbuild src/engine/systems.ts --format=esm --bundle --outfile=/tmp/systems.mjs
-//   node tools/calibrate.mjs /tmp/score.mjs /tmp/systems.mjs
-const sys = process.argv[3] ? await import(process.argv[3]) : null;
 
 const N = 20000;
 const SEED = 13579;
@@ -60,21 +56,3 @@ console.log("band cutoffs, by percentile:");
 for (const p of [0.25, 0.5, 0.75, 0.95]) console.log(`  p${(p * 100).toFixed(0).padStart(2)}  ${q(p)}`);
 console.log();
 console.log("distinct scores (ranking granularity):", new Set(scores).size);
-
-if (sys) {
-  const tally = (fn) => {
-    let s2 = SEED;
-    const r2 = () => { s2 = (s2 * 1664525 + 1013904223) % 4294967296; return s2 / 4294967296; };
-    const d2 = () => {
-      const y = 1930 + Math.floor(r2() * 80), m = 1 + Math.floor(r2() * 12), d = 1 + Math.floor(r2() * 28);
-      return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-    };
-    const t = {};
-    for (let i = 0; i < N; i++) { const r = fn(d2(), d2()); if (r) t[r.score] = (t[r.score] || 0) + 1; }
-    const n = Object.values(t).reduce((a, b) => a + b, 0);
-    return Object.fromEntries(Object.entries(t).sort((a, b) => +a[0] - +b[0]).map(([k, v]) => [k, +(v / n).toFixed(4)]));
-  };
-  console.log("\nNUMBERS_DIST  =", JSON.stringify(tally(sys.numbersMatch)));
-  console.log("ANIMALS_DIST  =", JSON.stringify(tally(sys.animalsMatch)));
-  console.log("SUNSIGNS_DIST =", JSON.stringify(tally(sys.sunSignsMatch)));
-}

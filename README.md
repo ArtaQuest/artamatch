@@ -1,27 +1,25 @@
 # ArtaMatch
 
-**Four old traditions read the same two dates of birth — every step shown, in plain words, with an
-honest account of what a date alone cannot tell you.**
+**One score, fully explained: the oldest date-only matching tradition, out of 36 — every step shown
+in plain words, with an honest account of what a date alone cannot tell you.**
 
 Live: https://artaquest.github.io/artamatch/ · Full methods: [METHODS.md](METHODS.md)
 
-The four, each with its own score in its own units:
+The page computes the traditional eight-test Moon score (sidereal, Lahiri) and then explains it
+three ways at once:
 
-1. **The Moon score** — the traditional eight-test system, out of 36, from where the two Moons sat.
-   The deepest of the four and the page's main subject: every point shows the rule that produced it
-   and the exact values it read.
-2. **The numbers** — the two dates' digits, reduced and compared by the classical three families.
-3. **The year animals** — the twelve-year cycle, its teams, secret friends and clashes, with the
-   year turning at the traditional early-February boundary (January babies belong to the previous
-   animal, and the page says so).
-4. **The Sun signs** — the familiar star signs compared by element, computed from the real Sun
-   rather than newspaper date ranges, so boundary days come out right and are flagged.
+- **The anatomy bar** — 36 = 1+2+3+4+5+6+7+8, drawn to scale, each test's block filled by the
+  points it earned. The score becomes visible arithmetic: the two heaviest tests carry as much as
+  the other six together, and you can see it.
+- **The landscape strip** — every possible score, sized by how often 20,000 random pairs land on
+  it, with this pair marked. "Higher than 69 in 100" stops being a claim and becomes a place.
+- **The sky ruler** — the full 360° band, its 27 birth-star stretches and 12 signs, with both
+  Moons marked and the band each swept during its birth day. The one picture of what the eight
+  tests actually read, uncertainty included.
 
-**The ensemble.** Each system's raw score becomes a percentile against 20,000 random date pairs —
-the same calibration for all four — and the headline is the plain mean of the percentiles, with a
-count of how many systems place the pair above their own average. No weights of mine: an earlier
-weighted blend was removed after measurement showed it moved rankings almost not at all (ρ = 0.954)
-while adding unverifiable numbers.
+(An experiment that also scored three other date-only traditions and averaged their percentiles was
+built, verified, and then removed to keep the page about one thing done properly; it lives in the
+git history.)
 
 ## What makes it honest
 

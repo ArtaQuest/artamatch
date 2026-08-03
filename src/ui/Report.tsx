@@ -13,9 +13,9 @@ import { useCallback, useMemo, useState } from "react";
 import { BODIES, SIGNS, type Body } from "../engine/ephemeris";
 import { GANA_LABEL, NADI_LABEL, YONI_LABEL } from "../engine/nakshatra";
 import {
-  matchPair, TRADITIONAL_PASS, PASS_RATE, MEDIAN_SCORE, type Match, type ScoreOptions,
+  matchPair, PERCENTILE_BELOW, PERCENTILE_BELOW_NO_VARNA,
+  TRADITIONAL_PASS, PASS_RATE, MEDIAN_SCORE, type Match, type ScoreOptions,
 } from "../engine/score";
-import { ensembleFor } from "../engine/systems";
 import { synastryAspects, type SynAspect } from "../engine/synastry";
 import {
   explainAspect, explainKuta, explainDosha, aspectLabel, formatOrb,
@@ -66,11 +66,6 @@ export default function Report({ a, b, options, onClose }: {
 
   const msg = messageUrl(b) ?? messageUrl(a);
   const prof = profileUrl(b);
-  // The ensemble across the four traditions. Cheap to compute, so no memo needed.
-  // (share button is defined below the early return so hooks stay unconditional)
-  const ens = ensembleFor(a.birthday, b.birthday,
-    { percentile: match.percentile, score: match.score, maxScore: match.maxScore });
-  const ensTone = ens && ens.percentile >= 75 ? "high" : ens && ens.percentile >= 25 ? "mid" : "low";
 
   return (
     <div className="panel">
@@ -81,47 +76,36 @@ export default function Report({ a, b, options, onClose }: {
         <button className="ghost" onClick={onClose}>Close</button>
       </div>
 
-      {ens && (
-        <div className="hero">
-          <span className={`num tone-${ensTone}`}>
-            {ens.percentile}
-            <small>out of 100 · four traditions</small>
-          </span>
-          <span>
-            <span className="verdict">
-              {ens.aboveAverage} of 4 traditions rate this pair at or above their own average
-            </span>
-            <span className="because">
-              Four separate traditions read the same two dates — the Moon score, the numbers, the
-              year animals and the Sun signs. Each is measured against 20,000 random pairs, and the
-              headline figure is the plain average of where this pair lands in each. No tradition is
-              weighted above another. {ens.summary}
-            </span>
-          </span>
-        </div>
-      )}
-
-      {ens && (
-        <div className="scores">
-          {ens.systems.map((sys) => (
-            <div className="scorecard" key={sys.key}>
-              <span className="k">{sys.name}</span>
-              <span className="v" style={{ fontSize: "1.05rem" }}>{sys.raw}</span>
-              <Meter value={sys.percentile} gold={sys.percentile >= 50} />
-              <span className="d">
-                Higher than {sys.percentile} in 100 random pairs. {sys.verdict}
-                {sys.caveat && <em style={{ display: "block", marginTop: "0.25rem" }}>Caveat: {sys.caveat}.</em>}
+      <div className="hero">
+        <span className={`num tone-${match.band.tone}`}>
+          {match.score % 1 === 0 ? match.score : match.score.toFixed(1)}
+          <small>out of {match.maxScore}</small>
+        </span>
+        <span>
+          <span className="verdict">
+            {match.band.label}
+            {match.distribution && !match.distribution.certain && (
+              <span className="pill soft" style={{ marginLeft: "0.5rem" }}>
+                ~{Math.round(match.distribution.confidence * 100)}% sure
               </span>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </span>
+          <span className="because">
+            Higher than <strong>{match.percentile} in 100</strong> randomly paired dates.{" "}
+            {match.band.note} The strip below shows where that sits: every possible score, sized by
+            how often random pairs land on it, with this pair marked.
+          </span>
+          <Landscape score={match.score} excluded={(options.exclude ?? []).length > 0} />
+        </span>
+      </div>
+
+      <ScoreAnatomy match={match} />
 
       {match.range && match.range.max > match.range.min && (
         <div className="note blue">
-          <strong>The Moon score, if the birth times were known</strong>
-          It could sit anywhere from {match.range.min} to {match.range.max} out of {match.maxScore},
-          depending on the hours nobody recorded:
+          <strong>If the birth times were known</strong>
+          The score could sit anywhere from {match.range.min} to {match.range.max} out of{" "}
+          {match.maxScore}, depending on the hours nobody recorded:
           <RangeBar min={match.range.min} max={match.range.max} value={match.score}
             scaleMin={0} scaleMax={match.maxScore} />
         </div>
@@ -284,7 +268,10 @@ function Tests({ match, a, b, excluded }: { match: Match; a: Person; b: Person; 
         Eight tests, {g.maxTotal} points between them. Every one of them reads where the Moon was —
         nothing else about the two people enters the score.
         Each shows the rule it used and the exact thing it read, so any line can be checked by hand.
+        And this is the thing they all read — the two Moons, on the sky's full 360° band:
       </p>
+
+      <MoonRuler match={match} a={a} b={b} />
 
       <div className="note blue">
         <strong>What a date alone can carry</strong>
@@ -313,10 +300,15 @@ function Tests({ match, a, b, excluded }: { match: Match; a: Person; b: Person; 
           total below.
         </p>
       )}
-      {shown.map((k) => (
+      {shown.map((k, i) => (
         <div className="kuta" key={k.key}>
           <div className="kuta-head">
-            <span className="nm">{k.name}</span>
+            <span className="nm">
+              <span style={{ color: "var(--dim)", fontFamily: "var(--mono)", marginRight: "0.45rem" }}>
+                {i + 1}
+              </span>
+              {k.name}
+            </span>
             <span className={`pts ${k.points >= k.maxPoints ? "tone-high" : k.points <= 0 ? "tone-low" : ""}`}>
               {k.points} / {k.maxPoints}
             </span>
@@ -534,6 +526,119 @@ function PersonChart({ person, span }: { person: Person; span: Match["spanA"] })
             ))}
           </tbody>
         </table>
+      </div>
+    </div>
+  );
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// The explainability instruments. All linear — never a wheel — and none relies on colour alone:
+// every mark carries a label or a tooltip, because the brand allows exactly two hues.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Where this pair lands among all pairs: the measured score distribution as a strip of thin bars,
+ * with this pair's score highlighted. This is the picture behind every "higher than N in 100"
+ * sentence on the page — the percentile stops being a claim and becomes a place you can see.
+ */
+function Landscape({ score, excluded }: { score: number; excluded: boolean }) {
+  const table = excluded ? PERCENTILE_BELOW_NO_VARNA : PERCENTILE_BELOW;
+  // The cumulative table differences into per-score shares.
+  const shares = table.slice(1).map((v, i) => Math.max(0, v - table[i]));
+  const peak = Math.max(...shares);
+  const at = Math.min(shares.length - 1, Math.max(0, Math.round(score) - (score > Math.round(score) ? 0 : 1)));
+  return (
+    <span className="landscape" aria-hidden="true">
+      {shares.map((share, i) => (
+        <i key={i}
+          className={i === at ? "here" : ""}
+          style={{ height: `${Math.max(share > 0 ? 8 : 2, (share / peak) * 100)}%` }}
+          title={`Score ${i + 1}: about ${share} in 100 random pairs land here`} />
+      ))}
+    </span>
+  );
+}
+
+/**
+ * The anatomy of the score: 36 = 1+2+3+4+5+6+7+8, drawn to scale. Each segment is one of the
+ * eight tests, wide in proportion to the points it can award, filled gold in proportion to the
+ * points it did award. The whole number becomes visible arithmetic — a reader can SEE that the
+ * two heaviest tests carry as much as the other six together, and exactly where this pair's
+ * points came from and went missing.
+ */
+function ScoreAnatomy({ match }: { match: Match }) {
+  const kutas = match.guna.kutas.filter((k) =>
+    (match.maxScore === 36) || k.key !== "varna");
+  return (
+    <div className="anatomy">
+      <span className="cap">
+        How the score is built — eight tests worth 1 through 8 points, drawn to scale. Gold is
+        earned; hover any block for its name and result.
+      </span>
+      <span className="bar">
+        {kutas.map((k, i) => (
+          <span key={k.key} className="seg" style={{ flexGrow: k.maxPoints }}
+            title={`Test ${i + 1} · ${k.name} — ${k.points} of ${k.maxPoints}. ${k.measures}`}>
+            <i style={{ width: `${(k.points / k.maxPoints) * 100}%` }} />
+            <b>{k.points > 0 ? k.points % 1 === 0 ? k.points : k.points.toFixed(1) : ""}</b>
+            <u>{k.maxPoints}</u>
+          </span>
+        ))}
+      </span>
+      <span className="cap dim">
+        Numbers inside each block are points earned; beneath, the points available. The two heaviest
+        tests ({kutas[kutas.length - 2]?.name.toLowerCase()} and {kutas[kutas.length - 1]?.name.toLowerCase()})
+        carry {7 + 8} of the {match.maxScore} between them — as much as the other six together, so
+        they usually decide the headline.
+      </span>
+    </div>
+  );
+}
+
+/**
+ * The sky's ruler: the full 360° band the Moon travels, divided into the 27 equal birth-star
+ * stretches (light ticks) and the 12 signs (heavy ticks), with each person's Moon marked — and the
+ * band it swept during their birth day, which is the uncertainty made visible. This is the one
+ * picture that shows WHAT the eight tests actually read.
+ */
+export function MoonRuler({ match, a, b }: { match: Match; a: Person; b: Person }) {
+  const spans = [
+    { span: match.spanA, name: a.name, cls: "a" },
+    { span: match.spanB, name: b.name, cls: "b" },
+  ];
+  const pct = (lon: number) => `${(lon / 360) * 100}%`;
+  return (
+    <div className="ruler-wrap">
+      <div className="ruler" aria-hidden="true">
+        {Array.from({ length: 27 }, (_, i) => (
+          <span key={`n${i}`} className="tick star" style={{ left: pct((i * 360) / 27) }}
+            title={starTitle(i)} />
+        ))}
+        {Array.from({ length: 12 }, (_, i) => (
+          <span key={`s${i}`} className="tick sign" style={{ left: pct(i * 30) }} title={SIGNS[i]} />
+        ))}
+        {spans.map(({ span, name, cls }) => {
+          const start = span.moonStartLon;
+          const arc = span.moonArc;
+          const wraps = start + arc > 360;
+          return (
+            <span key={cls}>
+              <span className={`sweep ${cls}`} style={{
+                left: pct(start), width: wraps ? pct(360 - start) : pct(arc),
+              }} title={`${name}'s Moon swept ${arc.toFixed(1)}° during the birth day`} />
+              {wraps && <span className={`sweep ${cls}`} style={{ left: 0, width: pct((start + arc) % 360) }} />}
+              <span className={`moon ${cls}`} style={{ left: pct(span.likeliest.lon) }}
+                title={`${name}'s Moon — ${starTitle(span.likeliest.nakshatra.index)}, in ${SIGNS[span.likeliest.rasi]}`} />
+            </span>
+          );
+        })}
+      </div>
+      <div className="legend">
+        <span><i style={{ background: "var(--yang)", borderRadius: "50%" }} /> {a.name}'s Moon</span>
+        <span><i style={{ background: "var(--yin-lift)", borderRadius: "50%" }} /> {b.name}'s Moon</span>
+        <span>tall ticks: the 12 signs · short ticks: the 27 birth-star stretches · the faint band
+          behind each dot is how far that Moon travelled during the birth day</span>
       </div>
     </div>
   );

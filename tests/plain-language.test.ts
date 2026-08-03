@@ -16,7 +16,6 @@ import { gunaMilan, type KutaSide } from "../src/engine/kuta";
 import { nakshatraOf } from "../src/engine/nakshatra";
 import { chartForDate, BODIES } from "../src/engine/ephemeris";
 import { matchPair } from "../src/engine/score";
-import { numbersMatch, animalsMatch, sunSignsMatch, ensembleFor } from "../src/engine/systems";
 import { summariseSynastry } from "../src/engine/synastry";
 import {
   explainAspect, explainKuta, explainDosha, aspectLabel, closeness, headlineSummary,
@@ -131,27 +130,6 @@ describe("nothing a reader can see uses astrology jargon", () => {
       found.push(...offences(`sign${i}.style`, m!.style));
     }
     for (const body of BODIES) found.push(...offences(`means.${body}`, BODY_MEANS[body]));
-    expect([...new Set(found)]).toEqual([]);
-  });
-
-  it("keeps the three extra traditions and the ensemble clean", () => {
-    const found: string[] = [];
-    for (const a of DATES) {
-      for (const b of DATES) {
-        found.push(...offences("numbers", numbersMatch(a, b)?.verdict));
-        found.push(...offences("animals", animalsMatch(a, b)?.verdict));
-        found.push(...offences("sunsigns", sunSignsMatch(a, b)?.verdict));
-        const m = matchPair(a, b)!;
-        const e = ensembleFor(a, b, { percentile: m.percentile, score: m.score, maxScore: m.maxScore })!;
-        found.push(...offences("ensemble.summary", e.summary));
-        for (const sys of e.systems) {
-          found.push(...offences(`${sys.key}.name`, sys.name));
-          found.push(...offences(`${sys.key}.raw`, sys.raw));
-          found.push(...offences(`${sys.key}.verdict`, sys.verdict));
-          found.push(...offences(`${sys.key}.caveat`, sys.caveat));
-        }
-      }
-    }
     expect([...new Set(found)]).toEqual([]);
   });
 

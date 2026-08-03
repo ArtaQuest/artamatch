@@ -10,8 +10,7 @@ the page — it exists so that any claim on the page can be checked by a strange
 
 A dependency-free ephemeris (`src/engine/ephemeris.ts`) places the Sun, Moon and eight planets on
 the ecliptic for any date between 1800 and 2100, in the constellation-aligned (sidereal, Lahiri)
-frame the Moon-score tradition uses. The Western Sun-sign system gets the familiar tropical frame by
-adding the two zodiacs' offset back (`systems.ts`).
+frame the Moon-score tradition uses.
 
 | Piece | Method | Source |
 |---|---|---|
@@ -81,27 +80,16 @@ Every raw score is placed against the distribution of 20,000 random date pairs
 (`tools/calibrate.mjs`, fixed seed, reproducible to the digit). This is the page's central honesty
 device: the traditional "pass mark" of 18 is cleared by **71%** of random pairs, and the median pair
 scores **21**, so "you passed" would be flattery. Percentile bands ("Above average", "High") are set
-on the measured distribution. A drift test (`tests/systems.test.ts`) recomputes a 2,000-pair sample
+on the measured distribution. A drift test (in `tests/score.test.ts`) recomputes a 2,000-pair sample
 in CI and fails if the embedded numbers go stale.
 
-## 5 · The other three traditions, and the ensemble
+## 5 · One score, not four (a removed experiment)
 
-| System | Input | Score scale | Outcomes |
-|---|---|---|---|
-| The numbers | all eight date digits, reduced (masters 11/22/33 kept) | 1–3 | same number / same family ({1,5,7} {2,4,8} {3,6,9}) / different |
-| The year animals | year, turning at the traditional early-February boundary | 0–4 | secret friends / same team / none / harm / clash |
-| The Sun signs | the real tropical Sun, not date ranges | 1–3 | same element / friendly elements / opposites / uneasy |
-
-Date-only caveats are surfaced per system: birthdays on 3–5 February (the animal year boundary) and
-days on which the Sun changes sign are flagged as time-dependent.
-
-**The ensemble rule.** Each system's raw score becomes a percentile against the same 20,000 random
-pairs (midpoint percentile rank for the coarse scales). The headline is the **plain mean of the four
-percentiles**, and the page also reports how many of the four sit at or above their own median —
-because disagreement between systems is the normal case and worth seeing, not averaging away. Equal
-weights are still a choice, but they are the only choice that does not smuggle in an opinion about
-which tradition is truest. An earlier weighted blend was removed after measurement showed it moved
-rankings almost not at all (ρ = 0.954 against the plain score) while adding unverifiable numbers.
+A version of this page also scored three other date-only traditions (date-digit numerology, the
+twelve-year animal cycle, Sun-sign elements) and averaged their calibrated percentiles into an
+ensemble. It worked, it was verified, and it was removed: four half-explained numbers teach less
+than one fully explained one, and the page's premise is depth. The implementation and its tests are
+in the git history if it is ever wanted again.
 
 ## 6 · The connections ("what runs between them")
 
@@ -137,7 +125,7 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 9 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 69 tests: ephemeris vs golden, rules, symmetry,
+npm test                                   # 63 tests: ephemeris vs golden, rules, symmetry,
                                            # uncertainty, jargon guards, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
 npx esbuild src/engine/score.ts  --format=esm --bundle --outfile=/tmp/score.mjs

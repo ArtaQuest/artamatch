@@ -384,3 +384,27 @@ describe("the uncertainty model", () => {
     }
   });
 });
+
+describe("calibration drift", () => {
+  it("keeps the embedded facts honest against a live recomputation", () => {
+    // 2,000 seeded pairs — a fast version of tools/calibrate.mjs. If a rule change shifts the
+    // distribution, the embedded PASS_RATE / MEDIAN_SCORE / percentile table go stale silently;
+    // this is the guard that makes them fail loudly instead.
+    let s = 97531;
+    const rnd = () => { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; };
+    const date = () => {
+      const y = 1930 + Math.floor(rnd() * 80), m = 1 + Math.floor(rnd() * 12), d = 1 + Math.floor(rnd() * 28);
+      return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    };
+    const scores: number[] = [];
+    for (let i = 0; i < 2000; i++) {
+      const m = matchPair(date(), date());
+      if (m) scores.push(m.score);
+    }
+    scores.sort((a, b) => a - b);
+    const median = scores[Math.floor(scores.length / 2)];
+    const passRate = (scores.filter((x) => x >= 18).length / scores.length) * 100;
+    expect(Math.abs(median - 21)).toBeLessThanOrEqual(1);
+    expect(Math.abs(passRate - 71)).toBeLessThanOrEqual(4);
+  });
+});

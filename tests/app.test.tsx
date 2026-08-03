@@ -81,7 +81,7 @@ describe("ArtaMatch app", () => {
     render(<App />);
     // Both people land in the list AND the pair's reading opens directly.
     expect(screen.getByText(/Ada & Alan/)).toBeDefined();
-    expect(screen.getByText(/4 traditions rate this pair/i)).toBeDefined();
+    expect(screen.getAllByText(/higher than/i).length).toBeGreaterThan(0);
     window.history.replaceState({}, "", "/");
   });
 
@@ -116,8 +116,10 @@ describe("ArtaMatch app", () => {
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
-    expect(screen.getAllByText(/random pairs/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/4 traditions rate this pair/i)).toBeDefined();
+    expect(screen.getAllByText(/randomly paired dates/i).length).toBeGreaterThan(0);
+    // The three instruments: the anatomy bar, the landscape strip, and (on the tests tab) the ruler.
+    expect(document.querySelector(".anatomy .bar")?.children.length).toBe(8);
+    expect((document.querySelector(".landscape")?.children.length ?? 0)).toBeGreaterThan(30);
 
     // The eight tests, each with the rule it used and the values it read.
     fireEvent.click(screen.getByRole("tab", { name: /eight tests/i }));
@@ -129,6 +131,10 @@ describe("ArtaMatch app", () => {
     }
     expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
     expect(screen.getAllByText(/What was read:/).length).toBe(8);
+    // The sky ruler renders both Moons and the full tick set: 27 star ticks + 12 sign ticks.
+    expect(document.querySelectorAll(".ruler .tick.star").length).toBe(27);
+    expect(document.querySelectorAll(".ruler .tick.sign").length).toBe(12);
+    expect(document.querySelectorAll(".ruler .moon").length).toBe(2);
 
     // What runs between them: the grid plus written explanations.
     fireEvent.click(screen.getByRole("tab", { name: /runs between/i }));

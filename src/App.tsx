@@ -153,9 +153,9 @@ export default function App() {
         <div style={{ flex: "1 1 260px" }}>
           <h1>ArtaMatch</h1>
           <p className="tag">
-            Put in two dates of birth and see how four old traditions read the pair — every step of
-            the working shown in plain words, with an honest account of what a date alone cannot
-            tell you.
+            Put in two dates of birth and see how the oldest date-only matching tradition reads the
+            pair — one score out of 36, every step of the working shown in plain words, with an
+            honest account of what a date alone cannot tell you.
           </p>
         </div>
       </header>

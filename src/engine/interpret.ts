@@ -18,6 +18,14 @@
 import { type Body } from "./ephemeris";
 import { type AspectType, type SynAspect } from "./synastry";
 import { type KutaResult, type Dosha } from "./kuta";
+import corpus from "../data/corpus.json";
+
+type Corpus = {
+  pairs: Record<string, { fused: string; easy: string; friction: string; facing: string }>;
+  birthStars: { index: number; name: string; title: string; summary: string; inRelationships: string }[];
+  moonSigns: { index: number; sign: string; title: string; style: string }[];
+};
+const CORPUS = corpus as Corpus;
 
 // ── bodies ──────────────────────────────────────────────────────────────────────────────────────
 
@@ -136,36 +144,87 @@ const SIGNATURE: Record<string, Bespoke> = {
 
 const bespokeFor = (a: Body, b: Body): Bespoke | undefined => SIGNATURE[[a, b].sort().join("|")];
 
-/** One paragraph explaining one inter-chart aspect. */
+/**
+ * One paragraph explaining one connection between the two charts.
+ *
+ * The corpus covers every pairing of the ten bodies in all four configurations — 78 pairs × 4 — so
+ * in practice a reader always gets writing specific to their case rather than a sentence assembled
+ * from slots. The compositional fallback below only fires if a corpus entry is ever missing.
+ */
 export function explainAspect(asp: SynAspect, nameA: string, nameB: string): string {
   const bodyA = asp.a.body, bodyB = asp.b.body;
   const mode = MODE[asp.type];
+
+  // Two slow outer planets say nothing about these two people specifically — say so plainly rather
+  // than dressing up a fact about their birth years as insight.
+  if (isOuter(bodyA) && isOuter(bodyB)) {
+    return `This one is shared by almost everybody born around the same years as ${nameA} and ` +
+      `${nameB}. It is listed for completeness and counts for almost nothing here, because it ` +
+      `describes a generation rather than a pair.`;
+  }
+
+  const key = [bodyA, bodyB].sort().join("|");
+  const entry = CORPUS.pairs[key];
+  const slot = ({ fusion: "fused", ease: "easy", friction: "friction", polarity: "facing" } as const)[mode.tone];
+  const written = entry?.[slot];
+  if (written) return written;
 
   const custom = bespokeFor(bodyA, bodyB)?.[mode.tone];
   if (custom) return custom;
 
   const roleA = ROLE[bodyA], roleB = ROLE[bodyB];
-  const generational = isOuter(bodyA) && isOuter(bodyB);
-  if (generational) {
-    return `A slow, generational contact — everyone born within a few years of ${nameA} and ` +
-      `${nameB} shares it. Listed for completeness; it says almost nothing about these two ` +
-      `specifically, and it is weighted accordingly.`;
-  }
-
   return `${nameA}'s ${roleA.noun} ${mode.verb} ${nameB}'s ${roleB.noun}: ${mode.quality}. ` +
     `In practice this is about ${roleA.brings} meeting ${roleB.brings}.`;
+}
+
+/** What their birth star is said to suggest, in plain words. */
+export function birthStarText(index: number): { title: string; summary: string; inRelationships: string } | null {
+  const row = CORPUS.birthStars.find((s) => s.index === index);
+  return row ? { title: row.title, summary: row.summary, inRelationships: row.inRelationships } : null;
+}
+
+/** How someone with the Moon in this sign tends to handle feelings and closeness. */
+export function moonSignText(index: number): { title: string; style: string } | null {
+  const row = CORPUS.moonSigns.find((s) => s.index === index);
+  return row ? { title: row.title, style: row.style } : null;
 }
 
 const OUTERS: Body[] = ["Uranus", "Neptune", "Pluto"];
 const isOuter = (b: Body) => OUTERS.includes(b);
 
-/** A one-line label, e.g. "Sun ☌ Moon". */
-export function aspectLabel(asp: SynAspect): string {
-  const glyph: Record<AspectType, string> = {
-    conjunction: "☌", opposition: "☍", trine: "△", square: "□", sextile: "✶",
-    quincunx: "⚻", sesquiquadrate: "⚼", quintile: "Q", semisquare: "∠", semisextile: "⚺",
-  };
-  return `${asp.a.body} ${glyph[asp.type]} ${asp.b.body}`;
+/** What each body stands for, as a short plain noun a reader can hold in their head. */
+export const BODY_MEANS: Record<Body, string> = {
+  Sun: "sense of self",
+  Moon: "emotional needs",
+  Mercury: "thinking and talking",
+  Venus: "affection",
+  Mars: "drive",
+  Jupiter: "optimism",
+  Saturn: "duty and limits",
+  Uranus: "need for freedom",
+  Neptune: "imagination",
+  Pluto: "intensity",
+};
+
+/** A one-line label in plain words: "her affection · pulling against · his drive". */
+export function aspectLabel(asp: SynAspect, nameA?: string, nameB?: string): string {
+  const left = nameA ? `${nameA}'s ${BODY_MEANS[asp.a.body]}` : BODY_MEANS[asp.a.body];
+  const right = nameB ? `${nameB}'s ${BODY_MEANS[asp.b.body]}` : BODY_MEANS[asp.b.body];
+  return `${left} — ${asp.def.plain} — ${right}`;
+}
+
+/**
+ * How close a connection is, in words.
+ *
+ * The tradition measures this in degrees away from exact and calls it the "orb". The number means
+ * nothing to most readers, and it is the exactness that carries the meaning, so the words lead and
+ * the degrees stay available as a tooltip for anyone who wants to check the working.
+ */
+export function closeness(exactness: number): string {
+  if (exactness >= 0.85) return "almost exact";
+  if (exactness >= 0.6) return "very close";
+  if (exactness >= 0.35) return "close";
+  return "loose";
 }
 
 export function formatOrb(orb: number): string {
@@ -184,59 +243,67 @@ export function formatDegree(deg: number): string {
 // ── kutas ───────────────────────────────────────────────────────────────────────────────────────
 
 const KUTA_FULL: Record<string, string> = {
-  varna: "Their working temperaments sit comfortably — neither is inclined to talk down to the other.",
+  varna: "The way they each go about things sits comfortably — neither is inclined to talk down to the other.",
   vashya: "Each has natural influence over the other, in a way that reads as mutual rather than one-sided.",
-  tara: "Each birth star is fortunate for the other's wellbeing, counted in both directions.",
-  yoni: "Instinctive and physical compatibility is rated at its maximum by this test.",
-  grahaMaitri: "The two minds are natural allies — the planets ruling their Moons are friends.",
-  gana: "Their basic dispositions belong to the same order, so nothing has to be explained twice.",
-  bhakoot: "The two Moon signs stand in a relationship the tradition treats as prosperous for a shared life.",
-  nadi: "Different constitutional types — the strongest single result available in the whole system.",
+  tara: "Each one comes out lucky for the other, counted both ways round.",
+  yoni: "The instinctive, physical side rates as well as this test allows.",
+  grahaMaitri: "Their minds are natural allies.",
+  gana: "Their basic temperaments match, so nothing has to be explained twice.",
+  bhakoot: "Their Moon signs sit at a distance the tradition treats as good for building a life together.",
+  nadi: "They are built differently underneath — the strongest single result available anywhere in this system.",
 };
 
 const KUTA_NONE: Record<string, string> = {
-  varna: "The tradition reads this ordering as slightly against the grain. It is worth one point of thirty-six.",
+  varna: "The tradition reads this way round as slightly against the grain. It is worth one point out of thirty-six, so it is the least of anyone's worries.",
   vashya: "Neither yields naturally to the other; influence has to be negotiated rather than assumed.",
-  tara: "The count between the two birth stars falls in an inauspicious remainder in both directions.",
-  yoni: "The two birth-star animals are classical enemies — the tradition's blunt way of saying the instincts differ.",
-  grahaMaitri: "The planets ruling the two Moons regard each other as enemies: minds that work differently at the root.",
-  gana: "A Rakshasa disposition paired against a Deva or Manushya one — the tradition's sharpest temperament warning.",
-  bhakoot: "Bhakoot dosha: the Moon signs stand in one of the three afflicted relationships.",
-  nadi: "Nadi dosha — the same constitutional type. This is the heaviest single deduction in Guna Milan.",
+  tara: "The count between their two birth stars lands on an unlucky position both ways round.",
+  yoni: "Their two birth-star animals are traditional enemies — a blunt old way of saying the instincts differ.",
+  grahaMaitri: "The two planets behind their Moon signs count each other enemies: minds that work differently at the root.",
+  gana: "A forceful temperament against a gentler one — the sharpest warning this system gives about temperament.",
+  bhakoot: "Their Moon signs sit at one of the three distances the tradition treats as hard going.",
+  nadi: "They are built the same way underneath. This is the heaviest single deduction anywhere in the thirty-six.",
+};
+
+/** Middling results, said differently per test — five identical "partial agreement" sentences down
+ *  one page reads as a template rather than a reading. */
+const KUTA_PARTIAL: Record<string, string> = {
+  varna: "Somewhere in between, on a test worth a single point either way.",
+  vashya: "Neither yields easily to the other, but neither digs in either.",
+  tara: "Lucky for each other in one direction and not the other, which is the commonest result here.",
+  yoni: "Their instincts are neither the same nor at odds — different, and compatible enough.",
+  grahaMaitri: "Their minds meet part of the way. Not the same wavelength, not opposed ones.",
+  gana: "Their temperaments differ without clashing outright.",
+  bhakoot: "",
+  nadi: "",
 };
 
 export function explainKuta(k: KutaResult): string {
   if (k.points >= k.maxPoints) return KUTA_FULL[k.key] ?? "";
   if (k.points <= 0) return KUTA_NONE[k.key] ?? "";
-  const pct = Math.round((k.points / k.maxPoints) * 100);
-  return `Partial agreement — ${k.points} of ${k.maxPoints} (${pct}%). The rule found something to ` +
-    `work with rather than a clean match or a clean failure.`;
+  return KUTA_PARTIAL[k.key] || `Part marks — ${k.points} of ${k.maxPoints}.`;
 }
 
 export function explainDosha(d: Dosha): string {
-  if (d.cancelled) {
-    return `${d.detail} ${d.caveat ?? ""} On the classical exemptions this one does not stand.`.trim();
-  }
+  // The heading already says whether it was set aside, so do not repeat it here — an earlier
+  // version appended "on the classical exemptions this one does not stand" underneath a heading
+  // that already said "traditionally set aside", which read as a contradiction.
   return `${d.detail} ${d.caveat ?? ""}`.trim();
 }
 
 /** The two or three sentences that go at the very top of a report. */
-export function headlineSummary(
-  nameA: string, nameB: string, overall: number, gunaTotal: number,
-  ease: number, charge: number,
-): string {
+export function headlineSummary(gunaTotal: number, ease: number, charge: number): string {
   const gunaPart = gunaTotal >= 18
-    ? `Guna Milan gives ${gunaTotal.toFixed(1)} of 36, above the conventional threshold of 18`
-    : `Guna Milan gives ${gunaTotal.toFixed(1)} of 36, under the conventional threshold of 18`;
+    ? `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, above the usual pass mark of 18`
+    : `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, under the usual pass mark of 18`;
 
-  const easePart = ease >= 60 ? "the aspects between the charts lean supportive"
-    : ease >= 45 ? "the aspects between the charts are mixed"
-    : "the aspects between the charts lean difficult";
+  const easePart = ease >= 60 ? "what runs between them leans supportive"
+    : ease >= 45 ? "what runs between them is mixed"
+    : "what runs between them leans difficult";
 
-  const chargePart = charge >= 65 ? "and there is a lot of contact between them"
-    : charge >= 35 ? "with a moderate amount of contact between them"
-    : "though the two charts barely touch, which usually reads as indifference rather than conflict";
+  const chargePart = charge >= 65 ? "and there is a great deal of it"
+    : charge >= 35 ? "and there is a fair amount of it"
+    : "though there is not much of it either way, which usually reads as mild indifference rather than trouble";
 
-  return `${nameA} and ${nameB}: ${gunaPart}; ${easePart}, ${chargePart}. ` +
-    `The combined figure is ${overall.toFixed(0)} out of 100 — a blend, not a verdict.`;
+  return `${gunaPart}; ${easePart}, ${chargePart}. ` +
+    `The single figure blends the three — it is a summary, not a verdict.`;
 }

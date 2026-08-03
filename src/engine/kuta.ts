@@ -28,8 +28,11 @@ import { SIGNS, SIGN_LORD, type Body } from "./ephemeris";
 
 export type Varna = "brahmin" | "kshatriya" | "vaishya" | "shudra";
 const VARNA_RANK: Record<Varna, number> = { brahmin: 4, kshatriya: 3, vaishya: 2, shudra: 1 };
+/** Plain names for the four groups. The tradition's own names come from a caste ordering; the
+ *  groups themselves track the four elements, so they are named for that instead. The hierarchy is
+ *  not hidden — the scoring rule states it plainly and invites the reader to discount it. */
 export const VARNA_LABEL: Record<Varna, string> = {
-  brahmin: "Brāhmaṇa", kshatriya: "Kṣatriya", vaishya: "Vaiśya", shudra: "Śūdra",
+  brahmin: "reflective", kshatriya: "driving", vaishya: "practical", shudra: "adaptable",
 };
 
 /** Moon sign → varna. It follows the elements exactly: water is Brāhmaṇa, fire Kṣatriya, earth
@@ -43,11 +46,11 @@ const SIGN_VARNA: Varna[] = [
 
 export type VashyaGroup = "chatushpada" | "manava" | "jalachara" | "vanachara" | "keeta";
 export const VASHYA_LABEL: Record<VashyaGroup, string> = {
-  chatushpada: "Chatuṣpada (four-footed)",
-  manava: "Mānava (human)",
-  jalachara: "Jalachara (water-dwelling)",
-  vanachara: "Vanachara (wild)",
-  keeta: "Keeṭa (insect)",
+  chatushpada: "four-footed",
+  manava: "human",
+  jalachara: "water-dwelling",
+  vanachara: "wild",
+  keeta: "small-creature",
 };
 
 /** Moon sign → vashya group. Sagittarius and Capricorn SPLIT at 15°, which is why this takes a
@@ -186,8 +189,11 @@ export type KutaKey = "varna" | "vashya" | "tara" | "yoni" | "grahaMaitri" | "ga
 
 export type KutaResult = {
   key: KutaKey;
+  /** The name shown to a reader. Plain English — the traditional name is a footnote, not a label.
+   *  Nobody should have to learn a vocabulary to read their own result. */
   name: string;
-  sanskrit: string;
+  /** The traditional name, kept for people who know it and for checking the working. */
+  traditional: string;
   /** What this kuta claims to measure, in plain English. */
   measures: string;
   points: number;
@@ -239,12 +245,12 @@ const countSigns = (a: number, b: number) => ((b - a + 12) % 12) + 1;
 const countNak = (a: number, b: number) => ((b - a + 27) % 27) + 1;
 
 export function bandFor(total: number): { label: string; note: string } {
-  if (total >= 32) return { label: "Exceptional", note: "Far above the conventional threshold — the eight tests agree almost completely." };
-  if (total >= 26) return { label: "Very good", note: "Comfortably above the conventional threshold of 18." };
-  if (total >= 21) return { label: "Good", note: "Above the conventional threshold of 18." };
-  if (total >= 18) return { label: "Acceptable", note: "At or just above the threshold traditionally treated as the minimum." };
-  if (total >= 14) return { label: "Below threshold", note: "Under the conventional minimum of 18, though several kutas still agree." };
-  return { label: "Poor", note: "Well under the conventional minimum of 18." };
+  if (total >= 32) return { label: "Exceptional", note: "Far above the usual pass mark. The eight tests agree almost completely." };
+  if (total >= 26) return { label: "Very good", note: "Comfortably above the usual pass mark of 18." };
+  if (total >= 21) return { label: "Good", note: "Above the usual pass mark of 18." };
+  if (total >= 18) return { label: "Acceptable", note: "Right around the mark traditionally treated as the minimum." };
+  if (total >= 14) return { label: "Below threshold", note: "Under the usual minimum of 18, though several of the eight still agree." };
+  return { label: "Poor", note: "Well under the usual minimum of 18." };
 }
 
 /** One ordering of Guna Milan. Call it twice, swapped, and average — see the file header. */
@@ -254,26 +260,29 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
   // 1 · Varna — 1 point
   const varnaA = SIGN_VARNA[a.rasi], varnaB = SIGN_VARNA[b.rasi];
   kutas.push({
-    key: "varna", name: "Varna", sanskrit: "वर्ण",
-    measures: "Whether their working temperaments sit comfortably together.",
+    key: "varna", name: "Ways of working", traditional: "Varna",
+    measures: "Whether the way they each go about things sits comfortably together.",
     points: VARNA_RANK[varnaA] >= VARNA_RANK[varnaB] ? 1 : 0,
     maxPoints: 1,
-    rule: "1 point when the first person's varna is equal to or higher than the second's, else 0.",
-    evidence: `${SIGNS[a.rasi]} → ${VARNA_LABEL[varnaA]} (rank ${VARNA_RANK[varnaA]}); ` +
-      `${SIGNS[b.rasi]} → ${VARNA_LABEL[varnaB]} (rank ${VARNA_RANK[varnaB]}).`,
+    rule: "An old ranking of four temperaments, running reflective, driving, practical, adaptable. " +
+      "It scores when the first person's sits at or above the second's. This is the one point in " +
+      "thirty-six that carries an inherited hierarchy, and it is worth discounting if that sits " +
+      "badly with you.",
+    evidence: `${SIGNS[a.rasi]} is ${VARNA_LABEL[varnaA]}; ${SIGNS[b.rasi]} is ${VARNA_LABEL[varnaB]}.`,
     orderSensitive: VARNA_RANK[varnaA] !== VARNA_RANK[varnaB],
   });
 
   // 2 · Vashya — 2 points
   const vashA = vashyaGroup(a.rasi, a.degInSign), vashB = vashyaGroup(b.rasi, b.degInSign);
   kutas.push({
-    key: "vashya", name: "Vashya", sanskrit: "वश्य",
-    measures: "Mutual influence — how naturally each yields to the other.",
+    key: "vashya", name: "Give and take", traditional: "Vashya",
+    measures: "How much sway each naturally has over the other.",
     points: VASHYA_MATRIX[VASHYA_ORDER.indexOf(vashA)][VASHYA_ORDER.indexOf(vashB)],
     maxPoints: 2,
-    rule: "The two Moon signs' vashya groups are looked up in the classical 5×5 table (same group = 2).",
-    evidence: `${SIGNS[a.rasi]} ${a.degInSign.toFixed(1)}° → ${VASHYA_LABEL[vashA]}; ` +
-      `${SIGNS[b.rasi]} ${b.degInSign.toFixed(1)}° → ${VASHYA_LABEL[vashB]}.`,
+    rule: "Each Moon sign belongs to one of five old groupings. The same grouping scores the full " +
+      "2; every other combination comes from a fixed table.",
+    evidence: `${SIGNS[a.rasi]} is in the ${VASHYA_LABEL[vashA]} group; ` +
+      `${SIGNS[b.rasi]} is in the ${VASHYA_LABEL[vashB]} group.`,
     orderSensitive: false,
   });
 
@@ -283,29 +292,31 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
   const badTara = (r: number) => r === 3 || r === 5 || r === 7;
   const goodCount = (badTara(taraAB) ? 0 : 1) + (badTara(taraBA) ? 0 : 1);
   kutas.push({
-    key: "tara", name: "Tara", sanskrit: "तारा",
-    measures: "Whether each is fortunate for the other's wellbeing.",
+    key: "tara", name: "Good for each other", traditional: "Tara",
+    measures: "Whether each tends to be lucky for the other's wellbeing.",
     points: goodCount === 2 ? 3 : goodCount === 1 ? 1.5 : 0,
     maxPoints: 3,
-    rule: "Count inclusively between the two birth stars in each direction, take each count mod 9. " +
-      "Remainders 3, 5 and 7 are inauspicious. Both auspicious = 3, one = 1.5, neither = 0.",
-    evidence: `${a.nakshatra.name} → ${b.nakshatra.name} = ${countNak(a.nakshatra.index, b.nakshatra.index)}, ` +
-      `mod 9 = ${taraAB} (${badTara(taraAB) ? "inauspicious" : "auspicious"}); reverse = ` +
-      `${countNak(b.nakshatra.index, a.nakshatra.index)}, mod 9 = ${taraBA} ` +
-      `(${badTara(taraBA) ? "inauspicious" : "auspicious"}).`,
+    rule: "Count the steps from one birth star to the other, both ways round the twenty-seven. " +
+      "Positions 3, 5 and 7 out of every nine are the unlucky ones. Both directions clear scores " +
+      "3, one clears 1.5, neither scores 0.",
+    evidence: `${a.nakshatra.name} to ${b.nakshatra.name} is ` +
+      `${countNak(a.nakshatra.index, b.nakshatra.index)} steps, landing on position ${taraAB || 9} ` +
+      `of nine (${badTara(taraAB) ? "unlucky" : "clear"}). The other way is ` +
+      `${countNak(b.nakshatra.index, a.nakshatra.index)} steps, position ${taraBA || 9} ` +
+      `(${badTara(taraBA) ? "unlucky" : "clear"}).`,
     orderSensitive: false, // both directions are counted, so swapping changes nothing
   });
 
   // 4 · Yoni — 4 points
   kutas.push({
-    key: "yoni", name: "Yoni", sanskrit: "योनि",
-    measures: "Physical and instinctive compatibility.",
+    key: "yoni", name: "Physical instinct", traditional: "Yoni",
+    measures: "Physical and instinctive fit.",
     points: yoniPoints(a.nakshatra.yoni, b.nakshatra.yoni),
     maxPoints: 4,
-    rule: "Each birth star carries an animal. Same animal = 4, friendly = 3, neutral = 2, " +
-      "unfriendly = 1, classical mortal enemies = 0.",
-    evidence: `${a.nakshatra.name} → ${YONI_LABEL[a.nakshatra.yoni]} (${a.nakshatra.yoniGender}); ` +
-      `${b.nakshatra.name} → ${YONI_LABEL[b.nakshatra.yoni]} (${b.nakshatra.yoniGender}).`,
+    rule: "Each birth star carries an animal. The same animal scores the full 4, a friendly pair " +
+      "3, an indifferent pair 2, an uneasy pair 1, and the seven traditional enemy pairs score 0.",
+    evidence: `${a.nakshatra.name}'s animal is the ${YONI_LABEL[a.nakshatra.yoni].toLowerCase()}; ` +
+      `${b.nakshatra.name}'s is the ${YONI_LABEL[b.nakshatra.yoni].toLowerCase()}.`,
     orderSensitive: false,
   });
 
@@ -313,26 +324,26 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
   const lordA = SIGN_LORD[a.rasi], lordB = SIGN_LORD[b.rasi];
   const gm = grahaMaitriPoints(lordA, lordB);
   kutas.push({
-    key: "grahaMaitri", name: "Graha Maitri", sanskrit: "ग्रहमैत्री",
-    measures: "Mental affinity — whether their minds are natural allies.",
+    key: "grahaMaitri", name: "Meeting of minds", traditional: "Graha Maitri",
+    measures: "Whether their minds work in a similar way.",
     points: gm.points, maxPoints: 5,
-    rule: "The two Moon signs' ruling grahas are compared in the natural friendship table: " +
-      "mutual friends 5, friend+neutral 4, mutual neutral 3, friend+enemy 1, neutral+enemy 0.5, " +
-      "mutual enemies 0.",
-    evidence: `${SIGNS[a.rasi]} is ruled by ${lordA}, ${SIGNS[b.rasi]} by ${lordB} — ${gm.how}.`,
+    rule: "Each Moon sign has a planet that goes with it, and those planets are ranked friend, " +
+      "neutral or enemy of one another. Both friends scores 5, friend and neutral 4, both neutral " +
+      "3, friend and enemy 1, neutral and enemy 0.5, both enemies 0.",
+    evidence: `${SIGNS[a.rasi]} goes with ${lordA}, ${SIGNS[b.rasi]} with ${lordB} — ${gm.how}.`,
     orderSensitive: false,
   });
 
   // 6 · Gana — 6 points
   const ganaA = a.nakshatra.gana, ganaB = b.nakshatra.gana;
   kutas.push({
-    key: "gana", name: "Gana", sanskrit: "गण",
-    measures: "Temperament — the disposition each brings to the other.",
+    key: "gana", name: "Temperament", traditional: "Gana",
+    measures: "The basic temperament each one brings.",
     points: GANA_MATRIX[GANA_ORDER.indexOf(ganaA)][GANA_ORDER.indexOf(ganaB)],
     maxPoints: 6,
-    rule: "The two birth stars' ganas are looked up in the classical 3×3 table. Same gana always " +
-      "scores 6; a Rakshasa paired with a Deva or Manushya scores at or near zero.",
-    evidence: `${a.nakshatra.name} → ${GANA_LABEL[ganaA]}; ${b.nakshatra.name} → ${GANA_LABEL[ganaB]}.`,
+    rule: "Every birth star is gentle, even-handed or forceful. The same temperament always scores " +
+      "the full 6; a forceful one paired with a gentle one scores at or near zero.",
+    evidence: `${a.nakshatra.name} is ${GANA_LABEL[ganaA]}; ${b.nakshatra.name} is ${GANA_LABEL[ganaB]}.`,
     orderSensitive: ganaA !== ganaB,
   });
 
@@ -341,28 +352,31 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
   const pair = [fwd, rev].sort((x, y) => x - y).join("/");
   const bhakootFails = pair === "2/12" || pair === "5/9" || pair === "6/8";
   kutas.push({
-    key: "bhakoot", name: "Bhakoot", sanskrit: "भकूट",
-    measures: "The shape of the shared life — prosperity, health, direction together.",
+    key: "bhakoot", name: "Life together", traditional: "Bhakoot",
+    measures: "How a shared life would tend to go — money, health, pulling in one direction.",
     points: bhakootFails ? 0 : 7,
     maxPoints: 7,
-    rule: "Count inclusively between the two Moon signs both ways. The pairs 2/12, 5/9 and 6/8 " +
-      "score zero (Bhakoot dosha); every other relationship scores the full 7.",
-    evidence: `${SIGNS[a.rasi]} → ${SIGNS[b.rasi]} = ${fwd}, reverse = ${rev} → ${pair}` +
-      `${bhakootFails ? " — a dosha pair" : " — not a dosha pair"}.`,
+    rule: "Count the signs from one Moon sign to the other, both ways round. Three particular " +
+      "distances — 2 and 12, 5 and 9, 6 and 8 — score nothing at all. Every other distance scores " +
+      "the full 7. There is no middle ground in this one.",
+    evidence: `${SIGNS[a.rasi]} to ${SIGNS[b.rasi]} is ${fwd} signs, and ${rev} coming back` +
+      `${bhakootFails ? " — one of the three difficult distances" : " — not one of the three difficult distances"}.`,
     orderSensitive: false,
   });
 
   // 8 · Nadi — 8 points, the single largest and the strictest
   const nadiA = a.nakshatra.nadi, nadiB = b.nakshatra.nadi;
   kutas.push({
-    key: "nadi", name: "Nadi", sanskrit: "नाडी",
-    measures: "Constitutional type — the deepest and most heavily weighted test.",
+    key: "nadi", name: "Underlying makeup", traditional: "Nadi",
+    measures: "The deepest layer — how each one is built underneath everything else.",
     points: nadiA === nadiB ? 0 : 8,
     maxPoints: 8,
-    rule: "Different nadi scores the full 8. The SAME nadi scores zero — Nadi dosha, the most " +
-      "serious single failure in the system.",
-    evidence: `${a.nakshatra.name} → ${NADI_LABEL[nadiA]}; ${b.nakshatra.name} → ${NADI_LABEL[nadiB]}` +
-      `${nadiA === nadiB ? " — the same nadi" : " — different nadis"}.`,
+    rule: "Every birth star is airy and restless, hot and driven, or steady and settled. Different " +
+      "types score the full 8. The same type scores nothing — the largest single deduction " +
+      "anywhere in the thirty-six, on the reasoning that two people built the same way have no " +
+      "spare capacity for each other.",
+    evidence: `${a.nakshatra.name} is ${NADI_LABEL[nadiA]}; ${b.nakshatra.name} is ${NADI_LABEL[nadiB]}` +
+      `${nadiA === nadiB ? " — the same" : " — different"}.`,
     orderSensitive: false,
   });
 
@@ -415,12 +429,12 @@ function doshas(a: KutaSide, b: KutaSide, kutas: KutaResult[]): Dosha[] {
     const sameRasi = a.rasi === b.rasi;
     const cancelled = (sameNak && !sameRasi) || (!sameNak && sameRasi);
     out.push({
-      key: "nadi", name: "Nadi dosha", present: true, mutual: true, cancelled,
-      detail: `Both birth stars are ${NADI_LABEL[a.nakshatra.nadi]}, so Nadi scores 0 of 8 — the ` +
-        `heaviest single deduction in the system.`,
+      key: "nadi", name: "Built the same way underneath", present: true, mutual: true, cancelled,
+      detail: `Both are ${NADI_LABEL[a.nakshatra.nadi]}, which costs the whole 8 points — the heaviest ` +
+        `single deduction in the system.`,
       caveat: cancelled
-        ? "Traditionally exempt here: the birth stars and rāśis do not both coincide, which the " +
-          "classical texts treat as cancelling the dosha."
+        ? "The old texts let this one off when the birth stars and the Moon signs do not both coincide, " +
+          "which is the case here."
         : undefined,
     });
   }
@@ -430,13 +444,12 @@ function doshas(a: KutaSide, b: KutaSide, kutas: KutaResult[]): Dosha[] {
     // Bhakoot dosha is conventionally waived when Graha Maitri is strong.
     const gm = kutas.find((k) => k.key === "grahaMaitri")!;
     out.push({
-      key: "bhakoot", name: "Bhakoot dosha", present: true, mutual: true,
+      key: "bhakoot", name: "An awkward distance between their Moon signs", present: true, mutual: true,
       cancelled: gm.points >= 4,
-      detail: "The two Moon signs stand in one of the three afflicted relationships, so Bhakoot " +
-        "scores 0 of 7.",
+      detail: "Their two Moon signs sit at one of the three distances the tradition treats as hard " +
+        "going, which costs the whole 7 points.",
       caveat: gm.points >= 4
-        ? "Commonly waived here: Graha Maitri is strong, which most authorities treat as cancelling " +
-          "Bhakoot dosha."
+        ? "Most readers set this one aside when the two minds get on well, as they do here."
         : undefined,
     });
   }
@@ -450,7 +463,7 @@ function doshas(a: KutaSide, b: KutaSide, kutas: KutaResult[]): Dosha[] {
     const refs = (m: typeof ma) =>
       [m.moon && "from the Moon", m.venus && "from Venus"].filter(Boolean).join(" and ");
     out.push({
-      key: "mangal", name: "Mangal (Kuja) dosha", present: true,
+      key: "mangal", name: "A harder placing for Mars", present: true,
       mutual: state === "both",
       cancelled: state === "both",
       detail: state === "both"
@@ -458,12 +471,12 @@ function doshas(a: KutaSide, b: KutaSide, kutas: KutaResult[]): Dosha[] {
         : `Only ${ma.any ? "the first" : "the second"} chart carries it, ` +
           `${refs(ma.any ? ma : mb)}.`,
       caveat:
-        "Checked from the Moon and from Venus. It is NOT checked from the Ascendant, which is the " +
-        "primary reference: the Ascendant moves a whole sign every two hours, so a birth date " +
-        "cannot even bias a guess at it. That reading is unavailable here rather than assumed." +
+        "Checked two of the three ways the tradition asks for. The third needs to know which sign was " +
+        "rising at the moment of birth, and that changes every two hours — a date alone cannot even " +
+        "make a sensible guess at it, so it is left out rather than invented." +
         (state === "both"
-          ? " Both partners carrying the dosha is the mitigation the tradition weights most heavily" +
-            " (dosha samya) — it is treated as balancing out."
+          ? " Both of them having it is the let-off the tradition weights most heavily" +
+            " — it is treated as balancing out."
           : ""),
     });
   }

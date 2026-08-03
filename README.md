@@ -12,6 +12,11 @@ Two independent instruments run over the same sidereal positions:
 
 Every number shows the rule that produced it and the exact values it read. Nothing is a black box.
 
+**No jargon.** Nothing on screen says *nakshatra*, *kuta*, *dosha*, *ayanamsa*, *orb* or *trine*.
+The eight tests are called things like "Meeting of minds" and "Underlying makeup"; connections read
+"her affection — pulling against — his drive". The traditional terms are kept in the code for
+checking the working, and a test walks the rendered page asserting none of them reach the reader.
+
 ---
 
 ## The thing most compatibility sites get wrong
@@ -105,6 +110,20 @@ the enemy set exactly so the shortcut cannot come back.
 
 Graha Maitri (all 7 rows), Gana, Varna, Tara, Bhakoot and Nadi were confirmed unchanged.
 
+## Two bugs worth recording
+
+**The displayed birth star disagreed with the scored one, on 6.1% of dates.** The report was drawn
+at noon while the "most likely" birth star was the one covering the largest share of the day. On a
+day where the Moon changes birth star twice, noon can land in a two-hour sliver next to a state
+covering half the day — so the page printed one birth star and scored a different one. The headline
+is now taken at the middle of the most likely state, which makes the shown chart and the computed
+score the same chart, and is also the better estimate under a flat prior over birth times.
+
+**Meters rendered as full-height gradient blocks.** `.meter` was a `<span>`, and inline boxes
+silently ignore `height` — so a 6px bar filled its container and overlapped everything beneath it.
+Every sized element in the stylesheet now states its `display`, and the screenshot tool asserts no
+meter is taller than 12px.
+
 ## Design decisions worth arguing with
 
 **Scores are symmetric.** `score(A,B) === score(B,A)`, asserted over hundreds of random date pairs.
@@ -126,8 +145,14 @@ written down long before anyone chose a weighting. Charge is deliberately small 
 connection is not a compatible one, and letting intensity dominate would rank the most turbulent
 pairings highest. Every component is reported separately so the blend can be ignored entirely.
 
-**No chart wheel.** The aspect grid is a table, because that is what the data is; it reads on a phone
-and needs no legend.
+**No chart wheel.** The connection grid is a table, because that is what the data is; it reads on a
+phone and needs no legend.
+
+**The headline is a range when the date cannot support a number.** Rather than printing one confident
+figure, an uncertain pair shows every reading the two dates allow with a probability against each —
+"this reading is about 49% likely", then the alternatives. The eight tests depend on the Moon only
+through which birth star and sign it is in, and each day holds at most four such states whose shares
+*are* their probabilities, so that table is exact rather than sampled.
 
 ---
 

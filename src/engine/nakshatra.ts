@@ -86,16 +86,20 @@ export function nakshatraOf(lon: number): { info: NakshatraInfo; pada: number; d
 export const nakshatraStart = (index: number) => index * NAK_ARC;
 
 /** Human labels, for the report. */
+/** Plain names for the three temperaments. "Deva / Manushya / Rakshasa" translate literally as
+ *  divine / human / demonic, which reads as a moral judgement on a person and is not what the
+ *  system means — it means gentle, even-handed, and forceful. Named for what they mean. */
 export const GANA_LABEL: Record<Gana, string> = {
-  deva: "Deva (divine)",
-  manushya: "Manushya (human)",
-  rakshasa: "Rakshasa (demonic)",
+  deva: "gentle",
+  manushya: "even-handed",
+  rakshasa: "forceful",
 };
 
+/** The three constitutional types, named for what they describe rather than transliterated. */
 export const NADI_LABEL: Record<Nadi, string> = {
-  adi: "Ādi (Vāta)",
-  madhya: "Madhya (Pitta)",
-  antya: "Antya (Kapha)",
+  adi: "airy and restless",
+  madhya: "hot and driven",
+  antya: "steady and settled",
 };
 
 export const YONI_LABEL: Record<YoniAnimal, string> = {

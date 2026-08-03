@@ -46,7 +46,7 @@ describe("ArtaMatch app", () => {
   it("mounts and shows the empty state", () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: "ArtaMatch", level: 1 })).toBeDefined();
-    expect(screen.getByText(/Nobody yet/i)).toBeDefined();
+    expect(screen.getByText(/Nobody here yet/i)).toBeDefined();
   });
 
   it("refuses an impossible date instead of charting the wrong day", () => {
@@ -55,7 +55,7 @@ describe("ArtaMatch app", () => {
     // not a leap year — so the field ends up empty and the entry is refused either way. What
     // matters is that nobody is added and the reason is stated.
     addPerson("Nobody", "2001-02-29");
-    expect(screen.getByText(/Nobody yet/i)).toBeDefined();
+    expect(screen.getByText(/Nobody here yet/i)).toBeDefined();
     expect(screen.getByText(/date of birth is the one thing this needs|not a real calendar date/i)).toBeDefined();
   });
 
@@ -64,7 +64,7 @@ describe("ArtaMatch app", () => {
     // 2001-02-29 forward to 1 March, charting the wrong day. This is the path that needs guarding.
     window.history.replaceState({}, "", "/?n=Ghost&b=2001-02-29");
     render(<App />);
-    expect(screen.getByText(/Nobody yet/i)).toBeDefined();
+    expect(screen.getByText(/Nobody here yet/i)).toBeDefined();
     expect(screen.queryByText("Ghost")).toBeNull();
     window.history.replaceState({}, "", "/");
   });
@@ -81,7 +81,7 @@ describe("ArtaMatch app", () => {
     addPerson("Ada", "1815-12-10");
     // "Ada" appears both in the list and in the "Ranked against Ada" heading — both are correct.
     expect(screen.getAllByText(/Ada/).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText(/1815-12-10/)).toBeDefined();
+    expect(screen.getByText(/10 December 1815/)).toBeDefined();
     // Prompted to add a second person rather than shown an empty ranking.
     expect(screen.getByText(/Add at least one more person/i)).toBeDefined();
   });
@@ -91,11 +91,10 @@ describe("ArtaMatch app", () => {
     addPerson("Ada", "1815-12-10");
     addPerson("Turing", "1912-06-23");
 
-    const ranking = screen.getByText(/Ranked against Ada/i).closest(".panel") as HTMLElement;
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     const row = within(ranking).getByRole("button", { name: /Turing/ });
-    expect(row.textContent).toMatch(/Guna \d+(\.\d+)?\/36/);
-    expect(row.textContent).toMatch(/ease \d+/);
-    expect(row.textContent).toMatch(/charge \d+/);
+    expect(row.textContent).toMatch(/traditional score \d+(\.\d+)?\/36/i);
+    expect(row.textContent).toMatch(/\d+of 100/);
   });
 
   it("opens a full report with every section populated", () => {
@@ -103,27 +102,29 @@ describe("ArtaMatch app", () => {
     addPerson("Ada", "1815-12-10");
     addPerson("Turing", "1912-06-23");
 
-    const ranking = screen.getByText(/Ranked against Ada/i).closest(".panel") as HTMLElement;
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
-    expect(screen.getByText(/a blend, not a verdict/i)).toBeDefined();
+    expect(screen.getByText(/a summary, not a verdict/i)).toBeDefined();
 
-    // Guna tab: all eight kutas, each with its rule and its evidence.
-    fireEvent.click(screen.getByRole("tab", { name: /Guna Milan/i }));
-    for (const kuta of ["Varna", "Vashya", "Tara", "Yoni", "Graha Maitri", "Gana", "Bhakoot", "Nadi"]) {
-      expect(screen.getByText(kuta), `${kuta} missing`).toBeDefined();
+    // The eight tests, each with the rule it used and the values it read.
+    fireEvent.click(screen.getByRole("tab", { name: /eight tests/i }));
+    for (const test of ["Ways of working", "Give and take", "Good for each other",
+      "Physical instinct", "Meeting of minds", "Temperament", "Life together", "Underlying makeup"]) {
+      expect(screen.getByText(test), `${test} missing`).toBeDefined();
     }
-    expect(screen.getAllByText(/^Rule:/).length).toBe(8);
+    expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
+    expect(screen.getAllByText(/What was read:/).length).toBe(8);
 
-    // Aspects tab: the grid plus written explanations.
-    fireEvent.click(screen.getByRole("tab", { name: /Aspects/i }));
-    expect(screen.getByText(/Aspect grid/i)).toBeDefined();
-    expect(screen.getByText(/major aspects, ordered by how much each one counts/i)).toBeDefined();
+    // What runs between them: the grid plus written explanations.
+    fireEvent.click(screen.getByRole("tab", { name: /runs between/i }));
+    expect(screen.getByText(/connection grid/i)).toBeDefined();
+    expect(screen.getByText(/strongest first/i)).toBeDefined();
 
-    // Positions tab: both charts, all ten bodies each.
-    fireEvent.click(screen.getByRole("tab", { name: /Positions/i }));
-    expect(screen.getAllByText(/Janma nakshatra/i).length).toBe(2);
+    // Where everything was: both charts, all ten bodies each.
+    fireEvent.click(screen.getByRole("tab", { name: /Where everything/i }));
+    expect(screen.getAllByText(/Their birth star/i).length).toBe(2);
     expect(screen.getAllByText(/☉ Sun/).length).toBe(2);
     expect(screen.getAllByText(/♇ Pluto/).length).toBe(2);
   });
@@ -132,7 +133,7 @@ describe("ArtaMatch app", () => {
     render(<App />);
     // 1965-07-27: the Moon crosses two nakshatra boundaries AND a rasi boundary — four states.
     addPerson("Wanderer", "1965-07-27");
-    expect(screen.getAllByText(/Moon moved/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/time matters/i).length).toBeGreaterThan(0);
   });
 
   it("survives the public-account fetch failing", async () => {
@@ -173,13 +174,46 @@ describe("ArtaMatch app", () => {
   it("ranks the seeded people against each other", () => {
     localStorage.removeItem("artamatch.seeded.v1");
     render(<App />);
-    const ranking = screen.getByText(/Ranked against Ayse Altundal/i).closest(".panel") as HTMLElement;
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ayse Altundal/i }).closest(".panel") as HTMLElement;
     // Two others, each with a real score.
     const rows = within(ranking).getAllByRole("button");
     expect(rows.length).toBeGreaterThanOrEqual(2);
     expect(ranking.textContent).toMatch(/Elif Eda Ayan/);
     expect(ranking.textContent).toMatch(/Lana El Jamal/);
-    expect(ranking.textContent).toMatch(/Guna \d+(\.\d+)?\/36/);
+    expect(ranking.textContent).toMatch(/traditional score \d+(\.\d+)?\/36/i);
+  });
+
+  it("shows no astrology jargon anywhere a reader can see it", () => {
+    // The guard is on the RENDERED TEXT, not the source, because that is the thing a reader
+    // actually meets. Comments, variable names and the traditional terms kept for checking the
+    // working are all free to say whatever they like — this asserts that none of it reaches screen.
+    const BANNED = [
+      "nakshatra", "rashi", "rasi", "kuta", "koota", "guna milan", "dosha", "graha", "varna",
+      "vashya", "yoni", "bhakoot", "nadi", "mangal", "kuja", "ayanamsa", "sidereal", "tropical",
+      "lahiri", "vedic", "jyotish", "synastry", "conjunction", "trine", "sextile", "quincunx",
+      "sesquiquadrate", "semi-sextile", "orb", "lagna", "ascendant", "retrograde", "exalted",
+      "debilitated", "benefic", "malefic", "pada", "dasha", "janma", "chandra", "brāhmaṇa",
+      "kṣatriya", "vaiśya", "śūdra", "deva", "manushya", "rakshasa",
+    ];
+
+    render(<App />);
+    addPerson("Ada", "1815-12-10");
+    addPerson("Turing", "1912-06-23");
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
+    fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
+
+    const seen: string[] = [];
+    for (const tab of [/In short/i, /eight tests/i, /runs between/i, /Where everything/i]) {
+      fireEvent.click(screen.getByRole("tab", { name: tab }));
+      const text = (document.body.textContent ?? "").toLowerCase();
+      for (const word of BANNED) {
+        // Word boundaries so "gana" does not fire on "organ" and "orb" not on "absorb".
+        if (new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text)) {
+          seen.push(`${word} (on ${tab.source})`);
+        }
+      }
+    }
+    expect([...new Set(seen)]).toEqual([]);
   });
 
   it("shows the everyone-against-everyone grid symmetrically", () => {
@@ -188,7 +222,7 @@ describe("ArtaMatch app", () => {
     addPerson("Turing", "1912-06-23");
     addPerson("Curie", "1867-11-07");
 
-    fireEvent.click(screen.getByRole("tab", { name: /Everyone against everyone/i }));
+    fireEvent.click(screen.getByRole("tab", { name: /Everyone vs everyone/i }));
     const table = screen.getByText(/Every pair, scored out of 100/i).closest(".panel")!
       .querySelector("table")!;
     const rows = [...table.querySelectorAll("tbody tr")];

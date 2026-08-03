@@ -17,7 +17,6 @@ import {
 import { fetchPublicMembers, loadCached, messageUrl, type FetchResult } from "./data/artaquest";
 import { matchPair, rankAgainst, overallBand } from "./engine/score";
 import { birthSpan } from "./engine/uncertainty";
-import { SIGNS } from "./engine/ephemeris";
 import Report from "./ui/Report";
 import { Avatar, Mark, Meter } from "./ui/bits";
 
@@ -125,8 +124,8 @@ export default function App() {
         <div style={{ flex: "1 1 260px" }}>
           <h1>ArtaMatch</h1>
           <p className="tag">
-            Sidereal compatibility from dates of birth alone — Ashtakoota Guna Milan and a full
-            synastry report, with every point traced to the rule that produced it.
+            Put in two dates of birth and see how an old tradition reads the pair — the full working
+            shown, in plain words, with an honest account of what a date alone cannot tell you.
           </p>
         </div>
       </header>
@@ -136,7 +135,8 @@ export default function App() {
           <section className="panel">
             <h2>Add someone</h2>
             <p className="panel-note">
-              Stored in this browser only. Nothing you type here is sent anywhere.
+              Kept in this browser and nowhere else. Nothing you type here is sent anywhere, because
+              there is no server to send it to.
             </p>
             <div className="field">
               <label htmlFor="nm">Name</label>
@@ -157,7 +157,8 @@ export default function App() {
           <section className="panel">
             <h2>Public accounts</h2>
             <p className="panel-note">
-              ArtaQuest members whose birthday is already public on their own profile.
+              People on ArtaQuest who have already made their birthday public on their own profile.
+              You can message them from here.
             </p>
             <div className="row">
               <button className="ghost" onClick={runImport} disabled={importing}>
@@ -179,10 +180,11 @@ export default function App() {
           <section className="panel">
             <h2>Everyone ({people.length})</h2>
             <p className="panel-note">
-              {self ? <>Ranking against <strong>{self.name}</strong>. Tap another row to switch.</>
-                : "Tap someone to rank everyone else against them."}
+              {self ? <>Everyone is being compared against <strong>{self.name}</strong>. Tap a
+                different name to switch.</>
+                : "Tap whoever you want to compare everyone else against."}
             </p>
-            {people.length === 0 && <p className="empty">Nobody yet. Add a date of birth above.</p>}
+            {people.length === 0 && <p className="empty">Nobody here yet. Add a date of birth above.</p>}
             {people.map((p) => (
               <PersonRow key={p.id} person={p} isSelf={p.id === selfId}
                 onPick={() => setSelfId(p.id)} onRemove={() => removePerson(p.id)} />
@@ -202,7 +204,7 @@ export default function App() {
                 </button>
                 <button role="tab" aria-selected={view === "matrix"}
                   className={view === "matrix" ? "on" : ""} onClick={() => setView("matrix")}>
-                  Everyone against everyone
+                  Everyone vs everyone
                 </button>
               </div>
 
@@ -216,21 +218,41 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          Sidereal (Vedic) positions, Lahiri ayanamsa. The built-in ephemeris is verified against the
-          Swiss Ephemeris across 1900–2100: the Moon agrees to <code>1.4′</code>, the Sun to{" "}
-          <code>0.7′</code>. The unknown birth time moves the Moon by up to <code>±6.6°</code> —
-          roughly 290× larger — which is why every Moon-dependent result here carries a range rather
-          than a single confident number.
+          <strong style={{ color: "var(--muted)" }}>Where the numbers come from.</strong> The
+          positions of the Sun, Moon and planets are worked out here in your browser, and checked
+          against the Swiss Ephemeris — the reference astronomers and astrologers both use — at
+          nearly two thousand dates between 1900 and 2100. The Moon agrees to within about a
+          fortieth of a degree.
         </p>
         <p>
-          Astrology is a shared symbolic language with no established causal mechanism. Nothing here
-          predicts anything about anybody. Read it as a way of describing patterns, not as a verdict
-          on a person.{" "}
-          <a href="https://github.com/ArtaQuest/artamatch" target="_blank" rel="noreferrer">Source</a>.
+          <strong style={{ color: "var(--muted)" }}>Why the time of day keeps coming up.</strong> The
+          Moon travels about 13 degrees a day, and most of this tradition is built on exactly where
+          it was. Not knowing the hour moves it by up to 6.6 degrees either way — about three hundred
+          times bigger than any error in the maths. That is why nothing here gives you one confident
+          number when the date alone cannot support one.
+        </p>
+        <p>
+          <strong style={{ color: "var(--muted)" }}>And what this is.</strong> There is no known way
+          any of this could actually work. It is an old and carefully worked-out way of talking about
+          people, not a science, and nothing here predicts anything about anybody. Read it the way
+          you would read a character sketch someone wrote about you — interesting where it lands,
+          harmless where it does not.{" "}
+          <a href="https://github.com/ArtaQuest/artamatch" target="_blank" rel="noreferrer">
+            All the workings are open
+          </a>.
         </p>
       </footer>
     </div>
   );
+}
+
+/** 1999-12-06 → 6 December 1999. Reading a date should not require parsing a format. */
+const MONTHS = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"];
+export function formatBirthday(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return iso;
+  return `${+m[3]} ${MONTHS[+m[2] - 1]} ${m[1]}`;
 }
 
 /** Public rows are replaced wholesale on each import; manual rows are never touched. */
@@ -250,12 +272,16 @@ function PersonRow({ person, isSelf, onPick, onRemove }: {
       <button className="who link" onClick={onPick} style={{ textAlign: "left" }}>
         <span className="nm">{person.name}</span>
         <span className="bd">
-          {person.birthday}
-          {moon && <> · {moon.nakshatra.name} · {SIGNS[moon.rasi]}</>}
-          {span && !span.stable && " ·"}
+          {formatBirthday(person.birthday)}
+          {moon && <> · {moon.nakshatra.name}</>}
         </span>
       </button>
-      {span && !span.stable && <span className="pill warn" title="The Moon changed birth star during this day, so results carry a range">Moon moved</span>}
+      {span && !span.stable && (
+        <span className="pill soft"
+          title="The Moon changed birth star during this day, so the time of day would change the result">
+          time matters
+        </span>
+      )}
       {person.source === "artaquest" && <span className="pill aq">ArtaQuest</span>}
       {person.source === "manual" && (
         <button className="link" onClick={onRemove} aria-label={`Remove ${person.name}`}
@@ -292,21 +318,21 @@ function Ranking({ self, ranked, onOpen }: {
             <button className="rank-row" key={r.other.id} onClick={() => onOpen(r.other.id)}>
               <span className="pos">{i + 1}</span>
               <Avatar person={r.other} />
-              <span>
-                <span className="nm">{r.other.name}</span>
-                <span className="sub">
-                  Guna {r.match.components.guna.total.toFixed(1)}/36 ·
-                  ease {r.match.components.easeScore.toFixed(0)} ·
-                  charge {r.match.components.chargeScore.toFixed(0)}
-                  {unstable && " · Moon moved"}
+              <span className="body">
+                <span className="nm">
+                  {r.other.name}
+                  {msg && <span className="pill aq" style={{ marginLeft: "0.4rem" }}>can message</span>}
                 </span>
-                <Meter value={r.overall} />
+                <span className="sub">
+                  {band.label} · traditional score {r.match.components.guna.total.toFixed(1)}/36
+                  {unstable && " · time of day would change this"}
+                </span>
+                <Meter value={r.overall} gold={band.tone === "high"} />
               </span>
-              {msg
-                ? <a href={msg} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}
-                    className="pill aq">Message</a>
-                : <span />}
-              <span className={`sc tone-${band.tone}`}>{r.overall.toFixed(0)}</span>
+              <span className={`sc tone-${band.tone}`}>
+                {r.overall.toFixed(0)}
+                <small>of 100</small>
+              </span>
             </button>
           );
         })}

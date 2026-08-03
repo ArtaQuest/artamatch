@@ -32,6 +32,9 @@ export type AspectDef = {
   orb: number;
   /** Major aspects carry full weight; minor ones are shown but barely move the score. */
   major: boolean;
+  /** The plain-English name shown to a reader. The traditional term is kept in `label` for anyone
+   *  who knows it, but it is never the only thing on screen. */
+  plain: string;
   /** −1 friction … +1 ease. The conjunction is 0 because its quality depends on WHICH bodies meet
    *  (Venus with Jupiter is not Mars with Saturn) — it is resolved from body valence instead. */
   valence: number;
@@ -39,16 +42,16 @@ export type AspectDef = {
 };
 
 export const ASPECTS: AspectDef[] = [
-  { type: "conjunction",    angle: 0,   orb: 8, major: true,  valence: 0,     label: "conjunction" },
-  { type: "opposition",     angle: 180, orb: 8, major: true,  valence: -0.35, label: "opposition" },
-  { type: "trine",          angle: 120, orb: 7, major: true,  valence: 1,     label: "trine" },
-  { type: "square",         angle: 90,  orb: 7, major: true,  valence: -0.85, label: "square" },
-  { type: "sextile",        angle: 60,  orb: 5, major: true,  valence: 0.7,   label: "sextile" },
-  { type: "quincunx",       angle: 150, orb: 3, major: false, valence: -0.5,  label: "quincunx" },
-  { type: "sesquiquadrate", angle: 135, orb: 2, major: false, valence: -0.4,  label: "sesquiquadrate" },
-  { type: "quintile",       angle: 72,  orb: 2, major: false, valence: 0.5,   label: "quintile" },
-  { type: "semisquare",     angle: 45,  orb: 2, major: false, valence: -0.4,  label: "semi-square" },
-  { type: "semisextile",    angle: 30,  orb: 2, major: false, valence: 0.25,  label: "semi-sextile" },
+  { type: "conjunction",    angle: 0,   orb: 8, major: true,  valence: 0,     label: "conjunction",    plain: "sitting together" },
+  { type: "opposition",     angle: 180, orb: 8, major: true,  valence: -0.35, label: "opposition",     plain: "facing each other" },
+  { type: "trine",          angle: 120, orb: 7, major: true,  valence: 1,     label: "trine",          plain: "flowing together" },
+  { type: "square",         angle: 90,  orb: 7, major: true,  valence: -0.85, label: "square",         plain: "pulling against" },
+  { type: "sextile",        angle: 60,  orb: 5, major: true,  valence: 0.7,   label: "sextile",        plain: "helping along" },
+  { type: "quincunx",       angle: 150, orb: 3, major: false, valence: -0.5,  label: "quincunx",       plain: "not quite meeting" },
+  { type: "sesquiquadrate", angle: 135, orb: 2, major: false, valence: -0.4,  label: "sesquiquadrate", plain: "niggling at" },
+  { type: "quintile",       angle: 72,  orb: 2, major: false, valence: 0.5,   label: "quintile",       plain: "sparking off" },
+  { type: "semisquare",     angle: 45,  orb: 2, major: false, valence: -0.4,  label: "semi-square",    plain: "rubbing against" },
+  { type: "semisextile",    angle: 30,  orb: 2, major: false, valence: 0.25,  label: "semi-sextile",   plain: "brushing past" },
 ];
 
 /** The Sun and Moon get wider orbs — standard practice, and defensible here: they are the brightest,

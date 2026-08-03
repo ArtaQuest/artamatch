@@ -68,6 +68,26 @@ function componentsFor(chartA: Chart, chartB: Chart): MatchComponents {
 
 export type Band = { min: number; max: number; spread: number; certain: boolean };
 
+/** One possible reading, with how likely it is. */
+export type Outcome = {
+  /** Guna Milan total for this combination of birth stars. */
+  guna: number;
+  overall: number;
+  /** Probability, under a flat prior over birth times within each date. */
+  probability: number;
+  /** What the two Moons would be, for this reading. */
+  labelA: string;
+  labelB: string;
+};
+
+export type Distribution = {
+  /** Every distinct reading the two dates allow, most likely first. */
+  outcomes: Outcome[];
+  /** How likely the headline reading is. 1 when the dates settle it. */
+  confidence: number;
+  certain: boolean;
+};
+
 export type Match = {
   /** The headline reading, taken at 12:00 UT on both sides — the single best point estimate. */
   components: MatchComponents;
@@ -76,6 +96,8 @@ export type Match = {
    *  a full (detailed) evaluation. */
   band: Band | null;
   gunaBand: Band | null;
+  /** Every reading the dates allow, with probabilities. Present only on a detailed evaluation. */
+  distribution: Distribution | null;
   /** True when the answer does not depend on the unknown birth times at all. */
   certain: boolean;
   /** Plain-language account of what the missing clocks cost, or "" when they cost nothing. */
@@ -120,15 +142,60 @@ export function matchPair(isoA: string, isoB: string, detailed = false): Match |
 
   if (!detailed) {
     return {
-      components, overall: components.overall, band: null, gunaBand: null,
+      components, overall: components.overall, band: null, gunaBand: null, distribution: null,
       certain: spanA.stable && spanB.stable,
       uncertaintyNote: uncertaintyNote(spanA, spanB, null),
       spanA, spanB,
     };
   }
 
-  const hours = sampleHours(DETAIL_STEPS);
   const a = parseDate(isoA)!, b = parseDate(isoB)!;
+
+  // ── the exact, probabilistic part ──────────────────────────────────────────────────────────
+  // The eight tests depend on the Moon ONLY through which birth star and sign it is in. Each
+  // person's day contains at most four such states, and each state's share of the day IS its
+  // probability under a flat prior over birth times. So the set of possible readings is small and
+  // finite, and can be enumerated exactly rather than sampled — no approximation at all.
+  const raw: Outcome[] = [];
+  for (const sa of spanA.states) {
+    const ca = withMoonAt(spanA.chart, julianDay(a.y, a.m, a.d, (sa.fromHour + sa.toHour) / 2));
+    for (const sb of spanB.states) {
+      const cb = withMoonAt(spanB.chart, julianDay(b.y, b.m, b.d, (sb.fromHour + sb.toHour) / 2));
+      const c = componentsFor(ca, cb);
+      raw.push({
+        guna: c.guna.total,
+        overall: c.overall,
+        probability: sa.share * sb.share,
+        labelA: `${sa.nakshatra.name} in ${sa.rasiName}`,
+        labelB: `${sb.nakshatra.name} in ${sb.rasiName}`,
+      });
+    }
+  }
+
+  // Merge readings that come out the same, so "27 of 36" is reported once with its total
+  // probability rather than split across two indistinguishable rows.
+  const merged = new Map<string, Outcome>();
+  for (const o of raw) {
+    const key = o.guna.toFixed(3);
+    const prev = merged.get(key);
+    if (prev) {
+      prev.probability += o.probability;
+      if (o.probability > 0) prev.overall = (prev.overall + o.overall) / 2;
+    } else {
+      merged.set(key, { ...o });
+    }
+  }
+  const outcomes = [...merged.values()].sort((x, y) => y.probability - x.probability);
+  const distribution: Distribution = {
+    outcomes,
+    confidence: outcomes[0]?.probability ?? 1,
+    certain: outcomes.length === 1,
+  };
+
+  // ── the continuous part ────────────────────────────────────────────────────────────────────
+  // The aspect layer varies smoothly with the Moon rather than in steps, so its range is sampled
+  // on a time grid instead of enumerated.
+  const hours = sampleHours(DETAIL_STEPS);
   const chartsA = hours.map((h) => withMoonAt(spanA.chart, julianDay(a.y, a.m, a.d, h)));
   const chartsB = hours.map((h) => withMoonAt(spanB.chart, julianDay(b.y, b.m, b.d, h)));
 
@@ -147,7 +214,7 @@ export function matchPair(isoA: string, isoB: string, detailed = false): Match |
   const gunaBand: Band = { min: minG, max: maxG, spread: maxG - minG, certain: maxG - minG < 1e-9 };
 
   return {
-    components, overall: components.overall, band, gunaBand,
+    components, overall: components.overall, band, gunaBand, distribution,
     certain: gunaBand.certain && band.certain,
     uncertaintyNote: uncertaintyNote(spanA, spanB, gunaBand),
     spanA, spanB,

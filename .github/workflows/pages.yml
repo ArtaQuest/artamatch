@@ -1,0 +1,64 @@
+name: Build, test and deploy to Pages
+
+on:
+  push:
+    # The work is staged on feature/artamatch and previewed live from there; main takes over once
+    # it is merged. Pages hosts one site, so whichever of these pushed last is what is served.
+    branches: [main, feature/artamatch]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A queued deploy should wait for the running one rather than cancel it — cancelling mid-deploy is
+# how a Pages site ends up serving half of one build and half of another.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      # The verification gate. tests/golden.json is committed, so the Swiss Ephemeris comparison
+      # runs here without the 300 MB .se1 files — a regression in the ephemeris fails the build
+      # rather than shipping quietly.
+      - name: Typecheck
+        run: npx tsc -b
+      - name: Test against Swiss Ephemeris golden data
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+
+      # Pages serves no fallback for client-side routes; copying index.html to 404.html means a
+      # deep link resolves instead of showing GitHub's own 404 page.
+      - name: SPA fallback
+        run: cp dist/index.html dist/404.html
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/artamatch')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

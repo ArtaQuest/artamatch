@@ -147,7 +147,8 @@ const bespokeFor = (a: Body, b: Body): Bespoke | undefined => SIGNATURE[[a, b].s
 /**
  * One paragraph explaining one connection between the two charts.
  *
- * The corpus covers every pairing of the ten bodies in all four configurations — 78 pairs × 4 — so
+ * The corpus covers every pairing of the ten bodies in all four configurations — 55 pairs × 4,
+ * plus 23 node pairs written for a possible future feature and currently unreachable — so
  * in practice a reader always gets writing specific to their case rather than a sentence assembled
  * from slots. The compositional fallback below only fires if a corpus entry is ever missing.
  */
@@ -183,6 +184,16 @@ export function birthStarText(index: number): { title: string; summary: string; 
   return row ? { title: row.title, summary: row.summary, inRelationships: row.inRelationships } : null;
 }
 
+/**
+ * The name a birth star goes by on this page: its plain-English title, never the Sanskrit name.
+ * The reader is assumed to have no background; "The quick starter" carries meaning where a
+ * transliterated name carries none. The traditional names stay in the code and the data for
+ * anyone checking the working against another source.
+ */
+export function starTitle(index: number): string {
+  return CORPUS.birthStars.find((s) => s.index === index)?.title ?? `star ${index + 1} of 27`;
+}
+
 /** How someone with the Moon in this sign tends to handle feelings and closeness. */
 export function moonSignText(index: number): { title: string; style: string } | null {
   const row = CORPUS.moonSigns.find((s) => s.index === index);
@@ -206,11 +217,19 @@ export const BODY_MEANS: Record<Body, string> = {
   Pluto: "intensity",
 };
 
-/** A one-line label in plain words: "her affection · pulling against · his drive". */
+/**
+ * A one-line label: "her affection — square — his drive".
+ *
+ * The five MAJOR angle names (conjunction, opposition, trine, square, sextile) are part of the
+ * small allowed vocabulary — they are the standard terms, half-known to most readers, and each is
+ * introduced with its plain meaning close by. The minor angles are not allowed vocabulary, so they
+ * keep their plain phrasings.
+ */
 export function aspectLabel(asp: SynAspect, nameA?: string, nameB?: string): string {
   const left = nameA ? `${nameA}'s ${BODY_MEANS[asp.a.body]}` : BODY_MEANS[asp.a.body];
   const right = nameB ? `${nameB}'s ${BODY_MEANS[asp.b.body]}` : BODY_MEANS[asp.b.body];
-  return `${left} — ${asp.def.plain} — ${right}`;
+  const link = asp.def.major ? asp.def.label : asp.def.plain;
+  return `${left} — ${link} — ${right}`;
 }
 
 /**
@@ -292,9 +311,11 @@ export function explainDosha(d: Dosha): string {
 
 /** The two or three sentences that go at the very top of a report. */
 export function headlineSummary(gunaTotal: number, ease: number, charge: number): string {
-  const gunaPart = gunaTotal >= 18
+  const gunaPart = gunaTotal > 18
     ? `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, above the usual pass mark of 18`
-    : `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, under the usual pass mark of 18`;
+    : gunaTotal === 18
+      ? `The old eight-part test gives them 18.0 out of 36 — right on the usual pass mark`
+      : `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, under the usual pass mark of 18`;
 
   const easePart = ease >= 60 ? "what runs between them leans supportive"
     : ease >= 45 ? "what runs between them is mixed"

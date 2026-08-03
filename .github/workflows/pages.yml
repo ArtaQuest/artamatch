@@ -41,6 +41,13 @@ jobs:
       - name: Build
         run: npx vite build
 
+      # Load the built bundle in a real browser: console errors, page errors, horizontal overflow
+      # and broken meter layout all fail the deploy instead of shipping quietly.
+      - name: Browser smoke (screenshots + layout assertions)
+        run: |
+          npx playwright install --with-deps chromium
+          node tools/screenshot.mjs "$PWD/dist" /tmp/shots
+
       # Pages serves no fallback for client-side routes; copying index.html to 404.html means a
       # deep link resolves instead of showing GitHub's own 404 page.
       - name: SPA fallback

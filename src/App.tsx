@@ -15,9 +15,12 @@ import {
   type Person, loadPeople, savePeople, newId, loadSelfId, saveSelfId, validatePerson,
 } from "./data/people";
 import { fetchPublicMembers, loadCached, messageUrl, type FetchResult } from "./data/artaquest";
-import { matchPair, rankAgainst, OPTIONAL_TESTS, type ScoreOptions } from "./engine/score";
+import {
+  matchPair, rankAgainst, bandOf, OPTIONAL_TESTS, PERCENTILE_BELOW_NO_VARNA, type ScoreOptions,
+} from "./engine/score";
 import type { KutaKey } from "./engine/kuta";
 import { birthSpan } from "./engine/uncertainty";
+import { starTitle } from "./engine/interpret";
 import Report from "./ui/Report";
 import { Avatar, Mark, Meter } from "./ui/bits";
 
@@ -47,21 +50,34 @@ export default function App() {
   // Never sit on a populated list with nobody selected — that shows "pick who you are" where a
   // ranking could be. Happens on a seeded first visit, and after deleting whoever was selected.
   useEffect(() => {
-    if (!selfId && people.length > 0) setSelfId(people[0].id);
+    if (people.length > 0 && !people.some((p) => p.id === selfId)) setSelfId(people[0].id);
   }, [selfId, people]);
 
-  // A shared link carries one person in the query string, so two people can compare without either
-  // of them uploading anything.
+  // A shared link carries one or two people in the query string, so a reading can be passed
+  // around without anybody uploading anything. ?n=&b= adds one person; ?n2=&b2= adds a second and
+  // opens the pair's reading directly.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    const n = q.get("n"), b = q.get("b");
-    if (n && b && !validatePerson(n, b)) {
-      setPeople((prev) =>
-        prev.some((p) => p.name === n && p.birthday === b)
-          ? prev
-          : [...prev, { id: newId(), name: n, birthday: b, source: "manual", addedAt: Date.now() }]);
-      window.history.replaceState({}, "", window.location.pathname);
+    const incoming: Person[] = [];
+    for (const [nk, bk] of [["n", "b"], ["n2", "b2"]] as const) {
+      const n = q.get(nk), b = q.get(bk);
+      if (n && b && !validatePerson(n, b)) {
+        incoming.push({ id: newId(), name: n, birthday: b, source: "manual", addedAt: Date.now() });
+      }
     }
+    if (incoming.length === 0) return;
+    setPeople((prev) => {
+      const merged = [...prev];
+      const resolved: string[] = [];
+      for (const person of incoming) {
+        const existing = merged.find((p) => p.name === person.name && p.birthday === person.birthday);
+        if (existing) { resolved.push(existing.id); continue; }
+        merged.push(person); resolved.push(person.id);
+      }
+      if (resolved.length === 2) setPair([resolved[0], resolved[1]]);
+      return merged;
+    });
+    window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
   // Show any still-fresh cached import immediately, so a reload does not look empty.
@@ -115,6 +131,14 @@ export default function App() {
     [self, people, options],
   );
 
+  // A report whose people have gone (deleted, or replaced by an import) must close rather than
+  // linger unresolved and spontaneously reopen when a later import restores the id.
+  useEffect(() => {
+    if (pair && (!people.some((p) => p.id === pair[0]) || !people.some((p) => p.id === pair[1]))) {
+      setPair(null);
+    }
+  }, [pair, people]);
+
   const pairPeople = useMemo(() => {
     if (!pair) return null;
     const a = people.find((p) => p.id === pair[0]);
@@ -129,8 +153,9 @@ export default function App() {
         <div style={{ flex: "1 1 260px" }}>
           <h1>ArtaMatch</h1>
           <p className="tag">
-            Put in two dates of birth and see how an old tradition reads the pair — the full working
-            shown, in plain words, with an honest account of what a date alone cannot tell you.
+            Put in two dates of birth and see how four old traditions read the pair — every step of
+            the working shown in plain words, with an honest account of what a date alone cannot
+            tell you.
           </p>
         </div>
       </header>
@@ -250,7 +275,7 @@ export default function App() {
         <p>
           <strong style={{ color: "var(--muted)" }}>Why the time of day keeps coming up.</strong> The
           Moon travels about 13 degrees a day, and most of this tradition is built on exactly where
-          it was. Not knowing the hour moves it by up to 6.6 degrees either way — about three hundred
+          it was. Not knowing the hour typically moves it about 6.6 degrees either way, up to 7.7 at the Moon’s fastest — hundreds of
           times bigger than any error in the maths. That is why nothing here gives you one confident
           number when the date alone cannot support one.
         </p>
@@ -296,7 +321,7 @@ function PersonRow({ person, isSelf, onPick, onRemove }: {
         <span className="nm">{person.name}</span>
         <span className="bd">
           {formatBirthday(person.birthday)}
-          {moon && <> · {moon.nakshatra.name}</>}
+          {moon && <> · {starTitle(moon.nakshatra.index).toLowerCase()}</>}
         </span>
       </button>
       {span && !span.stable && (
@@ -388,7 +413,7 @@ function Matrix({ people, options, onOpen }: { people: Person[]; options: ScoreO
     <div className="panel">
       <h2>Everyone against everyone</h2>
       <p className="panel-note">
-Every pair, scored out of 36. The grid is symmetric by construction, so it reads the same across as it does down. Tap any cell for the full reading.
+Every pair, scored on the Moon score. The grid is symmetric by construction, so it reads the same across as it does down. Tap any cell for the full reading.
       </p>
       <div className="scroll-x">
         <table className="data">
@@ -406,11 +431,14 @@ Every pair, scored out of 36. The grid is symmetric by construction, so it reads
                   if (row.id === col.id) return <td key={col.id} className="matrix-cell self">—</td>;
                   const v = cells.get(`${row.id}|${col.id}`);
                   if (v === undefined) return <td key={col.id} className="matrix-cell self">·</td>;
-                  const tone = v >= 25.5 ? "high" : v >= 17 ? "mid" : "low";
+                  // The same score must wear the same colour here as it does in the report —
+                  // including against the right distribution when a test is switched off.
+                  const tone = bandOf(v,
+                    options.exclude?.includes("varna") ? PERCENTILE_BELOW_NO_VARNA : undefined).tone;
                   return (
                     <td key={col.id} className="matrix-cell">
                       <button className="link" onClick={() => onOpen(row.id, col.id)}
-                        title={`${row.name} & ${col.name} — ${v} of 36`}>
+                        title={`${row.name} & ${col.name} — ${v}`}>
                         <span className={`tone-${tone}`}>{v % 1 === 0 ? v : v.toFixed(1)}</span>
                       </button>
                     </td>

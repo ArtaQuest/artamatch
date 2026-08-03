@@ -9,16 +9,17 @@
  * phone, and needs no legend to interpret.
  */
 
-import { useMemo, useState } from "react";
-import { BODIES, SIGN_GLYPH, BODY_GLYPH, SIGNS, type Body } from "../engine/ephemeris";
-import { nakshatraOf, GANA_LABEL, NADI_LABEL, YONI_LABEL } from "../engine/nakshatra";
+import { useCallback, useMemo, useState } from "react";
+import { BODIES, SIGNS, type Body } from "../engine/ephemeris";
+import { GANA_LABEL, NADI_LABEL, YONI_LABEL } from "../engine/nakshatra";
 import {
   matchPair, TRADITIONAL_PASS, PASS_RATE, MEDIAN_SCORE, type Match, type ScoreOptions,
 } from "../engine/score";
+import { ensembleFor } from "../engine/systems";
 import { synastryAspects, type SynAspect } from "../engine/synastry";
 import {
-  explainAspect, explainKuta, explainDosha, aspectLabel, formatOrb, formatDegree,
-  closeness, BODY_MEANS, birthStarText, moonSignText,
+  explainAspect, explainKuta, explainDosha, aspectLabel, formatOrb,
+  closeness, BODY_MEANS, birthStarText, moonSignText, starTitle,
 } from "../engine/interpret";
 import type { Person } from "../data/people";
 import { messageUrl, profileUrl } from "../data/artaquest";
@@ -37,6 +38,18 @@ export default function Report({ a, b, options, onClose }: {
   a: Person; b: Person; options: ScoreOptions; onClose: () => void;
 }) {
   const [tab, setTab] = useState<Tab>("short");
+  const [copied, setCopied] = useState(false);
+  // A link that reproduces THIS reading on any browser: both names and dates in the query string.
+  // Everything is recomputed on arrival, so the link carries inputs, never conclusions.
+  const shareReading = useCallback(() => {
+    const u = new URL(window.location.href);
+    u.search = "";
+    u.searchParams.set("n", a.name); u.searchParams.set("b", a.birthday);
+    u.searchParams.set("n2", b.name); u.searchParams.set("b2", b.birthday);
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 2500); };
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(u.toString()).then(done, done);
+    else { window.prompt("Copy this link", u.toString()); done(); }
+  }, [a, b]);
   const match = useMemo(
     () => matchPair(a.birthday, b.birthday, true, options),
     [a.birthday, b.birthday, options],
@@ -53,6 +66,11 @@ export default function Report({ a, b, options, onClose }: {
 
   const msg = messageUrl(b) ?? messageUrl(a);
   const prof = profileUrl(b);
+  // The ensemble across the four traditions. Cheap to compute, so no memo needed.
+  // (share button is defined below the early return so hooks stay unconditional)
+  const ens = ensembleFor(a.birthday, b.birthday,
+    { percentile: match.percentile, score: match.score, maxScore: match.maxScore });
+  const ensTone = ens && ens.percentile >= 75 ? "high" : ens && ens.percentile >= 25 ? "mid" : "low";
 
   return (
     <div className="panel">
@@ -63,25 +81,53 @@ export default function Report({ a, b, options, onClose }: {
         <button className="ghost" onClick={onClose}>Close</button>
       </div>
 
-      <div className="hero">
-        <span className={`num tone-${match.band.tone}`}>
-          {match.score % 1 === 0 ? match.score : match.score.toFixed(1)}
-          <small>out of {match.maxScore}</small>
-        </span>
-        <span>
-          <span className="verdict">{match.band.label}</span>
-          <span className="because">
-            Higher than <strong>{match.percentile} in 100</strong> randomly paired dates.{" "}
-            {match.band.note}
+      {ens && (
+        <div className="hero">
+          <span className={`num tone-${ensTone}`}>
+            {ens.percentile}
+            <small>out of 100 · four traditions</small>
           </span>
-          {match.range && match.range.max > match.range.min && (
-            <RangeBar min={match.range.min} max={match.range.max} value={match.score}
-              scaleMin={0} scaleMax={match.maxScore} />
-          )}
-        </span>
-      </div>
+          <span>
+            <span className="verdict">
+              {ens.aboveAverage} of 4 traditions rate this pair at or above their own average
+            </span>
+            <span className="because">
+              Four separate traditions read the same two dates — the Moon score, the numbers, the
+              year animals and the Sun signs. Each is measured against 20,000 random pairs, and the
+              headline figure is the plain average of where this pair lands in each. No tradition is
+              weighted above another. {ens.summary}
+            </span>
+          </span>
+        </div>
+      )}
 
-      <Answers match={match} a={a} b={b} />
+      {ens && (
+        <div className="scores">
+          {ens.systems.map((sys) => (
+            <div className="scorecard" key={sys.key}>
+              <span className="k">{sys.name}</span>
+              <span className="v" style={{ fontSize: "1.05rem" }}>{sys.raw}</span>
+              <Meter value={sys.percentile} gold={sys.percentile >= 50} />
+              <span className="d">
+                Higher than {sys.percentile} in 100 random pairs. {sys.verdict}
+                {sys.caveat && <em style={{ display: "block", marginTop: "0.25rem" }}>Caveat: {sys.caveat}.</em>}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {match.range && match.range.max > match.range.min && (
+        <div className="note blue">
+          <strong>The Moon score, if the birth times were known</strong>
+          It could sit anywhere from {match.range.min} to {match.range.max} out of {match.maxScore},
+          depending on the hours nobody recorded:
+          <RangeBar min={match.range.min} max={match.range.max} value={match.score}
+            scaleMin={0} scaleMax={match.maxScore} />
+        </div>
+      )}
+
+      <Answers match={match} a={a} b={b} excluded={(options.exclude ?? []) as string[]} />
 
       {match.distribution && !match.distribution.certain && (
         <div className="note">
@@ -119,6 +165,15 @@ export default function Report({ a, b, options, onClose }: {
         </div>
       )}
 
+      <div className="row" style={{ marginBottom: "0.7rem" }}>
+        <button className="ghost" onClick={shareReading}>
+          {copied ? "Link copied" : "Copy a link to this reading"}
+        </button>
+        <span className="panel-note" style={{ margin: 0 }}>
+          The link carries only the two names and dates — whoever opens it computes everything fresh.
+        </span>
+      </div>
+
       <div className="tabs" role="tablist">
         {TABS.map(([key, lbl]) => (
           <button key={key} role="tab" aria-selected={tab === key}
@@ -127,7 +182,7 @@ export default function Report({ a, b, options, onClose }: {
       </div>
 
       {tab === "short" && <InShort match={match} a={a} b={b} />}
-      {tab === "tests" && <Tests match={match} a={a} b={b} />}
+      {tab === "tests" && <Tests match={match} a={a} b={b} excluded={(options.exclude ?? []) as string[]} />}
       {tab === "between" && <Between match={match} a={a} b={b} />}
       {tab === "where" && <Where a={a} b={b} match={match} />}
     </div>
@@ -135,12 +190,14 @@ export default function Report({ a, b, options, onClose }: {
 }
 
 /** The three plain statements that answer what most people came to ask. */
-function Answers({ match, a, b }: { match: Match; a: Person; b: Person }) {
+function Answers({ match, a, b, excluded }: { match: Match; a: Person; b: Person; excluded: string[] }) {
   const { helps, rubs } = match.connections;
   const strongest = match.connections.headline[0];
-  const weakest = [...match.guna.kutas].sort((x, y) =>
+  // A test the reader switched off must not be quoted back as their best or worst agreement.
+  const counted = match.guna.kutas.filter((k) => !excluded.includes(k.key));
+  const weakest = [...counted].sort((x, y) =>
     x.points / x.maxPoints - y.points / y.maxPoints)[0];
-  const best = [...match.guna.kutas].sort((x, y) =>
+  const best = [...counted].sort((x, y) =>
     y.points / y.maxPoints - x.points / x.maxPoints)[0];
 
   return (
@@ -176,7 +233,7 @@ function InShort({ match, a, b }: { match: Match; a: Person; b: Person }) {
   return (
     <>
       <div className="note blue">
-        <strong>How this works, in four sentences</strong>
+        <strong>How the Moon score works, in four sentences</strong>
         Where the Moon sat when each of them was born is the whole basis of this. Eight old tests
         compare those two positions, each worth a different number of points, adding up to
         thirty-six. {TRADITIONAL_PASS} is the traditional pass mark, but {PASS_RATE} in 100 random
@@ -218,12 +275,14 @@ function InShort({ match, a, b }: { match: Match; a: Person; b: Person }) {
   );
 }
 
-function Tests({ match, a, b }: { match: Match; a: Person; b: Person }) {
+function Tests({ match, a, b, excluded }: { match: Match; a: Person; b: Person; excluded: string[] }) {
   const g = match.guna;
+  const shown = g.kutas.filter((k) => !excluded.includes(k.key));
   return (
     <>
       <p className="panel-note">
-        Eight tests, {g.maxTotal} points between them. Six of the eight read only where the Moon was.
+        Eight tests, {g.maxTotal} points between them. Every one of them reads where the Moon was —
+        nothing else about the two people enters the score.
         Each shows the rule it used and the exact thing it read, so any line can be checked by hand.
       </p>
 
@@ -248,7 +307,13 @@ function Tests({ match, a, b }: { match: Match; a: Person; b: Person }) {
         </div>
       )}
 
-      {g.kutas.map((k) => (
+      {excluded.length > 0 && (
+        <p className="panel-note">
+          One test is switched off in "What gets counted" and is left out of both the list and the
+          total below.
+        </p>
+      )}
+      {shown.map((k) => (
         <div className="kuta" key={k.key}>
           <div className="kuta-head">
             <span className="nm">{k.name}</span>
@@ -293,9 +358,14 @@ function Between({ match, a, b }: { match: Match; a: Person; b: Person }) {
     return m;
   }, [aspects]);
 
-  const glyph: Record<string, string> = {
-    conjunction: "☌", opposition: "☍", trine: "△", square: "□", sextile: "✶",
-    quincunx: "⚻", sesquiquadrate: "⚼", quintile: "Q", semisquare: "∠", semisextile: "⚺",
+  // Major angle names are allowed vocabulary, abbreviated to fit a cell; the minor angles are
+  // not, so they show as a plain dot and speak through their tooltip.
+  const mark: Record<string, string> = {
+    conjunction: "cnj", opposition: "opp", trine: "tri", square: "sqr", sextile: "sxt",
+  };
+  const SHORT: Record<Body, string> = {
+    Sun: "Sun", Moon: "Moon", Mercury: "Mer", Venus: "Ven", Mars: "Mars",
+    Jupiter: "Jup", Saturn: "Sat", Uranus: "Ura", Neptune: "Nep", Pluto: "Plu",
   };
 
   const major = aspects.filter((x) => x.def.major);
@@ -328,14 +398,14 @@ function Between({ match, a, b }: { match: Match; a: Person; b: Person }) {
             <tr>
               <th aria-label="body" />
               {GRID_BODIES.map((bb) => (
-                <th key={bb} title={`${bb} — ${BODY_MEANS[bb]}`}>{BODY_GLYPH[bb]}</th>
+                <th key={bb} title={`${bb} — ${BODY_MEANS[bb]}`}>{SHORT[bb]}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {GRID_BODIES.map((ba) => (
               <tr key={ba}>
-                <th title={`${ba} — ${BODY_MEANS[ba]}`}>{BODY_GLYPH[ba]}</th>
+                <th title={`${ba} — ${BODY_MEANS[ba]}`}>{SHORT[ba]}</th>
                 {GRID_BODIES.map((bb) => {
                   const asp = lookup.get(`${ba}|${bb}`);
                   if (!asp) return <td key={bb} className="flat" />;
@@ -343,7 +413,7 @@ function Between({ match, a, b }: { match: Match; a: Person; b: Person }) {
                   return (
                     <td key={bb} className={cls}
                       title={`${a.name}'s ${BODY_MEANS[ba]} ${asp.def.plain} ${b.name}'s ${BODY_MEANS[bb]} — ${closeness(asp.exactness)}`}>
-                      {glyph[asp.type]}
+                      {mark[asp.type] ?? "·"}
                     </td>
                   );
                 })}
@@ -413,7 +483,7 @@ function PersonChart({ person, span }: { person: Person; span: Match["spanA"] })
 
       {star && (
         <div className="note blue">
-          <strong>{span.likeliest.nakshatra.name} — {star.title}</strong>
+          <strong>Their birth star: {star.title}</strong>
           {star.summary} <em style={{ opacity: 0.85 }}>{star.inRelationships}</em>
         </div>
       )}
@@ -428,8 +498,8 @@ function PersonChart({ person, span }: { person: Person; span: Match["spanA"] })
 
       <table className="data">
         <tbody>
-          <tr><th>Birth star</th><td>{span.likeliest.nakshatra.name}</td></tr>
-          <tr><th>Its planet</th><td>{span.likeliest.nakshatra.lord}</td></tr>
+          <tr><th>Birth star</th><td>{starTitle(span.likeliest.nakshatra.index)} — one of the 27
+            equal stretches of sky the Moon passes through each month</td></tr>
           <tr><th>Temperament</th><td>{GANA_LABEL[span.likeliest.nakshatra.gana]}</td></tr>
           <tr><th>Its animal</th><td>{YONI_LABEL[span.likeliest.nakshatra.yoni]}</td></tr>
           <tr><th>Built</th><td>{NADI_LABEL[span.likeliest.nakshatra.nadi]}</td></tr>
@@ -438,7 +508,7 @@ function PersonChart({ person, span }: { person: Person; span: Match["spanA"] })
             {span.stable
               ? " — stayed in one birth star and one sign all day"
               : ` — passed through ${span.states.length} different readings: ` +
-                span.states.map((s) => `${s.nakshatra.name} (${Math.round(s.share * 100)}%)`).join(", ")}
+                span.states.map((s) => `${starTitle(s.nakshatra.index)} (${Math.round(s.share * 100)}%)`).join(", ")}
           </td></tr>
         </tbody>
       </table>
@@ -447,27 +517,21 @@ function PersonChart({ person, span }: { person: Person; span: Match["spanA"] })
       <div className="scroll-x">
         <table className="data">
           <thead>
-            <tr><th>What</th><th>Where it sat</th><th>Birth star</th><th className="num">Moving</th></tr>
+            <tr><th>What</th><th>Where it sat</th><th className="num">Moving</th></tr>
           </thead>
           <tbody>
-            {span.chart.placements.map((p) => {
-              const nk = nakshatraOf(p.lon);
-              return (
-                <tr key={p.body}>
-                  <td title={BODY_MEANS[p.body]}>
-                    {BODY_GLYPH[p.body]} {p.body}<br />
-                    <span style={{ color: "var(--dim)", fontSize: "0.72rem" }}>{BODY_MEANS[p.body]}</span>
-                  </td>
-                  <td>{formatDegree(p.deg)} {SIGN_GLYPH[p.sign]} {SIGNS[p.sign]}</td>
-                  {/* The quarter-division is deliberately not shown: it is 3°20′ wide against a
-                      ±6.6° uncertainty, so it would be a number with no information in it. */}
-                  <td>{nk.info.name}</td>
-                  <td className="num" title={`${p.speed.toFixed(2)}° per day`}>
-                    {p.retro ? "backwards" : "forwards"}
-                  </td>
-                </tr>
-              );
-            })}
+            {span.chart.placements.map((p) => (
+              <tr key={p.body}>
+                <td>
+                  {p.body}<br />
+                  <span style={{ color: "var(--dim)", fontSize: "0.72rem" }}>{BODY_MEANS[p.body]}</span>
+                </td>
+                <td>{p.deg.toFixed(1)}° into {SIGNS[p.sign]}</td>
+                <td className="num" title={`${p.speed.toFixed(2)}° per day`}>
+                  {p.retro ? "backwards" : "forwards"}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

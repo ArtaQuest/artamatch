@@ -1,8 +1,8 @@
 /**
  * kuta.ts — Ashtakoota Guna Milan, the eight-fold Vedic compatibility system. 36 points.
  *
- * This is the sidereal heart of ArtaMatch. Six of the eight kutas are computed purely from the two
- * Moons' nakshatra and rāśi, which is the one thing a birth DATE very nearly determines — that is
+ * This is the sidereal heart of ArtaMatch. All eight kutas are computed purely from the two
+ * Moons, which is the one thing a birth DATE very nearly determines — that is
  * why a sidereal matcher can say something meaningful from dates alone where a Western one, which
  * leans on the Ascendant and therefore on the birth minute, cannot.
  *
@@ -299,9 +299,9 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
     rule: "Count the steps from one birth star to the other, both ways round the twenty-seven. " +
       "Positions 3, 5 and 7 out of every nine are the unlucky ones. Both directions clear scores " +
       "3, one clears 1.5, neither scores 0.",
-    evidence: `${a.nakshatra.name} to ${b.nakshatra.name} is ` +
+    evidence: `Counting from the first person's birth star to the second's is ` +
       `${countNak(a.nakshatra.index, b.nakshatra.index)} steps, landing on position ${taraAB || 9} ` +
-      `of nine (${badTara(taraAB) ? "unlucky" : "clear"}). The other way is ` +
+      `of nine (${badTara(taraAB) ? "unlucky" : "clear"}). The other way round is ` +
       `${countNak(b.nakshatra.index, a.nakshatra.index)} steps, position ${taraBA || 9} ` +
       `(${badTara(taraBA) ? "unlucky" : "clear"}).`,
     orderSensitive: false, // both directions are counted, so swapping changes nothing
@@ -315,8 +315,8 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
     maxPoints: 4,
     rule: "Each birth star carries an animal. The same animal scores the full 4, a friendly pair " +
       "3, an indifferent pair 2, an uneasy pair 1, and the seven traditional enemy pairs score 0.",
-    evidence: `${a.nakshatra.name}'s animal is the ${YONI_LABEL[a.nakshatra.yoni].toLowerCase()}; ` +
-      `${b.nakshatra.name}'s is the ${YONI_LABEL[b.nakshatra.yoni].toLowerCase()}.`,
+    evidence: `The first person's birth star carries the ${YONI_LABEL[a.nakshatra.yoni].toLowerCase()}; ` +
+      `the second's carries the ${YONI_LABEL[b.nakshatra.yoni].toLowerCase()}.`,
     orderSensitive: false,
   });
 
@@ -343,7 +343,7 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
     maxPoints: 6,
     rule: "Every birth star is gentle, even-handed or forceful. The same temperament always scores " +
       "the full 6; a forceful one paired with a gentle one scores at or near zero.",
-    evidence: `${a.nakshatra.name} is ${GANA_LABEL[ganaA]}; ${b.nakshatra.name} is ${GANA_LABEL[ganaB]}.`,
+    evidence: `The first person's birth star is ${GANA_LABEL[ganaA]}; the second's is ${GANA_LABEL[ganaB]}.`,
     orderSensitive: ganaA !== ganaB,
   });
 
@@ -375,7 +375,7 @@ export function gunaMilanOrdered(a: KutaSide, b: KutaSide): GunaMilan {
       "types score the full 8. The same type scores nothing — the largest single deduction " +
       "anywhere in the thirty-six, on the reasoning that two people built the same way have no " +
       "spare capacity for each other.",
-    evidence: `${a.nakshatra.name} is ${NADI_LABEL[nadiA]}; ${b.nakshatra.name} is ${NADI_LABEL[nadiB]}` +
+    evidence: `The first person's birth star is ${NADI_LABEL[nadiA]}; the second's is ${NADI_LABEL[nadiB]}` +
       `${nadiA === nadiB ? " — the same" : " — different"}.`,
     orderSensitive: false,
   });

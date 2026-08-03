@@ -16,11 +16,9 @@
  *             longitude terms) plus nutation in longitude. The Moon is the single most important body
  *             here — Guna Milan is built almost entirely on its nakshatra, and a nakshatra is only
  *             13°20′ wide — so it gets the good series rather than the cheap one.
- *   Sun,      JPL/Standish low-precision Keplerian elements, Table 1 (valid 1800–2050).
- *   Mercury…  These are the inner bodies, where Table 1 is at its best.
- *   Mars
- *   Jupiter…  JPL/Standish Table 2a plus the b/c/s/f long-period terms (valid 3000 BC – 3000 AD).
- *   Pluto     Table 1 degrades badly for Saturn past its 2050 horizon; Table 2a does not.
+ *   Sun …     JPL/Standish low-precision Keplerian elements, Table 1 — for EVERY planet. The
+ *   Pluto     longer-range Table 2a was tried for the outer planets and measured WORSE inside
+ *             1900–2100 (see the ELEMENTS comment and tools/compare-elements.mjs).
  *
  * Everything here is PURE and DETERMINISTIC — no Date.now(), no I/O, no network. The same input
  * always produces the same chart, which is what makes the compatibility report reproducible by a
@@ -333,11 +331,14 @@ export function chartAt(jd: number, bodies: Body[] = BODIES): Chart {
   const placements = bodies.map((b) => place(b, jd));
   const byBody = {} as Record<Body, Placement>;
   for (const p of placements) byBody[p.body] = p;
-  const { y, m, d, hour } = fromJulianDay(jd);
-  const hh = Math.floor(hour);
+  // Round to the nearest MINUTE before decomposing, so the carry propagates through the hour and
+  // the date. Rounding minutes after splitting produced "04:60" → printed as "04:00", an hour (and
+  // at midnight a whole day) before the instant the placements were computed at.
+  const { y, m, d, hour } = fromJulianDay(Math.round(jd * 1440) / 1440);
+  const hh = Math.floor(hour + 1e-9);
   const mm = Math.round((hour - hh) * 60);
   const iso = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` +
-    `T${String(hh).padStart(2, "0")}:${String(mm % 60).padStart(2, "0")}Z`;
+    `T${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}Z`;
   return { jd, iso, ayanamsa: ayanamsaDeg(centuries(jd)), placements, byBody };
 }
 

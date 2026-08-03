@@ -3,7 +3,7 @@
  *
  * The sidereal ecliptic is divided into 27 nakshatras of 13°20′ each, starting at 0° sidereal Aries.
  * The Moon's nakshatra at birth is the Janma Nakshatra, the "birth star" — the single most personal
- * point in a Vedic chart, and the thing six of the eight kutas are computed from.
+ * point in a Vedic chart, and — with the rest of the Moon's position — what all eight kutas read.
  *
  * The attribute table below is load-bearing: get one row wrong and every match involving that
  * nakshatra is wrong, silently. It was cross-checked four ways (three independent research passes

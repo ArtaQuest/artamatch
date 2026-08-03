@@ -33,6 +33,7 @@ import { nakshatraOf } from "./nakshatra";
 import { type KutaSide, type SymmetricGunaMilan, type KutaKey, gunaMilan } from "./kuta";
 import { type SynAspect, summariseSynastry } from "./synastry";
 import { type BirthSpan, birthSpan } from "./uncertainty";
+import { starTitle } from "./interpret";
 
 /**
  * Share of random pairs scoring BELOW each whole mark, 0…36. Measured over 20,000 random date
@@ -45,6 +46,17 @@ export const PERCENTILE_BELOW = [
   42, 48, 52, 58, 62, 69, 76, 83, 89, 94, 96, 98, 99, 99, 100, 100, 100,
 ];
 
+/**
+ * The same table with the first test left out (max 35). A score computed without it must be
+ * compared against the distribution of scores computed without it — comparing a 35-point score
+ * against the 36-point distribution would quietly understate everyone by about half a point.
+ * Same tool, same seed, `{exclude:['varna']}`.
+ */
+export const PERCENTILE_BELOW_NO_VARNA = [
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 5, 10, 12, 15, 18, 23, 29, 33, 40,
+  46, 51, 55, 60, 68, 72, 80, 88, 94, 96, 97, 98, 99, 100, 100, 100,
+];
+
 /** The traditional minimum. Reported honestly: it is a low bar, not a badge. */
 export const TRADITIONAL_PASS = 18;
 /** Share of random pairs that clear TRADITIONAL_PASS — the context that makes it honest. */
@@ -52,13 +64,15 @@ export const PASS_RATE = 71;
 /** The median random pair. */
 export const MEDIAN_SCORE = 21;
 
-/** Where a score sits among random pairs, 0–100. Linearly interpolated between whole marks. */
-export function percentileOf(score: number): number {
-  const clamped = Math.max(0, Math.min(36, score));
+/** Where a score sits among random pairs, 0–100. Linearly interpolated between whole marks.
+ *  Pass the table matching how the score was computed — see PERCENTILE_BELOW_NO_VARNA. */
+export function percentileOf(score: number, table: number[] = PERCENTILE_BELOW): number {
+  const max = table.length - 1;
+  const clamped = Math.max(0, Math.min(max, score));
   const lo = Math.floor(clamped);
-  const hi = Math.min(36, lo + 1);
+  const hi = Math.min(max, lo + 1);
   const t = clamped - lo;
-  return Math.round(PERCENTILE_BELOW[lo] * (1 - t) + PERCENTILE_BELOW[hi] * t);
+  return Math.round(table[lo] * (1 - t) + table[hi] * t);
 }
 
 export type Band = { label: string; note: string; tone: "high" | "mid" | "low" };
@@ -67,8 +81,8 @@ export type Band = { label: string; note: string; tone: "high" | "mid" | "low" }
  * Bands set on the MEASURED distribution rather than on the tradition's own flattering thresholds.
  * "Above average" means above the median pair, which is what those words normally mean.
  */
-export function bandOf(score: number): Band {
-  const p = percentileOf(score);
+export function bandOf(score: number, table: number[] = PERCENTILE_BELOW): Band {
+  const p = percentileOf(score, table);
   if (p >= 95) return { label: "Unusually high", tone: "high", note: "Higher than about 95 in 100 random pairs. Scores like this are rare." };
   if (p >= 75) return { label: "High", tone: "high", note: "In the top quarter of random pairs." };
   if (p >= 50) return { label: "Above average", tone: "mid", note: "Above the middle of the range, where half of all pairs sit." };
@@ -146,13 +160,18 @@ export type Distribution = {
   certain: boolean;
 };
 
+const OUTER_BODIES = ["Uranus", "Neptune", "Pluto"];
+
 function connectionsFrom(A: Chart, B: Chart): Connections {
   const s = summariseSynastry(A, B);
-  // Count only the significant ones — the minor angles are shown but are too slight to count as
-  // "a thing between them", and padding the tally with them would make the number unverifiable.
-  const significant = s.aspects.filter((x) => x.def.major && x.weight >= 0.25);
-  const helps = significant.filter((x) => x.valence > 0.15).length;
-  const rubs = significant.filter((x) => x.valence < -0.15).length;
+  // Count EXACTLY what the report's list renders: the major angles, minus the pairings between the
+  // three slowest planets (which the list also leaves out). The page says "you can count them in
+  // the list", so the count and the list must be the same set — an earlier version filtered the
+  // count on an invisible weight threshold, and the invited check failed. Found by review.
+  const listed = s.aspects.filter((x) =>
+    x.def.major && !(OUTER_BODIES.includes(x.a.body) && OUTER_BODIES.includes(x.b.body)));
+  const helps = listed.filter((x) => x.valence > 0.15).length;
+  const rubs = listed.filter((x) => x.valence < -0.15).length;
   return { all: s.aspects, headline: s.headline, helps, rubs, lean: helps - rubs };
 }
 
@@ -188,10 +207,12 @@ export function matchPair(isoA: string, isoB: string, detailed = false, opts: Sc
   const guna = gunaMilan(sideFrom(spanA.chart), sideFrom(spanB.chart));
   const connections = connectionsFrom(spanA.chart, spanB.chart);
   const score = scoreOf(guna, excluded);
+  // A score computed without a test must be ranked against the distribution computed without it.
+  const table = excluded.includes("varna") ? PERCENTILE_BELOW_NO_VARNA : PERCENTILE_BELOW;
 
   const base = {
     score, maxScore: 36 - excluded.reduce((s, k) => s + (guna.kutas.find((x) => x.key === k)?.maxPoints ?? 0), 0),
-    percentile: percentileOf(score), band: bandOf(score), guna, connections, spanA, spanB,
+    percentile: percentileOf(score, table), band: bandOf(score, table), guna, connections, spanA, spanB,
   };
 
   if (!detailed) {
@@ -214,18 +235,22 @@ export function matchPair(isoA: string, isoB: string, detailed = false, opts: Sc
       raw.push({
         score: scoreOf(gunaMilan(sideFrom(ca), sideFrom(cb)), excluded),
         probability: sa.share * sb.share,
-        labelA: `${sa.nakshatra.name} in ${sa.rasiName}`,
-        labelB: `${sb.nakshatra.name} in ${sb.rasiName}`,
+        labelA: `${starTitle(sa.nakshatra.index)} · ${sa.rasiName}`,
+        labelB: `${starTitle(sb.nakshatra.index)} · ${sb.rasiName}`,
       });
     }
   }
 
-  // Merge readings that come out the same, so one score is reported once with its total chance.
+  // Merge only rows that are the SAME READING — same score AND same two birth-star labels. An
+  // earlier version merged on score alone, which glued genuinely different readings together under
+  // the first one's labels with their combined probability: the table then named the wrong reading
+  // with an inflated chance. Found by review, reproduced on 1990-11-13 × 1966-11-01.
   const merged = new Map<string, Outcome>();
   for (const o of raw) {
-    const prev = merged.get(o.score.toFixed(3));
+    const key = `${o.score.toFixed(3)}|${o.labelA}|${o.labelB}`;
+    const prev = merged.get(key);
     if (prev) prev.probability += o.probability;
-    else merged.set(o.score.toFixed(3), { ...o });
+    else merged.set(key, { ...o });
   }
   const outcomes = [...merged.values()].sort((x, y) => y.probability - x.probability);
   const scores = outcomes.map((o) => o.score);
@@ -240,13 +265,13 @@ export function matchPair(isoA: string, isoB: string, detailed = false, opts: Sc
 }
 
 function describeStates(span: BirthSpan): string {
-  if (span.stable) return `stayed in ${span.likeliest.nakshatra.name} all day`;
+  if (span.stable) return `stayed in ${starTitle(span.likeliest.nakshatra.index)} all day`;
   // Name the sign too when the birth star alone would repeat — the Moon can change sign while
   // staying in one birth star, and "Punarvasu, then Punarvasu" reads as a bug rather than a fact.
-  const names = span.states.map((s) => s.nakshatra.name);
+  const names = span.states.map((s) => s.nakshatra.index);
   const ambiguous = names.some((n, i) => names.indexOf(n) !== i);
   return span.states
-    .map((s) => `${s.nakshatra.name}${ambiguous ? ` in ${s.rasiName}` : ""} ` +
+    .map((s) => `${starTitle(s.nakshatra.index)}${ambiguous ? ` in ${s.rasiName}` : ""} ` +
       `(${Math.round(s.share * 100)}% of the day)`)
     .join(", then ");
 }
@@ -266,7 +291,7 @@ function uncertaintyNote(a: BirthSpan, b: BirthSpan, range: { min: number; max: 
       `to ${range.max.toFixed(1)} out of 36.`
     : "";
   return `Without knowing the time of day, ${moving} Moon could have been in more than one birth ` +
-    `star, and six of the eight tests read only where the Moon was. ${detail}${rangeText}`;
+    `star, and every one of the eight tests reads the Moon. ${detail}${rangeText}`;
 }
 
 // ── ranking ─────────────────────────────────────────────────────────────────────────────────────

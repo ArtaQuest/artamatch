@@ -1,5 +1,6 @@
 /** Small shared pieces. Kept together because none of them is big enough to deserve a file. */
 
+import { useState } from "react";
 import type { Person } from "../data/people";
 
 export function Mark({ size = 34 }: { size?: number }) {
@@ -16,8 +17,12 @@ export function Mark({ size = 34 }: { size?: number }) {
 }
 
 export function Avatar({ person }: { person: Person }) {
-  if (person.avatar) {
-    return <img className="avatar" src={person.avatar} alt="" loading="lazy" />;
+  // A broken avatar URL falls back to the initial placeholder instead of the browser's
+  // broken-image glyph.
+  const [failed, setFailed] = useState(false);
+  if (person.avatar && !failed) {
+    return <img className="avatar" src={person.avatar} alt="" loading="lazy"
+      onError={() => setFailed(true)} />;
   }
   const initial = person.name.trim().charAt(0).toUpperCase() || "?";
   return <span className="avatar ph" aria-hidden="true">{initial}</span>;

@@ -71,6 +71,11 @@ export function loadCached(): FetchResult | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as FetchResult;
     if (!parsed?.fetchedAt || Date.now() - parsed.fetchedAt > CACHE_TTL_MS) return null;
+    // Validate the SHAPE, not just the age. A malformed-but-fresh entry (hand-edited storage, a
+    // half-written write, an old schema) otherwise crashes the whole app at mount.
+    if (!Array.isArray(parsed.people) || !Array.isArray(parsed.skipped)) return null;
+    parsed.people = parsed.people.filter((p) =>
+      p && typeof p.name === "string" && !!parseDate(String(p.birthday ?? "")));
     return parsed;
   } catch {
     return null;
@@ -129,7 +134,10 @@ export async function fetchPublicMembers(signal?: AbortSignal): Promise<FetchRes
   });
 
   const result: FetchResult = { people, skipped, fetchedAt: Date.now() };
-  cache(result);
+  // Cache only a USEFUL result. One flaky network window must not poison six hours of visits with
+  // an empty snapshot; a genuinely-empty directory is indistinguishable, and refetching that is a
+  // far smaller cost than hiding everyone.
+  if (people.length > 0) cache(result);
   return result;
 }
 

@@ -57,3 +57,4 @@ await shot('6-mobile-report', 390, 844, async p => {
 
 await browser.close(); server.close();
 console.log(errors.length ? '\nPROBLEMS:\n'+errors.join('\n') : '\nno console errors, no overflow, meters OK');
+if (errors.length) process.exitCode = 1;

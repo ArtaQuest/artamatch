@@ -6,9 +6,9 @@
  * A birth DATE fixes the Sun to about a degree and the outer planets to almost nothing. It does not
  * fix the MOON. The Moon travels 11.8°–15.4° in a day, and a nakshatra is 13°20′ wide — so on most
  * days the Moon changes nakshatra somewhere inside the birth day, and on many it changes rāśi too.
- * Six of the eight kutas are computed from the Moon's nakshatra and rāśi. A matcher that quietly
- * evaluates "the chart" at noon and prints 28/36 is stating, with total confidence, one of two or
- * three answers that the input cannot distinguish between.
+ * Every one of the eight kutas is computed from the two Moons. A matcher that quietly
+ * evaluates "the chart" at noon and prints 28/36 is stating, with total confidence, one of two, three or
+ * four answers that the input cannot distinguish between.
  *
  * For scale, measured against the Swiss Ephemeris: this engine's Moon is accurate to 1.4 arcminutes,
  * while the unknown birth time moves the Moon by up to ±6.6° — roughly 290× larger. The ephemeris is
@@ -16,7 +16,7 @@
  *
  * So instead of a point estimate, every Moon-dependent result is computed across the WHOLE DAY:
  *   · the Moon's arc across the 24 hours, and the exact instants it crosses a boundary
- *   · the distinct (nakshatra, rāśi) states it occupies — at most three
+ *   · the distinct states it occupies — at most four
  *   · each state's share of the day, which is a defensible weight for "most likely"
  * A caller then evaluates its rule once per state and reports a RANGE when the states disagree.
  *
@@ -109,7 +109,22 @@ function crossing(lo: number, hi: number, f: (h: number) => boolean, iterations 
  * scanning hourly for an index change and then bisecting inside that hour to about a second. That is
  * exact rather than sampled — a state boundary is a real instant, not a grid artefact.
  */
+const SPAN_CACHE = new Map<string, BirthSpan | null>();
+
 export function birthSpan(iso: string, bodies?: Body[]): BirthSpan | null {
+  // The matrix view computes every pair; without this cache 200 people cost 19,900 fresh
+  // hour-by-hour Moon scans. Only the default-bodies call is cached, and the cache is bounded.
+  const cacheable = bodies === undefined;
+  if (cacheable && SPAN_CACHE.has(iso)) return SPAN_CACHE.get(iso)!;
+  const out = birthSpanUncached(iso, bodies);
+  if (cacheable) {
+    if (SPAN_CACHE.size > 600) SPAN_CACHE.clear();
+    SPAN_CACHE.set(iso, out);
+  }
+  return out;
+}
+
+function birthSpanUncached(iso: string, bodies?: Body[]): BirthSpan | null {
   const parsed = parseDate(iso);
   if (!parsed) return null;
   const { y, m, d } = parsed;
@@ -124,10 +139,18 @@ export function birthSpan(iso: string, bodies?: Body[]): BirthSpan | null {
   // Unwrapped travel: the Moon always moves forward, so a negative difference means it wrapped 360°.
   const moonArc = ((moonEndLon - moonStartLon) % 360 + 360) % 360;
 
-  // Key of the state at a given hour: nakshatra index and rāśi index together.
+  // Key of the state at a given hour. THREE components, not two: the eight tests also read the
+  // mid-sign split at 15° of Sagittarius (255°) and Capricorn (285°) — the one rule that depends
+  // on the degree WITHIN a sign. A day on which the Moon crosses 255° or 285° changes that test's
+  // answer without changing star or sign, so those crossings must open a new state too, or the
+  // "every reading the dates allow" table would quietly miss a reading. Found by adversarial
+  // review, verified by brute force.
   const keyAt = (hour: number) => {
     const lon = moonAt(hour);
-    return { nak: nakshatraOf(lon).info.index, rasi: Math.floor(lon / 30) % 12, lon };
+    const rasi = Math.floor(lon / 30) % 12;
+    const degIn = lon - rasi * 30;
+    const half = (rasi === 8 || rasi === 9) && degIn >= 15 ? 1 : 0;
+    return { nak: nakshatraOf(lon).info.index, rasi, half, lon };
   };
 
   // Hourly scan for changes, then bisect each one.
@@ -135,10 +158,10 @@ export function birthSpan(iso: string, bodies?: Body[]): BirthSpan | null {
   let prev = keyAt(0);
   for (let h = 1; h <= HOURS; h++) {
     const here = keyAt(h);
-    if (here.nak !== prev.nak || here.rasi !== prev.rasi) {
+    if (here.nak !== prev.nak || here.rasi !== prev.rasi || here.half !== prev.half) {
       const changed = (hour: number) => {
         const k = keyAt(hour);
-        return k.nak === prev.nak && k.rasi === prev.rasi;
+        return k.nak === prev.nak && k.rasi === prev.rasi && k.half === prev.half;
       };
       edges.push(crossing(h - 1, h, changed));
     }

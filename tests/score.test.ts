@@ -251,6 +251,71 @@ describe("score distribution", () => {
   });
 });
 
+describe("the switch-off option", () => {
+  const dates = makeDates(30, 8080);
+
+  it("removes exactly the first test's points, and compares against the right distribution", () => {
+    for (let i = 0; i + 1 < dates.length; i += 2) {
+      const full = matchPair(dates[i], dates[i + 1])!;
+      const without = matchPair(dates[i], dates[i + 1], false, { exclude: ["varna"] })!;
+      const varnaPts = full.guna.kutas.find((k) => k.key === "varna")!.points;
+      expect(without.score).toBeCloseTo(full.score - varnaPts, 9);
+      expect(without.maxScore).toBe(35);
+      // The percentile must come from the 35-point calibration, which shifts the whole curve —
+      // comparing a 35-point score against the 36-point table understates everyone.
+      expect(without.percentile).toBeGreaterThanOrEqual(0);
+      expect(without.percentile).toBeLessThanOrEqual(100);
+    }
+  });
+
+  it("keeps the ranking symmetric with a test switched off", () => {
+    const people = dates.slice(0, 8).map((birthday, i) => ({ id: `p${i}`, birthday }));
+    for (const self of people) {
+      for (const r of rankAgainst(self, people, { exclude: ["varna"] })) {
+        const theirs = rankAgainst(r.other, people, { exclude: ["varna"] })
+          .find((x) => x.other.id === self.id)!;
+        expect(theirs.score).toBeCloseTo(r.score, 9);
+      }
+    }
+  });
+});
+
+describe("ranking order", () => {
+  it("is sorted by score, then by the documented tie-break, and never claims otherwise", () => {
+    const people = makeDates(14, 2718).map((birthday, i) => ({ id: `p${i}`, birthday }));
+    const ranked = rankAgainst(people[0], people);
+    for (let i = 1; i < ranked.length; i++) {
+      const prev = ranked[i - 1], cur = ranked[i];
+      expect(prev.score >= cur.score, `row ${i} out of order`).toBe(true);
+      if (prev.score === cur.score) {
+        expect(prev.match.connections.lean >= cur.match.connections.lean,
+          `tie at ${prev.score} broken the wrong way`).toBe(true);
+      }
+    }
+  });
+});
+
+describe("the probability table", () => {
+  const dates = makeDates(60, 4242);
+
+  it("conserves probability, keeps the headline inside the range, and never doubles a reading", () => {
+    for (let i = 0; i + 1 < dates.length; i += 2) {
+      const m = matchPair(dates[i], dates[i + 1], true)!;
+      const d = m.distribution!;
+      const mass = d.outcomes.reduce((s, o) => s + o.probability, 0);
+      expect(Math.abs(mass - 1), `${dates[i]}/${dates[i + 1]} mass ${mass}`).toBeLessThan(1e-9);
+      const scores = d.outcomes.map((o) => o.score);
+      expect(m.range!.min).toBe(Math.min(...scores));
+      expect(m.range!.max).toBe(Math.max(...scores));
+      expect(scores).toContain(m.score);
+      // One row per READING: no two rows may share both labels and score. This is the guard on the
+      // merge bug review found, where different readings were glued under one row's labels.
+      const keys = d.outcomes.map((o) => `${o.score}|${o.labelA}|${o.labelB}`);
+      expect(new Set(keys).size).toBe(keys.length);
+    }
+  });
+});
+
 describe("the uncertainty model", () => {
   it("finds every distinct Moon state within the birth day", () => {
     for (const iso of makeDates(120, 31337)) {
@@ -273,9 +338,16 @@ describe("the uncertainty model", () => {
       const seen = new Set<string>();
       for (let h = 0; h <= 24; h += 0.25) {
         const lon = siderealLongitude("Moon", julianDay(y, m, d, h));
-        seen.add(`${nakshatraOf(lon).info.index}|${Math.floor(lon / 30) % 12}`);
+        const rasi = Math.floor(lon / 30) % 12;
+        // Three-part key: the mid-sign split at 15° of the 9th and 10th signs is a real state
+        // boundary too (it changes one of the eight tests without changing star or sign).
+        const half = (rasi === 8 || rasi === 9) && lon - rasi * 30 >= 15 ? 1 : 0;
+        seen.add(`${nakshatraOf(lon).info.index}|${rasi}|${half}`);
       }
-      const found = new Set(span.states.map((s) => `${s.nakshatra.index}|${s.rasi}`));
+      const found = new Set(span.states.map((s) => {
+        const half = (s.rasi === 8 || s.rasi === 9) && s.lon - s.rasi * 30 >= 15 ? 1 : 0;
+        return `${s.nakshatra.index}|${s.rasi}|${half}`;
+      }));
       expect([...seen].sort(), iso).toEqual([...found].sort());
     }
   });

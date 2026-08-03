@@ -76,6 +76,15 @@ describe("ArtaMatch app", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  it("opens a two-person share link straight into the reading", () => {
+    window.history.replaceState({}, "", "/?n=Ada&b=1815-12-10&n2=Alan&b2=1912-06-23");
+    render(<App />);
+    // Both people land in the list AND the pair's reading opens directly.
+    expect(screen.getByText(/Ada & Alan/)).toBeDefined();
+    expect(screen.getByText(/4 traditions rate this pair/i)).toBeDefined();
+    window.history.replaceState({}, "", "/");
+  });
+
   it("adds someone, makes them self, and shows their birth star", () => {
     render(<App />);
     addPerson("Ada", "1815-12-10");
@@ -107,7 +116,8 @@ describe("ArtaMatch app", () => {
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
-    expect(screen.getByText(/randomly paired dates/i)).toBeDefined();
+    expect(screen.getAllByText(/random pairs/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/4 traditions rate this pair/i)).toBeDefined();
 
     // The eight tests, each with the rule it used and the values it read.
     fireEvent.click(screen.getByRole("tab", { name: /eight tests/i }));
@@ -129,8 +139,9 @@ describe("ArtaMatch app", () => {
     fireEvent.click(screen.getByRole("tab", { name: /Where everything/i }));
     expect(screen.getAllByText(/Everything else/i).length).toBe(2);
     expect(screen.getAllByText(/Birth star/i).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText(/☉ Sun/).length).toBe(2);
-    expect(screen.getAllByText(/♇ Pluto/).length).toBe(2);
+    // Glyphs are gone — planets are named in words, once per chart.
+    expect(screen.getAllByText(/^Sun$/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText(/^Pluto$/).length).toBeGreaterThanOrEqual(2);
   });
 
   it("warns on a date where the Moon changes birth star, and not on one where it does not", () => {
@@ -194,10 +205,18 @@ describe("ArtaMatch app", () => {
     const BANNED = [
       "nakshatra", "rashi", "rasi", "kuta", "koota", "guna milan", "dosha", "graha", "varna",
       "vashya", "yoni", "bhakoot", "nadi", "mangal", "kuja", "ayanamsa", "sidereal", "tropical",
-      "lahiri", "vedic", "jyotish", "synastry", "conjunction", "trine", "sextile", "quincunx",
+      "lahiri", "vedic", "jyotish", "synastry", "quincunx",
       "sesquiquadrate", "semi-sextile", "orb", "lagna", "ascendant", "retrograde", "exalted",
       "debilitated", "benefic", "malefic", "pada", "dasha", "janma", "chandra", "brāhmaṇa",
       "kṣatriya", "vaiśya", "śūdra", "deva", "manushya", "rakshasa",
+      // The 27 traditional star names and the two node names are ALSO not assumed knowledge —
+      // the page speaks in their plain titles. The five MAJOR angle names (conjunction,
+      // opposition, trine, square, sextile) and the 12 sign names are the entire allowed
+      // vocabulary, so they are absent from this list.
+      "ashwini", "bharani", "krittika", "rohini", "mrigashira", "ardra", "punarvasu", "pushya",
+      "ashlesha", "magha", "phalguni", "hasta", "chitra", "swati", "vishakha", "anuradha",
+      "jyeshtha", "mula", "ashadha", "shravana", "dhanishtha", "shatabhisha", "bhadrapada",
+      "revati", "rahu", "ketu",
     ];
 
     render(<App />);
@@ -227,7 +246,7 @@ describe("ArtaMatch app", () => {
     addPerson("Curie", "1867-11-07");
 
     fireEvent.click(screen.getByRole("tab", { name: /Everyone vs everyone/i }));
-    const table = screen.getByText(/Every pair, scored out of 36/i).closest(".panel")!
+    const table = screen.getByText(/Every pair, scored on the Moon score/i).closest(".panel")!
       .querySelector("table")!;
     const rows = [...table.querySelectorAll("tbody tr")];
     expect(rows).toHaveLength(3);

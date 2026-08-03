@@ -576,7 +576,7 @@ function ScoreAnatomy({ match }: { match: Match }) {
         How the score is built — eight tests worth 1 through 8 points, drawn to scale. Gold is
         earned; hover any block for its name and result.
       </span>
-      <span className="bar">
+      <span className="host"><span className="bar">
         {kutas.map((k, i) => (
           <span key={k.key} className="seg" style={{ flexGrow: k.maxPoints }}
             title={`Test ${i + 1} · ${k.name} — ${k.points} of ${k.maxPoints}. ${k.measures}`}>
@@ -585,7 +585,7 @@ function ScoreAnatomy({ match }: { match: Match }) {
             <u>{k.maxPoints}</u>
           </span>
         ))}
-      </span>
+      </span></span>
       <span className="cap dim">
         Numbers inside each block are points earned; beneath, the points available. The two heaviest
         tests ({kutas[kutas.length - 2]?.name.toLowerCase()} and {kutas[kutas.length - 1]?.name.toLowerCase()})

@@ -317,23 +317,28 @@ function PersonRow({ person, isSelf, onPick, onRemove }: {
   return (
     <div className={`person ${isSelf ? "is-self" : ""}`}>
       <Avatar person={person} />
+      {/* Everything textual lives INSIDE the flexible column, so the name always gets the row's
+          width. An earlier layout put the badges beside this column as flex siblings; on rows with
+          two badges the name column collapsed to a few characters and the date wrapped word by
+          word. The remove button is the only other sibling — a fixed, small one. */}
       <button className="who link" onClick={onPick} style={{ textAlign: "left" }}>
-        <span className="nm">{person.name}</span>
+        <span className="nm">
+          {person.name}
+          {person.source === "artaquest" && <span className="pill aq">ArtaQuest</span>}
+        </span>
         <span className="bd">
           {formatBirthday(person.birthday)}
           {moon && <> · {starTitle(moon.nakshatra.index).toLowerCase()}</>}
+          {span && !span.stable && (
+            <span className="tm"
+              title="The Moon changed birth star or sign during this day, so the time of day would change the result">
+              {" "}· time matters
+            </span>
+          )}
         </span>
       </button>
-      {span && !span.stable && (
-        <span className="pill soft"
-          title="The Moon changed birth star during this day, so the time of day would change the result">
-          time matters
-        </span>
-      )}
-      {person.source === "artaquest" && <span className="pill aq">ArtaQuest</span>}
       {person.source === "manual" && (
-        <button className="link" onClick={onRemove} aria-label={`Remove ${person.name}`}
-          style={{ color: "var(--muted)" }}>×</button>
+        <button className="link rm" onClick={onRemove} aria-label={`Remove ${person.name}`}>×</button>
       )}
     </div>
   );

@@ -174,6 +174,28 @@ beside a scored one without becoming a rival scoreboard.
 60°, 90°, 120° — occur ~3.8 times per pair, and the two that are not — 0° and 180° — occur ~1.9,
 almost exactly half, which is what the geometry demands.)
 
+## 5.5 · The ceiling (`src/engine/search.ts`)
+
+Every birth date within ±12 years of a person's own — **8,767 days, one at a time** — scored, to find
+the best that exists. Reported with the worst, the median, a histogram of all 8,767, and the count of
+days that reach the top.
+
+That last number is the point. Measured on the seeded people: **46–79 of the 8,767 days reach the
+ceiling**, roughly one in 110–190. The eight tests read the Moon and the Moon returns to the same
+birth star every 27.3 days, so the top score belongs to a *position in the sky*, not to a person.
+Nobody reaches 36; the ceilings measured so far sit at 29.5–32.6 against medians near 21.
+
+| | |
+|---|---|
+| method | Moon-only sides, skipping the nine bodies the eight tests never read |
+| cost | ~900 ms for 8,767 days, driven as a generator in ~20 ms slices behind a progress bar |
+| agreement with `matchPair` | exact to 10 decimal places, checked on every day of four whole months |
+
+The fast path is a *second implementation of the score*, which is the dangerous kind of optimisation:
+a panel announcing "the most you could score is 29.5" while the reading for that very date says 28
+would be worse than no panel. `fastExpected()` exists purely as the seam the tests hold the two
+implementations against, and nothing in the app calls it.
+
 ## 5.4 · Removed experiments
 
 All worked, all were verified, all were deleted. They are in the git history.
@@ -221,8 +243,9 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 8 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 83 tests: ephemeris vs golden, rules, symmetry,
-                                           # uncertainty, synastry vs brute force, jargon, drift
+npm test                                   # 95 tests: ephemeris vs golden, rules, symmetry,
+                                           # uncertainty, synastry vs brute force, the ceiling
+                                           # scan vs matchPair, jargon guards, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
 npx esbuild src/engine/score.ts --format=esm --bundle --outfile=/tmp/score.mjs
 node tools/calibrate.mjs /tmp/score.mjs                    # the percentile table + its summary

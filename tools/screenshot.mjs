@@ -43,7 +43,9 @@ const VIEWPORTS = [
 // Each state: a name and a driver that gets the page there from a fresh load. The report is ONE
 // document now, so there are no report tabs to drive — a single scroll covers the whole reading.
 const STATES = [
-  ["home", async () => {}],
+  // Wait for the ceiling scan to finish rather than photographing its progress bar: the finished
+  // panel is the state with the numbers, the histogram and the layout worth auditing.
+  ["home", async (p) => { await p.waitForSelector(".ceiling .hist", { timeout: 30000 }); }],
   ["report", async (p) => { await p.locator(".rank-row").first().click(); await p.waitForSelector(".anatomy"); }],
   ["matrix", async (p) => { await p.getByRole("button", { name: /Everyone vs everyone/i }).click(); }],
   ["toggle-off", async (p) => {

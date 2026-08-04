@@ -20,6 +20,7 @@ import {
 } from "./engine/score";
 import type { KutaKey } from "./engine/kuta";
 import { birthSpan } from "./engine/uncertainty";
+import { scanWithin, type SearchResult } from "./engine/search";
 import { starTitle } from "./engine/interpret";
 import Report from "./ui/Report";
 import { Avatar, Mark, Meter } from "./ui/bits";
@@ -262,7 +263,8 @@ export default function App() {
               </div>
 
               {view === "ranking"
-                ? <Ranking self={self} ranked={ranked} onOpen={(id) => self && setPair([self.id, id])} />
+                ? <Ranking self={self} ranked={ranked} options={options}
+                    onOpen={(id) => self && setPair([self.id, id])} />
                 : <Matrix people={people} options={options} onOpen={(x, y) => setPair([x, y])} />}
             </>
           )}
@@ -355,9 +357,10 @@ function PersonRow({ person, isSelf, onPick, onRemove }: {
   );
 }
 
-function Ranking({ self, ranked, onOpen }: {
+function Ranking({ self, ranked, options, onOpen }: {
   self: Person | null;
   ranked: ReturnType<typeof rankAgainst<Person>>;
+  options: ScoreOptions;
   onOpen: (id: string) => void;
 }) {
   if (!self) {
@@ -375,6 +378,8 @@ function Ranking({ self, ranked, onOpen }: {
         be told apart on this evidence. Scores are symmetric, so this list agrees with everyone
         else's about any shared pair. Tap a row for the full reading.
       </p>
+      <Ceiling self={self} options={options} bestHere={ranked[0]?.score ?? null}
+        bestName={ranked[0]?.other.name ?? null} />
       <div className="rank">
         {ranked.map((r, i) => {
           const m = r.match;
@@ -403,6 +408,134 @@ function Ranking({ self, ranked, onOpen }: {
         })}
       </div>
     </div>
+  );
+}
+
+/** How many years either side the ceiling search looks. Twelve is the user's call and it is a
+ *  reasonable one: it is about the widest age gap most people would actually consider, and it is
+ *  wide enough that the Moon's 27-day cycle repeats inside it hundreds of times. */
+const CEILING_YEARS = 12;
+
+/** Scans are pure and deterministic, so a result is worth keeping for as long as the page lives —
+ *  flipping between two people should not re-earn a second of arithmetic each time. */
+const CEILING_CACHE = new Map<string, SearchResult>();
+
+/**
+ * The ceiling: the best score this person could reach against ANY birth date within twelve years
+ * of their own, every one of the ~8,767 days scored one at a time.
+ *
+ * Two things make this worth a second of a phone's time. It gives a score a second anchor — not
+ * just "higher than 50 in 100 random pairs" but "out of a possible 29.5, for you specifically".
+ * And it kills a superstition the rest of the page would otherwise feed: the top score is not held
+ * by one person born on one magic day. The eight tests read the Moon, the Moon comes back to the
+ * same birth star every 27.3 days, so scores of dates reach the identical ceiling. That count is
+ * printed, and it is the most honest sentence on the panel.
+ *
+ * The scan is a generator driven in slices of about 20 ms, so the page keeps scrolling while it
+ * runs, and it is abandoned the moment the selected person or the counted tests change.
+ */
+function Ceiling({ self, options, bestHere, bestName }: {
+  self: Person; options: ScoreOptions; bestHere: number | null; bestName: string | null;
+}) {
+  const key = `${self.birthday}|${(options.exclude ?? []).join(",")}`;
+  const [result, setResult] = useState<SearchResult | null>(() => CEILING_CACHE.get(key) ?? null);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const cached = CEILING_CACHE.get(key);
+    if (cached) { setResult(cached); setProgress(1); return; }
+    setResult(null); setProgress(0);
+    const gen = scanWithin(self.birthday, CEILING_YEARS, options);
+    let stopped = false;
+    const tick = () => {
+      if (stopped) return;
+      const started = performance.now();
+      let step = gen.next();
+      // One slice per frame, not one day per frame: a day costs a tenth of a millisecond, so
+      // yielding after each would spend the whole budget on scheduling.
+      while (!step.done && performance.now() - started < 20) step = gen.next();
+      if (step.done) {
+        if (step.value) { CEILING_CACHE.set(key, step.value); setResult(step.value); }
+        setProgress(1);
+      } else {
+        setProgress(step.value);
+        setTimeout(tick, 0);
+      }
+    };
+    const handle = setTimeout(tick, 0);
+    return () => { stopped = true; clearTimeout(handle); };
+  }, [key, self.birthday, options]);
+
+  if (!result) {
+    return (
+      <div className="ceiling scanning">
+        <span className="lbl">
+          Working out the best score {self.name} could reach against anyone born within{" "}
+          {CEILING_YEARS} years — {Math.round(progress * 8767).toLocaleString()} days scored
+        </span>
+        <Meter value={progress} max={1} gold />
+      </div>
+    );
+  }
+
+  const share = Math.round(result.days / result.atCeiling);
+  return (
+    <div className="ceiling">
+      <div className="top">
+        <span className="cap">{fmtScore(result.ceiling)}<small>the most available</small></span>
+        <p className="txt">
+          That is the highest score {self.name} can reach against <strong>any</strong> date of birth
+          within {CEILING_YEARS} years of their own — every one of the{" "}
+          {result.days.toLocaleString()} days from {formatBirthday(result.from)} to{" "}
+          {formatBirthday(result.to)}, scored one at a time. The worst available is{" "}
+          {fmtScore(result.floor)} and the middle of the range is {fmtScore(result.median)}.
+        </p>
+      </div>
+      <Histogram result={result} bestHere={bestHere} />
+      <p className="legend-note">
+        <span className="key-a">the most available</span>
+        {bestHere !== null && <span className="key-b">your best here</span>}
+        <span className="dim">
+          each bar is one score, as tall as the number of the {result.days.toLocaleString()} days
+          that land on it
+        </span>
+      </p>
+      <p className="txt dim">
+        <strong>{result.atCeiling.toLocaleString()} of those days reach it</strong> — about one in
+        every {share}. The eight tests read the Moon, and the Moon comes back to the same place
+        every 27 days, so the top score belongs to a position in the sky rather than to a person.
+        The nearest dates that reach it are{" "}
+        {result.best.map((b) => formatBirthday(b.iso)).join(", ")}.
+        {bestHere !== null && bestName && (
+          <> The best you have on this list is {bestName} at {fmtScore(bestHere)}.</>
+        )}
+      </p>
+    </div>
+  );
+}
+
+/** The ~8,767 scanned days, one bar per whole score, with the ceiling and the best on the list
+ *  marked. The same picture as the report's landscape strip, but of what is AVAILABLE to one
+ *  person rather than what is common across everybody. */
+function Histogram({ result, bestHere }: { result: SearchResult; bestHere: number | null }) {
+  const peak = Math.max(...result.histogram, 1);
+  const top = Math.round(result.ceiling);
+  const here = bestHere === null ? -1 : Math.round(bestHere);
+  return (
+    <span className="hist" role="img"
+      aria-label={`How many of the ${result.days} scanned days land on each score, from ` +
+        `${fmtScore(result.floor)} to ${fmtScore(result.ceiling)}`}>
+      {result.histogram.map((n, i) => (
+        // A marked bar keeps its own floor. Only 71 of 8,767 days reach the ceiling, so drawn to
+        // scale the gold marker is a two-pixel sliver — the one bar the reader is looking for,
+        // and the hardest to see.
+        <i key={i} className={i === top ? "top" : i === here ? "here" : ""}
+          style={{ height: `${i === top || i === here ? Math.max(26, (n / peak) * 100)
+            : n > 0 ? Math.max(6, (n / peak) * 100) : 2}%` }}
+          title={`${n.toLocaleString()} of the ${result.days.toLocaleString()} days score ${i}` +
+            (i === top ? " — the most available" : i === here ? " — your best on this list" : "")} />
+      ))}
+    </span>
   );
 }
 

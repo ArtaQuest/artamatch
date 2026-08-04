@@ -248,6 +248,34 @@ describe("ArtaMatch app", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  it("scans every day within twelve years for the best score a person could reach", async () => {
+    // The ceiling panel is about a second of arithmetic, so it must never block: it renders a
+    // progress bar first and fills in when the scan lands. Both states are asserted, and the
+    // ceiling is required to be consistent with the ranking beside it — a panel claiming a "most
+    // available" below a score already on the list would be self-contradicting.
+    render(<App />);
+    addPerson("Ada", "1815-12-10");
+    addPerson("Turing", "1912-06-23");
+
+    expect(document.querySelector(".ceiling.scanning")).not.toBeNull();
+    expect(screen.getByText(/days scored/i)).toBeDefined();
+
+    const hist = await screen.findByRole("img", { name: /scanned days land on each score/i },
+      { timeout: 60_000 });
+    expect(hist.children.length).toBe(37);
+    expect(document.querySelector(".ceiling.scanning")).toBeNull();
+
+    const panel = document.querySelector(".ceiling")!.textContent ?? "";
+    expect(panel).toMatch(/8,7\d\d days from 10 December 1803 to 10 December 1827/);
+    expect(panel).toMatch(/of those days reach it/);
+    expect(panel).toMatch(/comes back to the same place every 27 days/);
+
+    const ceiling = Number(/^([\d.]+)/.exec(document.querySelector(".ceiling .cap")!.textContent!)![1]);
+    const top = Number(/([\d.]+)/.exec(document.querySelector(".rank-row .sc")!.textContent!)![1]);
+    expect(ceiling).toBeGreaterThanOrEqual(top);
+    expect(ceiling).toBeLessThan(36);
+  }, 90_000);
+
   it("warns on a date where the Moon changes birth star, and not on one where it does not", () => {
     render(<App />);
     // 1965-07-27: the Moon crosses two nakshatra boundaries AND a rasi boundary — four states.

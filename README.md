@@ -42,6 +42,25 @@ both people share one axis, so "in the same place" is literally one label sittin
 - **The hour grid** — all 576 combinations of the two birth hours, shaded by the score each gives.
   You can see the blocks where the answer changes, and whether the missing hour matters at all.
 
+### The ceiling: what is the *most* you could score?
+
+A score out of 36 on its own invites "is 24 good?", and a percentile answers that only in the
+aggregate. So the ranking panel answers it for **this person**: it scans **every single birth date
+within twelve years either side of theirs, one day at a time** — about 8,767 of them — and reports
+the best score that exists anywhere in that window, the worst, the middle, and a histogram of the
+lot. The scan runs in slices of a frame behind a progress bar, so the page never stops scrolling.
+
+It also puts a stake through a superstition the rest of the page would otherwise feed. The top score
+is not held by one soulmate born on one magic day: the eight tests read the Moon, the Moon comes back
+to the same place every 27.3 days, and so **dozens of those days reach the identical ceiling** — for
+one of the seeded people, 71 days out of 8,767, about one in 123. The panel prints that count, and it
+is the most honest sentence on it.
+
+The scan is a *second* implementation of the score (Moon-only, skipping nine bodies it does not need,
+because it runs nine thousand times). Two code paths for one number is how a page ends up
+contradicting itself, so a test holds the fast path against `matchPair` **to ten decimal places on
+every day of four whole months**, and again on every date the scan names as best.
+
 ### Why there are two systems on the page and only one of them scores
 
 An aspect layer was cut from this page once, for a good reason: a second, unscored system beside a

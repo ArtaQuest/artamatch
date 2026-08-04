@@ -152,6 +152,30 @@ button.link:hover { color: var(--yang); background: none; }
 .tabs button:hover { color: var(--text); background: none; }
 .tabs button.on:hover { color: var(--yang); }
 
+/* ── the ceiling: the best score available to one person ────────────────────
+   Every birth date within twelve years, scored one day at a time. A progress bar while it runs,
+   because it is about a second of arithmetic and a page that freezes is a broken page. */
+.ceiling { display: block; background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 0.8rem 0.9rem; margin: 0 0 0.9rem; }
+.ceiling.scanning { padding: 0.75rem 0.9rem; }
+.ceiling .lbl { display: block; font-size: 0.79rem; color: var(--muted); line-height: 1.5; }
+.ceiling .top { display: flex; gap: 0.9rem; align-items: flex-start; flex-wrap: wrap; }
+.ceiling .cap { display: block; font-family: var(--mono); font-size: 2rem; font-weight: 700;
+  line-height: 1; color: var(--yang); flex: 0 0 auto; }
+.ceiling .cap small { display: block; font-family: inherit; font-size: 0.58rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); margin-top: 0.3rem; }
+.ceiling .txt { font-size: 0.81rem; line-height: 1.6; color: var(--text); margin: 0;
+  flex: 1 1 240px; min-width: 0; }
+.ceiling .txt.dim { color: var(--muted); margin-top: 0.5rem; }
+.ceiling .txt strong { color: var(--yang); font-weight: 650; }
+.ceiling .meter { margin-top: 0.5rem; }
+
+/* One bar per whole score, height by how many of the scanned days land on it. */
+.hist { display: flex; align-items: flex-end; gap: 1px; height: 40px; margin: 0.7rem 0 0.1rem; }
+.hist i { display: block; flex: 1 1 0; min-width: 2px; background: var(--line-2); border-radius: 1px 1px 0 0; }
+.hist i.here { background: var(--link); }
+.hist i.top { background: var(--yang); }
+
 .rank { display: block; border-top: 1px solid var(--line); }
 .rank-row { display: grid; grid-template-columns: 1.6rem 32px minmax(0, 1fr) auto; gap: 0.6rem;
   align-items: center; padding: 0.55rem 0.3rem; border: none; border-bottom: 1px solid var(--line);

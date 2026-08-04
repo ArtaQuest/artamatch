@@ -18,6 +18,9 @@ three ways at once:
 - **The sky ruler** — the full 360° band, its 27 birth-star stretches and 12 signs, with both
   Moons marked and the band each swept during its birth day. The one picture of what the eight
   tests actually read, uncertainty included.
+- **The hour grid** — all 576 combinations of the two birth hours, shaded by the score each gives.
+  You can see the blocks where the answer changes, and see at a glance whether the missing hour
+  matters at all.
 
 The whole reading is **one scrolling document** with six numbered sections — what the score is, how
 it is built, how sure it is, what it read, the eight tests one by one, and who these two people are.
@@ -33,10 +36,17 @@ one thing. They are in the git history, and in [METHODS.md](METHODS.md) §5.
 - **Percentiles, not flattery.** The traditional "pass mark" of 18/36 is cleared by 71% of random
   pairs (median 21), so "you passed" means little; every score is shown against the distribution it
   actually comes from, and a drift test keeps those numbers current in CI.
-- **Uncertainty is enumerated, not hidden.** A birth date does not fix the Moon: it moves 11.8–15.4°
-  a day against 13°20′ birth stars. The page computes *every* reading the two dates allow — at most
-  four Moon states per person, found by bisection — and shows each with its probability. Typical
-  displacement from the unknown hour is ±6.6°, up to ±7.7° at the Moon's fastest.
+- **Every prediction carries a confidence interval.** Not just the report — the hero, the ranking
+  rows and the totals all show the range the unknown birth hours allow, so a list of point estimates
+  can never hide that two people are statistically indistinguishable. The headline is the *expected*
+  score (the mean across every birth time), beside a 90% interval and the single most likely reading.
+- **The interval is computed exactly, not sampled.** A birth date does not fix the Moon: it moves
+  11.8–15.4° a day against 13°20′ birth stars. But the eight tests read the Moon only through which
+  birth star, sign and mid-sign half it is in — so each day partitions into at most four states whose
+  shares *are* their probabilities, and enumerating the ≤16 combinations gives the true distribution.
+  Verified against brute force: it agrees with a 240×240 hour sweep (57,600 pairs) to within 0.15
+  percentage points, and a 24×24 sample is measurably *worse* — off by up to 1.3 points, because
+  24 samples miss where the boundaries actually fall.
 - **No jargon.** The only specialist vocabulary on screen is the 12 sign names. Everything else —
   Sanskrit star names, category names, glyphs — is replaced by plain-English titles ("The quick
   starter"). Two tests enforce it: one walks the rendered page, one walks every string the engine
@@ -83,7 +93,7 @@ everything. Messaging deep-links into ArtaQuest's existing end-to-end-encrypted 
 ```bash
 npm install
 npm run dev       # http://localhost:5173/artamatch/
-npm test          # 61 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
+npm test          # 64 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
 npx vite build
 node tools/contrast.mjs                           # WCAG contrast for every ink/surface pair
 node tools/screenshot.mjs "$PWD/dist" /tmp/shots   # 35-state visual audit at five widths

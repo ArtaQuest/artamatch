@@ -103,7 +103,8 @@ describe("ArtaMatch app", () => {
     const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     const row = within(ranking).getByRole("button", { name: /Turing/ });
     expect(row.textContent).toMatch(/higher than \d+ in 100 random pairs/i);
-    expect(row.textContent).toMatch(/of 36/);
+    // Every prediction carries an interval: either it is certain ("of 36") or it states the ±.
+    expect(row.textContent).toMatch(/of 36|±\d/);
   });
 
   it("opens a full report with every section populated", () => {

@@ -283,3 +283,14 @@ table.data tr.lead td { color: var(--yang); }
 .legend i.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 .legend i.dot.a { background: var(--yang); }
 .legend i.dot.b { background: var(--yin-lift); }
+
+/* The 24x24 hour grid: every combination of birth hours, shaded by the score it gives. */
+.hourgrid-wrap { display: block; margin: 0.3rem 0 0.6rem; }
+.hourgrid { display: block; width: 100%; max-width: 420px; border: 1px solid var(--line);
+  border-radius: 8px; overflow: hidden; background: var(--panel-2); padding: 3px; }
+.hourgrid .hrow { display: flex; gap: 1px; }
+.hourgrid .hrow + .hrow { margin-top: 1px; }
+.hourgrid i { display: block; flex: 1 1 0; aspect-ratio: 1; background: var(--yang); border-radius: 1px; }
+.legend i.swatch { width: 11px; height: 11px; border-radius: 2px; background: var(--yang); }
+.legend i.swatch.faint { opacity: 0.15; }
+.legend i.swatch.full { opacity: 1; }

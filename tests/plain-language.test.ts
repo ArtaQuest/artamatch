@@ -84,7 +84,7 @@ describe("nothing a reader can see uses astrology jargon", () => {
     const found: string[] = [];
     for (const a of DATES) {
       for (const b of DATES) {
-        const m = matchPair(a, b, true)!;
+        const m = matchPair(a, b)!;
         found.push(...offences(`${a}/${b} uncertainty`, m.uncertaintyNote));
         for (const o of m.distribution?.outcomes ?? []) {
           found.push(...offences("outcome.labelA", o.labelA));

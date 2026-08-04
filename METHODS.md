@@ -47,10 +47,23 @@ The Moon moves 11.8–15.4° a day; a birth star is 13°20′ wide and a sign 30
 | Birth star | ~25% |
 | Finer divisions | not attempted — the error swallows them |
 
-Instead of guessing, `src/engine/uncertainty.ts` finds every (birth star, sign) state the Moon
-occupies during the day — at most four; `1965-07-27` reaches the ceiling — by hourly scan plus
-bisection to the second. Each state's share of the day **is** its probability under a flat prior, so
-the page enumerates every possible reading exactly, with its chance. The displayed chart is taken at
+Instead of guessing, `src/engine/uncertainty.ts` finds every (birth star, sign, mid-sign half) state
+the Moon occupies during the day — at most four; `1965-07-27` reaches the ceiling — by hourly scan
+plus bisection to the second. Each state's share of the day **is** its probability under a flat
+prior, so the page enumerates every possible reading exactly, with its chance.
+
+**This is exact, and it was checked against brute force.** The eight tests read the Moon *only*
+through those three quantities, so the ≤16 state combinations are the whole distribution. Compared
+against sweeping the actual hour grid, the exact method agrees with a 240×240 sweep (57,600 hour
+pairs) to within **0.15 percentage points** — while a 24×24 sweep is off by up to **1.3 points**,
+because 24 samples per day straddle the boundaries rather than finding them. The page therefore
+computes the interval exactly and *draws* the 24×24 hour grid as the explanation, rather than
+sampling the grid to get the number.
+
+Every prediction carries the result: the **expected** score (the probability-weighted mean, and the
+right thing to rank on), the **narrowest 90% interval**, the **full support**, and the single **most
+likely** reading with its probability. There is one code path — a `detailed` flag once let ranking
+skip the distribution, which meant the ranking and the report could quietly disagree. The displayed chart is taken at
 the middle of the most likely state, *not* at noon: measured over 7,200 dates, noon disagrees with
 the most likely birth star on 6.1% of days, which once made the page show one star and score another.
 
@@ -124,7 +137,7 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 8 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 61 tests: ephemeris vs golden, rules, symmetry,
+npm test                                   # 64 tests: ephemeris vs golden, rules, symmetry,
                                            # uncertainty, jargon guards, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
 npx esbuild src/engine/score.ts  --format=esm --bundle --outfile=/tmp/score.mjs

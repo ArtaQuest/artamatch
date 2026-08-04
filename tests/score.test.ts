@@ -249,7 +249,7 @@ describe("the switch-off option", () => {
   it("removes exactly the first test's points, and compares against the right distribution", () => {
     for (let i = 0; i + 1 < dates.length; i += 2) {
       const full = matchPair(dates[i], dates[i + 1])!;
-      const without = matchPair(dates[i], dates[i + 1], false, { exclude: ["varna"] })!;
+      const without = matchPair(dates[i], dates[i + 1], { exclude: ["varna"] })!;
       const varnaPts = full.guna.kutas.find((k) => k.key === "varna")!.points;
       expect(without.score).toBeCloseTo(full.score - varnaPts, 9);
       expect(without.maxScore).toBe(35);
@@ -289,18 +289,64 @@ describe("ranking order", () => {
   });
 });
 
+describe("every prediction carries an interval", () => {
+  const dates = makeDates(80, 31415);
+
+  it("gives every pair an expectation, a 90% interval and a full support", () => {
+    for (let i = 0; i + 1 < dates.length; i += 2) {
+      const m = matchPair(dates[i], dates[i + 1])!;
+      const d = m.distribution;
+      // The expectation is the probability-weighted mean, and must sit inside the support.
+      const mean = d.outcomes.reduce((s, o) => s + o.score * o.probability, 0);
+      expect(d.expected).toBeCloseTo(mean, 9);
+      expect(d.expected).toBeGreaterThanOrEqual(d.support.min - 1e-9);
+      expect(d.expected).toBeLessThanOrEqual(d.support.max + 1e-9);
+      // The interval sits inside the support and really covers at least 90%.
+      expect(d.interval.lo).toBeGreaterThanOrEqual(d.support.min);
+      expect(d.interval.hi).toBeLessThanOrEqual(d.support.max);
+      expect(d.interval.covers).toBeGreaterThanOrEqual(0.9 - 1e-9);
+      const inside = d.outcomes
+        .filter((o) => o.score >= d.interval.lo && o.score <= d.interval.hi)
+        .reduce((s, o) => s + o.probability, 0);
+      expect(inside).toBeGreaterThanOrEqual(0.9 - 1e-9);
+      // The modal reading really is the most likely one.
+      for (const o of d.outcomes) expect(d.modal.probability).toBeGreaterThanOrEqual(o.probability - 1e-12);
+    }
+  });
+
+  it("collapses the interval to a point when the dates settle the answer", () => {
+    // 1984-02-08 x 1967-08-26: both Moons stay in one birth star and one sign all day.
+    const m = matchPair("1984-02-08", "1967-08-26")!;
+    expect(m.certain).toBe(true);
+    expect(m.distribution.outcomes).toHaveLength(1);
+    expect(m.distribution.interval.lo).toBe(m.distribution.interval.hi);
+    expect(m.distribution.support.min).toBe(m.distribution.support.max);
+    expect(m.distribution.confidence).toBeCloseTo(1, 9);
+  });
+
+  it("keeps the interval symmetric under swapping the two people", () => {
+    for (let i = 0; i + 1 < dates.length; i += 2) {
+      const ab = matchPair(dates[i], dates[i + 1])!.distribution;
+      const ba = matchPair(dates[i + 1], dates[i])!.distribution;
+      expect(ab.expected).toBeCloseTo(ba.expected, 9);
+      expect(ab.interval.lo).toBe(ba.interval.lo);
+      expect(ab.interval.hi).toBe(ba.interval.hi);
+    }
+  });
+});
+
 describe("the probability table", () => {
   const dates = makeDates(60, 4242);
 
   it("conserves probability, keeps the headline inside the range, and never doubles a reading", () => {
     for (let i = 0; i + 1 < dates.length; i += 2) {
-      const m = matchPair(dates[i], dates[i + 1], true)!;
-      const d = m.distribution!;
+      const m = matchPair(dates[i], dates[i + 1])!;
+      const d = m.distribution;
       const mass = d.outcomes.reduce((s, o) => s + o.probability, 0);
       expect(Math.abs(mass - 1), `${dates[i]}/${dates[i + 1]} mass ${mass}`).toBeLessThan(1e-9);
       const scores = d.outcomes.map((o) => o.score);
-      expect(m.range!.min).toBe(Math.min(...scores));
-      expect(m.range!.max).toBe(Math.max(...scores));
+      expect(m.distribution.support.min).toBe(Math.min(...scores));
+      expect(m.distribution.support.max).toBe(Math.max(...scores));
       expect(scores).toContain(m.score);
       // One row per READING: no two rows may share both labels and score. This is the guard on the
       // merge bug review found, where different readings were glued under one row's labels.
@@ -352,16 +398,16 @@ describe("the uncertainty model", () => {
     const dates = makeDates(80, 606);
     let sawStable = false, sawUnstable = false;
     for (let i = 0; i + 1 < dates.length && !(sawStable && sawUnstable); i += 2) {
-      const m = matchPair(dates[i], dates[i + 1], true);
+      const m = matchPair(dates[i], dates[i + 1]);
       if (!m) continue;
       const bothStable = m.spanA.stable && m.spanB.stable;
       if (bothStable) {
         sawStable = true;
         expect(m.certain, `${dates[i]} vs ${dates[i + 1]} should be certain`).toBe(true);
-        expect(m.range!.max).toBe(m.range!.min);
+        expect(m.distribution.support.max).toBe(m.distribution.support.min);
       } else {
         sawUnstable = true;
-        expect(m.range!.max).toBeGreaterThanOrEqual(m.range!.min);
+        expect(m.distribution.support.max).toBeGreaterThanOrEqual(m.distribution.support.min);
       }
     }
     expect(sawStable || sawUnstable).toBe(true);
@@ -371,7 +417,7 @@ describe("the uncertainty model", () => {
     for (const iso of makeDates(60, 24601)) {
       const span = birthSpan(iso)!;
       if (!span.stable) {
-        const m = matchPair(iso, "1990-06-15", true)!;
+        const m = matchPair(iso, "1990-06-15")!;
         expect(m.certain).toBe(false);
         expect(m.uncertaintyNote).toContain("time of day");
       }

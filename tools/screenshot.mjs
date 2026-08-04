@@ -27,7 +27,11 @@ const server = createServer((req, res) => {
   res.writeHead(200, { "Content-Type": MIME[extname(f)] || "application/octet-stream" });
   res.end(readFileSync(f));
 });
-await new Promise((r) => server.listen(4321, r));
+// Port 0 lets the OS pick a free one. A fixed port meant two audits could not run at once — and
+// they do, whenever a reviewer is driving the page while CI or a developer runs this.
+await new Promise((r) => server.listen(0, r));
+const PORT = server.address().port;
+const ORIGIN = `http://localhost:${PORT}/artamatch/`;
 
 const browser = await chromium.launch();
 const errors = [];
@@ -51,19 +55,19 @@ const STATES = [
   // search: both Moons stay in one birth star and one sign all day, which is rare enough that
   // the earlier hand-picked pair did not qualify and this branch went unrendered for a while.
   ["certain", async (p) => {
-    await p.goto("http://localhost:4321/artamatch/?n=Certain%20A&b=1984-02-08&n2=Certain%20B&b2=1967-08-26",
+    await p.goto(`${ORIGIN}?n=Certain%20A&b=1984-02-08&n2=Certain%20B&b2=1967-08-26`,
       { waitUntil: "networkidle" });
     await p.waitForSelector(".ruler");
   }],
   // The extremes of the score range, where the landscape strip's "this pair" label sits hard
   // against an edge and could clip.
   ["lowest", async (p) => {
-    await p.goto("http://localhost:4321/artamatch/?n=Low%20A&b=2004-09-23&n2=Low%20B&b2=1990-08-20",
+    await p.goto(`${ORIGIN}?n=Low%20A&b=2004-09-23&n2=Low%20B&b2=1990-08-20`,
       { waitUntil: "networkidle" });
     await p.waitForSelector(".ruler");
   }],
   ["highest", async (p) => {
-    await p.goto("http://localhost:4321/artamatch/?n=High%20A&b=1983-09-01&n2=High%20B&b2=1969-03-23",
+    await p.goto(`${ORIGIN}?n=High%20A&b=1983-09-01&n2=High%20B&b2=1969-03-23`,
       { waitUntil: "networkidle" });
     await p.waitForSelector(".ruler");
   }],
@@ -130,7 +134,7 @@ for (const [vname, width, height] of VIEWPORTS) {
     const page = await ctx.newPage();
     page.on("console", (m) => { if (m.type() === "error") errors.push(`[${vname}/${sname}] console: ${m.text()}`); });
     page.on("pageerror", (e) => errors.push(`[${vname}/${sname}] PAGEERROR ${e.message}`));
-    await page.goto("http://localhost:4321/artamatch/", { waitUntil: "networkidle" });
+    await page.goto(ORIGIN, { waitUntil: "networkidle" });
     try {
       await drive(page);
     } catch (e) {

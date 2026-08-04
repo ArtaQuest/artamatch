@@ -299,6 +299,9 @@ export default function App() {
   );
 }
 
+/** Trim a trailing .0 — half points are real, "22.0" reads like a rounding artefact. */
+export const fmtScore = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(1));
+
 /** 1999-12-06 → 6 December 1999. Reading a date should not require parsing a format. */
 const MONTHS = ["January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December"];
@@ -364,13 +367,14 @@ function Ranking({ self, ranked, onOpen }: {
     <div className="panel">
       <h2>Ranked against {self.name}</h2>
       <p className="panel-note">
-        Scores are symmetric, so this list agrees with everyone else's about any shared pair.
-        Tap a row for the full report.
+        Ranked by the average score across every birth time the two dates allow. Where a row shows
+        a range, the unknown hour genuinely moves the answer — two rows whose ranges overlap cannot
+        be told apart on this evidence. Scores are symmetric, so this list agrees with everyone
+        else's about any shared pair. Tap a row for the full reading.
       </p>
       <div className="rank">
         {ranked.map((r, i) => {
           const m = r.match;
-          const unstable = !m.spanA.stable || !m.spanB.stable;
           const msg = messageUrl(r.other);
           return (
             <button className="rank-row" key={r.other.id} onClick={() => onOpen(r.other.id)}>
@@ -383,13 +387,13 @@ function Ranking({ self, ranked, onOpen }: {
                 </span>
                 <span className="sub">
                   {m.band.label} · higher than {m.percentile} in 100 random pairs
-                  {unstable && " · time of day would change this"}
+                  {!m.certain && ` · could be ${fmtScore(m.distribution.interval.lo)}–${fmtScore(m.distribution.interval.hi)} depending on the hour`}
                 </span>
-                <Meter value={m.score} max={m.maxScore} gold={m.band.tone === "high"} />
+                <Meter value={m.distribution.expected} max={m.maxScore} gold={m.band.tone === "high"} />
               </span>
               <span className={`sc tone-${m.band.tone}`}>
-                {m.score % 1 === 0 ? m.score : m.score.toFixed(1)}
-                <small>of {m.maxScore}</small>
+                {fmtScore(m.distribution.expected)}
+                <small>{m.certain ? `of ${m.maxScore}` : `±${fmtScore((m.distribution.interval.hi - m.distribution.interval.lo) / 2)}`}</small>
               </span>
             </button>
           );
@@ -404,7 +408,7 @@ function Matrix({ people, options, onOpen }: { people: Person[]; options: ScoreO
     const m = new Map<string, number>();
     for (let i = 0; i < people.length; i++) {
       for (let j = i + 1; j < people.length; j++) {
-        const r = matchPair(people[i].birthday, people[j].birthday, false, options);
+        const r = matchPair(people[i].birthday, people[j].birthday, options);
         if (r) {
           m.set(`${people[i].id}|${people[j].id}`, r.score);
           m.set(`${people[j].id}|${people[i].id}`, r.score);

@@ -10,8 +10,10 @@
  * the two brand colours, and none relying on colour alone — every mark is labelled or titled.
  */
 
-import { useCallback, useState } from "react";
-import { SIGNS } from "../engine/ephemeris";
+import { useCallback, useMemo, useState } from "react";
+import { SIGNS, chartAt, julianDay, parseDate } from "../engine/ephemeris";
+import { nakshatraOf } from "../engine/nakshatra";
+import { gunaMilan, type KutaSide } from "../engine/kuta";
 import { GANA_LABEL, NADI_LABEL, YONI_LABEL } from "../engine/nakshatra";
 import {
   matchPair, PERCENTILE_BELOW, PERCENTILE_BELOW_NO_VARNA,
@@ -26,7 +28,7 @@ export default function Report({ a, b, options, onClose }: {
   a: Person; b: Person; options: ScoreOptions; onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const match = matchPair(a.birthday, b.birthday, true, options);
+  const match = matchPair(a.birthday, b.birthday, options);
 
   /** A link that reproduces this reading anywhere. It carries the two names and dates — inputs,
    *  never conclusions — so the receiving browser computes the whole thing itself. */
@@ -69,23 +71,33 @@ export default function Report({ a, b, options, onClose }: {
       {/* ── 1 · the answer ───────────────────────────────────────────────────────────────── */}
       <div className="hero">
         <span className={`num tone-${match.band.tone}`}>
-          {fmt(match.score)}
+          {fmt(match.distribution.expected)}
           <small>out of {match.maxScore}</small>
         </span>
         <span>
           <span className="verdict">
             {match.band.label}
             {!match.certain && (
-              <span className="pill soft" title="How likely this exact reading is, given nobody knows the birth times">
-                about {Math.round(match.confidence * 100)}% sure
+              <span className="pill soft"
+                title={`Nine of every ten birth-time combinations give a score in this range`}>
+                {fmt(match.distribution.interval.lo)}–{fmt(match.distribution.interval.hi)} · 90% sure
               </span>
             )}
           </span>
           <span className="because">
-            Higher than <strong>{match.percentile} in 100</strong> randomly paired dates.{" "}
-            {match.band.note}
+            {match.certain ? (
+              <>The two dates settle this outright — no birth time needed. Higher than{" "}
+              <strong>{match.percentile} in 100</strong> randomly paired dates. {match.band.note}</>
+            ) : (
+              <>Averaged across every birth time the dates allow. Nine times in ten it lands
+              between <strong>{fmt(match.distribution.interval.lo)}</strong> and{" "}
+              <strong>{fmt(match.distribution.interval.hi)}</strong>; the single most likely reading
+              is <strong>{fmt(match.distribution.modal.score)}</strong> at{" "}
+              {Math.round(match.confidence * 100)}%. Higher than{" "}
+              <strong>{match.percentile} in 100</strong> randomly paired dates. {match.band.note}</>
+            )}
           </span>
-          <Landscape score={match.score} excluded={excluded.length > 0} />
+          <Landscape score={match.distribution.expected} excluded={excluded.length > 0} />
         </span>
       </div>
 
@@ -142,16 +154,23 @@ export default function Report({ a, b, options, onClose }: {
                 </tbody>
               </table>
             </div>
-            {match.range && match.range.max > match.range.min && (
-              <>
-                <p className="say">
-                  Across every birth time the two dates allow, the score runs from{" "}
-                  <strong>{fmt(match.range.min)}</strong> to <strong>{fmt(match.range.max)}</strong>:
-                </p>
-                <RangeBar min={match.range.min} max={match.range.max} value={match.score}
-                  scaleMin={0} scaleMax={match.maxScore} />
-              </>
-            )}
+            <p className="say">
+              Across every birth time the two dates allow the score runs from{" "}
+              <strong>{fmt(match.distribution.support.min)}</strong> to{" "}
+              <strong>{fmt(match.distribution.support.max)}</strong>, and nine times in ten it lands
+              between <strong>{fmt(match.distribution.interval.lo)}</strong> and{" "}
+              <strong>{fmt(match.distribution.interval.hi)}</strong>:
+            </p>
+            <RangeBar min={match.distribution.interval.lo} max={match.distribution.interval.hi}
+              value={match.distribution.expected} scaleMin={0} scaleMax={match.maxScore} />
+
+            <p className="say">
+              And here is the same thing hour by hour. Every cell is one combination of birth
+              hours — {a.name} down the side, {b.name} across the top, midnight to midnight — shaded
+              by the score it gives. The blocks are where the answer changes, and their sizes are
+              the probabilities in the table above.
+            </p>
+            <HourGrid a={a} b={b} match={match} options={options} />
           </>
         )}
       </Section>
@@ -214,7 +233,10 @@ export default function Report({ a, b, options, onClose }: {
 
         <div className="row total">
           <strong>Total</strong>
-          <strong>{fmt(match.score)} / {match.maxScore} — {match.band.label}</strong>
+          <strong>
+          {fmt(match.distribution.expected)} / {match.maxScore} — {match.band.label}
+          {!match.certain && ` (${fmt(match.distribution.interval.lo)}–${fmt(match.distribution.interval.hi)})`}
+        </strong>
         </div>
       </Section>
 
@@ -413,6 +435,88 @@ function PersonPanel({ person, span, showMoonSign }: {
           </td></tr>
         </tbody>
       </table>
+    </div>
+  );
+}
+
+
+/**
+ * The 24×24 hour grid: every combination of birth hours, shaded by the score it gives.
+ *
+ * The interval above is computed EXACTLY, by enumerating the handful of (birth star, sign,
+ * mid-sign half) states each day contains — not by sampling this grid. (Checked: the exact method
+ * agrees with a 240×240 sweep to 0.15 percentage points, and a 24×24 sample is measurably worse.)
+ * This picture exists because it is the honest, legible answer to "how much does the missing hour
+ * matter" — you can see the blocks, see where the boundaries fall, and see at a glance whether the
+ * unknown hour changes anything at all.
+ */
+function HourGrid({ a, b, match, options }: {
+  a: Person; b: Person; match: Match; options: ScoreOptions;
+}) {
+  const grid = useMemo(() => {
+    const pa = parseDate(a.birthday), pb = parseDate(b.birthday);
+    if (!pa || !pb) return null;
+    const excluded = options.exclude ?? [];
+    // 24 hourly sides per person, then 576 cheap arithmetic combinations.
+    const sideAt = (p: { y: number; m: number; d: number }, h: number): KutaSide => {
+      const c = chartAt(julianDay(p.y, p.m, p.d, h + 0.5));
+      const moon = c.byBody.Moon;
+      return {
+        moonLon: moon.lon, nakshatra: nakshatraOf(moon.lon).info, rasi: moon.sign,
+        degInSign: moon.deg, marsLon: c.byBody.Mars.lon, venusLon: c.byBody.Venus.lon,
+      };
+    };
+    const sa = Array.from({ length: 24 }, (_, h) => sideAt(pa, h));
+    const sb = Array.from({ length: 24 }, (_, h) => sideAt(pb, h));
+    const cells: number[][] = [];
+    let lo = Infinity, hi = -Infinity;
+    for (let i = 0; i < 24; i++) {
+      const row: number[] = [];
+      for (let j = 0; j < 24; j++) {
+        const g = gunaMilan(sa[i], sb[j]);
+        const v = excluded.length
+          ? g.kutas.filter((k) => !excluded.includes(k.key)).reduce((s, k) => s + k.points, 0)
+          : g.total;
+        row.push(v);
+        if (v < lo) lo = v;
+        if (v > hi) hi = v;
+      }
+      cells.push(row);
+    }
+    return { cells, lo, hi };
+  }, [a.birthday, b.birthday, options]);
+
+  if (!grid) return null;
+  const { cells, lo, hi } = grid;
+  const span = hi - lo || 1;
+
+  return (
+    <div className="hourgrid-wrap">
+      <div className="hourgrid" role="img"
+        aria-label={`Score for each of the 576 combinations of birth hours, ranging from ${lo} to ${hi} out of ${match.maxScore}`}>
+        {cells.map((row, i) => (
+          <span className="hrow" key={i}>
+            {row.map((v, j) => (
+              <i key={j}
+                // Lightness carries the value; the title carries it in words, so the grid never
+                // depends on colour alone.
+                style={{ opacity: 0.15 + 0.85 * ((v - lo) / span) }}
+                title={`${a.name} born ${String(i).padStart(2, "0")}:00–${String(i + 1).padStart(2, "0")}:00, ` +
+                  `${b.name} born ${String(j).padStart(2, "0")}:00–${String(j + 1).padStart(2, "0")}:00 → ` +
+                  `${v} of ${match.maxScore}`} />
+            ))}
+          </span>
+        ))}
+      </div>
+      <div className="legend">
+        <span><i className="dot swatch faint" /> {lo} of {match.maxScore}</span>
+        <span><i className="dot swatch full" /> {hi} of {match.maxScore}</span>
+        <span className="dim">
+          {lo === hi
+            ? "every hour gives the same answer — the shading is flat because the dates settle it"
+            : `576 hour combinations · ${a.name} down the side, ${b.name} across the top`}
+        </span>
+      </div>
     </div>
   );
 }

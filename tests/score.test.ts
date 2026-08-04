@@ -269,15 +269,20 @@ describe("the switch-off option", () => {
   });
 
   it("keeps the ranking symmetric with a test switched off", () => {
+    // Each rankAgainst call now draws 576 charts per pair for the headline score, so the O(n²)
+    // rebuild inside the loop was 64 full rankings — fine on this laptop, a timeout on CI's
+    // runner. Build each person's view once and compare the views, which is the same assertion
+    // for an eighth of the work.
     const people = dates.slice(0, 8).map((birthday, i) => ({ id: `p${i}`, birthday }));
+    const views = new Map(people.map((p) => [p.id, rankAgainst(p, people, { exclude: ["varna"] })]));
     for (const self of people) {
-      for (const r of rankAgainst(self, people, { exclude: ["varna"] })) {
-        const theirs = rankAgainst(r.other, people, { exclude: ["varna"] })
-          .find((x) => x.other.id === self.id)!;
+      for (const r of views.get(self.id)!) {
+        const theirs = views.get(r.other.id)!.find((x) => x.other.id === self.id)!;
         expect(theirs.score).toBeCloseTo(r.score, 9);
+        expect(theirs.percentile).toBe(r.percentile);
       }
     }
-  });
+  }, 60_000);
 });
 
 describe("ranking order", () => {

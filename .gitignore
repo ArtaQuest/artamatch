@@ -4,3 +4,10 @@ dist/
 .DS_Store
 .vite/
 tsconfig.tsbuildinfo
+
+# Scratch files that review agents write into the repo while probing. Three have been swept into
+# commits by `git add -A` — one of them broke CI with a hardcoded absolute path.
+tests/_*.test.ts
+tests/_*.test.tsx
+tools/_*.mjs
+tools/_*.ts

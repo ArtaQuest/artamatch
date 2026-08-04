@@ -17,6 +17,8 @@ import { nakshatraOf } from "../src/engine/nakshatra";
 import { chartForDate } from "../src/engine/ephemeris";
 import { matchPair } from "../src/engine/score";
 import { explainKuta, explainDosha, birthStarText, moonSignText } from "../src/engine/interpret";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 /** Vocabulary that must never reach a reader. Matched on word boundaries. */
 const BANNED = [
@@ -57,6 +59,23 @@ const DATES = [
 ];
 
 describe("nothing a reader can see uses astrology jargon", () => {
+  it("keeps the page title and meta description clean", () => {
+    // The most visible text on the whole site — the browser tab, search results and link previews
+    // — and for a long time the worst offender, because both jargon guards only ever inspected
+    // React-rendered content and never the static head. It said "sidereal", "Vedic",
+    // "Ashtakoota Guna Milan" and "synastry", the last describing a layer since removed.
+    const html = readFileSync(fileURLToPath(new URL("../index.html", import.meta.url)), "utf8");
+    const found: string[] = [];
+    const title = /<title>([^<]*)<\/title>/.exec(html)?.[1] ?? "";
+    expect(title.length).toBeGreaterThan(10);
+    found.push(...offences("<title>", title));
+    for (const m of html.matchAll(/content="([^"]*)"/g)) {
+      found.push(...offences("meta content", m[1]));
+    }
+    expect([...new Set(found)]).toEqual([]);
+  });
+
+
   it("keeps the eight tests clean — names, rules, evidence and explanations", () => {
     const found: string[] = [];
     for (const a of DATES) {

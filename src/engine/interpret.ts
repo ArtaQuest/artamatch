@@ -20,8 +20,32 @@ import corpus from "../data/corpus.json";
 type Corpus = {
   birthStars: { index: number; name: string; title: string; summary: string; inRelationships: string }[];
   moonSigns: { index: number; sign: string; title: string; style: string }[];
+  planets: { body: string; opens: string; what: string; readings: string[] }[];
 };
 const CORPUS = corpus as Corpus;
+
+// ── the natal chart, body by body ───────────────────────────────────────────────────────────────
+
+/**
+ * The five bodies a birth DATE can say something personal about, in reading order, each with the
+ * plain phrase that says what it is taken to stand for.
+ *
+ * Jupiter and Saturn are drawn on the chart and make connections, but get no paragraph: Jupiter
+ * holds a sign for about a year and Saturn for two and a half, so a reading of them describes
+ * everyone born around the same time. The three slowest are further out still. Where a placement
+ * is shared with a whole cohort, saying so is more useful than a character sketch of the cohort.
+ */
+export const READ_BODIES = CORPUS.planets.map((p) => p.body);
+
+export function planetMeta(body: string): { opens: string; what: string } | null {
+  const row = CORPUS.planets.find((p) => p.body === body);
+  return row ? { opens: row.opens, what: row.what } : null;
+}
+
+/** What this body in this sign is said to suggest — one plain sentence or two, never a prediction. */
+export function planetReading(body: string, sign: number): string {
+  return CORPUS.planets.find((p) => p.body === body)?.readings[sign] ?? "";
+}
 
 // ── the birth stars and Moon signs ──────────────────────────────────────────────────────────────
 

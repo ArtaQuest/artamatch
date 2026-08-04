@@ -82,11 +82,20 @@ async function audit(page, tag) {
     if (document.body.scrollWidth > window.innerWidth + 1) {
       out.push(`HORIZONTAL OVERFLOW: body ${document.body.scrollWidth}px > viewport ${window.innerWidth}px`);
     }
+    // Inside a deliberate horizontal scroller, a wide box is the point, not a bug. Detected from
+    // the COMPUTED overflow rather than a hardcoded class list — the list silently stopped covering
+    // everything the moment a new scroller was added, and reported the new chart as broken.
+    const inScroller = (el) => {
+      for (let n = el.parentElement; n && n !== document.body; n = n.parentElement) {
+        const ox = getComputedStyle(n).overflowX;
+        if (ox === "auto" || ox === "scroll") return true;
+      }
+      return false;
+    };
     for (const el of document.querySelectorAll("body *")) {
       const r = el.getBoundingClientRect();
       if (r.width === 0) continue;
-      // Ignore anything inside a deliberate horizontal scroller.
-      if (el.closest(".scroll-x, .anatomy .host, .hourgrid")) continue;
+      if (inScroller(el)) continue;
       if (r.right > window.innerWidth + 2 || r.left < -2) {
         out.push(`overflows viewport: <${el.tagName.toLowerCase()} class="${el.className}"> ` +
           `left ${Math.round(r.left)} right ${Math.round(r.right)} vs ${window.innerWidth}`);
@@ -131,6 +140,45 @@ async function audit(page, tag) {
       if (nm.scrollWidth > nm.clientWidth + 2 && nm.clientWidth < 70) {
         out.push(`name column collapsed to ${Math.round(nm.clientWidth)}px ("${nm.textContent.trim().slice(0, 16)}")`);
       }
+    }
+
+    // SHEARED TEXT. A label clipped by its own box is worse than a missing one when it is a
+    // number: "0.5" sheared to "0" is a WRONG figure, not an absent one, and that shipped once.
+    // Any short label in a fixed-width box is checked, at every width.
+    for (const el of document.querySelectorAll(".anatomy .seg b, .anatomy .seg u, .band .chip, .band .cell")) {
+      if (getComputedStyle(el).display === "none") continue;
+      if (el.scrollWidth > el.clientWidth + 1) {
+        out.push(`text sheared by its box: <${el.tagName.toLowerCase()} class="${el.className}"> ` +
+          `"${el.textContent.trim()}" needs ${el.scrollWidth}px, has ${el.clientWidth}`);
+      }
+    }
+
+    // THE CHART. Its whole job is to put a planet where the planet was, and the lane packing is
+    // the only thing stopping two labels from sitting on top of each other. Both are checked in
+    // the rendered DOM rather than trusted from the arithmetic that produced it.
+    for (const band of document.querySelectorAll(".band")) {
+      const chips = [...band.querySelectorAll(".chip")].map((c) => {
+        const r = c.getBoundingClientRect();
+        return { r, name: c.textContent.trim() };
+      });
+      for (let i = 0; i < chips.length; i++) {
+        for (let j = i + 1; j < chips.length; j++) {
+          const a = chips[i].r, b = chips[j].r;
+          if (a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1) {
+            out.push(`chart labels overlap: "${chips[i].name}" and "${chips[j].name}"`);
+          }
+        }
+      }
+      const bandBox = band.getBoundingClientRect();
+      for (const { r, name } of chips) {
+        if (r.left < bandBox.left - 1 || r.right > bandBox.right + 1) {
+          out.push(`chart label "${name}" hangs off the band`);
+        }
+      }
+    }
+    if (document.querySelector(".report")) {
+      const bands = document.querySelectorAll(".band");
+      if (bands.length !== 3) out.push(`report has ${bands.length} charts, expected 3`);
     }
     return out;
   });

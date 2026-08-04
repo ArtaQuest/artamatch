@@ -117,31 +117,80 @@ describe("ArtaMatch app", () => {
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
     expect(screen.getAllByText(/randomly paired dates/i).length).toBeGreaterThan(0);
-    // All three instruments render at once — there are no tabs to hide anything behind.
+
+    // The document's spine: numbered sections, each with a heading, in reading order.
+    expect(document.querySelectorAll(".sec > h3").length).toBeLessThanOrEqual(5);
+    expect(screen.getByText(/Each of them, on their own/i)).toBeDefined();
+    expect(screen.getByText(/Where the two charts touch/i)).toBeDefined();
+    expect(screen.getByText(/Where the score came from/i)).toBeDefined();
+    expect(screen.getByText(/How sure the score is/i)).toBeDefined();
+
+    // Three charts: one per person, then the two of them on one axis.
+    const bands = document.querySelectorAll(".band");
+    expect(bands.length).toBe(3);
+    expect(bands[0].querySelectorAll(".chip").length).toBe(10);   // every body in the sky
+    expect(bands[1].querySelectorAll(".chip").length).toBe(10);
+    expect(bands[2].querySelectorAll(".chip").length).toBe(20);   // both people, one axis
+    // The twelve signs are the axis of every chart, cut open at Aries.
+    for (const band of bands) expect(band.querySelectorAll(".cell").length).toBe(12);
+
+    // Five bodies get a reading, for each of the two people.
+    for (const opens of ["At the centre", "How they feel", "How they think",
+      "How they warm to people", "How they go after things"]) {
+      expect(screen.getAllByText(new RegExp(opens, "i")).length, `${opens} missing`).toBe(2);
+    }
+
+    // Connections are narrated, numbered, and the numbers appear on the shared chart.
+    const conns = document.querySelectorAll(".conn");
+    expect(conns.length).toBeGreaterThan(0);
+    expect(conns.length).toBeLessThanOrEqual(6);
+    expect([...conns].map((c) => c.querySelector(".conn-n")?.textContent))
+      .toEqual(Array.from({ length: conns.length }, (_, i) => String(i + 1)));
+    expect(bands[2].querySelectorAll(".chip b").length).toBeGreaterThan(0);
+
+    // Both instruments of the score still render.
     expect(document.querySelector(".anatomy .bar")?.children.length).toBe(8);
     expect((document.querySelector(".landscape")?.children.length ?? 0)).toBeGreaterThan(30);
 
-    // All eight tests, each with the rule it used and the values it read — no tab to open.
+    // All eight tests, each with the rule it used and the values it read, one click away.
     for (const test of ["Ways of working", "Give and take", "Good for each other",
       "Physical instinct", "Meeting of minds", "Temperament", "Life together", "Underlying makeup"]) {
       expect(screen.getAllByText(test).length, `${test} missing`).toBeGreaterThan(0);
     }
-    // The rule and the values live behind "Show the working" — present for every test, one click
-    // away rather than eight dense paragraphs burying the answer.
-    // Eight per-test disclosures plus one "more about" per person.
-    expect(screen.getAllByRole("group").length).toBe(10);
-    expect(screen.getAllByText(/Show the working/).length).toBe(8);
     expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
     expect(screen.getAllByText(/What was read:/).length).toBe(8);
 
-    // The document's spine: numbered sections, each with a heading.
-    expect(document.querySelectorAll(".sec > h3").length).toBeLessThanOrEqual(4);
-    expect(screen.getByText(/Where the points came from/i)).toBeDefined();
-    expect(screen.getByText(/How sure this is/i)).toBeDefined();
-    expect(screen.getByText(/The two of them/i)).toBeDefined();
+    // Four disclosures: the rest of each person's chart, all the connections, all eight tests.
+    expect(screen.getAllByRole("group").length).toBe(4);
 
     // Both people are described, by plain title rather than a transliterated name.
     expect(screen.getAllByText(/their birth star, one of the 27/i).length).toBe(2);
+  });
+
+  it("gives every synastry claim a mean, a give-or-take and how often it held", () => {
+    // The user-facing promise of the whole section: both charts are drawn 576 times, and no
+    // sentence states a bare number. A connection that quietly dropped its spread would read as
+    // certainty the two dates cannot support.
+    render(<App />);
+    addPerson("Ada", "1815-12-10");
+    addPerson("Turing", "1912-06-23");
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
+    fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
+
+    expect(screen.getByText(/24 . 24 = 576 times/)).toBeDefined();
+    for (const work of document.querySelectorAll(".conn-work")) {
+      const t = work.textContent ?? "";
+      expect(t, "a connection with no give-or-take").toMatch(/give or take \d|in every one of the 576/);
+      // Every connection must say what the unknown hours do to it, in whichever of the three
+      // honest forms fits: fixed outright, inside the orb regardless, or true only some of the time.
+      expect(t, "a connection with no account of the unknown hours")
+        .toMatch(/in every one of the 576 charts|whatever hour either was born|connection in \d+% of the 576/i);
+    }
+    // And the count of connections is itself given with its spread, never as a bare tally — plus
+    // the measured reason a reader should not treat that count as a result.
+    const page = document.body.textContent ?? "";
+    expect(page).toMatch(/places, give or take \d/);
+    expect(page).toMatch(/which is to say not at all/);
   });
 
   it("names the pair in a real heading and moves focus there when a reading opens", () => {
@@ -186,16 +235,16 @@ describe("ArtaMatch app", () => {
     expect(Math.abs(marked - shown)).toBeLessThanOrEqual(0.5);
   });
 
-  it("says a shared Moon sign once, not twice in adjacent columns", () => {
-    // 1984-02-08 x 1967-08-26 both have the Moon in Aries. Printing the identical paragraph in
-    // both columns reads as a bug, so the shared case is stated once above them.
+  it("says so when a date does not settle which sign a planet was in", () => {
+    // On 1999-12-06 the Moon spends 87% of the day in Scorpio and 13% in Libra, and Mercury
+    // crosses the same boundary. A chart that printed one sign and said nothing would state as
+    // fact something the input cannot support.
     window.history.replaceState({}, "",
-      "/?n=CertA&b=1984-02-08&n2=CertB&b2=1967-08-26");
+      "/?n=CertA&b=1999-12-06&n2=CertB&b2=2004-12-27");
     render(<App />);
-    expect(screen.getByText(/Both have the Moon in Aries/i)).toBeDefined();
-    // "Fast heat, quick recovery" is the Aries line — it must appear exactly once.
-    // Once above the two columns, never twice inside them.
-    expect(screen.getAllByText(/Fast heat, quick recovery/i)).toHaveLength(1);
+    // Both the Moon and Mercury cross that boundary, so the note appears twice for this person.
+    expect(screen.getAllByText(/This one is not settled by the date/i).length).toBe(2);
+    expect(document.body.textContent).toMatch(/Libra for 13% of that day/);
     window.history.replaceState({}, "", "/");
   });
 

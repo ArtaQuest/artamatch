@@ -16,7 +16,11 @@ import { gunaMilan, type KutaSide } from "../src/engine/kuta";
 import { nakshatraOf } from "../src/engine/nakshatra";
 import { chartForDate } from "../src/engine/ephemeris";
 import { matchPair } from "../src/engine/score";
-import { explainKuta, explainDosha, birthStarText, moonSignText } from "../src/engine/interpret";
+import {
+  explainKuta, explainDosha, birthStarText, moonSignText, planetMeta, planetReading, READ_BODIES,
+} from "../src/engine/interpret";
+import { ASPECTS, PERSONAL, STANDS_FOR, standsFor, synastryGrid } from "../src/engine/synastry";
+import { GENERATIONAL } from "../src/engine/natal";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -128,6 +132,52 @@ describe("nothing a reader can see uses astrology jargon", () => {
       expect(m, `moon sign ${i} missing`).not.toBeNull();
       found.push(...offences(`sign${i}.title`, m!.title));
       found.push(...offences(`sign${i}.style`, m!.style));
+    }
+    // The chart readings: five bodies × twelve signs, plus the phrase that opens each one. Sixty
+    // paragraphs written by hand is exactly where a stray "retrograde" or "cusp" would survive.
+    expect(READ_BODIES.length).toBe(5);
+    for (const body of READ_BODIES) {
+      const meta = planetMeta(body);
+      expect(meta, `${body} has no opener`).not.toBeNull();
+      found.push(...offences(`${body}.opens`, meta!.opens));
+      found.push(...offences(`${body}.what`, meta!.what));
+      for (let i = 0; i < 12; i++) {
+        const text = planetReading(body, i);
+        expect(text.length, `${body} in sign ${i} has no reading`).toBeGreaterThan(40);
+        found.push(...offences(`${body}.sign${i}`, text));
+      }
+    }
+    expect([...new Set(found)]).toEqual([]);
+  });
+
+  it("keeps the connection wording clean — the sentences it builds, not just the parts", () => {
+    // Every connection sentence is ASSEMBLED at render time from a body phrase, a joining phrase
+    // and a meaning, so checking the pieces is not enough: this builds all of them and checks the
+    // finished sentence, the way a reader meets it.
+    const found: string[] = [];
+    for (const g of GENERATIONAL) found.push(...offences("generational", `${g.body} ${g.years}`));
+    for (const a of PERSONAL) {
+      for (const b of PERSONAL) {
+        for (const aspect of ASPECTS) {
+          const sentence = `${standsFor(a, "Ada")} ${aspect.joins} ${standsFor(b, "Turing")}. ` +
+            `${aspect.means}`;
+          found.push(...offences(`${a}/${b}/${aspect.kind}`, sentence));
+        }
+      }
+    }
+    expect(Object.keys(STANDS_FOR).length).toBe(PERSONAL.length);
+    expect([...new Set(found)]).toEqual([]);
+  });
+
+  it("keeps every connection a real date pair can produce clean", () => {
+    const found: string[] = [];
+    for (const a of DATES) {
+      for (const b of DATES) {
+        for (const c of synastryGrid(a, b).connections) {
+          found.push(...offences(`${a}/${b} kind`, c.kind));
+          found.push(...offences(`${a}/${b} joins`, `${c.bodyA} ${c.aspect.joins} ${c.bodyB}`));
+        }
+      }
     }
     expect([...new Set(found)]).toEqual([]);
   });

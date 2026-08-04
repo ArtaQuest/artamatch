@@ -1,37 +1,55 @@
 # ArtaMatch
 
-**One score, fully explained: the oldest date-only matching tradition, out of 36 — every step shown
-in plain words, with an honest account of what a date alone cannot tell you.**
+**Two sidereal charts, read one at a time, then laid over each other, then scored — in plain
+English, with an honest account of what a date of birth alone cannot tell you.**
 
 ### → [artaquest.github.io/artamatch](https://artaquest.github.io/artamatch/)
 
 Full method, and the provenance of every number on the page: **[METHODS.md](METHODS.md)**
 
-The whole reading is one short document that answers four questions in the order people ask them:
-**what is the score**, then **where the points came from**, **how sure it is**, and **who these two
-people are**. Nothing is behind a tab. Three diagrams do the explaining, and each answers a
-different question without repeating a number:
+The reading is one document, read top to bottom, in the order a person actually asks:
 
+1. **The score** — what it is, and whether that is good.
+2. **Each of them, on their own** — both charts drawn, and five things each one is said to suggest,
+   one plain paragraph apiece.
+3. **Where the two charts touch** — both people on one shared band, and the connections between
+   their planets, narrated.
+4. **Where the score came from** — the eight tests, drawn to scale.
+5. **How sure the score is** — every reading the two dates allow, and the 576 hour combinations.
+
+### The rule the whole page is built on
+
+**Nothing is a bare number.** A date of birth fixes a *day*, not an instant, so every statement is
+made **24 × 24 = 576 times** — once for each combination of the two unknown birth hours — and
+reported with its mean, its give-or-take and how often it held. The score carries its exact
+distribution; every planet carries the share of the day it spent in the sign shown; every connection
+carries how many of the 576 charts actually contained it.
+
+### The chart is a straight line, not a wheel
+
+A wheel's *rotation* carries the houses and the rising sign, and a birth date fixes neither of them —
+they turn a full circle every day. Drawing the circle anyway would put a real-looking orientation on
+a chart that has none. So the circle is cut open at the start of Aries and laid flat: the same twelve
+signs in the same order, an angle becomes a horizontal distance you can measure with your eye, and
+both people share one axis, so "in the same place" is literally one label sitting above another.
+
+### Three diagrams, each answering a different question
+
+- **The sky band** — where every planet was, for one person or for both at once, with a leader line
+  from each label to its exact position and the connections numbered to match the list below.
 - **The anatomy bar** — 36 = 1+2+3+4+5+6+7+8, drawn to scale, each test's block filled by the
-  points it earned. The score becomes visible arithmetic: the two heaviest tests carry as much as
-  the other six together, and you can see it.
-- **The landscape strip** — every possible score, sized by how often 20,000 random pairs land on
-  it, with this pair marked. "Higher than 69 in 100" stops being a claim and becomes a place.
+  points it earned. The score becomes visible arithmetic.
 - **The hour grid** — all 576 combinations of the two birth hours, shaded by the score each gives.
   You can see the blocks where the answer changes, and whether the missing hour matters at all.
 
-It got here by deletion, measured each time. Four tabs became six sections became four. An
-*ensemble* of four traditions and an *aspect layer* of 55 planet-pair readings were both built,
-verified and then removed — each worked, and each made the page about more than one thing. A **sky
-ruler** diagram went too: the score depends only on the *relationship* between the two Moons, never
-their absolute positions, so it drew data no test reads, and the test cards say the same thing in
-words more precisely. The per-test rule and evidence moved behind "show the working", and each
-person's character sketch behind "more about them" — still there, still checkable, no longer
-shouting over the answer.
+### Why there are two systems on the page and only one of them scores
 
-The measured effect on a phone: **1,972 visible words → 971, and 11.8 screens → 8.2**, with nothing
-removed that a reader cannot still reach in one click. The removed experiments are in the git
-history and in [METHODS.md](METHODS.md) §5.
+An aspect layer was cut from this page once, for a good reason: a second, unscored system beside a
+scored one invites "is nineteen connections *good*?" and cannot answer it. It is back because that
+question now has a measured answer. Over 20,000 random pairs, **every** pair has between about ten
+and twenty connections, the median is fifteen, and the count agrees with the eight-test score at
+**0.03 out of 1** — which is to say not at all. Two old systems, the same two dates, no agreement.
+The page says exactly that, out loud, and then shows *which* connections rather than how many.
 
 ## What makes it honest
 

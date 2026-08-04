@@ -1,38 +1,59 @@
 /**
- * Report.tsx — the whole reading for one pair, as ONE short document.
+ * Report.tsx — the whole reading for one pair, as ONE document that reads top to bottom.
  *
- * It answers four questions in the order people ask them, and stops:
+ * It answers five questions in the order a person actually asks them:
  *
- *   the score        →  what is it, and is that good
- *   1 · the points   →  where each point came from
- *   2 · how sure     →  what the unknown birth hours do to it
- *   3 · the two      →  who these people are, and what the tradition warns about
+ *   the score       →  what is it, and is that good
+ *   1 · each of us  →  who does this say I am — the two sidereal charts, read one at a time
+ *   2 · the two     →  where do our charts touch — synastry, drawn on one shared band
+ *   3 · the points  →  where the number came from
+ *   4 · how sure    →  what the two unknown birth hours do to all of it
  *
- * It got here by deletion. It was once four tabs; then six sections, four diagrams and 1,972 words
- * — twelve phone screens. The sky ruler went because the score depends only on the RELATIONSHIP
- * between the two Moons, never their absolute positions, so it drew data no test reads; the test
- * cards state the same thing in words, more precisely. The per-test rule and evidence went behind
- * "show the working" — still there, still checkable, no longer shouting over the answer.
+ * ── The rule the whole page is built on ─────────────────────────────────────────────────────────
  *
- * Three diagrams survive because each answers a different question and none repeats a number:
- * the landscape strip (is this good), the anatomy bar (why this number), the hour grid (where the
- * range comes from).
+ * Nothing here is a bare number. A date of birth fixes a DAY, not an instant, so every statement is
+ * made 576 times — once for each combination of the two unknown birth hours — and reported with its
+ * mean, its give-or-take and how often it held. The score has its exact distribution, each planet
+ * has the share of the day it spent in the sign shown, and each connection has how many of the 576
+ * charts actually contained it.
+ *
+ * ── Two systems, and why only one of them scores ────────────────────────────────────────────────
+ *
+ * The aspect layer was cut from this page once, because a second unscored system beside a scored
+ * one invites "is nineteen connections good?" and cannot answer it. It is back because that
+ * question now HAS an answer, measured over 20,000 random pairs: every pair has between ten and
+ * twenty connections, the median is fifteen, and the count agrees with the eight-test score at 0.03
+ * out of 1. The page says so out loud and then shows WHICH connections rather than how many.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SIGNS, chartAt, julianDay, parseDate } from "../engine/ephemeris";
+import { chartAt, julianDay, parseDate, type Body } from "../engine/ephemeris";
 import { nakshatraOf, GANA_LABEL, NADI_LABEL, YONI_LABEL } from "../engine/nakshatra";
 import { gunaMilan, type KutaSide } from "../engine/kuta";
 import {
   matchPair, PERCENTILE_BELOW, PERCENTILE_BELOW_NO_VARNA, type Match, type ScoreOptions,
 } from "../engine/score";
-import { explainKuta, explainDosha, birthStarText, moonSignText, starTitle } from "../engine/interpret";
+import { natalChart, GENERATIONAL, type NatalChart } from "../engine/natal";
+import {
+  synastryGrid, narrate, standsFor, atSign, CONNECTIONS_MEDIAN, CONNECTIONS_LO, CONNECTIONS_HI,
+  CONNECTIONS_VS_SCORE, GRID, type Connection,
+} from "../engine/synastry";
+import {
+  explainKuta, explainDosha, birthStarText, starTitle, planetMeta, planetReading, READ_BODIES,
+} from "../engine/interpret";
 import type { Person } from "../data/people";
+import { formatBirthday } from "../App";
 import { messageUrl, profileUrl } from "../data/artaquest";
 import { Avatar, Meter } from "./bits";
+import SkyBand, { type Chip } from "./SkyBand";
 
 /** Trim a trailing .0 — half points are real, "18.0" reads like a rounding artefact. */
 const fmt = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(1));
+const pct = (p: number) => Math.round(p * 100);
+const deg = (d: number) => `${d.toFixed(1)}°`;
+
+/** How many connections get a paragraph of their own. The rest are one click away, in full. */
+const NARRATED = 6;
 
 export default function Report({ a, b, options, onClose }: {
   a: Person; b: Person; options: ScoreOptions; onClose: () => void;
@@ -65,7 +86,17 @@ export default function Report({ a, b, options, onClose }: {
     else { window.prompt("Copy this link", u.toString()); done(); }
   }, [a, b]);
 
-  if (!match) {
+  const charts = useMemo(() => {
+    if (!match) return null;
+    return {
+      a: natalChart(a.birthday, match.spanA.jdEstimate),
+      b: natalChart(b.birthday, match.spanB.jdEstimate),
+    };
+  }, [a.birthday, b.birthday, match?.spanA.jdEstimate, match?.spanB.jdEstimate]);
+
+  const syn = useMemo(() => synastryGrid(a.birthday, b.birthday), [a.birthday, b.birthday]);
+
+  if (!match || !charts?.a || !charts.b) {
     return (
       <div className="panel">
         <p className="error">One of these dates is not a real calendar date, so nothing can be worked out from it.</p>
@@ -80,8 +111,25 @@ export default function Report({ a, b, options, onClose }: {
   const msg = messageUrl(b) ?? messageUrl(a);
   const prof = profileUrl(b);
   const doshas = match.guna.doshas;
-  const sameMoonSign = match.spanA.likeliest.rasi === match.spanB.likeliest.rasi;
-  const sharedSign = sameMoonSign ? moonSignText(match.spanA.likeliest.rasi) : null;
+  const narrated = narrate(syn.connections, NARRATED);
+
+  // Which chips carry which connection number, so the chart and the list point at each other.
+  const badgesA = new Map<Body, number[]>();
+  const badgesB = new Map<Body, number[]>();
+  narrated.forEach((c, i) => {
+    badgesA.set(c.bodyA, [...(badgesA.get(c.bodyA) ?? []), i + 1]);
+    badgesB.set(c.bodyB, [...(badgesB.get(c.bodyB) ?? []), i + 1]);
+  });
+
+  const chipsFor = (chart: NatalChart, badges: Map<Body, number[]>): Chip[] =>
+    chart.bodies.map((x) => ({
+      body: x.body, lon: x.lon, retro: x.retro,
+      badges: badges.get(x.body),
+      faint: !badges.has(x.body),
+    }));
+
+  const full = shown.filter((k) => k.points >= k.maxPoints);
+  const none = shown.filter((k) => k.points <= 0);
 
   return (
     <div className="panel report">
@@ -112,15 +160,127 @@ export default function Report({ a, b, options, onClose }: {
         </span>
       </div>
 
-      {/* ── 1 · where the points came from ───────────────────────────────────────────────── */}
-      <Section n={1} title="Where the points came from">
+      <p className="lede">
+        That score is one old tradition's answer, and it reads only the two Moons. Below it, the same
+        two dates are read a second way: both charts drawn in full, one at a time, and then laid over
+        each other to see where they touch. Every number on this page was worked out{" "}
+        <strong>{GRID} × {GRID} = {GRID * GRID} times</strong> — once for each combination of the two
+        unknown birth hours — and is given with how much it moved.
+      </p>
+
+      {/* ── 1 · the two charts, one at a time ────────────────────────────────────────────── */}
+      <Section n={1} title="Each of them, on their own">
         <p className="say">
-          {shown.length} old tests compare where the two Moons sat — nothing else about the two
-          people enters the score. They are worth different amounts, drawn here to scale: the three
-          heaviest carry {6 + 7 + 8} of the {match.maxScore} points between them, as much as all
-          the others put together.
+          A birth date places every planet in one of the twelve signs. It does not place them in
+          houses, and it does not say which sign was rising — those turn a full circle every day, so
+          from a date alone they are not approximate, they are simply unknown. Nothing below quietly
+          fills them in. What is here is the layer a date really settles.
+        </p>
+        <PersonChart person={a} chart={charts.a} span={match.spanA} tone="a" />
+        <PersonChart person={b} chart={charts.b} span={match.spanB} tone="b" />
+      </Section>
+
+      {/* ── 2 · the two charts together ──────────────────────────────────────────────────── */}
+      <Section n={2} title="Where the two charts touch">
+        <p className="say">
+          Now both on one line. {a.name}'s planets sit above it and {b.name}'s below, so where a gold
+          label stands directly over a blue one, those two were in the same part of the sky. The
+          other connections are fixed distances apart — a quarter of the way round, a third, or
+          right across from each other.
+        </p>
+        <SkyBand
+          above={chipsFor(charts.a, badgesA)}
+          below={chipsFor(charts.b, badgesB)}
+          label={`${a.name}'s planets above the twelve signs and ${b.name}'s below them, ` +
+            `with the ${narrated.length} strongest connections numbered`}
+        />
+        <p className="legend-note">
+          <span className="key-a">{a.name}</span>
+          <span className="key-b">{b.name}</span>
+          <span className="dim">◄ appearing to move backwards · faded = making no connection · numbers match the list below</span>
+        </p>
+
+        <p className="say">
+          Across the {GRID * GRID} charts these two touch in{" "}
+          <strong>{syn.count.mean.toFixed(0)} places</strong>, give or take{" "}
+          {syn.count.sd.toFixed(1)}. That number is not a result, and it is worth saying why: every
+          pair of dates has between about {CONNECTIONS_LO} and {CONNECTIONS_HI} of them, the middle
+          pair has {CONNECTIONS_MEDIAN}, and across 20,000 random pairs the count lines up with the
+          score at the top of this page at {CONNECTIONS_VS_SCORE.toFixed(2)} out of 1 — which is to
+          say not at all. Two old systems, the same two dates, no agreement. So what follows is{" "}
+          <strong>which</strong> connections, never how many.
+        </p>
+
+        {narrated.map((c, i) => (
+          <ConnectionCard key={`${c.bodyA}-${c.bodyB}`} c={c} n={i + 1} a={a.name} b={b.name}
+            // What an angle means is the same wherever it turns up, so it is explained the FIRST
+            // time and not again. Six paragraphs each ending in the same stock sentence read as a
+            // form letter, and a reader stops seeing the part that IS about them.
+            explain={narrated.findIndex((x) => x.kind === c.kind) === i} />
+        ))}
+
+        <details className="working">
+          <summary>All {syn.connections.length} connections, with the arithmetic</summary>
+          <p className="say dim">
+            Two planets count as connected when the angle between them is within a set distance of
+            one of the five: <strong>8°</strong> when the Sun or the Moon is one of the pair,{" "}
+            <strong>6°</strong> otherwise. There is no measurement that could settle those numbers —
+            it is the commonest convention in use, and it is a convention, not a finding. The three
+            slowest planets are left off entirely: they hold one sign for seven to thirty years, so
+            a connection to one of them is shared with everybody born in that window.
+          </p>
+          <div className="scroll-x">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th>{a.name}</th><th>{b.name}</th><th>Angle</th>
+                  <th className="num">Apart</th><th className="num">From exact</th>
+                  <th className="num">Holds in</th>
+                </tr>
+              </thead>
+              <tbody>
+                {syn.connections.map((c, i) => (
+                  <tr key={i} className={i < NARRATED ? "lead" : undefined}>
+                    <td>{c.bodyA}</td>
+                    <td>{c.bodyB}</td>
+                    <td>{c.aspect.kind === "together" ? "same place"
+                      : c.aspect.kind === "opposite" ? "opposite"
+                        : `a ${c.aspect.kind}`}</td>
+                    <td className="num">{deg(c.separation.mean)} ± {deg(c.separation.sd)}</td>
+                    <td className="num">{deg(c.off.mean)} ({deg(c.off.lo)}–{deg(c.off.hi)})</td>
+                    <td className="num">{pct(c.probability)}%</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="say dim">
+            "Apart" is the angle between the two planets, averaged over all {GRID * GRID} charts,
+            with its give-or-take. "From exact" is how far that sits from a clean angle, with the
+            band that holds nine of every ten charts. "Holds in" is the share of the{" "}
+            {GRID * GRID} in which it counted as a connection at all.
+          </p>
+        </details>
+      </Section>
+
+      {/* ── 3 · where the score came from ────────────────────────────────────────────────── */}
+      <Section n={3} title="Where the score came from">
+        <p className="say">
+          {shown.length} old tests compare where the two Moons sat — nothing else about either
+          person enters the score, which is why it and the charts above can disagree. They are worth
+          different amounts, drawn here to scale: the three heaviest carry {6 + 7 + 8} of the{" "}
+          {match.maxScore} points between them, as much as all the others together.
         </p>
         <Anatomy kutas={shown} />
+        <p className="say">
+          {full.length > 0
+            ? <>Full marks on {list(full.map((k) => k.name.toLowerCase()))}. </>
+            : <>Nothing scored full marks. </>}
+          {none.length > 0
+            ? <>Nothing at all on {list(none.map((k) => k.name.toLowerCase()))}. </>
+            : <>Every test put something on the board. </>}
+          The rest landed in between.
+        </p>
 
         {match.guna.orderMatters && (
           <p className="say dim">
@@ -131,20 +291,18 @@ export default function Report({ a, b, options, onClose }: {
           </p>
         )}
 
-        {shown.map((k, i) => (
-          <div className="kuta" key={k.key}>
-            <div className="kuta-head">
-              <span className="nm"><i>{i + 1}</i>{k.name}</span>
-              <span className={`pts ${k.points >= k.maxPoints ? "tone-high" : k.points <= 0 ? "tone-low" : ""}`}>
-                {fmt(k.points)} / {k.maxPoints}
-              </span>
-            </div>
-            <Meter value={k.points} max={k.maxPoints} gold={k.points > 0} />
-            <span className="says">{k.measures} {explainKuta(k)}</span>
-            {/* The rule and the values it read stay one click away rather than gone: eight tests
-                × three dense paragraphs buried the answer under its own footnotes. */}
-            <details className="working">
-              <summary>Show the working</summary>
+        <details className="working">
+          <summary>All {shown.length} tests, one at a time</summary>
+          {shown.map((k, i) => (
+            <div className="kuta" key={k.key}>
+              <div className="kuta-head">
+                <span className="nm"><i>{i + 1}</i>{k.name}</span>
+                <span className={`pts ${k.points >= k.maxPoints ? "tone-high" : k.points <= 0 ? "tone-low" : ""}`}>
+                  {fmt(k.points)} / {k.maxPoints}
+                </span>
+              </div>
+              <Meter value={k.points} max={k.maxPoints} gold={k.points > 0} />
+              <span className="says">{k.measures} {explainKuta(k)}</span>
               <span className="detail"><b>What was read:</b> {k.evidence}</span>
               <span className="detail"><b>How it is scored:</b> {k.rule}</span>
               {k.forwardPoints !== k.reversePoints && (
@@ -153,9 +311,9 @@ export default function Report({ a, b, options, onClose }: {
                   {fmt(k.reversePoints)} with {b.name} first — the average is used.
                 </span>
               )}
-            </details>
-          </div>
-        ))}
+            </div>
+          ))}
+        </details>
 
         <div className="row total">
           <strong>Total</strong>
@@ -166,13 +324,13 @@ export default function Report({ a, b, options, onClose }: {
         </div>
       </Section>
 
-      {/* ── 2 · how sure ─────────────────────────────────────────────────────────────────── */}
-      <Section n={2} title="How sure this is">
+      {/* ── 4 · how sure ─────────────────────────────────────────────────────────────────── */}
+      <Section n={4} title="How sure the score is">
         {match.certain ? (
           <p className="say">
             Both Moons stayed in one birth star and one sign for the whole of their birth days, so
-            not knowing what time of day either was born changes nothing at all. This is as firm as
-            a reading from dates alone can be.
+            not knowing what time of day either was born changes the score not at all. This is as
+            firm as a reading from dates alone can be.
           </p>
         ) : (
           <>
@@ -192,7 +350,7 @@ export default function Report({ a, b, options, onClose }: {
                 <tbody>
                   {d.outcomes.map((o, i) => (
                     <tr key={i} className={i === 0 ? "lead" : undefined}>
-                      <td className="num">{Math.round(o.probability * 100)}%</td>
+                      <td className="num">{pct(o.probability)}%</td>
                       <td className="num">{fmt(o.score)}</td>
                       <td>{o.labelA}</td>
                       <td>{o.labelB}</td>
@@ -202,18 +360,18 @@ export default function Report({ a, b, options, onClose }: {
               </table>
             </div>
             <p className="say">
-              The same thing hour by hour. Every cell is one combination of birth hours —{" "}
-              {a.name} down the side, {b.name} across the top, midnight to midnight — shaded by the
-              score it gives. The blocks are where the answer changes.
+              The same thing hour by hour — the {GRID * GRID} charts, drawn. Every cell is one
+              combination of birth hours, {a.name} down the side and {b.name} across the top,
+              midnight to midnight, shaded by the score it gives. The blocks are where the answer
+              changes.
             </p>
             <HourGrid a={a} b={b} match={match} options={options} />
           </>
         )}
       </Section>
 
-      {/* ── 3 · the caveats and the people ───────────────────────────────────────────────── */}
       {doshas.length > 0 && (
-        <Section n={3} title="Warnings the tradition raises">
+        <Section n={5} title="Warnings the tradition raises">
           {doshas.map((x) => (
             <div key={x.key} className="note">
               <strong>{x.name}{x.cancelled ? " — traditionally set aside" : ""}</strong>
@@ -222,20 +380,6 @@ export default function Report({ a, b, options, onClose }: {
           ))}
         </Section>
       )}
-
-      <Section n={doshas.length > 0 ? 4 : 3} title="The two of them">
-        {sameMoonSign && sharedSign && (
-          <p className="say">
-            <strong>Both have the Moon in {SIGNS[match.spanA.likeliest.rasi]} — {sharedSign.title}.</strong>{" "}
-            {sharedSign.style} They share this, which the fifth test reads as minds that work the
-            same way.
-          </p>
-        )}
-        <div className="cols">
-          <PersonPanel person={a} span={match.spanA} showMoonSign={!sameMoonSign} />
-          <PersonPanel person={b} span={match.spanB} showMoonSign={!sameMoonSign} />
-        </div>
-      </Section>
 
       <div className="row actions">
         {msg && <a href={msg} target="_blank" rel="noreferrer"><button>Message on ArtaQuest</button></a>}
@@ -252,12 +396,157 @@ export default function Report({ a, b, options, onClose }: {
   );
 }
 
+/** "a, b and c" — an Oxford-comma-free list, because these are read aloud in prose. */
+function list(items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
 function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
     <section className="sec">
       <h3><i>{n}</i>{title}</h3>
       {children}
     </section>
+  );
+}
+
+/**
+ * One person's chart, and what it is said to suggest.
+ *
+ * Five bodies get a paragraph. Jupiter and Saturn are drawn and make connections but get no
+ * character reading: Jupiter holds a sign for about a year, Saturn for two and a half, so a
+ * paragraph about them is a paragraph about everybody born that year. The three slowest are named
+ * with their windows and left at that.
+ */
+function PersonChart({ person, chart, span, tone }: {
+  person: Person; chart: NatalChart; span: Match["spanA"]; tone: "a" | "b";
+}) {
+  const star = birthStarText(span.likeliest.nakshatra.index);
+  const titles = span.states.map((s) => s.nakshatra.index);
+  const ambiguous = titles.some((t, i) => titles.indexOf(t) !== i);
+  const chips: Chip[] = chart.bodies.map((x) => ({
+    body: x.body, lon: x.lon, retro: x.retro, faint: !READ_BODIES.includes(x.body),
+  }));
+  /** The sign, plus the other one when the date genuinely does not settle it. Used everywhere a
+   *  placement is printed — including the slow bodies in the fold, which cross boundaries too. */
+  const signPhrase = (body: Body) => {
+    const row = chart.byBody[body];
+    if (row.settled) return row.signName;
+    const other = row.chances.filter((c) => c.sign !== row.sign)
+      .map((c) => `${c.signName} for ${pct(c.share)}% of that day`).join(", ");
+    return `${row.signName} — though the date does not settle it: ${other}`;
+  };
+
+  return (
+    <div className={`who-chart ${tone}`}>
+      <h4>{person.name}</h4>
+      <span className="born">born {formatBirthday(person.birthday)}</span>
+      <SkyBand above={chips} tone={tone}
+        label={`${person.name}'s planets across the twelve signs`} />
+      <p className="legend-note">
+        <span className="dim">
+          The twelve signs, cut open at the start of Aries and laid flat. ◄ means the planet was
+          appearing to move backwards against the stars — the Earth overtaking it, not the planet
+          turning round.
+        </span>
+      </p>
+
+      {READ_BODIES.map((body) => {
+        const row = chart.byBody[body as Body];
+        const meta = planetMeta(body);
+        if (!row || !meta) return null;
+        return (
+          <p className="say" key={body}>
+            <strong>{meta.opens} — {body} in {row.signName}
+              {row.retro ? ", moving backwards" : ""}.</strong>{" "}
+            {planetReading(body, row.sign)}
+            {!row.settled && (
+              <span className="dim">
+                {" "}This one is not settled by the date: {row.chances.map((c) => `${c.signName} for ${pct(c.share)}% of that day`)
+                  .join(", ")}. The reading above is the likelier of them.
+              </span>
+            )}
+          </p>
+        );
+      })}
+
+      <details className="working">
+        <summary>The rest of {person.name}'s chart</summary>
+        <p className="say dim">
+          <strong>Jupiter in {signPhrase("Jupiter")}</strong> — where they take chances — and{" "}
+          <strong>Saturn in {signPhrase("Saturn")}</strong> — what they take seriously.
+          Jupiter holds one sign for about a year and Saturn for two and a half, so these are shared
+          with most people born around the same time. They still make connections with another
+          chart, which is why they are drawn.
+        </p>
+        <p className="say dim">
+          {GENERATIONAL.map((g) => `${g.body} in ${signPhrase(g.body)}`).join("; ")} —
+          these three hold a sign for {GENERATIONAL.map((g) => g.years).join(", ")} respectively, so
+          they describe a generation rather than a person, and get no reading here.
+        </p>
+        {star && (
+          <p className="say">
+            <strong>{star.title}</strong> — their birth star, one of the 27 equal stretches of sky
+            the Moon passes through each month, and the thing the eight tests below actually read.
+            {" "}{star.summary} {star.inRelationships}
+          </p>
+        )}
+        <table className="data">
+          <tbody>
+            <tr><th scope="row">Temperament</th><td>{GANA_LABEL[span.likeliest.nakshatra.gana]}</td></tr>
+            <tr><th scope="row">Its animal</th><td>{YONI_LABEL[span.likeliest.nakshatra.yoni]}</td></tr>
+            <tr><th scope="row">Built</th><td>{NADI_LABEL[span.likeliest.nakshatra.nadi]}</td></tr>
+            <tr><th scope="row">Moon that day</th><td>
+              moved {span.moonArc.toFixed(1)}°
+              {span.stable
+                ? " — stayed in one birth star and one sign all day"
+                : `, passing through ${span.states.length} readings: ` +
+                  span.states.map((s) =>
+                    `${starTitle(s.nakshatra.index)}${ambiguous ? ` in ${s.rasiName}` : ""} ` +
+                    `(${pct(s.share)}%)`).join(", ")}
+            </td></tr>
+          </tbody>
+        </table>
+      </details>
+    </div>
+  );
+}
+
+/**
+ * One connection: what it is, what it is taken to mean, and then the arithmetic behind it.
+ *
+ * The arithmetic sentence is written three ways rather than one, because the honest thing to say
+ * differs by case and a single template would have to say the weakest of them every time. A pair of
+ * slow planets really is fixed to a tenth of a degree — "give or take 0.0°" is not humility, it is
+ * noise — while a pair involving the Moon genuinely might not be a connection at all.
+ */
+function ConnectionCard({ c, n, a, b, explain }: {
+  c: Connection; n: number; a: string; b: string; explain: boolean;
+}) {
+  const fixed = c.separation.sd < 0.05;
+  return (
+    <div className="conn">
+      <p className="say">
+        <span className="conn-n">{n}</span>
+        <strong>{a}'s {c.bodyA} {c.aspect.joins} {b}'s {c.bodyB}.</strong>{" "}
+        That is {standsFor(c.bodyA, a)}, and {standsFor(c.bodyB, b)}.
+        {explain && ` ${c.aspect.means}`}
+      </p>
+      <p className="say dim conn-work">
+        {atSign(c.lonA)} and {atSign(c.lonB)} —{" "}
+        {fixed
+          ? <>{deg(c.separation.mean)} apart in every one of the {GRID * GRID} charts, so the
+            birth times cannot touch it.</>
+          : c.certain
+            ? <>{deg(c.separation.mean)} apart on average, give or take {deg(c.separation.sd)}; it
+              stays inside the {c.orb}° that counts as close whatever hour either was born.</>
+            : <>{deg(c.separation.mean)} apart on average, give or take {deg(c.separation.sd)}. It
+              is a connection in <strong>{pct(c.probability)}%</strong> of the {GRID * GRID}{" "}
+              charts, and nine times in ten it sits {deg(c.off.lo)}–{deg(c.off.hi)} from exact,
+              against the {c.orb}° allowed.</>}
+      </p>
+    </div>
   );
 }
 
@@ -332,11 +621,13 @@ function Anatomy({ kutas }: { kutas: Match["guna"]["kutas"] }) {
 /**
  * The 24×24 hour grid: every combination of birth hours, shaded by the score it gives.
  *
- * The interval is computed EXACTLY — by enumerating the handful of (birth star, sign, mid-sign
- * half) states each day holds, not by sampling this grid. (Checked: the exact method agrees with a
- * 240×240 sweep to 0.15 percentage points, and a 24×24 sample is measurably worse.) This picture
- * exists because it is the legible answer to "how much does the missing hour matter" — you can see
- * the blocks, and see at a glance whether it matters at all.
+ * The score's interval is computed EXACTLY — by enumerating the handful of (birth star, sign,
+ * mid-sign half) states each day holds, not by sampling this grid. (Checked: the exact method
+ * agrees with a 240×240 sweep to 0.15 percentage points, and a 24×24 sample is measurably worse,
+ * because a score JUMPS at a boundary and sampling misses where the boundary falls. The synastry
+ * section above reports the grid directly, because an angle is smooth and 576 samples of it are
+ * as good as the exact area — checked, to within 1.9 points of probability.) This picture exists
+ * because it is the legible answer to "how much does the missing hour matter".
  */
 function HourGrid({ a, b, match, options }: {
   a: Person; b: Person; match: Match; options: ScoreOptions;
@@ -399,55 +690,6 @@ function HourGrid({ a, b, match, options }: {
         <span><i className="dot swatch full" /> {fmt(hi)} of {match.maxScore}</span>
         <span className="dim">576 hour combinations</span>
       </div>
-    </div>
-  );
-}
-
-function PersonPanel({ person, span, showMoonSign }: {
-  person: Person; span: Match["spanA"]; showMoonSign: boolean;
-}) {
-  const star = birthStarText(span.likeliest.nakshatra.index);
-  const moonSign = showMoonSign ? moonSignText(span.likeliest.rasi) : null;
-  // A day where the Moon changes sign inside one birth star would print the same title twice, so
-  // the sign disambiguates when a title repeats.
-  const titles = span.states.map((s) => s.nakshatra.index);
-  const ambiguous = titles.some((t, i) => titles.indexOf(t) !== i);
-  return (
-    <div className="who-panel">
-      <h4>{person.name}</h4>
-      {star && (
-        <p className="say">
-          <strong>{star.title}</strong> — their birth star, one of the 27 equal stretches of sky the
-          Moon passes through each month. {star.summary}
-        </p>
-      )}
-      {/* The rest is a character sketch of one person, on a page about a pair — worth having, not
-          worth 800px of the scroll. It was the second-largest block on the page. */}
-      <details className="working">
-        <summary>More about {person.name}</summary>
-        {star && <p className="say dim">{star.inRelationships}</p>}
-        {moonSign && (
-          <p className="say">
-            <strong>Moon in {SIGNS[span.likeliest.rasi]} — {moonSign.title}.</strong> {moonSign.style}
-          </p>
-        )}
-        <table className="data">
-          <tbody>
-            <tr><th scope="row">Temperament</th><td>{GANA_LABEL[span.likeliest.nakshatra.gana]}</td></tr>
-            <tr><th scope="row">Its animal</th><td>{YONI_LABEL[span.likeliest.nakshatra.yoni]}</td></tr>
-            <tr><th scope="row">Built</th><td>{NADI_LABEL[span.likeliest.nakshatra.nadi]}</td></tr>
-            <tr><th scope="row">Moon that day</th><td>
-              moved {span.moonArc.toFixed(1)}°
-              {span.stable
-                ? " — stayed in one birth star and one sign all day"
-                : `, passing through ${span.states.length} readings: ` +
-                  span.states.map((s) =>
-                    `${starTitle(s.nakshatra.index)}${ambiguous ? ` in ${s.rasiName}` : ""} ` +
-                    `(${Math.round(s.share * 100)}%)`).join(", ")}
-            </td></tr>
-          </tbody>
-        </table>
-      </details>
     </div>
   );
 }

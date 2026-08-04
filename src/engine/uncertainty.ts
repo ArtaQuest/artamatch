@@ -91,8 +91,9 @@ export type BirthSpan = {
 
 const HOURS = 24;
 
-/** The instant, in UT hours, at which f() changes sign between lo and hi — by bisection. */
-function crossing(lo: number, hi: number, f: (h: number) => boolean, iterations = 26): number {
+/** The instant, in UT hours, at which f() changes sign between lo and hi — by bisection.
+ *  Exported so the natal chart can find a planet's sign change the same exact way. */
+export function crossing(lo: number, hi: number, f: (h: number) => boolean, iterations = 26): number {
   let a = lo, b = hi;
   const target = f(a);
   for (let i = 0; i < iterations; i++) {

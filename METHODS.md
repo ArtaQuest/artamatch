@@ -99,34 +99,110 @@ scores **21**, so "you passed" would be flattery. Percentile bands ("Above avera
 on the measured distribution. A drift test (in `tests/score.test.ts`) recomputes a 2,000-pair sample
 in CI and fails if the embedded numbers go stale.
 
-## 5 · Two removed experiments
+## 5 · The two charts, and the connections between them
 
-Both worked, both were verified, both were deleted. They are in the git history.
+### 5.1 · One person's chart (`src/engine/natal.ts`)
+
+A full natal chart has three layers: which **sign** each planet is in, which **house** it is in, and
+which sign was **rising**. Only the first survives a missing birth time — houses and the rising sign
+turn a full circle every 24 hours, so from a date alone they are not approximate, they are *unknown*.
+This file draws the layer that survives, and the page says the other two are missing rather than
+quietly defaulting them to sunrise, which is the usual dodge.
+
+Even the surviving layer has edges: a planet near a boundary at midnight is in two signs that day. So
+every body reports the signs it could be in **and the share of the day it spent in each**, found
+exactly — an hourly scan for a change, then bisection inside the hour that changed. The Moon does
+this on about two days in five; Mercury moves at most ~2.2° in a day and Saturn ~0.13°, so theirs is
+settled unless the date lands on the crossing itself.
+
+**Five bodies get a paragraph** — Sun, Moon, Mercury, Venus, Mars. Jupiter holds a sign for about a
+year and Saturn for two and a half, so a *reading* of them would describe everyone born that year;
+they are drawn, they make connections, and they get a stated placement rather than a character
+sketch. Uranus, Neptune and Pluto (7, 14 and 12–30 years to a sign) get their windows named and
+nothing else.
+
+### 5.2 · Where two charts touch (`src/engine/synastry.ts`)
+
+Seven bodies (Sun … Saturn) make connections; the three slowest do not, because "your Pluto is
+opposite my Sun" is true of everyone born in a twenty-year window — a fact about a generation, not
+about two people.
+
+**How close counts as close** is a *convention*, and is labelled as one on the page: 8° when the Sun
+or the Moon is involved, 6° otherwise, for all five angles. No measurement could settle it.
+
+**The method is 576 charts.** `synastryGrid` draws both charts once for every combination of the two
+unknown birth hours and reports every quantity as a mean, a standard deviation and a 5th-to-95th
+band: the angle between each pair of bodies, how far that angle sits from the exact one, and how
+many connections the two charts have at all.
+
+**Verified three ways.** A closed form is kept in the same file and renders nothing — it exists to
+check the grid. Under a flat prior over birth times each longitude is nearly uniform over its day's
+arc, so the angle between two of them is a **difference of two uniforms**, a trapezoid with an exact
+area. `tests/synastry.test.ts` holds all three against each other:
+
+| | worst disagreement |
+|---|---|
+| closed form vs 240×240 brute force (57,600 hour pairs) | **0.06 pp** |
+| 24×24 grid vs closed form | **1.9 pp**, on a connection sitting exactly on the edge of its orb |
+
+The closed form's own residual came down 30× (1.73 pp → 0.06 pp) when each body's day was cut into
+twelve pieces instead of treated as one straight arc: Mercury near a turn decelerates to a standstill
+and back, so it lingers at one end of its arc and races the other.
+
+**Ordering.** Connections are ranked by **strength** — the average, over all 576 charts, of how close
+the angle is as a fraction of the orb, counting a chart where it misses as nothing. Ranking by
+*probability* was tried and thrown away: probability is a fact about how slowly the planets move, so
+the six slowest pairs won every time and the Moon — the most personal body there is, and the one the
+entire score is built from — could never appear at all. A test asserts the Moon now reaches the
+narrated list on more than 30% of pairs, and that no single planet fills more than two of the six.
+
+### 5.3 · Why the connections are not scored
+
+Measured over the same 20,000 random pairs (`tools/calibrate-synastry.mjs`, seed 13579):
+
+| | |
+|---|---|
+| connections per pair | median **15**, 5th–95th **10.5 – 20.2** |
+| correlation with the eight-test score | **0.030** |
+
+So the *count* measures nothing — everybody has about fifteen — and the two traditions, handed the
+same two dates, do not agree with each other. The page prints both facts before the first connection
+and then shows **which** connections rather than how many. That is what lets a second system sit
+beside a scored one without becoming a rival scoreboard.
+
+(A sanity check that falls out of the same run: the three angles reachable from either side —
+60°, 90°, 120° — occur ~3.8 times per pair, and the two that are not — 0° and 180° — occur ~1.9,
+almost exactly half, which is what the geometry demands.)
+
+## 5.4 · Removed experiments
+
+All worked, all were verified, all were deleted. They are in the git history.
 
 **The ensemble.** Three other date-only traditions (date-digit numerology, the twelve-year animal
 cycle, Sun-sign elements), each calibrated the same way, averaged into one percentile. Removed
 because four half-explained numbers teach less than one fully explained one.
 
-**The aspect layer.** Angles between the two people's planets, with written readings for all 55
-body pairs in four configurations. It was honest — angles are the same in either zodiac, so it was
-not mixing systems — but it was a *second, unscored* system sitting beside the scored one, which
-invited exactly the question it could not answer ("is 19 connections good?"). Removing it took 95 KB
-of prose and a third of the bundle with it.
+**The first aspect layer.** Written readings for all 55 body pairs in four configurations, sitting
+beside the score as unscored commentary. Removed because it invited "is 19 connections good?" and
+could not answer it. The layer above is its replacement, and the difference is §5.3: the question now
+has a measured answer, and every sentence carries the spread of the 576 charts behind it.
 
-**The sky ruler.** A linear 360° band with both Moons and their daily arcs. Cut because the score
-depends only on the *relationship* between the two Moons — which birth star, which sign, which
-half-sign — never on where they sit absolutely, so the drawing showed data no test reads. It also
-needed the longest caption of any diagram and the per-test "what was read" lines state the same
-facts exactly.
-
-What both removals have in common: the page is now about one thing, and every pixel on it serves
-that thing.
+**The sky ruler.** A linear 360° band with both Moons and their daily arcs. Cut because the *score*
+depends only on the relationship between the two Moons, never on where they sit absolutely, so it
+drew data no test reads. The chart in §5.1 is a different object with a different job: it shows every
+planet, for the reading rather than for the score, and both people at once.
 
 ## 6 · The words
 
-All rendered prose lives in `src/data/corpus.json` (19 KB: 27 birth stars, 12 Moon signs) and in
-`src/engine/interpret.ts` (what each test means at full, partial and no marks) — written to a fixed
-voice: plain, non-fatalistic, no predictions.
+All rendered prose lives in `src/data/corpus.json` (31 KB: 27 birth stars, 12 Moon signs, and 60
+chart readings — five bodies × twelve signs) and in `src/engine/interpret.ts` (what each test means
+at full, partial and no marks) — written to a fixed voice: plain, non-fatalistic, no predictions.
+
+**Connection sentences are assembled, not stored.** Each is built from a body phrase ("how Ada
+feels"), a joining phrase ("sits in the same place as") and a meaning — so all 7 × 7 × 5 = 245
+possible sentences are correct by construction, with no table to fall out of step. What an angle
+*means* is printed the first time it appears in a reading and not again: six paragraphs ending in the
+same stock sentence read as a form letter, and the reader stops seeing the part that is about them.
 
 **The vocabulary rule:** the only specialist terms allowed on screen are the 12 zodiac sign names.
 Everything else — Sanskrit star names, the tradition's category names, symbols and glyphs — is
@@ -145,11 +221,15 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 8 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 68 tests: ephemeris vs golden, rules, symmetry,
-                                           # uncertainty, jargon guards, drift
+npm test                                   # 83 tests: ephemeris vs golden, rules, symmetry,
+                                           # uncertainty, synastry vs brute force, jargon, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
 npx esbuild src/engine/score.ts --format=esm --bundle --outfile=/tmp/score.mjs
 node tools/calibrate.mjs /tmp/score.mjs                    # the percentile table + its summary
+echo 'export * from "./src/engine/score"; export * from "./src/engine/synastry";
+      export * from "./src/engine/uncertainty";' |
+  npx esbuild --bundle --format=esm --loader:.ts=ts --sourcefile=e.ts --outfile=/tmp/syn.mjs
+node tools/calibrate-synastry.mjs /tmp/syn.mjs             # §5.3: what a count of connections is worth
 node tools/compare-elements.mjs tests/golden.json          # the Table 1 vs 2a decision
 node tools/contrast.mjs                                    # WCAG contrast, every ink/surface pair
 node tools/screenshot.mjs dist shots/                      # 35-state visual audit, five widths

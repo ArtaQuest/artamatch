@@ -153,9 +153,9 @@ export default function App() {
         <div style={{ flex: "1 1 260px" }}>
           <h1>ArtaMatch</h1>
           <p className="tag">
-            Put in two dates of birth and see how the oldest date-only matching tradition reads the
-            pair — one score out of 36, every step of the working shown in plain words, with an
-            honest account of what a date alone cannot tell you.
+            Put in two dates of birth. You get each person's chart read on its own, then the two
+            laid over each other to see where they touch, then one score out of 36 — all in plain
+            words, and all with an honest account of what a date alone cannot tell you.
           </p>
         </div>
       </header>
@@ -280,9 +280,10 @@ export default function App() {
         <p>
           <strong style={{ color: "var(--muted)" }}>Why the time of day keeps coming up.</strong> The
           Moon travels about 13 degrees a day, and most of this tradition is built on exactly where
-          it was. Not knowing the hour typically moves it about 6.6 degrees either way, up to 7.7 at the Moon’s fastest — hundreds of
-          times bigger than any error in the maths. That is why nothing here gives you one confident
-          number when the date alone cannot support one.
+          it was. Not knowing the hour typically moves it about 6.6 degrees either way, up to 7.7 at
+          the Moon’s fastest — hundreds of times bigger than any error in the maths. So nothing here
+          is worked out once. Every reading is made 576 times, once for each combination of the two
+          unknown birth hours, and what you are shown is the average and how far it moved.
         </p>
         <p>
           <strong style={{ color: "var(--muted)" }}>And what this is.</strong> There is no known way

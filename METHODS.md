@@ -113,6 +113,12 @@ not mixing systems — but it was a *second, unscored* system sitting beside the
 invited exactly the question it could not answer ("is 19 connections good?"). Removing it took 95 KB
 of prose and a third of the bundle with it.
 
+**The sky ruler.** A linear 360° band with both Moons and their daily arcs. Cut because the score
+depends only on the *relationship* between the two Moons — which birth star, which sign, which
+half-sign — never on where they sit absolutely, so the drawing showed data no test reads. It also
+needed the longest caption of any diagram and the per-test "what was read" lines state the same
+facts exactly.
+
 What both removals have in common: the page is now about one thing, and every pixel on it serves
 that thing.
 

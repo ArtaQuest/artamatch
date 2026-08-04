@@ -120,23 +120,24 @@ describe("ArtaMatch app", () => {
     // All three instruments render at once — there are no tabs to hide anything behind.
     expect(document.querySelector(".anatomy .bar")?.children.length).toBe(8);
     expect((document.querySelector(".landscape")?.children.length ?? 0)).toBeGreaterThan(30);
-    expect(document.querySelectorAll(".ruler .tick.star").length).toBe(27);
-    expect(document.querySelectorAll(".ruler .tick.sign").length).toBe(12);
-    expect(document.querySelectorAll(".ruler .moon").length).toBe(2);
 
     // All eight tests, each with the rule it used and the values it read — no tab to open.
     for (const test of ["Ways of working", "Give and take", "Good for each other",
       "Physical instinct", "Meeting of minds", "Temperament", "Life together", "Underlying makeup"]) {
       expect(screen.getAllByText(test).length, `${test} missing`).toBeGreaterThan(0);
     }
+    // The rule and the values live behind "Show the working" — present for every test, one click
+    // away rather than eight dense paragraphs burying the answer.
+    // Eight per-test disclosures plus one "more about" per person.
+    expect(screen.getAllByRole("group").length).toBe(10);
+    expect(screen.getAllByText(/Show the working/).length).toBe(8);
     expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
     expect(screen.getAllByText(/What was read:/).length).toBe(8);
 
     // The document's spine: numbered sections, each with a heading.
-    expect(document.querySelectorAll(".sec > h3").length).toBeGreaterThanOrEqual(5);
-    expect(screen.getByText(/How the score is built/i)).toBeDefined();
+    expect(document.querySelectorAll(".sec > h3").length).toBeLessThanOrEqual(4);
+    expect(screen.getByText(/Where the points came from/i)).toBeDefined();
     expect(screen.getByText(/How sure this is/i)).toBeDefined();
-    expect(screen.getByText(/What the tests actually read/i)).toBeDefined();
     expect(screen.getByText(/The two of them/i)).toBeDefined();
 
     // Both people are described, by plain title rather than a transliterated name.
@@ -193,6 +194,7 @@ describe("ArtaMatch app", () => {
     render(<App />);
     expect(screen.getByText(/Both have the Moon in Aries/i)).toBeDefined();
     // "Fast heat, quick recovery" is the Aries line — it must appear exactly once.
+    // Once above the two columns, never twice inside them.
     expect(screen.getAllByText(/Fast heat, quick recovery/i)).toHaveLength(1);
     window.history.replaceState({}, "", "/");
   });

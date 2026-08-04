@@ -271,6 +271,8 @@ table.data tr.lead td { color: var(--yang); }
 .anatomy .seg u { position: absolute; right: 4px; bottom: 1px; text-decoration: none;
   font-family: var(--mono); font-size: 0.58rem; color: var(--muted); z-index: 3; }
 .anatomy .seg u.onGold { color: var(--bg); }                    /* 10.7:1 on gold */
+/* Too narrow to hold its own number without shearing it into a different one. */
+.anatomy .seg[data-narrow] b { display: none; }
 .anatomy .key { display: block; font-size: 0.76rem; color: var(--dim); margin-top: 0.45rem; }
 
 /* The sky ruler: a linear 0–360° band. Never a wheel. */
@@ -306,3 +308,12 @@ table.data tr.lead td { color: var(--yang); }
 .legend i.swatch { width: 11px; height: 11px; border-radius: 2px; background: var(--yang); }
 .legend i.swatch.faint { opacity: 0.15; }
 .legend i.swatch.full { opacity: 1; }
+
+/* "Show the working" — the rule and the values behind each test, one click away. */
+.working { display: block; margin-top: 0.35rem; }
+.working > summary { display: inline-block; cursor: pointer; font-size: 0.76rem; color: var(--link);
+  padding: 0.2rem 0; list-style: none; }
+.working > summary::-webkit-details-marker { display: none; }
+.working > summary::before { content: "▸ "; }
+.working[open] > summary::before { content: "▾ "; }
+.working > summary:hover { color: var(--yang); }

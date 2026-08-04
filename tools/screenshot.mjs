@@ -44,12 +44,12 @@ const VIEWPORTS = [
 // document now, so there are no report tabs to drive — a single scroll covers the whole reading.
 const STATES = [
   ["home", async () => {}],
-  ["report", async (p) => { await p.locator(".rank-row").first().click(); await p.waitForSelector(".ruler"); }],
+  ["report", async (p) => { await p.locator(".rank-row").first().click(); await p.waitForSelector(".anatomy"); }],
   ["matrix", async (p) => { await p.getByRole("button", { name: /Everyone vs everyone/i }).click(); }],
   ["toggle-off", async (p) => {
     await p.locator(".opt input").first().setChecked(false);
     await p.locator(".rank-row").first().click();
-    await p.waitForSelector(".ruler");
+    await p.waitForSelector(".anatomy");
   }],
   // A pair whose dates settle the answer outright — the OTHER branch of section 2. Found by
   // search: both Moons stay in one birth star and one sign all day, which is rare enough that
@@ -57,19 +57,19 @@ const STATES = [
   ["certain", async (p) => {
     await p.goto(`${ORIGIN}?n=Certain%20A&b=1984-02-08&n2=Certain%20B&b2=1967-08-26`,
       { waitUntil: "networkidle" });
-    await p.waitForSelector(".ruler");
+    await p.waitForSelector(".anatomy");
   }],
   // The extremes of the score range, where the landscape strip's "this pair" label sits hard
   // against an edge and could clip.
   ["lowest", async (p) => {
     await p.goto(`${ORIGIN}?n=Low%20A&b=2004-09-23&n2=Low%20B&b2=1990-08-20`,
       { waitUntil: "networkidle" });
-    await p.waitForSelector(".ruler");
+    await p.waitForSelector(".anatomy");
   }],
   ["highest", async (p) => {
     await p.goto(`${ORIGIN}?n=High%20A&b=1983-09-01&n2=High%20B&b2=1969-03-23`,
       { waitUntil: "networkidle" });
-    await p.waitForSelector(".ruler");
+    await p.waitForSelector(".anatomy");
   }],
 ];
 
@@ -112,10 +112,6 @@ async function audit(page, tag) {
     if (document.querySelector(".report")) {
       const segs = document.querySelectorAll(".anatomy .seg").length;
       if (segs < 7) out.push(`anatomy bar has ${segs} blocks, expected 7 or 8`);
-      if (document.querySelectorAll(".ruler .tick").length !== 39) {
-        out.push(`sky ruler has ${document.querySelectorAll(".ruler .tick").length} ticks, expected 39`);
-      }
-      if (document.querySelectorAll(".ruler .moon").length !== 2) out.push("sky ruler is missing a Moon");
       const here = document.querySelector(".landscape .here");
       if (!here) out.push("landscape strip does not mark this pair");
       else {

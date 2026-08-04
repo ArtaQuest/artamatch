@@ -7,29 +7,31 @@ in plain words, with an honest account of what a date alone cannot tell you.**
 
 Full method, and the provenance of every number on the page: **[METHODS.md](METHODS.md)**
 
-The page computes the traditional eight-test Moon score (sidereal, Lahiri) and then explains it
-three ways at once:
+The whole reading is one short document that answers four questions in the order people ask them:
+**what is the score**, then **where the points came from**, **how sure it is**, and **who these two
+people are**. Nothing is behind a tab. Three diagrams do the explaining, and each answers a
+different question without repeating a number:
 
 - **The anatomy bar** — 36 = 1+2+3+4+5+6+7+8, drawn to scale, each test's block filled by the
   points it earned. The score becomes visible arithmetic: the two heaviest tests carry as much as
   the other six together, and you can see it.
 - **The landscape strip** — every possible score, sized by how often 20,000 random pairs land on
   it, with this pair marked. "Higher than 69 in 100" stops being a claim and becomes a place.
-- **The sky ruler** — the full 360° band, its 27 birth-star stretches and 12 signs, with both
-  Moons marked and the band each swept during its birth day. The one picture of what the eight
-  tests actually read, uncertainty included.
 - **The hour grid** — all 576 combinations of the two birth hours, shaded by the score each gives.
-  You can see the blocks where the answer changes, and see at a glance whether the missing hour
-  matters at all.
+  You can see the blocks where the answer changes, and whether the missing hour matters at all.
 
-The whole reading is **one scrolling document**: the score, then six numbered sections — how it is
-built, how sure it is, what it read, the eight tests one by one, any warnings the tradition raises,
-and who these two people are. Nothing is behind a tab, because the evidence for a number should not
-live on a different screen from the number.
+It got here by deletion, measured each time. Four tabs became six sections became four. An
+*ensemble* of four traditions and an *aspect layer* of 55 planet-pair readings were both built,
+verified and then removed — each worked, and each made the page about more than one thing. A **sky
+ruler** diagram went too: the score depends only on the *relationship* between the two Moons, never
+their absolute positions, so it drew data no test reads, and the test cards say the same thing in
+words more precisely. The per-test rule and evidence moved behind "show the working", and each
+person's character sketch behind "more about them" — still there, still checkable, no longer
+shouting over the answer.
 
-Two experiments were built, verified and then deleted to get here: an *ensemble* of four traditions,
-and an *aspect layer* of 55 planet-pair readings. Both worked; both made the page about more than
-one thing. They are in the git history, and in [METHODS.md](METHODS.md) §5.
+The measured effect on a phone: **1,972 visible words → 971, and 11.8 screens → 8.2**, with nothing
+removed that a reader cannot still reach in one click. The removed experiments are in the git
+history and in [METHODS.md](METHODS.md) §5.
 
 ## What makes it honest
 

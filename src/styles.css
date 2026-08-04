@@ -9,17 +9,21 @@
    tools/screenshot.mjs asserts both, at five widths, on every push. */
 
 :root {
-  --yang: #e8b923;          /* gold */
-  --yin: #1746dc;           /* blue (255 − gold) */
-  --yin-lift: #4a72f0;
+  /* Two hues only, gold and blue. What follows are LIGHTNESS STEPS of those two — which is what
+     the brand rule sanctions — chosen so every one clears WCAG on the surface it is used against.
+     Measured, not eyeballed: see the ratios in the comment beside each. */
+  --yang: #e8b923;          /* gold — 9.3:1 on the darkest panel */
+  --yin: #1746dc;           /* blue (255 − gold) — white on it, 7.1:1 */
+  --yin-lift: #436ced;      /* button hover fill — white on it, 4.6:1 (was #4a72f0 at 4.2) */
+  --link: #577cf1;          /* blue as INK: 4.5:1 on the darkest panel (was #4a72f0 at 4.0) */
   --bg: #010c17;
   --panel: #071522;
   --panel-2: #0b1d2f;
   --line: #12283f;
   --line-2: #1d3b58;
   --text: #e8eff7;
-  --muted: #93a9c0;
-  --dim: #64798f;
+  --muted: #93a9c0;         /* 7.1:1 on the darkest panel */
+  --dim: #74869a;           /* 4.6:1 on the darkest panel (was #64798f at 3.8 — failed body text) */
   --radius: 14px;
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
   color-scheme: dark;
@@ -36,7 +40,7 @@ html, body {
   overflow-x: hidden;
 }
 
-a { color: var(--yin-lift); text-decoration: none; }
+a { color: var(--link); text-decoration: none; }
 a:hover { color: var(--yang); }
 
 h1, h2, h3, h4 { line-height: 1.25; margin: 0 0 0.4rem; font-weight: 650; letter-spacing: -0.01em; }
@@ -47,7 +51,7 @@ h4 { font-size: 0.92rem; }
 p { margin: 0 0 0.7rem; }
 
 /* Focus must always be visible — several controls here are keyboard-only paths to the report. */
-:focus-visible { outline: 2px solid var(--yin-lift); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
 
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 1rem 4rem; }
 .scroll-x { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -86,8 +90,8 @@ button { display: inline-block; background: var(--yin); border: 1px solid transp
 button:hover:not(:disabled) { background: var(--yin-lift); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 button.ghost { background: transparent; border-color: var(--line-2); color: var(--text); }
-button.ghost:hover:not(:disabled) { border-color: var(--yin-lift); background: var(--panel-2); }
-button.link { background: none; border: none; color: var(--yin-lift); padding: 0; font-weight: 500; }
+button.ghost:hover:not(:disabled) { border-color: var(--link); background: var(--panel-2); }
+button.link { background: none; border: none; color: var(--link); padding: 0; font-weight: 500; }
 button.link:hover { color: var(--yang); background: none; }
 .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
 .error { color: var(--yang); font-size: 0.84rem; margin: 0.15rem 0 0.5rem; }
@@ -95,7 +99,7 @@ button.link:hover { color: var(--yang); background: none; }
 .pill { display: inline-block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em;
   font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 999px; border: 1px solid var(--line-2);
   color: var(--muted); white-space: nowrap; line-height: 1.5; }
-.pill.aq { border-color: var(--yin-lift); color: var(--yin-lift); }
+.pill.aq { border-color: var(--link); color: var(--link); }
 .pill.soft { border-color: transparent; background: var(--panel-2); }
 
 /* ── people list ────────────────────────────────────────────────────────── */

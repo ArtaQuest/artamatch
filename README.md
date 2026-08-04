@@ -3,7 +3,9 @@
 **One score, fully explained: the oldest date-only matching tradition, out of 36 — every step shown
 in plain words, with an honest account of what a date alone cannot tell you.**
 
-Live: https://artaquest.github.io/artamatch/ · Full methods: [METHODS.md](METHODS.md)
+### → [artaquest.github.io/artamatch](https://artaquest.github.io/artamatch/)
+
+Full method, and the provenance of every number on the page: **[METHODS.md](METHODS.md)**
 
 The page computes the traditional eight-test Moon score (sidereal, Lahiri) and then explains it
 three ways at once:
@@ -81,14 +83,16 @@ everything. Messaging deep-links into ArtaQuest's existing end-to-end-encrypted 
 ```bash
 npm install
 npm run dev       # http://localhost:5173/artamatch/
-npm test          # 60 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
+npm test          # 61 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
 npx vite build
-node tools/screenshot.mjs "$PWD/dist" /tmp/shots   # 25-state visual audit at five widths
+node tools/contrast.mjs                           # WCAG contrast for every ink/surface pair
+node tools/screenshot.mjs "$PWD/dist" /tmp/shots   # 35-state visual audit at five widths
 ```
 
-CI gates every deploy on the typecheck, the full test suite, and a real-browser audit of the built
-bundle — 5 viewports × 5 states, asserting no overflow, no console errors, intact instruments,
-un-squeezed rows and usable tap targets. Deployed to GitHub Pages by `.github/workflows/pages.yml`.
+CI gates every deploy on the typecheck, the full test suite, a computed **contrast** check (every
+ink ≥ 4.5:1 on the surface it is used against — the brand permits two hues, so the only lever is
+lightness), and a real-browser audit of the built bundle: 5 viewports × 5 states, asserting no
+overflow, no console errors, intact instruments, un-squeezed rows and usable tap targets. Deployed to GitHub Pages by `.github/workflows/pages.yml`.
 
 ## What this is
 

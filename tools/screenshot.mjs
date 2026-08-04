@@ -41,15 +41,29 @@ const VIEWPORTS = [
 const STATES = [
   ["home", async () => {}],
   ["report", async (p) => { await p.locator(".rank-row").first().click(); await p.waitForSelector(".ruler"); }],
-  ["matrix", async (p) => { await p.getByRole("tab", { name: /Everyone vs everyone/i }).click(); }],
+  ["matrix", async (p) => { await p.getByRole("button", { name: /Everyone vs everyone/i }).click(); }],
   ["toggle-off", async (p) => {
     await p.locator(".opt input").first().setChecked(false);
     await p.locator(".rank-row").first().click();
     await p.waitForSelector(".ruler");
   }],
-  // A pair whose dates settle the answer outright takes the other branch of section 2.
+  // A pair whose dates settle the answer outright — the OTHER branch of section 2. Found by
+  // search: both Moons stay in one birth star and one sign all day, which is rare enough that
+  // the earlier hand-picked pair did not qualify and this branch went unrendered for a while.
   ["certain", async (p) => {
-    await p.goto("http://localhost:4321/artamatch/?n=Ada&b=1815-12-10&n2=Alan&b2=1912-06-23",
+    await p.goto("http://localhost:4321/artamatch/?n=Certain%20A&b=1984-02-08&n2=Certain%20B&b2=1967-08-26",
+      { waitUntil: "networkidle" });
+    await p.waitForSelector(".ruler");
+  }],
+  // The extremes of the score range, where the landscape strip's "this pair" label sits hard
+  // against an edge and could clip.
+  ["lowest", async (p) => {
+    await p.goto("http://localhost:4321/artamatch/?n=Low%20A&b=2004-09-23&n2=Low%20B&b2=1990-08-20",
+      { waitUntil: "networkidle" });
+    await p.waitForSelector(".ruler");
+  }],
+  ["highest", async (p) => {
+    await p.goto("http://localhost:4321/artamatch/?n=High%20A&b=1983-09-01&n2=High%20B&b2=1969-03-23",
       { waitUntil: "networkidle" });
     await p.waitForSelector(".ruler");
   }],
@@ -85,7 +99,18 @@ async function audit(page, tag) {
         out.push(`sky ruler has ${document.querySelectorAll(".ruler .tick").length} ticks, expected 39`);
       }
       if (document.querySelectorAll(".ruler .moon").length !== 2) out.push("sky ruler is missing a Moon");
-      if (!document.querySelector(".landscape .here")) out.push("landscape strip does not mark this pair");
+      const here = document.querySelector(".landscape .here");
+      if (!here) out.push("landscape strip does not mark this pair");
+      else {
+        // The "this pair" label is absolutely positioned and centred on its bar; at the extremes
+        // it can run past the strip. Compare against the page, not the strip, since a little
+        // overhang inside the panel is fine but off-screen is not.
+        const lab = getComputedStyle(here, "::after");
+        const r = here.getBoundingClientRect();
+        const approx = parseFloat(lab.width) || 52;
+        if (r.left + r.width / 2 - approx / 2 < 0) out.push("landscape label clips off the left edge");
+        if (r.left + r.width / 2 + approx / 2 > window.innerWidth) out.push("landscape label clips off the right edge");
+      }
     }
 
     // A name showing under 70px of itself has lost its column — layout failure, not typography.

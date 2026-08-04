@@ -124,14 +124,15 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 8 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 63 tests: ephemeris vs golden, rules, symmetry,
+npm test                                   # 61 tests: ephemeris vs golden, rules, symmetry,
                                            # uncertainty, jargon guards, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
 npx esbuild src/engine/score.ts  --format=esm --bundle --outfile=/tmp/score.mjs
 npx esbuild src/engine/systems.ts --format=esm --bundle --outfile=/tmp/systems.mjs
 node tools/calibrate.mjs /tmp/score.mjs /tmp/systems.mjs   # every calibration table
 node tools/compare-elements.mjs tests/golden.json          # the Table 1 vs 2a decision
-node tools/screenshot.mjs dist shots/                      # visual checks: overflow, meter height
+node tools/contrast.mjs                                    # WCAG contrast, every ink/surface pair
+node tools/screenshot.mjs dist shots/                      # 35-state visual audit, five widths
 ```
 
 And the standing caveat, which is part of the method: there is no known mechanism by which any of

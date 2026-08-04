@@ -142,6 +142,18 @@ describe("ArtaMatch app", () => {
     expect(screen.getAllByText(/their birth star, one of the 27/i).length).toBe(2);
   });
 
+  it("says a shared Moon sign once, not twice in adjacent columns", () => {
+    // 1984-02-08 x 1967-08-26 both have the Moon in Aries. Printing the identical paragraph in
+    // both columns reads as a bug, so the shared case is stated once above them.
+    window.history.replaceState({}, "",
+      "/?n=CertA&b=1984-02-08&n2=CertB&b2=1967-08-26");
+    render(<App />);
+    expect(screen.getByText(/Both have the Moon in Aries/i)).toBeDefined();
+    // "Fast heat, quick recovery" is the Aries line — it must appear exactly once.
+    expect(screen.getAllByText(/Fast heat, quick recovery/i)).toHaveLength(1);
+    window.history.replaceState({}, "", "/");
+  });
+
   it("warns on a date where the Moon changes birth star, and not on one where it does not", () => {
     render(<App />);
     // 1965-07-27: the Moon crosses two nakshatra boundaries AND a rasi boundary — four states.
@@ -241,7 +253,7 @@ describe("ArtaMatch app", () => {
     addPerson("Turing", "1912-06-23");
     addPerson("Curie", "1867-11-07");
 
-    fireEvent.click(screen.getByRole("tab", { name: /Everyone vs everyone/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Everyone vs everyone/i }));
     const table = screen.getByText(/Every pair, scored on the Moon score/i).closest(".panel")!
       .querySelector("table")!;
     const rows = [...table.querySelectorAll("tbody tr")];

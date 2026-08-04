@@ -245,12 +245,17 @@ export default function App() {
             <Report a={pairPeople[0]} b={pairPeople[1]} options={options} onClose={() => setPair(null)} />
           ) : (
             <>
-              <div className="tabs" role="tablist">
-                <button role="tab" aria-selected={view === "ranking"}
+              {/* Toggle buttons, not an ARIA tabs pattern. These carried role="tab" and
+                  aria-selected without aria-controls, tabpanels, roving tabindex or arrow-key
+                  handling — announcing "tab" to a screen reader promises keyboard behaviour that
+                  was not there. aria-pressed says exactly what these are and needs nothing beyond
+                  a native button. */}
+              <div className="tabs" role="group" aria-label="Choose a view">
+                <button aria-pressed={view === "ranking"}
                   className={view === "ranking" ? "on" : ""} onClick={() => setView("ranking")}>
                   Ranking
                 </button>
-                <button role="tab" aria-selected={view === "matrix"}
+                <button aria-pressed={view === "matrix"}
                   className={view === "matrix" ? "on" : ""} onClick={() => setView("matrix")}>
                   Everyone vs everyone
                 </button>

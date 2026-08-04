@@ -35,6 +35,11 @@ jobs:
       # rather than shipping quietly.
       - name: Typecheck
         run: npx tsc -b
+      # Contrast is arithmetic, so it is asserted rather than reviewed. The brand allows two hues
+      # and no third accent, so the only lever is lightness — this fails if any ink drops below
+      # 4.5:1 on the surface it is used against.
+      - name: Contrast
+        run: node tools/contrast.mjs
       - name: Test against Swiss Ephemeris golden data
         run: npm test
 

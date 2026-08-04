@@ -54,6 +54,8 @@ export default function Report({ a, b, options, onClose }: {
   const msg = messageUrl(b) ?? messageUrl(a);
   const prof = profileUrl(b);
   const doshas = match.guna.doshas;
+  const sameMoonSign = match.spanA.likeliest.rasi === match.spanB.likeliest.rasi;
+  const sharedSign = sameMoonSign ? moonSignText(match.spanA.likeliest.rasi) : null;
 
   return (
     <div className="panel report">
@@ -230,9 +232,18 @@ export default function Report({ a, b, options, onClose }: {
 
       {/* ── 7 · the people ───────────────────────────────────────────────────────────────── */}
       <Section n={doshas.length > 0 ? 6 : 5} title="The two of them">
+        {/* When both Moons share a sign the emotional-style paragraph is identical for both, so it
+            is said ONCE here rather than printed twice verbatim in adjacent columns. */}
+        {sameMoonSign && sharedSign && (
+          <p className="say">
+            <strong>Both have the Moon in {SIGNS[match.spanA.likeliest.rasi]} — {sharedSign.title}.</strong>{" "}
+            {sharedSign.style} They share this, which the fifth test reads as minds that work the
+            same way.
+          </p>
+        )}
         <div className="cols">
-          <PersonPanel person={a} span={match.spanA} />
-          <PersonPanel person={b} span={match.spanB} />
+          <PersonPanel person={a} span={match.spanA} showMoonSign={!sameMoonSign} />
+          <PersonPanel person={b} span={match.spanB} showMoonSign={!sameMoonSign} />
         </div>
       </Section>
 
@@ -367,9 +378,11 @@ function MoonRuler({ match, a, b }: { match: Match; a: Person; b: Person }) {
   );
 }
 
-function PersonPanel({ person, span }: { person: Person; span: Match["spanA"] }) {
+function PersonPanel({ person, span, showMoonSign }: {
+  person: Person; span: Match["spanA"]; showMoonSign: boolean;
+}) {
   const star = birthStarText(span.likeliest.nakshatra.index);
-  const moonSign = moonSignText(span.likeliest.rasi);
+  const moonSign = showMoonSign ? moonSignText(span.likeliest.rasi) : null;
   return (
     <div className="who-panel">
       <h4>{person.name}</h4>

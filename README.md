@@ -86,9 +86,19 @@ pinned down, times the same kernel — widened — evaluated at the mean angle. 
 score at the mean" is what taking the expectation *does*.
 
 The number shown is the plain average of the 576 charts. The factorisation is computed alongside it
-and reported as the *decomposition*, because that is what makes the number explainable — and the gap
-between the two is printed on every reading (measured: median 4.5 × 10⁻⁴, worst 2.4 × 10⁻³, against
-a population spread of 0.057).
+and reported as the *decomposition* — and the gap is printed on every reading: **median 9.8 × 10⁻⁶,
+worst 6.1 × 10⁻⁵**, about a thousandth of a percentile point. That needed the **exact** expectation
+rather than a bell fitted to it: over the grid the angle is a difference of two uniforms, which is a
+*rectangle* when one body barely moves — six of the seven — and the furthest-from-Gaussian shape
+there is. The swap cut the gap thirty-fold, and it had to, because the ranked list prints the closed
+form while the reading prints the average.
+
+**And every term is centred.** Two bodies at a random angle still score something, and how much
+depends on the table of easy and hard rather than on the couple. Subtracting it fixed two live
+defects: rows carried a head start worth about a seventh of their size, and — much worse — the
+reader's switch *flattered everybody*, moving the average stranger from the 51st percentile to the
+76th just by being ticked. Both readings now centre on zero, and each ships its own calibration
+table.
 
 ### Two numbers, not one — and the reason is the biggest fabrication in the genre
 
@@ -117,7 +127,7 @@ none of them does — rank correlation against the model as shipped:
 | a sixth counted as much as a third | 0.958 |
 | every body weighted equally | 0.944 |
 | the same-place contact fixed at +1 | 0.884 |
-| **the opposite angle read as easy** | **0.718** |
+| **the opposite angle read as easy** | **0.677** |
 
 **Two more ablations, which undercut the model rather than flatter it** — reported because the paper
 this borrows its shape from reports its own centring as worth "only ~0.003 AUC":

@@ -28,6 +28,7 @@ const date = () => {
   return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 };
 
+const OPPOSITE = process.env.OPPOSITE ?? "hard";
 const raw = [], guna = [], bandWidth = [], ease = [], friction = [];
 // Does variance weighting quietly crush the Moon? The Sun moves ~1 degree a day and is pinned to a
 // third of a degree; the Moon moves 13 and is not. If the Moon ends up carrying a couple of per
@@ -40,7 +41,7 @@ for (let i = 0; i < N; i++) {
   // Every 40th pair is computed the slow way too, so the closed form is checked against brute
   // force on 500 fresh random pairs rather than only on the handful a test hard-codes.
   const withCheck = i % 40 === 0;
-  const r = affinity(a, b, { verify: withCheck });
+  const r = affinity(a, b, { verify: withCheck, opposite: OPPOSITE });
   if (!r) continue;
   raw.push(r.net);
   ease.push(r.ease); friction.push(r.friction);
@@ -69,7 +70,7 @@ const pearson = (xs, ys) => {
   return n / Math.sqrt(dx * dy);
 };
 
-console.log(`${raw.length} random pairs, seed ${SEED}\n`);
+console.log(`${raw.length} random pairs, seed ${SEED}, opposite read as ${OPPOSITE}\n`);
 console.log(`ease        mean ${mean(ease).toFixed(4)}  sd ${sd(ease).toFixed(4)}`);
 console.log(`friction    mean ${mean(friction).toFixed(4)}  sd ${sd(friction).toFixed(4)}`);
 console.log(`net score   mean ${mean(raw).toFixed(4)}  sd ${sd(raw).toFixed(4)}  ` +
@@ -78,7 +79,7 @@ console.log(`net score   mean ${mean(raw).toFixed(4)}  sd ${sd(raw).toFixed(4)} 
 
 const step = (AFFINITY_MAX - AFFINITY_MIN) / (AFFINITY_STEPS - 1);
 const table = Array.from({ length: AFFINITY_STEPS }, (_, i) => shareBelow(AFFINITY_MIN + i * step));
-console.log(`\nAFFINITY_BELOW (${AFFINITY_STEPS} steps from ${AFFINITY_MIN} to ${AFFINITY_MAX}):`);
+console.log(`\nAFFINITY_BELOW_${OPPOSITE.toUpperCase()} (${AFFINITY_STEPS} steps from ${AFFINITY_MIN} to ${AFFINITY_MAX}):`);
 console.log("  " + JSON.stringify(table));
 
 if (bandWidth.length) {
@@ -106,7 +107,7 @@ let s2 = SEED; const rnd2 = () => { s2 = (s2 * 1664525 + 1013904223) % 429496729
 const date2 = () => { const y = 1930 + Math.floor(rnd2() * 80), m = 1 + Math.floor(rnd2() * 12),
   d = 1 + Math.floor(rnd2() * 28); return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`; };
 const sample = Array.from({ length: M }, () => [date2(), date2()]);
-const runAll = (o = {}) => sample.map(([a, b]) => { const r = affinity(a, b, { verify: false, ...o }); return r ? r.net : 0; });
+const runAll = (o = {}) => sample.map(([a, b]) => { const r = affinity(a, b, { verify: false, opposite: OPPOSITE, ...o }); return r ? r.net : 0; });
 
 const baseRun = runAll();
 const variants = [];

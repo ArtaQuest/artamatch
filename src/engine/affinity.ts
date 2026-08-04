@@ -121,6 +121,51 @@ import { GRID, PERSONAL, hourlyLongitudes, type Spread } from "./synastry";
 
 const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;
+const SQ2PI = Math.sqrt(2 * Math.PI);
+const wrap180 = (x: number) => x - 360 * Math.round(x / 360);
+
+/** Abramowitz & Stegun 7.1.26 — absolute error 1.5e-7, five orders below anything that matters here. */
+function erf(x: number): number {
+  const sign = x < 0 ? -1 : 1;
+  const z = Math.abs(x);
+  const t = 1 / (1 + 0.3275911 * z);
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t
+    + 0.254829592) * t * Math.exp(-z * z);
+  return sign * y;
+}
+const Phi = (u: number) => 0.5 * (1 + erf(u / Math.SQRT2));
+const phiPdf = (u: number) => Math.exp(-0.5 * u * u) / SQ2PI;
+/** ∫_{−∞}^{u} Φ — the antiderivative the trapezoid case needs. */
+const J = (u: number) => u * Phi(u) + phiPdf(u);
+
+/**
+ * EXACT expectation of the Gaussian kernel under the grid's TRUE law.
+ *
+ * Over 24 × 24 birth hours the angle is θ = δ + X − Y with X ~ U[0, W₁] and Y ~ U[0, W₂], where W is
+ * how far each body travels in a day. That is a trapezoid — and when one body barely moves, which
+ * is six of the seven, a RECTANGLE, the furthest-from-Gaussian shape there is.
+ *
+ * The moment-matched Gaussian this file used to use over-states every on-aspect hit (a uniform's
+ * centre density is 0.289/σ against a bell's 0.399/σ) and it is worst exactly where it matters most:
+ * Moon-against-a-slow-body sits at σ/s ≈ 0.9, and those are the heaviest-weighted rows. Measured, the
+ * swap takes the gap between the explanation and the number from 2.0 × 10⁻³ to under 10⁻⁴ — which is
+ * not academic, because the ranked list prints the closed form and the reading prints the average,
+ * and at the old error the same two people could be shown two different percentiles.
+ *
+ * The four J terms cancel to ~1e-15 in the far tail and can go slightly negative; the clamps are
+ * load-bearing, not defensive.
+ */
+export function expectTrapezoid(delta: number, W1: number, W2: number, s: number): number {
+  const hi = Math.max(Math.abs(W1), Math.abs(W2));
+  const lo = Math.min(Math.abs(W1), Math.abs(W2));
+  if (hi < 1e-9) return Math.exp(-(delta * delta) / (2 * s * s));
+  const d = delta - hi / 2 + lo / 2;
+  if (lo < 1e-9) {
+    return Math.max(0, ((s * SQ2PI) / hi) * (Phi((d + hi) / s) - Phi(d / s)));
+  }
+  return Math.max(0, ((s * s * SQ2PI) / (hi * lo)) *
+    (J((d + hi) / s) - J(d / s) - J((d + hi - lo) / s) + J((d - lo) / s)));
+}
 
 /**
  * Traditional orb of each body, in degrees — the radius of its own light. [tradition: Lilly,
@@ -174,13 +219,43 @@ export const BODY_WEIGHT: Record<string, number> = {
  * outright still ranks pairs at Spearman 0.92 of this table, so the page's ordering does not turn
  * on the disagreement.
  */
-export const ASPECTS: { kind: string; degrees: number; valence: number | null }[] = [
-  { kind: "together", degrees: 0, valence: null },   // null: taken from the two bodies' natures
-  { kind: "sixth", degrees: 60, valence: 0.5 },
-  { kind: "quarter", degrees: 90, valence: -1 },
-  { kind: "third", degrees: 120, valence: 1 },
-  { kind: "opposite", degrees: 180, valence: -1 },
+export const ASPECTS: { kind: string; degrees: number; valence: number | null; images: number }[] = [
+  // `images`: how many places on the circle the angle occupies. Being a sixth of the way round
+  // happens at +60 AND at −60; being in the same place, or directly opposite, happens once. It
+  // makes no numerical difference for these seven bodies (the second image is ~1e-50 away) and it
+  // is the guard that stops the model breaking silently the day a faster body is added — and it
+  // is what makes the null below exact.
+  { kind: "together", degrees: 0, valence: null, images: 1 },  // null: taken from the bodies
+  { kind: "sixth", degrees: 60, valence: 0.5, images: 2 },
+  { kind: "quarter", degrees: 90, valence: -1, images: 2 },
+  { kind: "third", degrees: 120, valence: 1, images: 2 },
+  { kind: "opposite", degrees: 180, valence: -1, images: 1 },
 ];
+
+/**
+ * What a pair of bodies at a COMPLETELY RANDOM angle would score — and therefore what has to come
+ * off before a number means anything about these two people.
+ *
+ * E[K_a] under a uniform angle is exactly n_a·s·√(2π)/360, whatever the spread, so the offset is
+ * closed-form. Subtracting it is the largest correction this model has had:
+ *
+ *   · Without it, a row carries a head start that belongs to the VALENCE TABLE, not to the couple —
+ *     Jupiter-with-Venus opens at +0.0015 and Saturn-with-Mars at −0.0015 on rows whose whole size
+ *     is about ±0.01. Roughly a seventh of every explained row was an artefact.
+ *   · Worse, it made the reader's switch flatter everybody. Reading the opposite angle as easy
+ *     moves the population mean from +0.0015 to +0.052 — nine tenths of a standard deviation — so
+ *     the AVERAGE STRANGER jumped from the 51st percentile to the 76th merely by ticking a box.
+ *     That is the exact failure this page exists to avoid, and it was live.
+ *
+ * After centring both readings sit at zero by construction. Their spreads still differ by about 8%,
+ * so each still gets its own calibration table: a percentile must be measured in the state it is
+ * displayed in.
+ */
+export function nullResponse(a: Body, b: Body, opposite: OppositeReading = "hard"): number {
+  let sum = 0;
+  for (let ai = 0; ai < ASPECTS.length; ai++) sum += valenceOf(ai, a, b, opposite) * ASPECTS[ai].images;
+  return (sum * widthFor(a, b) * SQ2PI) / 360;
+}
 
 /** Half the summed moieties — the Gaussian width, so a pair sitting exactly on the traditional edge
  *  of the orb still counts for exp(−2) ≈ 14% of an exact one rather than falling off a cliff at an
@@ -250,7 +325,10 @@ export type Term = {
   ease: number;
   /** This pair's exact share of `friction`, likewise. Non-negative. */
   friction: number;
-  /** ease − friction. These add up EXACTLY to `net`, with no residual. */
+  /** What a pair of these two bodies at a COMPLETELY RANDOM angle would have scored. Subtracted, so
+   *  a row says something about these two people rather than about the valence table. */
+  baseline: number;
+  /** ease − friction − baseline. These add up EXACTLY to `net`, with no residual. */
   contribution: number;
   /** weight · compat / Σ imp — the same quantity as the closed form predicts it. */
   predicted: number;
@@ -263,7 +341,13 @@ export type Affinity = {
   ease: number;
   /** Everything it calls hard, likewise. Non-negative. NEVER silently subtracted from ease. */
   friction: number;
-  /** ease − friction, at the one-for-one exchange rate. Labelled as a choice wherever shown. */
+  /**
+   * THE SCORE: the mean over the 576 charts of (ease − friction − what a random angle would give).
+   *
+   * Note it does NOT equal `ease − friction` above: those two are reported raw, as two piles, and
+   * this one has the random-angle baseline taken out of it. Without that subtraction the reader's
+   * switch moved the average stranger from the 51st percentile to the 76th.
+   */
   net: number;
   /** The spread of `net` across the 576 charts: mean, sd, and the 5th-to-95th band. */
   spread: Spread;
@@ -317,9 +401,12 @@ export function affinity(isoA: string, isoB: string, opts: AffinityOptions = {})
         for (let j = 0; j < GRID; j++) deltas.push(angleDiff(la[i], lb[j]));
       }
       const { mean, sd } = circularStats(deltas);
-      const S2 = s2 + sd * sd;
-      const confidence = Math.sqrt(s2 / S2);
+      const confidence = Math.sqrt(s2 / (s2 + sd * sd));
       const separation = Math.abs(mean);
+      // How far each body actually travels in a day — the true law over the grid is a difference of
+      // two uniforms of these widths, and the closed form integrates against exactly that.
+      const wa = Math.abs(wrap180(la[GRID - 1] - la[0])) * GRID / (GRID - 1);
+      const wb = Math.abs(wrap180(lb[GRID - 1] - lb[0])) * GRID / (GRID - 1);
 
       // Split as it is summed. An earlier version accumulated only the net here and left ease and
       // friction to the brute-force loop below — so on the fast path (which the 20,000-pair
@@ -328,34 +415,43 @@ export function affinity(isoA: string, isoB: string, opts: AffinityOptions = {})
       let easeC = 0, frictionC = 0;
       let nearest = ASPECTS[0], nearestOff = Infinity;
       for (let ai = 0; ai < ASPECTS.length; ai++) {
-        const off = Math.abs(separation - ASPECTS[ai].degrees);
+        const t = ASPECTS[ai].degrees;
         const v = valenceOf(ai, bi, bj, opposite);
-        const g = Math.exp(-(off * off) / (2 * S2));
-        if (v >= 0) easeC += v * g; else frictionC += -v * g;
+        let e = expectTrapezoid(wrap180(mean - t), wa, wb, s);
+        if (ASPECTS[ai].images === 2) e += expectTrapezoid(wrap180(mean + t), wa, wb, s);
+        if (v >= 0) easeC += v * e; else frictionC += -v * e;
+        const off = Math.abs(separation - t);
         if (off < nearestOff) { nearestOff = off; nearest = ASPECTS[ai]; }
       }
-      const compat = easeC - frictionC;
-      const weight = imp * confidence;
+      const nul = nullResponse(bi, bj, opposite);
+      const compat = easeC - frictionC - nul;
+      const weight = imp;
       closed += weight * compat;
 
       // The same sum chart by chart, at the ACTUAL angle, with no widening and no attenuation.
       // This is what the numbers ARE; the factorisation above is what explains them.
       // The closed form's own split, used when the brute force is skipped.
-      let ease = weight * easeC, friction = weight * frictionC;
+      let ease = imp * easeC, friction = imp * frictionC;
       if (verify) {
         ease = 0; friction = 0;
         let k = 0;
         for (let i = 0; i < GRID; i++) {
           for (let j = 0; j < GRID; j++) {
-            const d = Math.abs(angleDiff(la[i], lb[j]));
+            const delta = angleDiff(la[i], lb[j]);
             let e = 0, f = 0;
             for (let ai = 0; ai < ASPECTS.length; ai++) {
-              const off = d - ASPECTS[ai].degrees;
+              const t = ASPECTS[ai].degrees;
               const v = valenceOf(ai, bi, bj, opposite);
-              const g = imp * Math.exp(-(off * off) / (2 * s2));
-              if (v >= 0) e += v * g; else f += -v * g;
+              const dm = wrap180(delta - t);
+              let g = Math.exp(-(dm * dm) / (2 * s2));
+              if (ASPECTS[ai].images === 2) {
+                const dp = wrap180(delta + t);
+                g += Math.exp(-(dp * dp) / (2 * s2));
+              }
+              if (v >= 0) e += v * imp * g; else f += -v * imp * g;
             }
-            netPerChart[k++] += e - f;
+            // Centred here as well, so the two paths are the same function by definition.
+            netPerChart[k++] += e - f - imp * nul;
             ease += e; friction += f;
           }
         }
@@ -365,7 +461,9 @@ export function affinity(isoA: string, isoB: string, opts: AffinityOptions = {})
 
       terms.push({
         bodyA: bi, bodyB: bj, separation, spread: sd, confidence, weight, compat,
-        ease, friction, contribution: ease - friction, predicted: weight * compat,
+        ease, friction, baseline: imp * nul,
+        contribution: ease - friction - imp * nul,
+        predicted: weight * compat,
         nearest: { kind: nearest.kind, degrees: nearest.degrees, off: nearestOff },
       });
     }
@@ -379,8 +477,8 @@ export function affinity(isoA: string, isoB: string, opts: AffinityOptions = {})
   const at = (p: number) => sorted[Math.min(sorted.length - 1, Math.round((p / 100) * (sorted.length - 1)))];
 
   for (const t of terms) {
-    t.ease /= totalWeight; t.friction /= totalWeight;
-    t.contribution = verify ? t.ease - t.friction : t.predicted / totalWeight;
+    t.ease /= totalWeight; t.friction /= totalWeight; t.baseline /= totalWeight;
+    t.contribution = verify ? t.ease - t.friction - t.baseline : t.predicted / totalWeight;
     t.predicted /= totalWeight;
   }
   terms.sort((x, y) => Math.abs(y.contribution) - Math.abs(x.contribution));
@@ -411,26 +509,46 @@ export const AFFINITY_STEPS = 41;
 export const AFFINITY_MIN = -0.24;
 export const AFFINITY_MAX = 0.24;
 
-/** 20,000 random pairs, seed 13579. Population: mean −0.0001, sd 0.0566, 5th −0.0953, 95th 0.0907.
- *  Ease and friction average 0.1090 and 0.1091 across the same sample — so the two piles are the
- *  same size on average, and a positive net really does mean more ease than a random pair has. */
+/**
+ * One table per reading, because the two do not have the same spread. 20,000 random pairs each,
+ * seed 13579, dates 1930–2010.
+ *
+ *   opposite = hard   mean −0.0003, sd 0.0565, 5th −0.0954, 95th 0.0904
+ *   opposite = easy   mean −0.0009, sd 0.0519, 5th −0.0864, 95th 0.0826
+ *
+ * Both centred on zero, which is the whole point of the null subtraction above: before it, the
+ * "easy" reading sat at +0.052 — nine tenths of a standard deviation — and ticking the box moved
+ * the average stranger from the 51st percentile to the 76th against a table calibrated in the
+ * other state.
+ *
+ * The piles, on the same sample: ease averages 0.1090 and friction 0.1091 — the same size, so
+ * "more ease than friction" really does mean more than a random pair gets.
+ */
 export let AFFINITY_BELOW: number[] = [
   0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 3, 5, 7, 10, 14, 19, 25, 32, 40, 49,
   58, 67, 75, 82, 87, 91, 94, 96, 97, 98, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100,
 ];
+export let AFFINITY_BELOW_EASY: number[] = [
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 4, 5, 8, 12, 17, 23, 31, 40, 50,
+  60, 69, 77, 84, 89, 93, 95, 97, 98, 99, 99, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+];
 
 /** The resolution limit, measured on the same 20,000 pairs. [measured] */
-export const POPULATION_SD = 0.0566;
+export const POPULATION_SD = 0.0565;
 export const BAND_WIDTH_MEDIAN = 0.0481;
 
-/** Percentile of a raw net score, 0–100, linearly interpolated between steps. */
-export function affinityPercentile(raw: number): number {
-  if (AFFINITY_BELOW.length === 0) return 50;
+/**
+ * Percentile of a raw net score, 0–100, linearly interpolated between steps.
+ *
+ * The table is chosen by the READING, because the two do not have the same spread — about 7% apart
+ * even after centring. A percentile has to be measured in the state it is displayed in; scoring one
+ * reading against the other's table is how a page ends up congratulating the average stranger.
+ */
+export function affinityPercentile(raw: number, opposite: OppositeReading = "hard"): number {
+  const table = opposite === "easy" ? AFFINITY_BELOW_EASY : AFFINITY_BELOW;
+  if (table.length === 0) return 50;
   const step = (AFFINITY_MAX - AFFINITY_MIN) / (AFFINITY_STEPS - 1);
   const x = Math.max(0, Math.min(AFFINITY_STEPS - 1, (raw - AFFINITY_MIN) / step));
   const lo = Math.floor(x), hi = Math.min(AFFINITY_STEPS - 1, lo + 1), t = x - lo;
-  return Math.round(AFFINITY_BELOW[lo] * (1 - t) + AFFINITY_BELOW[hi] * t);
+  return Math.round(table[lo] * (1 - t) + table[hi] * t);
 }
-
-/** Install the committed calibration table. */
-export function setCalibration(table: number[]) { AFFINITY_BELOW = table; }

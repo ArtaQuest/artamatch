@@ -152,7 +152,7 @@ export default function Report({ a, b, options, onClose }: {
       </div>
 
       {/* ── the answer ───────────────────────────────────────────────────────────────────── */}
-      <Fit aff={aff} a={a.name} b={b.name} hero />
+      <Fit aff={aff} a={a.name} b={b.name} hero opposite={options.opposite ?? "hard"} />
 
       <p className="lede">
         This page shows the whole of its working. Below: each chart on its own, then the two laid
@@ -219,6 +219,15 @@ export default function Report({ a, b, options, onClose }: {
             is said to matter and by <strong>how firmly the two dates pin that angle down</strong>.
             The {aff.terms.length} results below are averaged over all {GRID * GRID} charts and add
             up to the number above exactly — no remainder, nothing rounded away.
+          </p>
+          <p className="say dim">
+            <b>Taking out what any two dates would score anyway.</b> Two bodies at a completely
+            random angle still pick up something from this arithmetic, and how much depends on the
+            table of easy and hard rather than on these two people. That amount is worked out
+            exactly and subtracted from every row, so a row says what <em>this</em> pair did and not
+            what its two bodies always do. Without it, ticking the switch above moved the average
+            stranger from the 51st place in 100 to the 76th — which is precisely the flattery this
+            page exists not to do.
           </p>
           <p className="say dim">
             <b>What is a choice and what is a measurement.</b> Which angles are called easy or hard
@@ -548,10 +557,12 @@ export function angleName(kind: string): string {
  * undisclosed exchange rate is the largest invented number in the genre. Here it is one for one,
  * said out loud, and measured to barely matter.
  */
-function Fit({ aff, a, b, hero }: { aff: Affinity; a: string; b: string; hero?: boolean }) {
-  const p = affinityPercentile(aff.net);
-  const lo = affinityPercentile(aff.spread.lo);
-  const hi = affinityPercentile(aff.spread.hi);
+function Fit({ aff, a, b, hero, opposite }: {
+  aff: Affinity; a: string; b: string; hero?: boolean; opposite: "hard" | "easy";
+}) {
+  const p = affinityPercentile(aff.net, opposite);
+  const lo = affinityPercentile(aff.spread.lo, opposite);
+  const hi = affinityPercentile(aff.spread.hi, opposite);
   const settled = hi - lo <= 12;
   const peak = Math.max(aff.ease, aff.friction, 1e-9);
   return (
@@ -589,10 +600,12 @@ function Fit({ aff, a, b, hero }: { aff: Affinity; a: string; b: string; hero?: 
       </div>
       <p className="legend-note">
         <span className="dim">
-          These two are kept apart on purpose. The tradition says which angles are easy and which
-          are hard; it has never said how many easy ones cancel a hard one, so any single number has
-          to invent that exchange rate. This one uses one for one — and changing it by half or by
-          double barely moves who ranks above whom.
+          These two are kept apart on purpose, and the number above is not one minus the other. The
+          tradition says which angles are easy and which are hard; it has never said how many easy
+          ones cancel a hard one, so any single number has to invent that exchange rate. This one
+          uses one for one — and changing it by half or by double barely moves who ranks above whom.
+          A random pair of dates averages <strong>0.109</strong> of each, so the bars are worth
+          reading against that rather than against each other.
         </span>
       </p>
     </div>

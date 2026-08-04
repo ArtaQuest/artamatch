@@ -344,7 +344,7 @@ export function rankAgainst<T extends { id: string; birthday: string }>(
     const match = matchPair(self.birthday, other.birthday, opts);
     const aff = affinity(self.birthday, other.birthday, opts);
     if (match && aff) {
-      out.push({ other, match, aff, percentile: affinityPercentile(aff.net), score: aff.net });
+      out.push({ other, match, aff, percentile: affinityPercentile(aff.net, opts.opposite), score: aff.net });
     }
   }
   // Ties break toward the tighter band, so a reading the dates settle outranks one that merely

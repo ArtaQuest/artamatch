@@ -151,11 +151,39 @@ widened kernel at the mean angle. "Weight by the variance of the angle estimate,
 phase difference" is not a heuristic — it is what taking the expectation does.
 
 **What is shown is the plain average of the 576 charts**, not the closed form. The closed form is
-computed alongside as the *decomposition*, because it is what makes the number explainable, and the
-gap is printed on every reading. Measured over 500 random pairs: **median 4.5 × 10⁻⁴, worst
-2.4 × 10⁻³**, against a population spread of 0.057. Per-pair contributions are the exact 576-chart
-averages, so the five reasons the page shows plus the stated remainder sum to the score with a
-residual under 10⁻¹² — the explanation *is* the arithmetic, not an illustration of it.
+computed alongside as the *decomposition*, and the gap is printed on every reading. Measured over
+500 random pairs: **median 9.8 × 10⁻⁶, worst 6.1 × 10⁻⁵** — about a thousandth of a percentile
+point. It has to be that small, because the ranked list prints the closed form while the reading
+prints the average, and at the earlier 2.4 × 10⁻³ the same two people could be shown two different
+integers on two screens.
+
+Getting there needed the **exact** expectation rather than a moment-matched bell. Over the grid the
+angle is θ = δ + X − Y with X, Y uniform over each body's daily travel — a trapezoid, and when one
+body barely moves (six of the seven) a **rectangle**, the furthest-from-Gaussian shape there is. The
+bell over-states every on-aspect hit (a uniform's centre density is 0.289/σ against 0.399/σ) and is
+worst exactly where it matters: Moon-against-a-slow-body sits at σ/s ≈ 0.9, and those are the
+heaviest rows. `expectTrapezoid` integrates against the true law in closed form; the swap cut the
+gap **30-fold**.
+
+**Every term is centred.** Two bodies at a completely random angle still score something under this
+arithmetic, and how much is a property of the valence table, not of the couple. That amount is
+`(Σ_a v_a · n_a) · s · √(2π)/360` — exact, and independent of the spread — and it is subtracted from
+every row. Two things this fixed, both live before it:
+
+* rows carried a **head start**: Jupiter-with-Venus opened at +0.0015 and Saturn-with-Mars at
+  −0.0015, on rows whose whole size is about ±0.01 — roughly a seventh of every "explanation";
+* and, far worse, **the reader's switch flattered everybody**. Reading the opposite angle as easy
+  moved the population mean from +0.0015 to **+0.052** — nine tenths of a standard deviation — so
+  ticking a box moved the *average stranger* from the 51st percentile to the 76th, against a table
+  calibrated in the other state. After centring both readings sit at zero by construction
+  (measured: −0.0003 and −0.0009 over 20,000 pairs each). Their spreads still differ by 8%, so each
+  reading ships **its own calibration table**: a percentile must be measured in the state it is
+  displayed in.
+
+Per-pair contributions are the exact 576-chart averages, centred, so the five reasons the page shows
+plus the stated remainder sum to the score with a residual under 10⁻¹² — the explanation *is* the
+arithmetic. Note `net` is therefore **not** `ease − friction`: the two piles are reported raw and the
+score has the baseline taken out, and the page says so rather than letting a reader subtract them.
 
 ### 5.3 · Constants: what is citable and what is chosen
 
@@ -179,7 +207,7 @@ Rank correlation with the model as shipped, 1,500 random pairs:
 | a sixth counted as much as a third | 0.958 |
 | every body weighted equally | 0.944 |
 | the same-place contact fixed at +1 | 0.884 |
-| **the opposite angle read as easy** | **0.718** |
+| **the opposite angle read as easy** | **0.677** |
 
 **And two that undercut the model rather than flatter it**, reported because the paper this borrows
 its shape from reports its own centring as worth "only ~0.003 AUC":

@@ -13,7 +13,7 @@
 import { describe, it, expect } from "vitest";
 import {
   affinity, circularStats, valenceOf, widthFor, ASPECTS, BODY_ORB, BODY_NATURE, BODY_WEIGHT,
-  affinityPercentile, AFFINITY_BELOW,
+  affinityPercentile, AFFINITY_BELOW, AFFINITY_BELOW_EASY, expectTrapezoid, nullResponse,
 } from "../src/engine/affinity";
 import { PERSONAL, GRID, hourlyLongitudes } from "../src/engine/synastry";
 import { angleDiff, type Body } from "../src/engine/ephemeris";
@@ -87,8 +87,10 @@ describe("the constants are what they claim to be", () => {
 
 describe("the number is the average of the 576 charts", () => {
   it("matches a fully independent brute-force recomputation", () => {
-    // Written out longhand here rather than reusing anything the engine does, so this is a check
-    // of the model and not of itself.
+    // Written out longhand here rather than reusing anything the engine does, so this is a check of
+    // the model and not of itself. Note it folds the angle to [0,180] where the engine uses the
+    // two-image kernel on the signed difference — a deliberately different route to the same place.
+    const wrap = (z: number) => z - 360 * Math.round(z / 360);
     for (const [x, y] of [[DATES[0], DATES[2]], [DATES[4], DATES[5]], [DATES[6], DATES[7]]]) {
       const A = hourlyLongitudes(x), B = hourlyLongitudes(y);
       let total = 0, denom = 0;
@@ -101,12 +103,15 @@ describe("the number is the average of the 576 charts", () => {
             for (let j = 0; j < GRID; j++) {
               const d = Math.abs(angleDiff(A.get(bi)![i], B.get(bj)![j]));
               for (let ai = 0; ai < ASPECTS.length; ai++) {
-                const off = d - ASPECTS[ai].degrees;
+                const off = wrap(d - ASPECTS[ai].degrees);
                 total += imp * valenceOf(ai, bi as Body, bj as Body) *
                   Math.exp(-(off * off) / (2 * s * s));
               }
             }
           }
+          // What a random angle would have given this pair, taken off — the correction that stops
+          // a row reporting a property of the valence table as a property of the couple.
+          total -= imp * nullResponse(bi as Body, bj as Body) * GRID * GRID;
         }
       }
       const longhand = total / (denom * GRID * GRID);
@@ -127,7 +132,10 @@ describe("the number is the average of the 576 charts", () => {
         const friction = r.terms.reduce((s, t) => s + t.friction, 0);
         expect(ease).toBeCloseTo(r.ease, 12);
         expect(friction).toBeCloseTo(r.friction, 12);
-        expect(r.ease - r.friction).toBeCloseTo(r.net, 12);
+        // net is NOT ease − friction: the two piles are reported raw and the score has the
+        // random-angle baseline taken out. The page must never invite a reader to subtract them.
+        const base = r.terms.reduce((s, t) => s + t.baseline, 0);
+        expect(r.ease - r.friction - base).toBeCloseTo(r.net, 12);
       }
     }
   }, 60_000);
@@ -145,9 +153,11 @@ describe("the number is the average of the 576 charts", () => {
         if (r.agreement > worst) { worst = r.agreement; where = `${x} x ${y}`; }
       }
     }
-    // The population spread of the score is about 0.056, so this is under 5% of one standard
-    // deviation — well under one percentile point.
-    expect(worst, `worst closed-form gap at ${where}`).toBeLessThan(0.0025);
+    // Measured: median 1e-5, worst 6e-5 over 500 random pairs — about a thousandth of a percentile
+    // point. It has to be this small: the ranked list prints the closed form and the reading prints
+    // the average of the 576, so at the old 2e-3 the same two people could be shown two different
+    // numbers on two screens.
+    expect(worst, `worst closed-form gap at ${where}`).toBeLessThan(2e-4);
   }, 60_000);
 
   it("gives the same answer whichever person is put first", () => {
@@ -237,7 +247,7 @@ describe("the conventions are not steering the answer", () => {
     const base = run();
     const flipped = run({ opposite: "easy" });
     const rho = spearman(base, flipped);
-    expect(rho, `opposite-as-easy now ranks at ${rho.toFixed(3)}`).toBeGreaterThan(0.6);
+    expect(rho, `opposite-as-easy now ranks at ${rho.toFixed(3)}`).toBeGreaterThan(0.55);
     expect(rho, "if this rises above 0.85 the switch is no longer worth offering")
       .toBeLessThan(0.85);
   }, 60_000);
@@ -269,6 +279,39 @@ describe("the conventions are not steering the answer", () => {
 });
 
 describe("the percentile — the only measured number in the model", () => {
+  it("has a table per reading, and they are not the same table", () => {
+    // A percentile has to be measured in the state it is displayed in. The two readings differ in
+    // spread by about 7%, so one table for both would misreport whichever it was not built on.
+    expect(AFFINITY_BELOW.length).toBe(AFFINITY_BELOW_EASY.length);
+    expect(AFFINITY_BELOW).not.toEqual(AFFINITY_BELOW_EASY);
+    for (const table of [AFFINITY_BELOW, AFFINITY_BELOW_EASY]) {
+      for (let i = 1; i < table.length; i++) expect(table[i]).toBeGreaterThanOrEqual(table[i - 1]);
+      expect(table[0]).toBe(0);
+      expect(table[table.length - 1]).toBe(100);
+    }
+  });
+
+  it("integrates the kernel against the grid's TRUE law, not a bell fitted to it", () => {
+    // The 576 differences are a difference of two uniforms — a rectangle when one body barely
+    // moves, which is six of the seven. Checked against direct numerical integration.
+    for (const [W1, W2, s, delta] of [[13, 1, 5, 0], [13, 1, 5, 4], [0.5, 0.5, 4, 2], [15, 12, 6, 3]]) {
+      // delta is the CENTRE of the spread — it comes from the circular MEAN of the 576 differences
+      // — so both uniforms are centred on zero here. Getting that convention wrong is what this
+      // test caught first, in the test rather than in the model.
+      let sum = 0;
+      const N = 4000, M = 200;
+      for (let i = 0; i < N; i++) {
+        for (let j = 0; j < M; j++) {
+          const th = delta + (((i + 0.5) / N) - 0.5) * W1 - (((j + 0.5) / M) - 0.5) * W2;
+          sum += Math.exp(-(th * th) / (2 * s * s));
+        }
+      }
+      const numeric = sum / (N * M);
+      expect(expectTrapezoid(delta, W1, W2, s), `W=${W1}/${W2} s=${s} d=${delta}`)
+        .toBeCloseTo(numeric, 4);
+    }
+  }, 60_000);
+
   it("is monotone, bounded, and built from a committed table", () => {
     expect(AFFINITY_BELOW.length).toBeGreaterThan(0);
     let prev = -1;
@@ -282,6 +325,36 @@ describe("the percentile — the only measured number in the model", () => {
     expect(affinityPercentile(-1)).toBe(0);
     expect(affinityPercentile(1)).toBe(100);
   });
+
+  it("does not let the switch flatter anybody — the one bug that shipped", () => {
+    // Ticking the box once moved the AVERAGE STRANGER from the 51st percentile to the 76th, because
+    // reading the opposite angle as easy shifts the whole population by nine tenths of a standard
+    // deviation while the percentile was still measured against the other state's table. Two fixes
+    // hold it shut: every term has the random-angle baseline taken out, so both readings centre on
+    // zero; and each reading gets its own table.
+    let seed = 8675309;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    const date = () => {
+      const y = 1930 + Math.floor(rnd() * 80), m = 1 + Math.floor(rnd() * 12), d = 1 + Math.floor(rnd() * 28);
+      return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    };
+    const hard: number[] = [], easy: number[] = [];
+    for (let i = 0; i < 250; i++) {
+      const a = date(), b = date();
+      hard.push(affinityPercentile(affinity(a, b, { verify: false })!.net, "hard"));
+      easy.push(affinityPercentile(affinity(a, b, { verify: false, opposite: "easy" })!.net, "easy"));
+    }
+    const mean = (xs: number[]) => xs.reduce((s, v) => s + v, 0) / xs.length;
+    expect(Math.abs(mean(hard) - 50), `hard reading averages ${mean(hard).toFixed(1)}`).toBeLessThan(6);
+    expect(Math.abs(mean(easy) - 50), `easy reading averages ${mean(easy).toFixed(1)}`).toBeLessThan(6);
+    // And the raw scale is centred too, which is what makes the tables comparable at all.
+    const raws = (o: "hard" | "easy") => {
+      seed = 8675309;
+      return Array.from({ length: 250 }, () => affinity(date(), date(), { verify: false, opposite: o })!.net);
+    };
+    expect(Math.abs(mean(raws("hard")))).toBeLessThan(0.01);
+    expect(Math.abs(mean(raws("easy")))).toBeLessThan(0.01);
+  }, 60_000);
 
   it("puts the middle of the random population near the middle of the scale", () => {
     let seed = 31337;

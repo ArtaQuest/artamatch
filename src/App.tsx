@@ -378,6 +378,7 @@ function Ranking({ self, ranked, options, onOpen }: {
   options: ScoreOptions;
   onOpen: (id: string) => void;
 }) {
+  const opposite = options.opposite ?? "hard";
   if (!self) {
     return <div className="panel"><p className="empty">Pick who you are from the list to see a ranking.</p></div>;
   }
@@ -419,7 +420,7 @@ function Ranking({ self, ranked, options, onOpen }: {
                 </span>
                 <span className="sub">
                   higher than {r.percentile} in 100 random pairs · could be{" "}
-                  {affinityPercentile(r.aff.spread.lo)}–{affinityPercentile(r.aff.spread.hi)}{" "}
+                  {affinityPercentile(r.aff.spread.lo, opposite)}–{affinityPercentile(r.aff.spread.hi, opposite)}{" "}
                   depending on the hour · the older score puts it at{" "}
                   {fmtScore(m.distribution.expected)} of {m.maxScore}
                 </span>
@@ -575,7 +576,7 @@ function Matrix({ people, options, onOpen }: { people: Person[]; options: ScoreO
       for (let j = i + 1; j < people.length; j++) {
         const r = affinity(people[i].birthday, people[j].birthday, { ...options, verify: false });
         if (r) {
-          const p = affinityPercentile(r.net);
+          const p = affinityPercentile(r.net, options.opposite ?? "hard");
           m.set(`${people[i].id}|${people[j].id}`, p);
           m.set(`${people[j].id}|${people[i].id}`, p);
         }

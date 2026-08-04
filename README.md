@@ -1,7 +1,8 @@
 # ArtaMatch
 
-**Two sidereal charts, read one at a time, then laid over each other, then scored — in plain
-English, with an honest account of what a date of birth alone cannot tell you.**
+**Two sidereal charts, read one at a time, then laid over each other, then scored — with a
+continuous, variance-weighted model, in plain English, and with an honest account of what a date of
+birth alone cannot tell you.**
 
 ### → [artaquest.github.io/artamatch](https://artaquest.github.io/artamatch/)
 
@@ -61,14 +62,97 @@ because it runs nine thousand times). Two code paths for one number is how a pag
 contradicting itself, so a test holds the fast path against `matchPair` **to ten decimal places on
 every day of four whole months**, and again on every date the scan names as best.
 
-### Why there are two systems on the page and only one of them scores
+### The score
 
-An aspect layer was cut from this page once, for a good reason: a second, unscored system beside a
-scored one invites "is nineteen connections *good*?" and cannot answer it. It is back because that
-question now has a measured answer. Over 20,000 random pairs, **every** pair has between about ten
-and twenty connections, the median is fifteen, and the count agrees with the eight-test score at
-**0.03 out of 1** — which is to say not at all. Two old systems, the same two dates, no agreement.
-The page says exactly that, out loud, and then shows *which* connections rather than how many.
+Every angle between one person's seven bodies and the other's, scored against the five angles the
+tradition names, and summed:
+
+```
+     ease, friction  =  Σ  [v]±  ·  w_ij  ·  exp( −(Δ_ij − t_a)² / 2S²_ij )
+                       i,j,a
+
+     w_ij  =  imp_i · imp_j · √( s²_ij / S²_ij )        S²_ij = s²_ij + σ²_ij
+```
+
+where Δ and σ are the **circular mean and deviation of the angle across all 576 charts**. It is the
+same functional form as the ArtaQuest sky→topics forward model in the AstroAttention paper — a
+Gaussian kernel on a seam-free wrapped angular difference, non-negative weights, summed — with the
+phases fixed by the tradition instead of fitted, because there is nothing to fit to.
+
+**The weight is not bolted on; it falls out.** The thing being estimated is the average
+compatibility over every birth hour the two dates leave open. For a Gaussian kernel that expectation
+has a closed form, and it *factorises* into an amplitude that depends only on how well the angle is
+pinned down, times the same kernel — widened — evaluated at the mean angle. "Weight by the variance,
+score at the mean" is what taking the expectation *does*.
+
+The number shown is the plain average of the 576 charts. The factorisation is computed alongside it
+and reported as the *decomposition*, because that is what makes the number explainable — and the gap
+between the two is printed on every reading (measured: median 4.5 × 10⁻⁴, worst 2.4 × 10⁻³, against
+a population spread of 0.057).
+
+### Two numbers, not one — and the reason is the biggest fabrication in the genre
+
+The tradition has said for two thousand years which angles are easy and which are hard. It has never
+once said the **exchange rate** — how many easy angles cancel a hard one. Every published
+compatibility percentage nets them anyway, and that undisclosed rate is the largest invented number
+in the whole field.
+
+So **ease and friction are shown separately and never silently subtracted.** A combined number
+exists for ranking, at the only non-arbitrary rate there is (one for one), labelled as the choice it
+is — and how much that choice matters is measured, not argued.
+
+### What is measured and what is a convention
+
+| | |
+|---|---|
+| **Measured** | the positions · every angle, mean and spread · the 576-chart distribution · the percentile against 20,000 random pairs · every robustness figure below |
+| **Convention** | which angles are easy or hard [Ptolemy, *Tetrabiblos* I] · how wide an orb is [Lilly, *Christian Astrology*, 1647 — orbs belong to the **body**, and two bodies get the average of theirs] · which bodies are benefic or malefic [classical] · how much each body matters [the sources rank them; the numbers are ours] |
+
+A convention that drove the answer would be a problem. Measured over 1,500 random pairs, almost
+none of them does — rank correlation against the model as shipped:
+
+| ablation | Spearman |
+|---|---|
+| exchange rate ×0.5 … ×2.0 | 0.921 – 0.988 |
+| a sixth counted as much as a third | 0.958 |
+| every body weighted equally | 0.944 |
+| the same-place contact fixed at +1 | 0.884 |
+| **the opposite angle read as easy** | **0.718** |
+
+That last row is the one choice the model refuses to make for you, so it is **a switch on the page**.
+The classical texts call being directly opposite hard; writers on couples very often read it as two
+people completing each other. Nothing else we chose moves the ordering nearly as much.
+
+### The ceiling, reported as a result
+
+Over 20,000 random pairs the score has a standard deviation of **0.0566**. The 90% band a single
+pair spans across its own 576 charts has a median width of **0.0481** — a ratio of **0.85**.
+
+**Not knowing the two birth times costs almost as much as the entire difference between one couple
+and another.** Two pairs whose bands overlap cannot be told apart from dates alone by any model,
+however good; only about two in five randomly chosen pairs can be separated at all. Any site
+printing a compatibility percentage from dates alone, without a band, is claiming a precision the
+input does not carry. That is not a criticism of their model — it is arithmetic.
+
+### The empirical null
+
+The largest test ever run — Voas (2007), ~10 million married couples from the 2001 England and Wales
+census — found **no** sign-compatibility effect, bounding any effect below roughly one couple in a
+thousand. So nothing here is fitted, because there is nothing to fit to. What is computed is: under
+the tradition's own conventions, stated openly, where does this pair fall among random pairs? That
+has a true, reproducible answer, and it is the only one on offer.
+
+### Why there are two scores on the page and what to do about it
+
+The older **eight-test Moon score out of 36** is still there, in its own section, still calibrated,
+still carrying its own exact distribution over the 576 charts. It is not a rival headline: only one
+number on the page is called *the score*.
+
+It stays because of what it measures *about the new one*. The two read the same two dates and agree
+at **0.01 out of 1** — knowing one tells you nothing about the other. That disagreement is the most
+useful thing either of them says, and hiding one to avoid the awkwardness would be the dishonest
+move. The ranked list is ordered by the fit; the older score rides along in every row so you can
+watch them part company.
 
 ## What makes it honest
 

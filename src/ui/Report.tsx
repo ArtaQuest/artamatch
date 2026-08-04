@@ -34,10 +34,11 @@ import {
   matchPair, PERCENTILE_BELOW, PERCENTILE_BELOW_NO_VARNA, type Match, type ScoreOptions,
 } from "../engine/score";
 import { natalChart, GENERATIONAL, type NatalChart } from "../engine/natal";
+import { ASPECTS, standsFor, GRID, PERSONAL } from "../engine/synastry";
 import {
-  synastryGrid, narrate, standsFor, atSign, CONNECTIONS_MEDIAN, CONNECTIONS_LO, CONNECTIONS_HI,
-  CONNECTIONS_VS_SCORE, GRID, type Connection,
-} from "../engine/synastry";
+  affinity, affinityPercentile, AFFINITY_BELOW, AFFINITY_MIN, AFFINITY_MAX, AFFINITY_STEPS,
+  BODY_ORB, type Affinity, type Term,
+} from "../engine/affinity";
 import {
   explainKuta, explainDosha, birthStarText, starTitle, planetMeta, planetReading, READ_BODIES,
 } from "../engine/interpret";
@@ -52,8 +53,10 @@ const fmt = (n: number) => (n % 1 === 0 ? String(n) : n.toFixed(1));
 const pct = (p: number) => Math.round(p * 100);
 const deg = (d: number) => `${d.toFixed(1)}°`;
 
-/** How many connections get a paragraph of their own. The rest are one click away, in full. */
-const NARRATED = 6;
+/** How many of the 49 body pairs get a paragraph of their own. Five, with the leftover stated —
+ *  five rows that do NOT account for the answer would be an illustration pretending to explain it,
+ *  so the share they cover is printed beside them and the rest are one click away, in full. */
+const NARRATED = 5;
 
 export default function Report({ a, b, options, onClose }: {
   a: Person; b: Person; options: ScoreOptions; onClose: () => void;
@@ -94,9 +97,10 @@ export default function Report({ a, b, options, onClose }: {
     };
   }, [a.birthday, b.birthday, match?.spanA.jdEstimate, match?.spanB.jdEstimate]);
 
-  const syn = useMemo(() => synastryGrid(a.birthday, b.birthday), [a.birthday, b.birthday]);
+  const aff = useMemo(() => affinity(a.birthday, b.birthday, { opposite: options.opposite }),
+    [a.birthday, b.birthday, options.opposite]);
 
-  if (!match || !charts?.a || !charts.b) {
+  if (!match || !charts?.a || !charts.b || !aff) {
     return (
       <div className="panel">
         <p className="error">One of these dates is not a real calendar date, so nothing can be worked out from it.</p>
@@ -106,14 +110,21 @@ export default function Report({ a, b, options, onClose }: {
   }
 
   const excluded = (options.exclude ?? []) as string[];
-  const shown = match.guna.kutas.filter((k) => !excluded.includes(k.key));
+  const kutas = match.guna.kutas.filter((k) => !excluded.includes(k.key));
   const d = match.distribution;
   const msg = messageUrl(b) ?? messageUrl(a);
   const prof = profileUrl(b);
   const doshas = match.guna.doshas;
-  const narrated = narrate(syn.connections, NARRATED);
+  // The five biggest reasons for the score, and what is left over. Five rather than all 49 —
+  // and the leftover is stated, not hidden, because five rows that do NOT account for the answer
+  // would be an illustration pretending to be an explanation.
+  const narrated = aff.terms.slice(0, NARRATED);
+  const shown = narrated.reduce((s, t) => s + t.contribution, 0);
+  const rest = aff.net - shown;
+  const shareShown = Math.round(100 * narrated.reduce((s, t) => s + Math.abs(t.contribution), 0) /
+    aff.terms.reduce((s, t) => s + Math.abs(t.contribution), 0));
 
-  // Which chips carry which connection number, so the chart and the list point at each other.
+  // Which chips carry which number, so the chart and the list point at each other.
   const badgesA = new Map<Body, number[]>();
   const badgesB = new Map<Body, number[]>();
   narrated.forEach((c, i) => {
@@ -128,8 +139,8 @@ export default function Report({ a, b, options, onClose }: {
       faint: !badges.has(x.body),
     }));
 
-  const full = shown.filter((k) => k.points >= k.maxPoints);
-  const none = shown.filter((k) => k.points <= 0);
+  const fullMarks = kutas.filter((k) => k.points >= k.maxPoints);
+  const noMarks = kutas.filter((k) => k.points <= 0);
 
   return (
     <div className="panel report">
@@ -141,31 +152,15 @@ export default function Report({ a, b, options, onClose }: {
       </div>
 
       {/* ── the answer ───────────────────────────────────────────────────────────────────── */}
-      <div className="hero">
-        <span className={`num tone-${match.band.tone}`}>
-          {fmt(d.expected)}
-          <small>out of {match.maxScore}</small>
-        </span>
-        <span>
-          <span className="verdict">{match.band.label}</span>
-          <span className="because">
-            Higher than <strong>{Math.min(99, match.percentile)} in 100</strong> randomly paired
-            dates. {match.certain
-              ? "The two dates settle this outright — no birth time needed."
-              : <>Nobody knows what time of day either was born, so the honest answer is a range:
-                nine times in ten it lands between <strong>{fmt(d.interval.lo)}</strong> and{" "}
-                <strong>{fmt(d.interval.hi)}</strong>.</>}
-          </span>
-          <Landscape score={d.expected} excluded={excluded.length > 0} />
-        </span>
-      </div>
+      <Fit aff={aff} a={a.name} b={b.name} hero />
 
       <p className="lede">
-        That score is one old tradition's answer, and it reads only the two Moons. Below it, the same
-        two dates are read a second way: both charts drawn in full, one at a time, and then laid over
-        each other to see where they touch. Every number on this page was worked out{" "}
-        <strong>{GRID} × {GRID} = {GRID * GRID} times</strong> — once for each combination of the two
-        unknown birth hours — and is given with how much it moved.
+        This page shows the whole of its working. Below: each chart on its own, then the two laid
+        over each other with the five biggest reasons for that number, and then an older tradition's
+        entirely separate answer — which, measured over 20,000 random pairs, agrees with this one
+        almost not at all. Every number was worked out{" "}
+        <strong>{GRID} × {GRID} = {GRID * GRID} times</strong>, once for each combination of the two
+        unknown birth hours, and is given with how far it moved.
       </p>
 
       {/* ── 1 · the two charts, one at a time ────────────────────────────────────────────── */}
@@ -181,9 +176,9 @@ export default function Report({ a, b, options, onClose }: {
       </Section>
 
       {/* ── 2 · the two charts together ──────────────────────────────────────────────────── */}
-      <Section n={2} title="Where the two charts touch">
+      <Section n={2} title="How the two charts fit">
         <p className="say">
-          Now both on one line. {a.name}'s planets sit above it and {b.name}'s below, so where a gold
+          Now both on one line. {a.name}'s bodies sit above it and {b.name}'s below, so where a gold
           label stands directly over a blue one, those two were in the same part of the sky. The
           other connections are fixed distances apart — a quarter of the way round, a third, or
           right across from each other.
@@ -201,83 +196,90 @@ export default function Report({ a, b, options, onClose }: {
         </p>
 
         <p className="say">
-          Across the {GRID * GRID} charts these two touch in{" "}
-          <strong>{syn.count.mean.toFixed(0)} places</strong>, give or take{" "}
-          {syn.count.sd.toFixed(1)}. That number is not a result, and it is worth saying why: every
-          pair of dates has between about {CONNECTIONS_LO} and {CONNECTIONS_HI} of them, the middle
-          pair has {CONNECTIONS_MEDIAN}, and across 20,000 random pairs the count lines up with the
-          score at the top of this page at {CONNECTIONS_VS_SCORE.toFixed(2)} out of 1 — which is to
-          say not at all. Two old systems, the same two dates, no agreement. So what follows is{" "}
-          <strong>which</strong> connections, never how many.
+          Below are the <strong>five biggest reasons</strong> for that number, out of{" "}
+          {aff.terms.length}. They are {shareShown}% of it; everything else put together comes to{" "}
+          {rest >= 0 ? "+" : ""}{rest.toFixed(3)}. Each line is one of {a.name}'s bodies against one
+          of {b.name}'s, the angle between them averaged over the {GRID * GRID} charts, and what
+          that angle added or took away.
         </p>
-
-        {narrated.map((c, i) => (
-          <ConnectionCard key={`${c.bodyA}-${c.bodyB}`} c={c} n={i + 1} a={a.name} b={b.name}
+        {narrated.map((t, i) => (
+          <ReasonCard key={`${t.bodyA}-${t.bodyB}`} t={t} n={i + 1} a={a.name} b={b.name}
             // What an angle means is the same wherever it turns up, so it is explained the FIRST
-            // time and not again. Six paragraphs each ending in the same stock sentence read as a
+            // time and not again. Five paragraphs each ending in the same stock sentence read as a
             // form letter, and a reader stops seeing the part that IS about them.
-            explain={narrated.findIndex((x) => x.kind === c.kind) === i} />
+            explain={narrated.findIndex((x) => x.nearest.kind === t.nearest.kind) === i} />
         ))}
 
         <details className="working">
-          <summary>All {syn.connections.length} connections, with the arithmetic</summary>
+          <summary>All {aff.terms.length} pairs, and where every number came from</summary>
           <p className="say dim">
-            Two planets count as connected when the angle between them is within a set distance of
-            one of the five: <strong>8°</strong> when the Sun or the Moon is one of the pair,{" "}
-            <strong>6°</strong> otherwise. There is no measurement that could settle those numbers —
-            it is the commonest convention in use, and it is a convention, not a finding. The three
-            slowest planets are left off entirely: they hold one sign for seven to thirty years, so
-            a connection to one of them is shared with everybody born in that window.
+            <b>How the number is made.</b> Each of {a.name}'s seven bodies is compared with each of{" "}
+            {b.name}'s. For every one of the {GRID * GRID} charts the angle between them is measured,
+            and scored against the five angles the tradition names, weighted by how much each body
+            is said to matter and by <strong>how firmly the two dates pin that angle down</strong>.
+            The {aff.terms.length} results below are averaged over all {GRID * GRID} charts and add
+            up to the number above exactly — no remainder, nothing rounded away.
+          </p>
+          <p className="say dim">
+            <b>What is a choice and what is a measurement.</b> Which angles are called easy or hard
+            comes from the tradition, and so does how close still counts as close — each body has its
+            own allowance ({PERSONAL.map((x) => `${x} ${BODY_ORB[x]}°`).join(", ")}), and two bodies
+            are allowed the average of theirs. How much each of them <em>matters</em> is our choice;
+            the sources rank them but never number them. All of that is a convention. The one
+            measured thing is the percentile: where this pair falls among 20,000 randomly paired
+            dates put through exactly the same arithmetic.
           </p>
           <div className="scroll-x">
             <table className="data">
               <thead>
                 <tr>
                   <th>{a.name}</th><th>{b.name}</th><th>Angle</th>
-                  <th className="num">Apart</th><th className="num">From exact</th>
-                  <th className="num">Holds in</th>
+                  <th className="num">Apart</th><th className="num">Sure</th>
+                  <th className="num">Added</th>
                 </tr>
               </thead>
               <tbody>
-                {syn.connections.map((c, i) => (
+                {aff.terms.map((t, i) => (
                   <tr key={i} className={i < NARRATED ? "lead" : undefined}>
-                    <td>{c.bodyA}</td>
-                    <td>{c.bodyB}</td>
-                    <td>{c.aspect.kind === "together" ? "same place"
-                      : c.aspect.kind === "opposite" ? "opposite"
-                        : `a ${c.aspect.kind}`}</td>
-                    <td className="num">{deg(c.separation.mean)} ± {deg(c.separation.sd)}</td>
-                    <td className="num">{deg(c.off.mean)} ({deg(c.off.lo)}–{deg(c.off.hi)})</td>
-                    <td className="num">{pct(c.probability)}%</td>
+                    <td>{t.bodyA}</td>
+                    <td>{t.bodyB}</td>
+                    <td>{angleName(t.nearest.kind)}</td>
+                    <td className="num">{deg(t.separation)} ± {deg(t.spread)}</td>
+                    <td className="num">{pct(t.confidence)}%</td>
+                    <td className="num">{t.contribution >= 0 ? "+" : ""}{t.contribution.toFixed(4)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <p className="say dim">
-            "Apart" is the angle between the two planets, averaged over all {GRID * GRID} charts,
-            with its give-or-take. "From exact" is how far that sits from a clean angle, with the
-            band that holds nine of every ten charts. "Holds in" is the share of the{" "}
-            {GRID * GRID} in which it counted as a connection at all.
+            "Apart" is the angle between the two, averaged over the {GRID * GRID} charts, with how
+            far it wanders across them. "Sure" is how firmly the two dates settle it — a body that
+            barely moves in a day is near 100%, the Moon is not, and anything unsure counts for
+            proportionally less. "Added" is what the pair put into the total, and these{" "}
+            {aff.terms.length} numbers sum to it exactly.
           </p>
         </details>
       </Section>
 
       {/* ── 3 · where the score came from ────────────────────────────────────────────────── */}
-      <Section n={3} title="Where the score came from">
+      <Section n={3} title="A second, older answer — and it disagrees">
         <p className="say">
-          {shown.length} old tests compare where the two Moons sat — nothing else about either
-          person enters the score, which is why it and the charts above can disagree. They are worth
-          different amounts, drawn here to scale: the three heaviest carry {6 + 7 + 8} of the{" "}
-          {match.maxScore} points between them, as much as all the others together.
+          {kutas.length} old tests compare where the two Moons sat — and nothing else. Not the Sun,
+          not the angles above, nothing but the Moon. It is a completely separate tradition with a
+          completely separate answer, and across 20,000 random pairs the two line up at{" "}
+          <strong>0.01 out of 1</strong>: knowing one tells you nothing about the other. Both are
+          shown because that disagreement is the most useful thing either of them says. The eight
+          are worth different amounts, drawn here to scale: the three heaviest carry {6 + 7 + 8} of
+          the {match.maxScore} points between them, as much as all the others together.
         </p>
-        <Anatomy kutas={shown} />
+        <Anatomy kutas={kutas} />
         <p className="say">
-          {full.length > 0
-            ? <>Full marks on {list(full.map((k) => k.name.toLowerCase()))}. </>
+          {fullMarks.length > 0
+            ? <>Full marks on {list(fullMarks.map((k) => k.name.toLowerCase()))}. </>
             : <>Nothing scored full marks. </>}
-          {none.length > 0
-            ? <>Nothing at all on {list(none.map((k) => k.name.toLowerCase()))}. </>
+          {noMarks.length > 0
+            ? <>Nothing at all on {list(noMarks.map((k) => k.name.toLowerCase()))}. </>
             : <>Every test put something on the board. </>}
           The rest landed in between.
         </p>
@@ -292,8 +294,8 @@ export default function Report({ a, b, options, onClose }: {
         )}
 
         <details className="working">
-          <summary>All {shown.length} tests, one at a time</summary>
-          {shown.map((k, i) => (
+          <summary>All {kutas.length} tests, one at a time</summary>
+          {kutas.map((k, i) => (
             <div className="kuta" key={k.key}>
               <div className="kuta-head">
                 <span className="nm"><i>{i + 1}</i>{k.name}</span>
@@ -315,6 +317,9 @@ export default function Report({ a, b, options, onClose }: {
           ))}
         </details>
 
+        <Landscape table={excluded.length ? PERCENTILE_BELOW_NO_VARNA : PERCENTILE_BELOW}
+          index={Math.round(d.expected)}
+          label={`Distribution of the older score across random pairs; this pair scores ${fmt(d.expected)}`} />
         <div className="row total">
           <strong>Total</strong>
           <strong>
@@ -325,12 +330,12 @@ export default function Report({ a, b, options, onClose }: {
       </Section>
 
       {/* ── 4 · how sure ─────────────────────────────────────────────────────────────────── */}
-      <Section n={4} title="How sure the score is">
+      <Section n={4} title="How sure that older answer is">
         {match.certain ? (
           <p className="say">
             Both Moons stayed in one birth star and one sign for the whole of their birth days, so
-            not knowing what time of day either was born changes the score not at all. This is as
-            firm as a reading from dates alone can be.
+            not knowing what time of day either was born changes this older score not at all. That
+            is as firm as a reading from dates alone can be — and rarer than you would think.
           </p>
         ) : (
           <>
@@ -513,38 +518,101 @@ function PersonChart({ person, chart, span, tone }: {
   );
 }
 
+/** The five angles, named the way the page names them. */
+export function angleName(kind: string): string {
+  return kind === "together" ? "same place" : kind === "opposite" ? "opposite" : `a ${kind}`;
+}
+
 /**
- * One connection: what it is, what it is taken to mean, and then the arithmetic behind it.
+ * THE SCORE, and the two piles it is made of.
  *
- * The arithmetic sentence is written three ways rather than one, because the honest thing to say
- * differs by case and a single template would have to say the weakest of them every time. A pair of
- * slow planets really is fixed to a tenth of a degree — "give or take 0.0°" is not humility, it is
- * noise — while a pair involving the Moon genuinely might not be a connection at all.
+ * Shown as a percentile because the raw scale is meaningless to anybody, and with a BAND because
+ * the two unknown birth hours move it about as much as the whole difference between one couple and
+ * another — measured: the band a pair spans across its own 576 charts has a median width of
+ * 0.048 against a population spread of 0.057. Two pairs whose bands overlap cannot be told apart
+ * from dates alone by any model at all. That is the ceiling, and it is stated rather than dodged.
+ *
+ * Ease and friction are drawn separately and never quietly subtracted. The tradition has said for
+ * two thousand years which angles are easy and which are hard; it has never once said how many easy
+ * ones cancel a hard one. Every compatibility percentage ever published nets them anyway, and that
+ * undisclosed exchange rate is the largest invented number in the genre. Here it is one for one,
+ * said out loud, and measured to barely matter.
  */
-function ConnectionCard({ c, n, a, b, explain }: {
-  c: Connection; n: number; a: string; b: string; explain: boolean;
-}) {
-  const fixed = c.separation.sd < 0.05;
+function Fit({ aff, a, b, hero }: { aff: Affinity; a: string; b: string; hero?: boolean }) {
+  const p = affinityPercentile(aff.net);
+  const lo = affinityPercentile(aff.spread.lo);
+  const hi = affinityPercentile(aff.spread.hi);
+  const settled = hi - lo <= 12;
+  const peak = Math.max(aff.ease, aff.friction, 1e-9);
   return (
-    <div className="conn">
+    <div className={`fit${hero ? " hero-fit" : ""}`}>
+      <div className="fit-head">
+        <span className={`num tone-${p >= 75 ? "high" : p >= 40 ? "mid" : "low"}`}>
+          {p}<small>in 100</small>
+        </span>
+        <p className="txt">
+          Putting every angle between {a}'s seven bodies and {b}'s through the tradition's own rules,
+          this pair comes out <strong>higher than {p} in 100</strong> randomly paired dates.{" "}
+          {settled
+            ? <>The two unknown birth times barely move it — anywhere from {lo} to {hi} in 100.</>
+            : <>The two unknown birth times move it a long way: anywhere from{" "}
+              <strong>{lo}</strong> to <strong>{hi}</strong> in 100, and nothing in the dates can
+              narrow that.</>}
+        </p>
+      </div>
+
+      <Landscape table={AFFINITY_BELOW}
+        index={Math.round(((aff.net - AFFINITY_MIN) / (AFFINITY_MAX - AFFINITY_MIN)) * (AFFINITY_STEPS - 1))}
+        label={`Where this pair falls among 20,000 randomly paired dates: higher than ${p} in 100`} />
+
+      <div className="piles">
+        <span className="pile">
+          <span className="lbl">what the tradition calls easy</span>
+          <span className="bar ease"><i style={{ width: `${(aff.ease / peak) * 100}%` }} /></span>
+          <span className="v">{aff.ease.toFixed(3)}</span>
+        </span>
+        <span className="pile">
+          <span className="lbl">what it calls hard</span>
+          <span className="bar friction"><i style={{ width: `${(aff.friction / peak) * 100}%` }} /></span>
+          <span className="v">{aff.friction.toFixed(3)}</span>
+        </span>
+      </div>
+      <p className="legend-note">
+        <span className="dim">
+          These two are kept apart on purpose. The tradition says which angles are easy and which
+          are hard; it has never said how many easy ones cancel a hard one, so any single number has
+          to invent that exchange rate. This one uses one for one — and changing it by half or by
+          double barely moves who ranks above whom.
+        </span>
+      </p>
+    </div>
+  );
+}
+
+/** One reason for the score: what the angle is, what the tradition makes of it, and the arithmetic. */
+function ReasonCard({ t, n, a, b, explain }: {
+  t: Term; n: number; a: string; b: string; explain: boolean;
+}) {
+  const prose = ASPECTS.find((x) => x.kind === t.nearest.kind);
+  const sure = t.confidence > 0.97;
+  return (
+    <div className={`conn ${t.contribution >= 0 ? "good" : "hard"}`}>
       <p className="say">
         <span className="conn-n">{n}</span>
-        <strong>{a}'s {c.bodyA} {c.aspect.joins} {b}'s {c.bodyB}.</strong>{" "}
-        That is {standsFor(c.bodyA, a)}, and {standsFor(c.bodyB, b)}.
-        {explain && ` ${c.aspect.means}`}
+        <strong>{a}'s {t.bodyA} {prose?.joins ?? "sits near"} {b}'s {t.bodyB}.</strong>{" "}
+        That is {standsFor(t.bodyA, a)}, and {standsFor(t.bodyB, b)}.
+        {explain && prose && ` ${prose.means}`}
       </p>
       <p className="say dim conn-work">
-        {atSign(c.lonA)} and {atSign(c.lonB)} —{" "}
-        {fixed
-          ? <>{deg(c.separation.mean)} apart in every one of the {GRID * GRID} charts, so the
-            birth times cannot touch it.</>
-          : c.certain
-            ? <>{deg(c.separation.mean)} apart on average, give or take {deg(c.separation.sd)}; it
-              stays inside the {c.orb}° that counts as close whatever hour either was born.</>
-            : <>{deg(c.separation.mean)} apart on average, give or take {deg(c.separation.sd)}. It
-              is a connection in <strong>{pct(c.probability)}%</strong> of the {GRID * GRID}{" "}
-              charts, and nine times in ten it sits {deg(c.off.lo)}–{deg(c.off.hi)} from exact,
-              against the {c.orb}° allowed.</>}
+        {deg(t.separation)} apart {sure ? "" : `— give or take ${deg(t.spread)} — `}on average
+        across the {GRID * GRID} charts, which is {t.nearest.off < 1 ? "as near as makes no odds to"
+          : `${deg(t.nearest.off)} from`} {angleName(t.nearest.kind)}.{" "}
+        {sure
+          ? <>The dates settle this one.</>
+          : <>The dates leave it {pct(1 - t.confidence)}% open, so it counts for proportionally
+            less.</>}{" "}
+        It {t.contribution >= 0 ? "added" : "took away"}{" "}
+        <strong>{Math.abs(t.contribution).toFixed(3)}</strong>.
       </p>
     </div>
   );
@@ -555,23 +623,21 @@ function ConnectionCard({ c, n, a, b, explain }: {
  * bar picked out. The picture behind every "higher than N in 100" sentence — the percentile stops
  * being a claim and becomes a place you can see.
  */
-function Landscape({ score, excluded }: { score: number; excluded: boolean }) {
-  const table = excluded ? PERCENTILE_BELOW_NO_VARNA : PERCENTILE_BELOW;
+function Landscape({ table, index, label }: { table: number[]; index: number; label: string }) {
   // The table is cumulative ("share scoring below n"), so differencing gives the share AT each
-  // score: shares[i] = table[i+1] − table[i] = P(score === i). Bar i IS score i — this was once
-  // off by one in both directions at once, marker and tooltip disagreeing with each other.
+  // step: shares[i] = table[i+1] − table[i]. Bar i IS step i — this was once off by one in both
+  // directions at once, marker and tooltip disagreeing with each other.
   const shares = table.slice(1).map((v, i) => Math.max(0, v - table[i]));
   const peak = Math.max(...shares, 1);
-  const at = Math.max(0, Math.min(shares.length - 1, Math.round(score)));
+  const at = Math.max(0, Math.min(shares.length - 1, index));
   return (
-    <span className="landscape" role="img"
-      aria-label={`Distribution of scores across random pairs; this pair scores ${fmt(score)}`}>
+    <span className="landscape" role="img" aria-label={label}>
       {shares.map((share, i) => (
         <i key={i} className={i === at ? "here" : ""}
           // The marked bar keeps its own floor: at a rare score the true share is ~0, and a 1px
           // sliver is not a marker.
           style={{ height: `${i === at ? Math.max(18, (share / peak) * 100) : share > 0 ? Math.max(9, (share / peak) * 100) : 3}%` }}
-          title={`Score ${i}: about ${share} in 100 random pairs`} />
+          title={`about ${share} in 100 random pairs land here`} />
       ))}
     </span>
   );

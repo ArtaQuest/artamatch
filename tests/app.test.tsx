@@ -121,9 +121,13 @@ describe("ArtaMatch app", () => {
     // The document's spine: numbered sections, each with a heading, in reading order.
     expect(document.querySelectorAll(".sec > h3").length).toBeLessThanOrEqual(5);
     expect(screen.getByText(/Each of them, on their own/i)).toBeDefined();
-    expect(screen.getByText(/Where the two charts touch/i)).toBeDefined();
-    expect(screen.getByText(/Where the score came from/i)).toBeDefined();
-    expect(screen.getByText(/How sure the score is/i)).toBeDefined();
+    expect(screen.getByText(/How the two charts fit/i)).toBeDefined();
+    expect(screen.getByText(/A second, older answer/i)).toBeDefined();
+    expect(screen.getByText(/How sure that older answer is/i)).toBeDefined();
+    // THE score is the fit, once, at the top — and it carries its band.
+    expect(document.querySelectorAll(".fit").length).toBe(1);
+    expect(document.querySelector(".fit.hero-fit")).not.toBeNull();
+    expect(document.querySelectorAll(".pile").length).toBe(2);
 
     // Three charts: one per person, then the two of them on one axis.
     const bands = document.querySelectorAll(".band");
@@ -167,10 +171,10 @@ describe("ArtaMatch app", () => {
     expect(screen.getAllByText(/their birth star, one of the 27/i).length).toBe(2);
   });
 
-  it("gives every synastry claim a mean, a give-or-take and how often it held", () => {
-    // The user-facing promise of the whole section: both charts are drawn 576 times, and no
-    // sentence states a bare number. A connection that quietly dropped its spread would read as
-    // certainty the two dates cannot support.
+  it("explains the score with parts that add up to it, and says what is left over", () => {
+    // The strongest thing this page can claim: the five reasons shown are not illustrations, they
+    // are the arithmetic. So the residual is stated out loud, and every row carries how far the
+    // angle wanders and how much the dates settle it.
     render(<App />);
     addPerson("Ada", "1815-12-10");
     addPerson("Turing", "1912-06-23");
@@ -178,19 +182,24 @@ describe("ArtaMatch app", () => {
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
     expect(screen.getByText(/24 . 24 = 576 times/)).toBeDefined();
+    const reasons = document.querySelectorAll(".conn");
+    expect(reasons.length).toBe(5);
     for (const work of document.querySelectorAll(".conn-work")) {
       const t = work.textContent ?? "";
-      expect(t, "a connection with no give-or-take").toMatch(/give or take \d|in every one of the 576/);
-      // Every connection must say what the unknown hours do to it, in whichever of the three
-      // honest forms fits: fixed outright, inside the orb regardless, or true only some of the time.
-      expect(t, "a connection with no account of the unknown hours")
-        .toMatch(/in every one of the 576 charts|whatever hour either was born|connection in \d+% of the 576/i);
+      expect(t, "a reason with no angle").toMatch(/[\d.]+° apart/);
+      // Every reason says what the unknown hours do to it, and what it did to the score.
+      expect(t, "a reason with no account of the unknown hours")
+        .toMatch(/The dates settle this one|The dates leave it \d+% open/);
+      expect(t, "a reason that does not say what it changed").toMatch(/(added|took away)\s+[\d.]+/);
     }
-    // And the count of connections is itself given with its spread, never as a bare tally — plus
-    // the measured reason a reader should not treat that count as a result.
     const page = document.body.textContent ?? "";
-    expect(page).toMatch(/places, give or take \d/);
-    expect(page).toMatch(/which is to say not at all/);
+    expect(page, "no residual line").toMatch(/five biggest reasons/);
+    expect(page).toMatch(/everything else put together comes to/);
+    // The score is never shown without its band, and the two piles are never netted into one bar.
+    expect(page, "the score must never be shown without its band")
+      .toMatch(/higher than \d+ in 100/);
+    expect(page).toMatch(/what the tradition calls easy/);
+    expect(page).toMatch(/what it calls hard/);
   });
 
   it("names the pair in a real heading and moves focus there when a reading opens", () => {
@@ -216,23 +225,27 @@ describe("ArtaMatch app", () => {
   });
 
   it("marks the Landscape bar that matches the score, not the one beside it", () => {
-    // The marker sat on Math.round(score) - 1 while tooltips said "score i+1", so the gold bar
-    // pointed at the wrong score AND disagreed with its own hover text.
+    // The marker sat on Math.round(score) − 1 while tooltips said "score i+1", so the gold bar
+    // pointed at the wrong place AND disagreed with its own hover text. Now that the strip is used
+    // for two different scales, the invariant that matters is that the marked bar is the one the
+    // headline percentile falls on.
     render(<App />);
     addPerson("Ada", "1815-12-10");
     addPerson("Turing", "1912-06-23");
     const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
-    const bars = [...document.querySelectorAll(".landscape i")];
+    const strip = document.querySelector(".fit .landscape")!;
+    const bars = [...strip.querySelectorAll("i")];
     const marked = bars.findIndex((b) => b.classList.contains("here"));
-    const title = bars[marked].getAttribute("title") ?? "";
-    // The marked bar's own tooltip must name the index it sits at.
-    expect(title).toMatch(new RegExp(`^Score ${marked}:`));
-    // And it must be the bar for the reported score.
-    const hero = document.querySelector(".hero .num")?.textContent ?? "";
-    const shown = parseFloat(hero);
-    expect(Math.abs(marked - shown)).toBeLessThanOrEqual(0.5);
+    expect(marked).toBeGreaterThanOrEqual(0);
+
+    // The share of random pairs at or below the marked bar must match the headline percentile:
+    // the picture and the sentence are two views of one table, and they cannot disagree.
+    const shown = Number(document.querySelector(".fit .num")!.textContent!.replace(/\D+.*$/, ""));
+    const below = bars.slice(0, marked)
+      .reduce((s, b) => s + Number(/about (\d+) in 100/.exec(b.getAttribute("title") ?? "")?.[1] ?? 0), 0);
+    expect(Math.abs(below - shown), `strip says ${below}, headline says ${shown}`).toBeLessThanOrEqual(6);
   });
 
   it("says so when a date does not settle which sign a planet was in", () => {
@@ -270,9 +283,15 @@ describe("ArtaMatch app", () => {
     expect(panel).toMatch(/of those days reach it/);
     expect(panel).toMatch(/comes back to the same place every 27 days/);
 
+    // The ceiling belongs to the OLDER score, and says so; the rank rows now lead with the
+    // whole-chart fit. So it is compared against the older score printed in the row's own subtitle,
+    // not against the headline percentile beside it — comparing those would be a category error,
+    // and the panel's own wording is what stops a reader making it.
+    expect(document.querySelector(".ceiling")!.textContent).toMatch(/older eight-test score/i);
     const ceiling = Number(/^([\d.]+)/.exec(document.querySelector(".ceiling .cap")!.textContent!)![1]);
-    const top = Number(/([\d.]+)/.exec(document.querySelector(".rank-row .sc")!.textContent!)![1]);
-    expect(ceiling).toBeGreaterThanOrEqual(top);
+    const sub = document.querySelector(".rank-row .sub")!.textContent!;
+    const older = Number(/older score puts it at ([\d.]+)/.exec(sub)![1]);
+    expect(ceiling).toBeGreaterThanOrEqual(older);
     expect(ceiling).toBeLessThan(36);
   }, 90_000);
 
@@ -376,7 +395,7 @@ describe("ArtaMatch app", () => {
     addPerson("Curie", "1867-11-07");
 
     fireEvent.click(screen.getByRole("button", { name: /Everyone vs everyone/i }));
-    const table = screen.getByText(/Every pair, scored on the Moon score/i).closest(".panel")!
+    const table = screen.getByText(/Every pair, as a place among 20,000/i).closest(".panel")!
       .querySelector("table")!;
     const rows = [...table.querySelectorAll("tbody tr")];
     expect(rows).toHaveLength(3);

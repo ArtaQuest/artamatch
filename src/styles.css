@@ -347,9 +347,41 @@ table.data tr.lead td { color: var(--yang); }
 .who-chart.b h4 { color: var(--link); }
 .who-chart .born { display: block; font-size: 0.76rem; color: var(--dim); margin-bottom: 0.3rem; }
 
-/* One connection between the two charts: two sentences, then its arithmetic. */
+/* ── the fit: the score, and the two piles it is made of ────────────────────
+   Never one bar. The tradition says which angles are easy and which are hard and has never said
+   how many easy ones cancel a hard one, so ease and friction are drawn side by side and the
+   exchange rate is stated rather than baked into a single length. */
+.fit.hero-fit { margin: 0 0 1rem; }
+.fit.hero-fit .num { font-size: 3rem; }
+.fit { display: block; background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 0.85rem 0.95rem; margin: 0.2rem 0 1rem; }
+.fit-head { display: flex; gap: 0.95rem; align-items: flex-start; flex-wrap: wrap; }
+.fit-head .num { display: block; font-family: var(--mono); font-size: 2.4rem; font-weight: 700;
+  line-height: 1; flex: 0 0 auto; }
+.fit-head .num small { display: block; font-family: inherit; font-size: 0.55rem; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); margin-top: 0.3rem; }
+.fit-head .txt { font-size: 0.85rem; line-height: 1.6; margin: 0; flex: 1 1 240px; min-width: 0; }
+.fit-head .txt strong { color: var(--yang); font-weight: 650; }
+.piles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.3rem; margin-top: 0.75rem; }
+.pile { display: grid; grid-template-columns: minmax(0, 10rem) minmax(0, 1fr) auto; gap: 0.5rem;
+  align-items: center; }
+@media (max-width: 460px) { .pile { grid-template-columns: minmax(0, 1fr) auto; }
+  .pile .lbl { grid-column: 1 / -1; } }
+.pile .lbl { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+.pile .bar { display: block; height: 9px; border-radius: 5px; background: var(--line); overflow: hidden; }
+.pile .bar > i { display: block; height: 9px; }
+.pile .bar.ease > i { background: linear-gradient(90deg, #b8921c, var(--yang)); }
+.pile .bar.friction > i { background: linear-gradient(90deg, var(--yin), var(--yin-lift)); }
+.pile .v { font-family: var(--mono); font-size: 0.76rem; color: var(--muted); }
+
+/* One reason for the score: two sentences, then its arithmetic. */
 .conn { display: block; border-left: 2px solid var(--line-2); padding-left: 0.75rem;
   margin: 0 0 0.85rem; }
+.conn.good { border-left-color: var(--yang); }
+.conn.hard { border-left-color: var(--link); }
+.conn.hard .conn-n { background: var(--link); }
+/* A number that TOOK AWAY must not be printed in the colour that means "good". */
+.conn.hard .say strong { color: var(--link); }
 .conn .conn-n { display: inline-grid; place-items: center; width: 1.15rem; height: 1.15rem;
   border-radius: 4px; background: var(--yang); color: var(--bg); font-family: var(--mono);
   font-size: 0.68rem; font-weight: 700; margin-right: 0.4rem; vertical-align: -2px; }

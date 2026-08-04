@@ -15,9 +15,8 @@ import {
   type Person, loadPeople, savePeople, newId, loadSelfId, saveSelfId, validatePerson,
 } from "./data/people";
 import { fetchPublicMembers, loadCached, messageUrl, type FetchResult } from "./data/artaquest";
-import {
-  matchPair, rankAgainst, bandOf, OPTIONAL_TESTS, PERCENTILE_BELOW_NO_VARNA, type ScoreOptions,
-} from "./engine/score";
+import { rankAgainst, OPTIONAL_TESTS, type ScoreOptions } from "./engine/score";
+import { affinity, affinityPercentile } from "./engine/affinity";
 import type { KutaKey } from "./engine/kuta";
 import { birthSpan } from "./engine/uncertainty";
 import { scanWithin, type SearchResult } from "./engine/search";
@@ -35,7 +34,10 @@ export default function App() {
   // Tests the reader has chosen to leave out. Kept here rather than inside the report so the
   // ranking and the report always agree about what is being counted.
   const [excluded, setExcluded] = useState<KutaKey[]>([]);
-  const options = useMemo<ScoreOptions>(() => ({ exclude: excluded }), [excluded]);
+  // The one modelling choice the page refuses to make for the reader — see affinity.ts. Kept here
+  // beside the other, so the ranking, the grid and every reading always agree about it.
+  const [opposite, setOpposite] = useState<"hard" | "easy">("hard");
+  const options = useMemo<ScoreOptions>(() => ({ exclude: excluded, opposite }), [excluded, opposite]);
 
   const [name, setName] = useState("");
   const [birthday, setBirthday] = useState("");
@@ -211,8 +213,21 @@ export default function App() {
           <section className="panel">
             <h2>What gets counted</h2>
             <p className="panel-note">
-              One of the eight tests carries something you may not want in your results.
+              Two choices this page will not make for you.
             </p>
+            <label className="opt" style={{ marginBottom: "0.8rem" }}>
+              <input type="checkbox" checked={opposite === "easy"}
+                onChange={(e) => setOpposite(e.target.checked ? "easy" : "hard")} />
+              <span>
+                <b>Read two bodies sitting right across from each other as attraction</b>
+                This is the one place the old sources genuinely disagree, and the only choice on this
+                page that changes much: the classical texts call being directly opposite hard, while
+                writers on couples very often read it as two people completing each other. Leave it
+                off for the older reading. Turning it on reorders a list of people noticeably —
+                measured at 0.72 out of 1 rank agreement, where every other choice we made scores
+                above 0.88.
+              </span>
+            </label>
             {OPTIONAL_TESTS.map((t) => (
               <label className="opt" key={t.key}>
                 <input type="checkbox" checked={!excluded.includes(t.key)}
@@ -369,17 +384,26 @@ function Ranking({ self, ranked, options, onOpen }: {
   if (ranked.length === 0) {
     return <div className="panel"><p className="empty">Add at least one more person to compare against {self.name}.</p></div>;
   }
+  const best = ranked.reduce<{ name: string; score: number } | null>((b, r) =>
+    !b || r.match.distribution.expected > b.score
+      ? { name: r.other.name, score: r.match.distribution.expected } : b, null);
+
   return (
     <div className="panel">
       <h2>Ranked against {self.name}</h2>
       <p className="panel-note">
-        Ranked by the average score across every birth time the two dates allow. Where a row shows
-        a range, the unknown hour genuinely moves the answer — two rows whose ranges overlap cannot
-        be told apart on this evidence. Scores are symmetric, so this list agrees with everyone
-        else's about any shared pair. Tap a row for the full reading.
+        Ranked by how the two whole charts fit, averaged over all 576 combinations of the two
+        unknown birth hours. <strong style={{ color: "var(--yang)" }}>Where two ranges overlap,
+        those two cannot be told apart</strong> — and measured over 20,000 random pairs, the unknown
+        birth times cost about as much as the whole difference between one couple and another, so
+        that happens often. It is a limit of the input, not of the arithmetic. Tap a row for the
+        full reading.
       </p>
-      <Ceiling self={self} options={options} bestHere={ranked[0]?.score ?? null}
-        bestName={ranked[0]?.other.name ?? null} />
+      {/* The ceiling is computed on the OLDER score, so what it compares against must be the older
+          score too — the best one on this list, which is not necessarily the top row, because the
+          list is ordered by the whole-chart fit and the two disagree. Passing the row's raw fit
+          here once printed "the best you have is 0.1" against a scale that runs to 36. */}
+      <Ceiling self={self} options={options} best={best} />
       <div className="rank">
         {ranked.map((r, i) => {
           const m = r.match;
@@ -394,14 +418,16 @@ function Ranking({ self, ranked, options, onOpen }: {
                   {msg && <span className="pill aq" style={{ marginLeft: "0.4rem" }}>can message</span>}
                 </span>
                 <span className="sub">
-                  {m.band.label} · higher than {m.percentile} in 100 random pairs
-                  {!m.certain && ` · could be ${fmtScore(m.distribution.interval.lo)}–${fmtScore(m.distribution.interval.hi)} depending on the hour`}
+                  higher than {r.percentile} in 100 random pairs · could be{" "}
+                  {affinityPercentile(r.aff.spread.lo)}–{affinityPercentile(r.aff.spread.hi)}{" "}
+                  depending on the hour · the older score puts it at{" "}
+                  {fmtScore(m.distribution.expected)} of {m.maxScore}
                 </span>
-                <Meter value={m.distribution.expected} max={m.maxScore} gold={m.band.tone === "high"} />
+                <Meter value={r.percentile} max={100} gold={r.percentile >= 60} />
               </span>
-              <span className={`sc tone-${m.band.tone}`}>
-                {fmtScore(m.distribution.expected)}
-                <small>{m.certain ? `of ${m.maxScore}` : `±${fmtScore((m.distribution.interval.hi - m.distribution.interval.lo) / 2)}`}</small>
+              <span className={`sc tone-${r.percentile >= 75 ? "high" : r.percentile >= 40 ? "mid" : "low"}`}>
+                {r.percentile}
+                <small>in 100</small>
               </span>
             </button>
           );
@@ -434,8 +460,8 @@ const CEILING_CACHE = new Map<string, SearchResult>();
  * The scan is a generator driven in slices of about 20 ms, so the page keeps scrolling while it
  * runs, and it is abandoned the moment the selected person or the counted tests change.
  */
-function Ceiling({ self, options, bestHere, bestName }: {
-  self: Person; options: ScoreOptions; bestHere: number | null; bestName: string | null;
+function Ceiling({ self, options, best }: {
+  self: Person; options: ScoreOptions; best: { name: string; score: number } | null;
 }) {
   const key = `${self.birthday}|${(options.exclude ?? []).join(",")}`;
   const [result, setResult] = useState<SearchResult | null>(() => CEILING_CACHE.get(key) ?? null);
@@ -484,17 +510,18 @@ function Ceiling({ self, options, bestHere, bestName }: {
       <div className="top">
         <span className="cap">{fmtScore(result.ceiling)}<small>the most available</small></span>
         <p className="txt">
-          That is the highest score {self.name} can reach against <strong>any</strong> date of birth
+          <strong>Of the older eight-test score</strong>, that is the highest {self.name} can reach
+          against <strong>any</strong> date of birth
           within {CEILING_YEARS} years of their own — every one of the{" "}
           {result.days.toLocaleString()} days from {formatBirthday(result.from)} to{" "}
           {formatBirthday(result.to)}, scored one at a time. The worst available is{" "}
           {fmtScore(result.floor)} and the middle of the range is {fmtScore(result.median)}.
         </p>
       </div>
-      <Histogram result={result} bestHere={bestHere} />
+      <Histogram result={result} bestHere={best?.score ?? null} />
       <p className="legend-note">
         <span className="key-a">the most available</span>
-        {bestHere !== null && <span className="key-b">your best here</span>}
+        {best && <span className="key-b">your best here</span>}
         <span className="dim">
           each bar is one score, as tall as the number of the {result.days.toLocaleString()} days
           that land on it
@@ -506,8 +533,10 @@ function Ceiling({ self, options, bestHere, bestName }: {
         every 27 days, so the top score belongs to a position in the sky rather than to a person.
         The nearest dates that reach it are{" "}
         {result.best.map((b) => formatBirthday(b.iso)).join(", ")}.
-        {bestHere !== null && bestName && (
-          <> The best you have on this list is {bestName} at {fmtScore(bestHere)}.</>
+        {best && (
+          <> The best <em>this</em> score can find on your list is {best.name} at{" "}
+            {fmtScore(best.score)} — which is not the top row above, because that list is ordered by
+            the whole-chart fit and the two readings disagree.</>
         )}
       </p>
     </div>
@@ -544,10 +573,11 @@ function Matrix({ people, options, onOpen }: { people: Person[]; options: ScoreO
     const m = new Map<string, number>();
     for (let i = 0; i < people.length; i++) {
       for (let j = i + 1; j < people.length; j++) {
-        const r = matchPair(people[i].birthday, people[j].birthday, options);
+        const r = affinity(people[i].birthday, people[j].birthday, { ...options, verify: false });
         if (r) {
-          m.set(`${people[i].id}|${people[j].id}`, r.score);
-          m.set(`${people[j].id}|${people[i].id}`, r.score);
+          const p = affinityPercentile(r.net);
+          m.set(`${people[i].id}|${people[j].id}`, p);
+          m.set(`${people[j].id}|${people[i].id}`, p);
         }
       }
     }
@@ -562,7 +592,9 @@ function Matrix({ people, options, onOpen }: { people: Person[]; options: ScoreO
     <div className="panel">
       <h2>Everyone against everyone</h2>
       <p className="panel-note">
-Every pair, scored on the Moon score. The grid is symmetric by construction, so it reads the same across as it does down. Tap any cell for the full reading.
+Every pair, as a place among 20,000 randomly paired dates. The grid is symmetric by construction,
+        so it reads the same across as it does down — and none of these numbers should be read
+        without the range behind it, which the full reading shows. Tap any cell.
       </p>
       <div className="scroll-x">
         <table className="data">
@@ -584,14 +616,13 @@ Every pair, scored on the Moon score. The grid is symmetric by construction, so 
                   if (v === undefined) return <td key={col.id} className="matrix-cell self">·</td>;
                   // The same score must wear the same colour here as it does in the report —
                   // including against the right distribution when a test is switched off.
-                  const tone = bandOf(v,
-                    options.exclude?.includes("varna") ? PERCENTILE_BELOW_NO_VARNA : undefined).tone;
+                  const tone = v >= 75 ? "high" : v >= 40 ? "mid" : "low";
                   return (
                     <td key={col.id} className="matrix-cell">
                       <button className="link" onClick={() => onOpen(row.id, col.id)}
-                        aria-label={`${row.name} and ${col.name} — ${fmtScore(v)} out of 36`}
-                        title={`${row.name} & ${col.name} — ${fmtScore(v)}`}>
-                        <span className={`tone-${tone}`}>{v % 1 === 0 ? v : v.toFixed(1)}</span>
+                        aria-label={`${row.name} and ${col.name} — higher than ${v} in 100 random pairs`}
+                        title={`${row.name} & ${col.name} — higher than ${v} in 100 random pairs`}>
+                        <span className={`tone-${tone}`}>{v}</span>
                       </button>
                     </td>
                   );

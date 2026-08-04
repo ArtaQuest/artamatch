@@ -216,14 +216,20 @@ describe("scoring is symmetric — a ranked list must agree with itself", () => 
 
 
   it("keeps two people's rankings of each other consistent", () => {
-    const people = makeDates(12, 4242).map((birthday, i) => ({ id: `p${i}`, birthday }));
+    // Now that the ranking sorts on the whole-chart fit rather than the eight tests, this checks
+    // BOTH: my place on your list and yours on mine must be the same number, and so must the older
+    // score that travels with it. Ranking draws 576 charts per pair, hence the wider budget.
+    const people = makeDates(8, 4242).map((birthday, i) => ({ id: `p${i}`, birthday }));
+    const views = new Map(people.map((p) => [p.id, rankAgainst(p, people)]));
     for (const self of people) {
-      for (const r of rankAgainst(self, people)) {
-        const theirView = rankAgainst(r.other, people).find((x) => x.other.id === self.id)!;
+      for (const r of views.get(self.id)!) {
+        const theirView = views.get(r.other.id)!.find((x) => x.other.id === self.id)!;
         expect(theirView.score).toBeCloseTo(r.score, 9);
+        expect(theirView.percentile).toBe(r.percentile);
+        expect(theirView.match.distribution.expected).toBeCloseTo(r.match.distribution.expected, 9);
       }
     }
-  });
+  }, 60_000);
 });
 
 describe("score distribution", () => {

@@ -19,7 +19,8 @@ import { matchPair } from "../src/engine/score";
 import {
   explainKuta, explainDosha, birthStarText, moonSignText, planetMeta, planetReading, READ_BODIES,
 } from "../src/engine/interpret";
-import { ASPECTS, PERSONAL, STANDS_FOR, standsFor, synastryGrid } from "../src/engine/synastry";
+import { ASPECTS, PERSONAL, STANDS_FOR, standsFor } from "../src/engine/synastry";
+import { affinity } from "../src/engine/affinity";
 import { GENERATIONAL } from "../src/engine/natal";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -169,13 +170,16 @@ describe("nothing a reader can see uses astrology jargon", () => {
     expect([...new Set(found)]).toEqual([]);
   });
 
-  it("keeps every connection a real date pair can produce clean", () => {
+  it("keeps every reason a real date pair can produce clean", () => {
+    // The score's own explanation is generated, so this walks what a real pair of dates actually
+    // makes the page say — angle names, body phrases and the joining clause, assembled.
     const found: string[] = [];
     for (const a of DATES) {
       for (const b of DATES) {
-        for (const c of synastryGrid(a, b).connections) {
-          found.push(...offences(`${a}/${b} kind`, c.kind));
-          found.push(...offences(`${a}/${b} joins`, `${c.bodyA} ${c.aspect.joins} ${c.bodyB}`));
+        for (const t of affinity(a, b, { verify: false })!.terms.slice(0, 6)) {
+          const prose = ASPECTS.find((x) => x.kind === t.nearest.kind)!;
+          found.push(...offences(`${a}/${b}`, `${t.bodyA} ${prose.joins} ${t.bodyB}. ` +
+            `${standsFor(t.bodyA, "Ada")}, and ${standsFor(t.bodyB, "Turing")}. ${prose.means}`));
         }
       }
     }

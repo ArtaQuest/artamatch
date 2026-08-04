@@ -35,6 +35,7 @@ import { nakshatraOf } from "./nakshatra";
 import { type KutaSide, type SymmetricGunaMilan, type KutaKey, gunaMilan } from "./kuta";
 import { type BirthSpan, birthSpan } from "./uncertainty";
 import { starTitle } from "./interpret";
+import { affinity, affinityPercentile, type Affinity } from "./affinity";
 
 /**
  * Share of random pairs scoring BELOW each whole mark, 0…36. Measured over 20,000 random date
@@ -205,7 +206,12 @@ function withMoonAt(chart: Chart, jd: number): Chart {
   return { ...chart, placements, byBody };
 }
 
-export type ScoreOptions = { exclude?: KutaKey[] };
+export type ScoreOptions = {
+  exclude?: KutaKey[];
+  /** How the one genuinely disputed angle is read — see affinity.ts. Carried here so the ranking,
+   *  the grid and the report can never disagree about it. The eight tests ignore it. */
+  opposite?: "hard" | "easy";
+};
 
 /**
  * Score one pair — always with its full distribution.
@@ -317,14 +323,17 @@ function uncertaintyNote(a: BirthSpan, b: BirthSpan, dist: Distribution): string
 
 // ── ranking ─────────────────────────────────────────────────────────────────────────────────────
 
-type RankedMatch<T> = { other: T; match: Match; score: number };
+type RankedMatch<T> = { other: T; match: Match; aff: Affinity; percentile: number; score: number };
 
 /**
  * Rank everyone against one person.
  *
- * Sorted by score, then — where two pairs score the same — by how firmly the dates pin that score
- * down, so a result the dates settle outranks one that merely might be true. Both keys are
- * symmetric, so this list agrees with everyone else's about any shared pair.
+ * Sorted by the page's headline score — the fit between the two whole charts — and then, where two
+ * are level, by how firmly the dates pin it down, so a settled reading outranks a merely possible
+ * one. Both keys are symmetric, so this list agrees with everyone else's about any shared pair.
+ *
+ * The older eight-test score travels along for the row to show, but it does NOT order the list.
+ * Ordering by two things at once is how a page ends up unable to answer "which do I believe".
  */
 export function rankAgainst<T extends { id: string; birthday: string }>(
   self: T, others: T[], opts: ScoreOptions = {},
@@ -333,14 +342,15 @@ export function rankAgainst<T extends { id: string; birthday: string }>(
   for (const other of others) {
     if (other.id === self.id) continue;
     const match = matchPair(self.birthday, other.birthday, opts);
-    if (match) out.push({ other, match, score: match.distribution.expected });
+    const aff = affinity(self.birthday, other.birthday, opts);
+    if (match && aff) {
+      out.push({ other, match, aff, percentile: affinityPercentile(aff.net), score: aff.net });
+    }
   }
-  // Rank on the EXPECTED score — the mean over every birth time the dates allow — because that is
-  // the right summary of a distribution. Ties break toward the tighter interval, so a settled
-  // reading outranks a merely-possible one.
+  // Ties break toward the tighter band, so a reading the dates settle outranks one that merely
+  // might be true.
   return out.sort((x, y) =>
     y.score - x.score ||
-    (x.match.distribution.interval.hi - x.match.distribution.interval.lo) -
-    (y.match.distribution.interval.hi - y.match.distribution.interval.lo));
+    (x.aff.spread.hi - x.aff.spread.lo) - (y.aff.spread.hi - y.aff.spread.lo));
 }
 

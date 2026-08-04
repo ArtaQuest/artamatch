@@ -99,7 +99,7 @@ scores **21**, so "you passed" would be flattery. Percentile bands ("Above avera
 on the measured distribution. A drift test (in `tests/score.test.ts`) recomputes a 2,000-pair sample
 in CI and fails if the embedded numbers go stale.
 
-## 5 · The two charts, and the connections between them
+## 5 · The two charts, and the score between them
 
 ### 5.1 · One person's chart (`src/engine/natal.ts`)
 
@@ -107,7 +107,9 @@ A full natal chart has three layers: which **sign** each planet is in, which **h
 which sign was **rising**. Only the first survives a missing birth time — houses and the rising sign
 turn a full circle every 24 hours, so from a date alone they are not approximate, they are *unknown*.
 This file draws the layer that survives, and the page says the other two are missing rather than
-quietly defaulting them to sunrise, which is the usual dodge.
+quietly defaulting them to sunrise, which is the usual dodge. This matters more than it sounds:
+conventional synastry weights contacts with the rising sign and the midheaven **most heavily of
+all**, so a date-only reading is missing the tradition's own top-weighted factor entirely.
 
 Even the surviving layer has edges: a planet near a boundary at midnight is in two signs that day. So
 every body reports the signs it could be in **and the share of the day it spent in each**, found
@@ -117,84 +119,110 @@ settled unless the date lands on the crossing itself.
 
 **Five bodies get a paragraph** — Sun, Moon, Mercury, Venus, Mars. Jupiter holds a sign for about a
 year and Saturn for two and a half, so a *reading* of them would describe everyone born that year;
-they are drawn, they make connections, and they get a stated placement rather than a character
-sketch. Uranus, Neptune and Pluto (7, 14 and 12–30 years to a sign) get their windows named and
-nothing else.
+they are drawn, they are scored, and they get a stated placement rather than a character sketch.
+Uranus, Neptune and Pluto (7, 14 and 12–30 years to a sign) get their windows named and nothing else,
+and are excluded from scoring entirely.
 
-### 5.2 · Where two charts touch (`src/engine/synastry.ts`)
+### 5.2 · The score (`src/engine/affinity.ts`)
 
-Seven bodies (Sun … Saturn) make connections; the three slowest do not, because "your Pluto is
-opposite my Sun" is true of everyone born in a twenty-year window — a fact about a generation, not
-about two people.
+    ease, friction  =  Σ_{i,j,a}  [v_a]±  ·  w_ij  ·  exp( −(Δ_ij − t_a)² / 2 S²_ij )
+    w_ij            =  imp_i · imp_j · √( s²_ij / S²_ij )
+    S²_ij           =  s²_ij + σ²_ij
+    Δ_ij, σ_ij      =  circular mean and deviation of the angle over all 24×24 = 576 birth-hour pairs
 
-**How close counts as close** is a *convention*, and is labelled as one on the page: 8° when the Sun
-or the Moon is involved, 6° otherwise, for all five angles. No measurement could settle it.
+The same functional form as the sky→topics forward model of the AstroAttention paper
+(`analysis/adstopics/astro_forward.py`): a Gaussian kernel on a **seam-free wrapped** angular
+difference, non-negative weights, summed. Four house rules are carried over verbatim — circular
+readouts are always `atan2` of a resultant vector and never a scalar mean of angles; weights are
+positive but **not normalised** (the recorded softmax ablation there is worse); ablations are
+reported even when they undercut the model, as that paper reports its own centring worth "only
+~0.003 AUC"; and **the ceiling is reported as a result**. Two deliberate departures: the paper's
+phases are *fitted* per topic and here they are the tradition's five fixed angles, because there is
+nothing to fit to; and its kernel is `exp(−Δ²)` with Δ in radians — an implicit width near 40°, right
+for a broad seasonal phase and far too wide for an aspect — so the width here comes from the orb.
 
-**The method is 576 charts.** `synastryGrid` draws both charts once for every combination of the two
-unknown birth hours and reports every quantity as a mean, a standard deviation and a 5th-to-95th
-band: the angle between each pair of bodies, how far that angle sits from the exact one, and how
-many connections the two charts have at all.
+**Why the weight is not an invention.** The estimand is the average compatibility over every birth
+hour the two dates leave open. For a Gaussian kernel and θ ~ N(μ, σ²),
 
-**Verified three ways.** A closed form is kept in the same file and renders nothing — it exists to
-check the grid. Under a flat prior over birth times each longitude is nearly uniform over its day's
-arc, so the angle between two of them is a **difference of two uniforms**, a trapezoid with an exact
-area. `tests/synastry.test.ts` holds all three against each other:
+    E[ exp( −(θ−t)²/2s² ) ]  =  √( s²/(s²+σ²) ) · exp( −(μ−t)² / (2(s²+σ²)) )
 
-| | worst disagreement |
+which factorises into an amplitude depending only on how well the angle is pinned down, times a
+widened kernel at the mean angle. "Weight by the variance of the angle estimate, score at the mean
+phase difference" is not a heuristic — it is what taking the expectation does.
+
+**What is shown is the plain average of the 576 charts**, not the closed form. The closed form is
+computed alongside as the *decomposition*, because it is what makes the number explainable, and the
+gap is printed on every reading. Measured over 500 random pairs: **median 4.5 × 10⁻⁴, worst
+2.4 × 10⁻³**, against a population spread of 0.057. Per-pair contributions are the exact 576-chart
+averages, so the five reasons the page shows plus the stated remainder sum to the score with a
+residual under 10⁻¹² — the explanation *is* the arithmetic, not an illustration of it.
+
+### 5.3 · Constants: what is citable and what is chosen
+
+| | value | provenance |
+|---|---|---|
+| orbs | Sun 15°, Moon 12°, Mercury 7°, Venus 7°, Mars 8°, Jupiter 9°, Saturn 9°; a pair is allowed the **average of the two** | [tradition] Lilly, *Christian Astrology* (1647). Sources vary 1–3°. Orbs belong to the **body**, not the angle — the older of the two systems, and the only one with a citable table |
+| kernel width | s = orb/2, so a pair on the traditional edge still counts for exp(−2) ≈ 14% | [convention] the tradition supplies only "tighter is stronger" |
+| angle valences | sixth +0.5, third +1, quarter −1, opposite −1 | [tradition] for the *signs* (Tetrabiblos I). [convention] for the magnitudes |
+| same-place valence | the mean of the two bodies' natures | [tradition] near-total consensus that the conjunction has no valence of its own and takes it from the bodies joined |
+| body natures | Jupiter +1, Venus +0.5, Sun/Moon/Mercury 0, Mars −0.5, Saturn −1 | [tradition] the classical benefic/malefic ranking — 7 numbers, not a 49-cell table |
+| body importance | Sun 1, Moon 1, Venus 0.9, Mars 0.8, Mercury 0.6, Jupiter 0.5, Saturn 0.5 | [convention] the sources rank these; none numbers them |
+| the percentile | 20,000 random pairs, seed 13579 | **[measured]** — the only honest number in the model |
+
+### 5.4 · Ablations and robustness (`tools/calibrate-affinity.mjs`)
+
+Rank correlation with the model as shipped, 1,500 random pairs:
+
+| ablation | Spearman |
 |---|---|
-| closed form vs 240×240 brute force (57,600 hour pairs) | **0.06 pp** |
-| 24×24 grid vs closed form | **1.9 pp**, on a connection sitting exactly on the edge of its orb |
+| exchange rate ×0.5 / ×0.75 / ×1.5 / ×2.0 | 0.947 / 0.988 / 0.969 / 0.921 |
+| a sixth counted as much as a third | 0.958 |
+| every body weighted equally | 0.944 |
+| the same-place contact fixed at +1 | 0.884 |
+| **the opposite angle read as easy** | **0.718** |
 
-The closed form's own residual came down 30× (1.73 pp → 0.06 pp) when each body's day was cut into
-twelve pieces instead of treated as one straight arc: Mercury near a turn decelerates to a standstill
-and back, so it lingers at one end of its arc and races the other.
+And the check that the model reads the whole chart rather than only the bodies it can pin down —
+the weighting damps the Moon hardest, so this is the place it could quietly become a Sun-only score:
 
-**Ordering.** Connections are ranked by **strength** — the average, over all 576 charts, of how close
-the angle is as a fraction of the orb, counting a chart where it misses as nothing. Ranking by
-*probability* was tried and thrown away: probability is a fact about how slowly the planets move, so
-the six slowest pairs won every time and the Moon — the most personal body there is, and the one the
-entire score is built from — could never appear at all. A test asserts the Moon now reaches the
-narrated list on more than 30% of pairs, and that no single planet fills more than two of the six.
+| body | mean confidence | share of the answer |
+|---|---|---|
+| Sun | 0.980 | 23.0% |
+| **Moon** | **0.799** | **19.9%** |
+| Venus | 0.964 | 14.8% |
+| Mars | 0.969 | 13.8% |
+| Mercury | 0.963 | 9.7% |
+| Jupiter | 0.971 | 9.4% |
+| Saturn | 0.971 | 9.4% |
 
-### 5.3 · Why the connections are not scored
+Two bugs this reporting caught, both silent: `ease` and `friction` returned **zero** rather than a
+missing value on the fast path, so the calibration reported an ease forty times too small without
+complaining; and an ablation that mutated a table the code had stopped reading dutifully reported a
+perfect **1.000** — an ablation which has stopped testing anything looks exactly like a component
+that does not matter.
 
-Measured over the same 20,000 random pairs (`tools/calibrate-synastry.mjs`, seed 13579):
+### 5.5 · The ceiling, reported as a result
 
-| | |
-|---|---|
-| connections per pair | median **15**, 5th–95th **10.5 – 20.2** |
-| correlation with the eight-test score | **0.030** |
+Population spread of the score: **σ = 0.0566**. Median width of the 90% band one pair spans across
+its own 576 charts: **0.0481**. Ratio **0.85**.
 
-So the *count* measures nothing — everybody has about fifteen — and the two traditions, handed the
-same two dates, do not agree with each other. The page prints both facts before the first connection
-and then shows **which** connections rather than how many. That is what lets a second system sit
-beside a scored one without becoming a rival scoreboard.
+Not knowing the two birth times costs almost as much as the entire difference between one couple and
+another. Two pairs whose bands overlap cannot be told apart from dates alone by *any* model; only
+about two in five randomly chosen pairs can be separated at all. Every compatibility percentage
+computed from dates alone and printed without a band is claiming a precision the input cannot carry.
 
-(A sanity check that falls out of the same run: the three angles reachable from either side —
-60°, 90°, 120° — occur ~3.8 times per pair, and the two that are not — 0° and 180° — occur ~1.9,
-almost exactly half, which is what the geometry demands.)
+### 5.6 · The empirical null
 
-## 5.5 · The ceiling (`src/engine/search.ts`)
+Voas (2007), ~10 million married couples from the 2001 England and Wales census: **no**
+sign-compatibility effect, bounded below roughly one couple in a thousand; an apparent same-sign
+excess turned out to be census form-filling error. There is therefore no outcome to fit to, and any
+model claiming to have *learned* compatibility would be lying. Nothing here is fitted.
 
-Every birth date within ±12 years of a person's own — **8,767 days, one at a time** — scored, to find
-the best that exists. Reported with the worst, the median, a histogram of all 8,767, and the count of
-days that reach the top.
+### 5.7 · Two scores, and why both stay
 
-That last number is the point. Measured on the seeded people: **46–79 of the 8,767 days reach the
-ceiling**, roughly one in 110–190. The eight tests read the Moon and the Moon returns to the same
-birth star every 27.3 days, so the top score belongs to a *position in the sky*, not to a person.
-Nobody reaches 36; the ceilings measured so far sit at 29.5–32.6 against medians near 21.
-
-| | |
-|---|---|
-| method | Moon-only sides, skipping the nine bodies the eight tests never read |
-| cost | ~900 ms for 8,767 days, driven as a generator in ~20 ms slices behind a progress bar |
-| agreement with `matchPair` | exact to 10 decimal places, checked on every day of four whole months |
-
-The fast path is a *second implementation of the score*, which is the dangerous kind of optimisation:
-a panel announcing "the most you could score is 29.5" while the reading for that very date says 28
-would be worse than no panel. `fastExpected()` exists purely as the seam the tests hold the two
-implementations against, and nothing in the app calls it.
+The eight-test Moon score (§3) and the fit (§5.2) read the same two dates and correlate at **0.01**.
+Only one is called *the score* — the page may show many numbers but only one may carry that name —
+and the older one rides along in every ranked row so a reader can watch them part company. Hiding
+one to avoid the awkwardness would be the dishonest move.
 
 ## 5.4 · Removed experiments
 
@@ -206,8 +234,15 @@ because four half-explained numbers teach less than one fully explained one.
 
 **The first aspect layer.** Written readings for all 55 body pairs in four configurations, sitting
 beside the score as unscored commentary. Removed because it invited "is 19 connections good?" and
-could not answer it. The layer above is its replacement, and the difference is §5.3: the question now
-has a measured answer, and every sentence carries the spread of the 576 charts behind it.
+could not answer it.
+
+**The connection layer that replaced it.** Every connection between two charts with an exact
+probability, computed in closed form from a difference of two uniforms and verified against a
+240×240 brute-force sweep to 0.06 percentage points. It worked. It is gone anyway: §5.2 reads the
+same angles, weights each by how firmly the dates pin it down, and produces a number whose parts sum
+to it exactly. Keeping the older list beside it would have put two overlapping accounts of the same
+thing on one page — the failure this project has already made once. `src/engine/synastry.ts` shrank
+from 380 lines to 97.
 
 **The sky ruler.** A linear 360° band with both Moons and their daily arcs. Cut because the *score*
 depends only on the relationship between the two Moons, never on where they sit absolutely, so it
@@ -243,16 +278,17 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 8 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 95 tests: ephemeris vs golden, rules, symmetry,
-                                           # uncertainty, synastry vs brute force, the ceiling
-                                           # scan vs matchPair, jargon guards, drift
+npm test                                   # 100 tests: ephemeris vs golden, rules, symmetry,
+                                           # uncertainty, the score vs longhand brute force,
+                                           # the ceiling scan vs matchPair, jargon guards, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
 npx esbuild src/engine/score.ts --format=esm --bundle --outfile=/tmp/score.mjs
 node tools/calibrate.mjs /tmp/score.mjs                    # the percentile table + its summary
-echo 'export * from "./src/engine/score"; export * from "./src/engine/synastry";
-      export * from "./src/engine/uncertainty";' |
-  npx esbuild --bundle --format=esm --loader:.ts=ts --sourcefile=e.ts --outfile=/tmp/syn.mjs
-node tools/calibrate-synastry.mjs /tmp/syn.mjs             # §5.3: what a count of connections is worth
+echo 'export * from "./src/engine/affinity"; export * from "./src/engine/score";' |
+  npx esbuild --bundle --format=esm --loader:.ts=ts --sourcefile=e.ts --outfile=/tmp/aff.mjs
+node tools/calibrate-affinity.mjs /tmp/aff.mjs             # §5.3–5.5: the percentile table,
+                                                           # the ablations, the per-body shares,
+                                                           # and the ceiling
 node tools/compare-elements.mjs tests/golden.json          # the Table 1 vs 2a decision
 node tools/contrast.mjs                                    # WCAG contrast, every ink/surface pair
 node tools/screenshot.mjs dist shots/                      # 35-state visual audit, five widths

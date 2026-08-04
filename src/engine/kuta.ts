@@ -31,7 +31,7 @@ const VARNA_RANK: Record<Varna, number> = { brahmin: 4, kshatriya: 3, vaishya: 2
 /** Plain names for the four groups. The tradition's own names come from a caste ordering; the
  *  groups themselves track the four elements, so they are named for that instead. The hierarchy is
  *  not hidden — the scoring rule states it plainly and invites the reader to discount it. */
-export const VARNA_LABEL: Record<Varna, string> = {
+const VARNA_LABEL: Record<Varna, string> = {
   brahmin: "reflective", kshatriya: "driving", vaishya: "practical", shudra: "adaptable",
 };
 
@@ -44,8 +44,8 @@ const SIGN_VARNA: Varna[] = [
 
 // ── Vashya ──────────────────────────────────────────────────────────────────────────────────────
 
-export type VashyaGroup = "chatushpada" | "manava" | "jalachara" | "vanachara" | "keeta";
-export const VASHYA_LABEL: Record<VashyaGroup, string> = {
+type VashyaGroup = "chatushpada" | "manava" | "jalachara" | "vanachara" | "keeta";
+const VASHYA_LABEL: Record<VashyaGroup, string> = {
   chatushpada: "four-footed",
   manava: "human",
   jalachara: "water-dwelling",
@@ -145,7 +145,7 @@ const FRIENDSHIP: Record<string, { friends: Body[]; enemies: Body[] }> = {
   Saturn:  { friends: ["Mercury", "Venus"], enemies: ["Sun", "Moon", "Mars"] },
 };
 
-export function relationOf(from: Body, to: Body): Relation {
+function relationOf(from: Body, to: Body): Relation {
   const row = FRIENDSHIP[from];
   if (!row) return "neutral";
   if (row.friends.includes(to)) return "friend";
@@ -217,7 +217,7 @@ export type Dosha = {
   caveat?: string;
 };
 
-export type GunaMilan = {
+type GunaMilan = {
   kutas: KutaResult[];
   total: number;
   maxTotal: number;

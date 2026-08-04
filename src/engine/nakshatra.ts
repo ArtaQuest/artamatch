@@ -17,7 +17,7 @@ export const NAK_ARC = 360 / 27; // 13°20′
 
 export type Gana = "deva" | "manushya" | "rakshasa";
 export type Nadi = "adi" | "madhya" | "antya";
-export type YoniGender = "male" | "female";
+type YoniGender = "male" | "female";
 
 export type YoniAnimal =
   | "horse" | "elephant" | "sheep" | "serpent" | "dog" | "cat" | "rat"
@@ -72,8 +72,6 @@ export const NAKSHATRAS: NakshatraInfo[] = ROWS.map(([name, lord, gana, yoni, yo
   index: i, num: i + 1, name, lord, gana, yoni, yoniGender, nadi,
 }));
 
-export const NAK_NAMES = NAKSHATRAS.map((n) => n.name);
-
 /** Where a sidereal longitude falls: which nakshatra, and which of its four 3°20′ padas. */
 export function nakshatraOf(lon: number): { info: NakshatraInfo; pada: number; degIn: number } {
   const l = ((lon % 360) + 360) % 360;
@@ -81,9 +79,6 @@ export function nakshatraOf(lon: number): { info: NakshatraInfo; pada: number; d
   const degIn = l - index * NAK_ARC;
   return { info: NAKSHATRAS[index], pada: Math.floor(degIn / (NAK_ARC / 4)) + 1, degIn };
 }
-
-/** Longitude at which a nakshatra begins. */
-export const nakshatraStart = (index: number) => index * NAK_ARC;
 
 /** Human labels, for the report. */
 /** Plain names for the three temperaments. "Deva / Manushya / Rakshasa" translate literally as

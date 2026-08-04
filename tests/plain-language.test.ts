@@ -14,20 +14,16 @@
 import { describe, it, expect } from "vitest";
 import { gunaMilan, type KutaSide } from "../src/engine/kuta";
 import { nakshatraOf } from "../src/engine/nakshatra";
-import { chartForDate, BODIES } from "../src/engine/ephemeris";
+import { chartForDate } from "../src/engine/ephemeris";
 import { matchPair } from "../src/engine/score";
-import { summariseSynastry } from "../src/engine/synastry";
-import {
-  explainAspect, explainKuta, explainDosha, aspectLabel, closeness, headlineSummary,
-  birthStarText, moonSignText, BODY_MEANS,
-} from "../src/engine/interpret";
+import { explainKuta, explainDosha, birthStarText, moonSignText } from "../src/engine/interpret";
 
 /** Vocabulary that must never reach a reader. Matched on word boundaries. */
 const BANNED = [
   "nakshatra", "rashi", "rasi", "kuta", "koota", "guna", "dosha", "doshas", "graha", "varna",
   "vashya", "yoni", "bhakoot", "nadi", "mangal", "kuja", "ayanamsa", "sidereal", "tropical",
-  "lahiri", "vedic", "jyotish", "synastry", "natal", "quincunx",
-  "sesquiquadrate", "semisextile", "orb", "cusp", "ascendant", "lagna",
+  "lahiri", "vedic", "jyotish", "synastry", "natal", "quincunx", "conjunction", "opposition",
+  "trine", "sextile", "sesquiquadrate", "semisextile", "orb", "cusp", "ascendant", "lagna",
   "retrograde", "exalted", "debilitated", "benefic", "malefic", "pada", "dasha", "janma",
   "chandra", "brahmana", "kshatriya", "vaishya", "shudra", "deva", "manushya", "rakshasa",
   "adi", "madhya", "antya", "vata", "pitta", "kapha", "ecliptic", "longitude", "ephemeris",
@@ -83,21 +79,6 @@ describe("nothing a reader can see uses astrology jargon", () => {
     expect([...new Set(found)]).toEqual([]);
   });
 
-  it("keeps every written connection clean, across every pairing", () => {
-    const found: string[] = [];
-    for (let i = 0; i < DATES.length; i++) {
-      const A = chartForDate(DATES[i])!;
-      const B = chartForDate(DATES[(i + 1) % DATES.length])!;
-      const s = summariseSynastry(A, B);
-      found.push(...offences("headline", headlineSummary(s.easeScore, s.easeScore, s.chargeScore)));
-      for (const asp of s.aspects) {
-        found.push(...offences(`${asp.a.body}/${asp.b.body} label`, aspectLabel(asp, "Ada", "Alan")));
-        found.push(...offences(`${asp.a.body}/${asp.b.body} text`, explainAspect(asp, "Ada", "Alan")));
-        found.push(...offences("closeness", closeness(asp.exactness)));
-      }
-    }
-    expect([...new Set(found)]).toEqual([]);
-  });
 
   it("keeps the uncertainty wording clean — the string the report stopped rendering", () => {
     const found: string[] = [];
@@ -129,23 +110,7 @@ describe("nothing a reader can see uses astrology jargon", () => {
       found.push(...offences(`sign${i}.title`, m!.title));
       found.push(...offences(`sign${i}.style`, m!.style));
     }
-    for (const body of BODIES) found.push(...offences(`means.${body}`, BODY_MEANS[body]));
     expect([...new Set(found)]).toEqual([]);
   });
 
-  it("has a written reading for every body pair, so nobody gets the generic fallback", () => {
-    // 10 bodies → 55 unordered pairs. Every one must resolve to real prose in all four
-    // configurations, or a reader hits assembled-from-slots text exactly where it shows most.
-    const A = chartForDate("1994-02-15")!;
-    const B = chartForDate("1980-03-19")!;
-    const seen = new Set<string>();
-    for (const asp of summariseSynastry(A, B).aspects) {
-      const text = explainAspect(asp, "Ada", "Alan");
-      // The compositional fallback is recognisable by its stitched shape.
-      expect(text, `${asp.a.body}/${asp.b.body} fell through to the fallback`)
-        .not.toMatch(/In practice this is about .* meeting /);
-      seen.add([asp.a.body, asp.b.body].sort().join("|"));
-    }
-    expect(seen.size).toBeGreaterThan(5);
-  });
 });

@@ -17,9 +17,14 @@ three ways at once:
   Moons marked and the band each swept during its birth day. The one picture of what the eight
   tests actually read, uncertainty included.
 
-(An experiment that also scored three other date-only traditions and averaged their percentiles was
-built, verified, and then removed to keep the page about one thing done properly; it lives in the
-git history.)
+The whole reading is **one scrolling document** with six numbered sections — what the score is, how
+it is built, how sure it is, what it read, the eight tests one by one, and who these two people are.
+Nothing is behind a tab, because the evidence for a number should not live on a different screen
+from the number.
+
+Two experiments were built, verified and then deleted to get here: an *ensemble* of four traditions,
+and an *aspect layer* of 55 planet-pair readings. Both worked; both made the page about more than
+one thing. They are in the git history, and in [METHODS.md](METHODS.md) §5.
 
 ## What makes it honest
 
@@ -30,10 +35,10 @@ git history.)
   a day against 13°20′ birth stars. The page computes *every* reading the two dates allow — at most
   four Moon states per person, found by bisection — and shows each with its probability. Typical
   displacement from the unknown hour is ±6.6°, up to ±7.7° at the Moon's fastest.
-- **No jargon.** The only specialist vocabulary on screen is the 12 sign names and the five major
-  angle names (conjunction, opposition, trine, square, sextile). Everything else — Sanskrit star
-  names, category names, glyphs — is replaced by plain-English titles. Two tests enforce this: one
-  walks the rendered page, one walks every string the engine can produce.
+- **No jargon.** The only specialist vocabulary on screen is the 12 sign names. Everything else —
+  Sanskrit star names, category names, glyphs — is replaced by plain-English titles ("The quick
+  starter"). Two tests enforce it: one walks the rendered page, one walks every string the engine
+  can produce.
 - **Symmetric by construction.** score(A,B) = score(B,A), asserted over hundreds of random pairs, so
   everyone's ranked list agrees about any shared pair.
 - **The one test with an inherited caste hierarchy can be switched off** — and the score is then
@@ -53,7 +58,7 @@ fixed and regression-tested. The ones worth remembering:
 - Merged probability rows were **labelled with the wrong reading**: distinct birth-star combinations
   with equal scores were glued under the first one's labels with their combined chance.
 - The helps/rubs counts filtered on an invisible threshold, so **"you can count them in the list"
-  was false**. The counts now count exactly what the list shows.
+  was false**. Fixed at the time; the layer has since been removed entirely.
 - A stray `.toUpperCase()` made the **switch-off toggle silently ignore the exclusion** in the
   score. Caught by a test written the same hour.
 - The visible copy said "six of the eight tests read the Moon"; it is all eight.
@@ -76,13 +81,14 @@ everything. Messaging deep-links into ArtaQuest's existing end-to-end-encrypted 
 ```bash
 npm install
 npm run dev       # http://localhost:5173/artamatch/
-npm test          # 74 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
+npm test          # 60 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
 npx vite build
-node tools/screenshot.mjs "$PWD/dist" /tmp/shots   # browser smoke: overflow, meters, console
+node tools/screenshot.mjs "$PWD/dist" /tmp/shots   # 25-state visual audit at five widths
 ```
 
-CI gates every deploy on the typecheck, the full test suite, and a real-browser smoke of the built
-bundle. Deployed to GitHub Pages by `.github/workflows/pages.yml`.
+CI gates every deploy on the typecheck, the full test suite, and a real-browser audit of the built
+bundle — 5 viewports × 5 states, asserting no overflow, no console errors, intact instruments,
+un-squeezed rows and usable tap targets. Deployed to GitHub Pages by `.github/workflows/pages.yml`.
 
 ## What this is
 

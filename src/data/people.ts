@@ -13,7 +13,7 @@
 
 import { parseDate } from "../engine/ephemeris";
 
-export type PersonSource = "manual" | "artaquest";
+type PersonSource = "manual" | "artaquest";
 
 export type Person = {
   id: string;
@@ -45,7 +45,7 @@ const canStore = () => typeof localStorage !== "undefined";
  * this browser. The seed runs ONCE (guarded by SEEDED_KEY), so deleting one does not bring it back
  * on the next reload, which is the behaviour anyone would expect from a row with an × on it.
  */
-export const SEED_PEOPLE: { name: string; birthday: string }[] = [
+const SEED_PEOPLE: { name: string; birthday: string }[] = [
   { name: "Ayse Altundal", birthday: "1999-12-06" },
   { name: "Elif Eda Ayan", birthday: "2004-12-27" },
   { name: "Lana El Jamal", birthday: "2004-12-21" },

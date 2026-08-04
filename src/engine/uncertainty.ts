@@ -27,12 +27,12 @@
  */
 
 import {
-  type Chart, type Body, chartAt, julianDay, parseDate, siderealLongitude, angleDiff, SIGNS,
+  type Chart, type Body, chartAt, julianDay, parseDate, siderealLongitude, SIGNS,
 } from "./ephemeris";
 import { type NakshatraInfo, nakshatraOf } from "./nakshatra";
 
 /** One (nakshatra, rāśi) state the Moon occupies during the birth day. */
-export type MoonState = {
+type MoonState = {
   nakshatra: NakshatraInfo;
   pada: number;
   /** Sign index 0–11. */
@@ -202,34 +202,4 @@ function birthSpanUncached(iso: string, bodies?: Body[]): BirthSpan | null {
     likeliest,
     zoneWidened,
   };
-}
-
-/** A value that the input could not pin down: the likeliest reading plus the range it could take. */
-export type Ranged = {
-  /** The share-weighted likeliest value — what the headline shows. */
-  value: number;
-  min: number;
-  max: number;
-  /** True when min === max, i.e. the date really did determine this. */
-  certain: boolean;
-};
-
-export function ranged(values: { value: number; weight: number }[]): Ranged {
-  const nums = values.map((v) => v.value);
-  const min = Math.min(...nums);
-  const max = Math.max(...nums);
-  const best = values.reduce((a, b) => (b.weight > a.weight ? b : a), values[0]);
-  return { value: best.value, min, max, certain: max - min < 1e-9 };
-}
-
-/**
- * How far the Moon can be from its noon position, given only the date — the honest error bar. Used
- * in the report to say plainly how much of the answer the missing clock is responsible for.
- */
-export function moonUncertaintyDeg(span: BirthSpan): number {
-  const noon = siderealLongitude("Moon", span.jdMid);
-  return Math.max(
-    Math.abs(angleDiff(span.moonStartLon, noon)),
-    Math.abs(angleDiff(span.moonEndLon, noon)),
-  );
 }

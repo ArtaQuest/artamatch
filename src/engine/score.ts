@@ -15,10 +15,12 @@
  *   · A 0–100 scale invited comparison to marks out of a hundred. 59 was the median. People read
  *     59 as a fail; it is exactly average.
  *
- * So the score is now the tradition's own: a total out of 36. It needs no weights from me, it has
- * a stated threshold that has been in use for centuries, and every one of its points is traceable
- * to a rule printed beside it. What was "ease" survives as a tie-break and as plain COUNTS of
- * helping and rubbing connections — numbers a reader can verify against the list underneath.
+ * So the score is the tradition's own: a total out of 36. It needs no weights from me, it has a
+ * stated threshold in use for centuries, and every one of its points is traceable to a rule printed
+ * beside it. A later pass removed the aspect layer that had survived alongside it as unscored
+ * commentary — a second system beside a scored one invites exactly the question it cannot answer.
+ * Ties now break on CONFIDENCE: where two pairs score the same, the one whose dates pin the score
+ * down more firmly ranks higher.
  *
  * ── And why the score is shown with a percentile ────────────────────────────────────────────────
  *
@@ -31,7 +33,6 @@
 import { type Chart, type Placement, chartAt, julianDay, parseDate, SIGNS } from "./ephemeris";
 import { nakshatraOf } from "./nakshatra";
 import { type KutaSide, type SymmetricGunaMilan, type KutaKey, gunaMilan } from "./kuta";
-import { type SynAspect, summariseSynastry } from "./synastry";
 import { type BirthSpan, birthSpan } from "./uncertainty";
 import { starTitle } from "./interpret";
 
@@ -66,7 +67,7 @@ export const MEDIAN_SCORE = 21;
 
 /** Where a score sits among random pairs, 0–100. Linearly interpolated between whole marks.
  *  Pass the table matching how the score was computed — see PERCENTILE_BELOW_NO_VARNA. */
-export function percentileOf(score: number, table: number[] = PERCENTILE_BELOW): number {
+function percentileOf(score: number, table: number[] = PERCENTILE_BELOW): number {
   const max = table.length - 1;
   const clamped = Math.max(0, Math.min(max, score));
   const lo = Math.floor(clamped);
@@ -75,7 +76,7 @@ export function percentileOf(score: number, table: number[] = PERCENTILE_BELOW):
   return Math.round(table[lo] * (1 - t) + table[hi] * t);
 }
 
-export type Band = { label: string; note: string; tone: "high" | "mid" | "low" };
+type Band = { label: string; note: string; tone: "high" | "mid" | "low" };
 
 /**
  * Bands set on the MEASURED distribution rather than on the tradition's own flattering thresholds.
@@ -102,19 +103,6 @@ function sideFrom(chart: Chart): KutaSide {
   };
 }
 
-/** The connections between two charts, described in things a reader can count. */
-export type Connections = {
-  /** Every connection found, strongest first. */
-  all: SynAspect[];
-  /** The handful worth leading with. */
-  headline: SynAspect[];
-  /** How many of the significant ones help, and how many rub. Countable against the list. */
-  helps: number;
-  rubs: number;
-  /** helps − rubs. Used only to break ties in the ranking, never shown as a score. */
-  lean: number;
-};
-
 /** Tests that can be switched off, with the reason a reader might want to. */
 export const OPTIONAL_TESTS: { key: KutaKey; label: string; why: string }[] = [
   {
@@ -134,19 +122,21 @@ export type Match = {
   percentile: number;
   band: Band;
   guna: SymmetricGunaMilan;
-  connections: Connections;
   /** Present only on a full evaluation: every reading the two dates allow, with probabilities. */
   distribution: Distribution | null;
   /** The lowest and highest the score could be, given the unknown birth times. */
   range: { min: number; max: number } | null;
   /** True when the dates settle the answer outright. */
   certain: boolean;
+  /** How firmly the two dates pin the answer down, 0…1 — the chance both Moons really were where
+   *  the headline says. Used to break ties in the ranking and shown as the "% sure" pill. */
+  confidence: number;
   uncertaintyNote: string;
   spanA: BirthSpan;
   spanB: BirthSpan;
 };
 
-export type Outcome = {
+type Outcome = {
   score: number;
   probability: number;
   labelA: string;
@@ -159,21 +149,6 @@ export type Distribution = {
   confidence: number;
   certain: boolean;
 };
-
-const OUTER_BODIES = ["Uranus", "Neptune", "Pluto"];
-
-function connectionsFrom(A: Chart, B: Chart): Connections {
-  const s = summariseSynastry(A, B);
-  // Count EXACTLY what the report's list renders: the major angles, minus the pairings between the
-  // three slowest planets (which the list also leaves out). The page says "you can count them in
-  // the list", so the count and the list must be the same set — an earlier version filtered the
-  // count on an invisible weight threshold, and the invited check failed. Found by review.
-  const listed = s.aspects.filter((x) =>
-    x.def.major && !(OUTER_BODIES.includes(x.a.body) && OUTER_BODIES.includes(x.b.body)));
-  const helps = listed.filter((x) => x.valence > 0.15).length;
-  const rubs = listed.filter((x) => x.valence < -0.15).length;
-  return { all: s.aspects, headline: s.headline, helps, rubs, lean: helps - rubs };
-}
 
 function scoreOf(guna: SymmetricGunaMilan, excluded: KutaKey[]): number {
   if (excluded.length === 0) return guna.total;
@@ -205,14 +180,14 @@ export function matchPair(isoA: string, isoB: string, detailed = false, opts: Sc
   const excluded = opts.exclude ?? [];
 
   const guna = gunaMilan(sideFrom(spanA.chart), sideFrom(spanB.chart));
-  const connections = connectionsFrom(spanA.chart, spanB.chart);
   const score = scoreOf(guna, excluded);
   // A score computed without a test must be ranked against the distribution computed without it.
   const table = excluded.includes("varna") ? PERCENTILE_BELOW_NO_VARNA : PERCENTILE_BELOW;
 
   const base = {
     score, maxScore: 36 - excluded.reduce((s, k) => s + (guna.kutas.find((x) => x.key === k)?.maxPoints ?? 0), 0),
-    percentile: percentileOf(score, table), band: bandOf(score, table), guna, connections, spanA, spanB,
+    percentile: percentileOf(score, table), band: bandOf(score, table), guna, spanA, spanB,
+    confidence: spanA.likeliest.share * spanB.likeliest.share,
   };
 
   if (!detailed) {
@@ -296,13 +271,14 @@ function uncertaintyNote(a: BirthSpan, b: BirthSpan, range: { min: number; max: 
 
 // ── ranking ─────────────────────────────────────────────────────────────────────────────────────
 
-export type RankedMatch<T> = { other: T; match: Match; score: number };
+type RankedMatch<T> = { other: T; match: Match; score: number };
 
 /**
  * Rank everyone against one person.
  *
- * Sorted by the traditional score, then by whether the connections between them lean helpful. Both
- * halves are symmetric, so this list agrees with everyone else's about any shared pair.
+ * Sorted by score, then — where two pairs score the same — by how firmly the dates pin that score
+ * down, so a result the dates settle outranks one that merely might be true. Both keys are
+ * symmetric, so this list agrees with everyone else's about any shared pair.
  */
 export function rankAgainst<T extends { id: string; birthday: string }>(
   self: T, others: T[], opts: ScoreOptions = {},
@@ -314,7 +290,7 @@ export function rankAgainst<T extends { id: string; birthday: string }>(
     if (match) out.push({ other, match, score: match.score });
   }
   return out.sort((x, y) =>
-    y.score - x.score || y.match.connections.lean - x.match.connections.lean);
+    y.score - x.score || y.match.confidence - x.match.confidence);
 }
 
 export const signName = (i: number) => SIGNS[i];

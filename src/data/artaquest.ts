@@ -15,7 +15,7 @@
 import { type Person } from "./people";
 import { parseDate } from "../engine/ephemeris";
 
-export const ARTAQUEST_ORIGIN = "https://artaquest.com";
+const ARTAQUEST_ORIGIN = "https://artaquest.com";
 const API = `${ARTAQUEST_ORIGIN}/wp-json/aq/v1`;
 const CACHE_KEY = "artamatch.artaquest.v1";
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 hours — birthdays do not change
@@ -155,13 +155,4 @@ export function messageUrl(person: Person): string | null {
 export function profileUrl(person: Person): string | null {
   if (person.source !== "artaquest" || !person.slug) return null;
   return `${ARTAQUEST_ORIGIN}/u/${encodeURIComponent(person.slug)}`;
-}
-
-/** A shareable link that carries a manual entry in the URL, so two people can compare without
- *  either of them uploading anything anywhere. */
-export function shareUrl(base: string, name: string, birthday: string): string {
-  const u = new URL(base);
-  u.searchParams.set("n", name);
-  u.searchParams.set("b", birthday);
-  return u.toString();
 }

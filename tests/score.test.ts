@@ -14,7 +14,6 @@ import { nakshatraOf, NAKSHATRAS } from "../src/engine/nakshatra";
 import { matchPair, rankAgainst } from "../src/engine/score";
 import { birthSpan } from "../src/engine/uncertainty";
 import { chartForDate, julianDay, siderealLongitude } from "../src/engine/ephemeris";
-import { summariseSynastry } from "../src/engine/synastry";
 
 /** A deterministic pseudo-random date generator — seeded, so a failure is always reproducible. */
 function makeDates(count: number, seed = 12345): string[] {
@@ -213,13 +212,6 @@ describe("scoring is symmetric — a ranked list must agree with itself", () => 
     }
   });
 
-  it("gives identical synastry ease in both directions", () => {
-    for (let i = 0; i + 1 < dates.length; i += 2) {
-      const a = chartForDate(dates[i])!, b = chartForDate(dates[i + 1])!;
-      expect(summariseSynastry(a, b).easeScore).toBeCloseTo(summariseSynastry(b, a).easeScore, 9);
-      expect(summariseSynastry(a, b).chargeScore).toBeCloseTo(summariseSynastry(b, a).chargeScore, 9);
-    }
-  });
 
   it("keeps two people's rankings of each other consistent", () => {
     const people = makeDates(12, 4242).map((birthday, i) => ({ id: `p${i}`, birthday }));
@@ -288,7 +280,9 @@ describe("ranking order", () => {
       const prev = ranked[i - 1], cur = ranked[i];
       expect(prev.score >= cur.score, `row ${i} out of order`).toBe(true);
       if (prev.score === cur.score) {
-        expect(prev.match.connections.lean >= cur.match.connections.lean,
+        // Ties break on how firmly the dates pin the score down, so a settled reading outranks a
+        // merely-possible one.
+        expect(prev.match.confidence >= cur.match.confidence - 1e-9,
           `tie at ${prev.score} broken the wrong way`).toBe(true);
       }
     }

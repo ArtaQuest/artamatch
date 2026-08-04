@@ -103,7 +103,6 @@ describe("ArtaMatch app", () => {
     const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     const row = within(ranking).getByRole("button", { name: /Turing/ });
     expect(row.textContent).toMatch(/higher than \d+ in 100 random pairs/i);
-    expect(row.textContent).toMatch(/\d+ help, \d+ rub/i);
     expect(row.textContent).toMatch(/of 36/);
   });
 
@@ -117,37 +116,30 @@ describe("ArtaMatch app", () => {
 
     expect(screen.getByText(/Ada & Turing/)).toBeDefined();
     expect(screen.getAllByText(/randomly paired dates/i).length).toBeGreaterThan(0);
-    // The three instruments: the anatomy bar, the landscape strip, and (on the tests tab) the ruler.
+    // All three instruments render at once — there are no tabs to hide anything behind.
     expect(document.querySelector(".anatomy .bar")?.children.length).toBe(8);
     expect((document.querySelector(".landscape")?.children.length ?? 0)).toBeGreaterThan(30);
-
-    // The eight tests, each with the rule it used and the values it read.
-    fireEvent.click(screen.getByRole("tab", { name: /eight tests/i }));
-    for (const test of ["Ways of working", "Give and take", "Good for each other",
-      "Physical instinct", "Meeting of minds", "Temperament", "Life together", "Underlying makeup"]) {
-      // A test name can legitimately appear twice: once in the three plain answers at the top
-      // (as the strongest or weakest agreement) and once in the list itself.
-      expect(screen.getAllByText(test).length, `${test} missing`).toBeGreaterThan(0);
-    }
-    expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
-    expect(screen.getAllByText(/What was read:/).length).toBe(8);
-    // The sky ruler renders both Moons and the full tick set: 27 star ticks + 12 sign ticks.
     expect(document.querySelectorAll(".ruler .tick.star").length).toBe(27);
     expect(document.querySelectorAll(".ruler .tick.sign").length).toBe(12);
     expect(document.querySelectorAll(".ruler .moon").length).toBe(2);
 
-    // What runs between them: the grid plus written explanations.
-    fireEvent.click(screen.getByRole("tab", { name: /runs between/i }));
-    expect(screen.getByText(/connection grid/i)).toBeDefined();
-    expect(screen.getByText(/strongest first/i)).toBeDefined();
+    // All eight tests, each with the rule it used and the values it read — no tab to open.
+    for (const test of ["Ways of working", "Give and take", "Good for each other",
+      "Physical instinct", "Meeting of minds", "Temperament", "Life together", "Underlying makeup"]) {
+      expect(screen.getAllByText(test).length, `${test} missing`).toBeGreaterThan(0);
+    }
+    expect(screen.getAllByText(/How it is scored:/).length).toBe(8);
+    expect(screen.getAllByText(/What was read:/).length).toBe(8);
 
-    // Where everything was: both charts, all ten bodies each.
-    fireEvent.click(screen.getByRole("tab", { name: /Where everything/i }));
-    expect(screen.getAllByText(/Everything else/i).length).toBe(2);
-    expect(screen.getAllByText(/Birth star/i).length).toBeGreaterThanOrEqual(2);
-    // Glyphs are gone — planets are named in words, once per chart.
-    expect(screen.getAllByText(/^Sun$/).length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText(/^Pluto$/).length).toBeGreaterThanOrEqual(2);
+    // The document's spine: numbered sections, each with a heading.
+    expect(document.querySelectorAll(".sec > h3").length).toBeGreaterThanOrEqual(5);
+    expect(screen.getByText(/How the score is built/i)).toBeDefined();
+    expect(screen.getByText(/How sure this is/i)).toBeDefined();
+    expect(screen.getByText(/What the tests actually read/i)).toBeDefined();
+    expect(screen.getByText(/The two of them/i)).toBeDefined();
+
+    // Both people are described, by plain title rather than a transliterated name.
+    expect(screen.getAllByText(/their birth star, one of the 27/i).length).toBe(2);
   });
 
   it("warns on a date where the Moon changes birth star, and not on one where it does not", () => {
@@ -211,8 +203,8 @@ describe("ArtaMatch app", () => {
     const BANNED = [
       "nakshatra", "rashi", "rasi", "kuta", "koota", "guna milan", "dosha", "graha", "varna",
       "vashya", "yoni", "bhakoot", "nadi", "mangal", "kuja", "ayanamsa", "sidereal", "tropical",
-      "lahiri", "vedic", "jyotish", "synastry", "quincunx",
-      "sesquiquadrate", "semi-sextile", "orb", "lagna", "ascendant", "retrograde", "exalted",
+      "lahiri", "vedic", "jyotish", "synastry", "quincunx", "conjunction", "opposition", "trine",
+      "sextile", "square", "sesquiquadrate", "semi-sextile", "orb", "lagna", "ascendant", "retrograde", "exalted",
       "debilitated", "benefic", "malefic", "pada", "dasha", "janma", "chandra", "brāhmaṇa",
       "kṣatriya", "vaiśya", "śūdra", "deva", "manushya", "rakshasa",
       // The 27 traditional star names and the two node names are ALSO not assumed knowledge —
@@ -231,15 +223,13 @@ describe("ArtaMatch app", () => {
     const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
     fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
 
+    // One document, so one sweep covers the whole reading.
     const seen: string[] = [];
-    for (const tab of [/In short/i, /eight tests/i, /runs between/i, /Where everything/i]) {
-      fireEvent.click(screen.getByRole("tab", { name: tab }));
-      const text = (document.body.textContent ?? "").toLowerCase();
-      for (const word of BANNED) {
-        // Word boundaries so "gana" does not fire on "organ" and "orb" not on "absorb".
-        if (new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text)) {
-          seen.push(`${word} (on ${tab.source})`);
-        }
+    const text = (document.body.textContent ?? "").toLowerCase();
+    for (const word of BANNED) {
+      // Word boundaries so "gana" does not fire on "organ" and "orb" not on "absorb".
+      if (new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(text)) {
+        seen.push(word);
       }
     }
     expect([...new Set(seen)]).toEqual([]);

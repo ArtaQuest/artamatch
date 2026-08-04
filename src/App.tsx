@@ -377,8 +377,7 @@ function Ranking({ self, ranked, onOpen }: {
                   {msg && <span className="pill aq" style={{ marginLeft: "0.4rem" }}>can message</span>}
                 </span>
                 <span className="sub">
-                  {m.band.label} · higher than {m.percentile} in 100 random pairs ·{" "}
-                  {m.connections.helps} help, {m.connections.rubs} rub
+                  {m.band.label} · higher than {m.percentile} in 100 random pairs
                   {unstable && " · time of day would change this"}
                 </span>
                 <Meter value={m.score} max={m.maxScore} gold={m.band.tone === "high"} />

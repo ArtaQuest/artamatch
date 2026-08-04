@@ -32,8 +32,9 @@ Ephemeris to 1e-8°. JPL's longer-range Table 2a was tried for the outer planets
 worse** over 1900–2100 (`tools/compare-elements.mjs`) — it is fitted across six millennia and is
 looser inside any one century.
 
-Saturn's 22′ is acceptable *by construction*: connection strength scales with closeness-to-exact,
-which goes to zero at the edge where a position error could flip a connection in or out.
+Only the Moon's accuracy actually bears on the score — the eight tests read nothing else. The other
+bodies are computed because Mars and Venus feed one of the two warnings, and because the positions
+are worth showing. At 1.4′ the Moon is some 280× finer than the ±6.6° the missing birth time costs.
 
 ## 2 · What a date alone can and cannot say
 
@@ -83,46 +84,44 @@ scores **21**, so "you passed" would be flattery. Percentile bands ("Above avera
 on the measured distribution. A drift test (in `tests/score.test.ts`) recomputes a 2,000-pair sample
 in CI and fails if the embedded numbers go stale.
 
-## 5 · One score, not four (a removed experiment)
+## 5 · Two removed experiments
 
-A version of this page also scored three other date-only traditions (date-digit numerology, the
-twelve-year animal cycle, Sun-sign elements) and averaged their calibrated percentiles into an
-ensemble. It worked, it was verified, and it was removed: four half-explained numbers teach less
-than one fully explained one, and the page's premise is depth. The implementation and its tests are
-in the git history if it is ever wanted again.
+Both worked, both were verified, both were deleted. They are in the git history.
 
-## 6 · The connections ("what runs between them")
+**The ensemble.** Three other date-only traditions (date-digit numerology, the twelve-year animal
+cycle, Sun-sign elements), each calibrated the same way, averaged into one percentile. Removed
+because four half-explained numbers teach less than one fully explained one.
 
-Angles between one person's planets and the other's, `src/engine/synastry.ts`. An angle is the same
-number in either zodiac — the traditions disagree about where the zodiac *starts*, which changes
-signs, never angles — so this layer is not mixing systems. It is commentary, deliberately **outside
-the score**: it surfaces as counts ("9 help, 4 rub") a reader can verify against the list.
+**The aspect layer.** Angles between the two people's planets, with written readings for all 55
+body pairs in four configurations. It was honest — angles are the same in either zodiac, so it was
+not mixing systems — but it was a *second, unscored* system sitting beside the scored one, which
+invited exactly the question it could not answer ("is 19 connections good?"). Removing it took 95 KB
+of prose and a third of the bundle with it.
 
-Two structural rules: pairings between the three slowest planets are weighted to ~nothing (everyone
-born within a few years shares them — they describe a generation, not a pair), and every weight is
-defined on the unordered pair so the whole layer is symmetric.
+What both removals have in common: the page is now about one thing, and every pixel on it serves
+that thing.
 
-## 7 · The words
+## 6 · The words
 
-All rendered prose lives in `src/data/corpus.json`: 78 planet-pairs × 4 configurations, 27 birth
-stars, 12 Moon signs — written to a fixed voice (plain, non-fatalistic, no predictions) and audited.
+All rendered prose lives in `src/data/corpus.json` (19 KB: 27 birth stars, 12 Moon signs) and in
+`src/engine/interpret.ts` (what each test means at full, partial and no marks) — written to a fixed
+voice: plain, non-fatalistic, no predictions.
 
-**The vocabulary rule:** the only specialist terms allowed on screen are the 12 zodiac sign names
-and the five major angle names (conjunction, opposition, trine, square, sextile). Everything else —
-Sanskrit star and node names, the tradition's category names, symbols and glyphs — is banned and
-replaced by plain titles ("The quick starter"). Two tests enforce this: one walks the **rendered
-page** on every tab, one walks **every string the engine can produce** whether or not the UI
-currently shows it. The second exists because a string stops being covered by the first the moment
-the UI stops rendering it — which happened once.
+**The vocabulary rule:** the only specialist terms allowed on screen are the 12 zodiac sign names.
+Everything else — Sanskrit star names, the tradition's category names, symbols and glyphs — is
+replaced by plain titles ("The quick starter"). Two tests enforce it: one walks the **rendered
+page**, one walks **every string the engine can produce** whether or not the UI currently shows it.
+The second exists because a string stops being covered by the first the moment the UI stops
+rendering it — which happened once, and shipped stale wording for a week.
 
-## 8 · Privacy
+## 7 · Privacy
 
 Manual entries live in `localStorage` and are never transmitted; there is no server. Public entries
 come read-only from profiles whose owners already publish their birthday. Share links carry only
 names and dates — the receiving browser recomputes everything. Messaging deep-links into ArtaQuest's
 existing end-to-end-encrypted chat rather than reimplementing one.
 
-## 9 · Reproducing every number in this document
+## 8 · Reproducing every number in this document
 
 ```bash
 npm test                                   # 63 tests: ephemeris vs golden, rules, symmetry,

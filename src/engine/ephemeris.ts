@@ -29,33 +29,16 @@ export type Body =
   | "Sun" | "Moon" | "Mercury" | "Venus" | "Mars"
   | "Jupiter" | "Saturn" | "Uranus" | "Neptune" | "Pluto";
 
-/** The bodies, in the traditional order the reports list them. */
+/** The bodies, in the order the report lists them. */
 export const BODIES: Body[] = [
   "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
 ];
-
-/** The seven classical grahas — the only bodies Jyotish itself uses. The three modern planets are
- *  carried for the Western-style synastry layer, and are never allowed to affect Guna Milan. */
-export const CLASSICAL: Body[] = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
 
 export const SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
   "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces",
 ] as const;
-export type SignName = (typeof SIGNS)[number];
-
-/** The Sanskrit (rāśi) names, shown beside the familiar ones — this is a sidereal system and the
- *  rāśi names are what the rules are actually written in. */
-export const RASI = [
-  "Meṣa", "Vṛṣabha", "Mithuna", "Karka", "Siṃha", "Kanyā",
-  "Tulā", "Vṛścika", "Dhanu", "Makara", "Kumbha", "Mīna",
-] as const;
-
-export const SIGN_GLYPH = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
-export const BODY_GLYPH: Record<Body, string> = {
-  Sun: "☉", Moon: "☽", Mercury: "☿", Venus: "♀", Mars: "♂",
-  Jupiter: "♃", Saturn: "♄", Uranus: "♅", Neptune: "♆", Pluto: "♇",
-};
+type SignName = (typeof SIGNS)[number];
 
 /** The sign lords (sign index → ruling graha). Classical rulership only: Jyotish assigns no signs to
  *  Uranus, Neptune or Pluto, and Graha Maitri depends on this table being the classical one. */
@@ -68,7 +51,7 @@ const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;
 const sin = (d: number) => Math.sin(d * D2R);
 const cos = (d: number) => Math.cos(d * D2R);
-export const norm360 = (x: number) => { x %= 360; return x < 0 ? x + 360 : x; };
+const norm360 = (x: number) => { x %= 360; return x < 0 ? x + 360 : x; };
 
 /** Signed angular difference a − b, folded to (−180, 180]. */
 export const angleDiff = (a: number, b: number) => {
@@ -77,9 +60,6 @@ export const angleDiff = (a: number, b: number) => {
   if (d <= -180) d += 360;
   return d;
 };
-
-/** Absolute angular separation, 0…180. */
-export const separation = (a: number, b: number) => Math.abs(angleDiff(a, b));
 
 // ── time ────────────────────────────────────────────────────────────────────────────────────────
 
@@ -120,9 +100,9 @@ const centuries = (jd: number) => (jd - 2451545.0) / 36525;
  * out to be enough: the residual across 1975 samples is below 1e-6°, i.e. Swiss Ephemeris' Lahiri is
  * itself a quadratic and this reproduces it rather than approximating it.
  */
-export const AYANAMSA_C0 = 23.85709235;
-export const AYANAMSA_C1 = 1.39688796;
-export const AYANAMSA_C2 = 0.00030709;
+const AYANAMSA_C0 = 23.85709235;
+const AYANAMSA_C1 = 1.39688796;
+const AYANAMSA_C2 = 0.00030709;
 export const ayanamsaDeg = (T: number): number => AYANAMSA_C0 + AYANAMSA_C1 * T + AYANAMSA_C2 * T * T;
 
 // ── the Moon (Meeus ch. 47) ─────────────────────────────────────────────────────────────────────

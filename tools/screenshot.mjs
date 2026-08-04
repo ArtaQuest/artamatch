@@ -36,28 +36,22 @@ const VIEWPORTS = [
   ["m360", 360, 780], ["m390", 390, 844], ["t768", 768, 1024], ["d1280", 1280, 900], ["d1600", 1600, 900],
 ];
 
-// Each state: a name and a driver that gets the page there from a fresh load.
+// Each state: a name and a driver that gets the page there from a fresh load. The report is ONE
+// document now, so there are no report tabs to drive — a single scroll covers the whole reading.
 const STATES = [
   ["home", async () => {}],
-  ["report", async (p) => { await p.locator(".rank-row").first().click(); await p.waitForSelector(".hero"); }],
-  ["tests", async (p) => {
-    await p.locator(".rank-row").first().click();
-    await p.getByRole("tab", { name: /eight tests/i }).click();
-    await p.waitForSelector(".ruler");
-  }],
-  ["between", async (p) => {
-    await p.locator(".rank-row").first().click();
-    await p.getByRole("tab", { name: /runs between/i }).click();
-  }],
-  ["where", async (p) => {
-    await p.locator(".rank-row").first().click();
-    await p.getByRole("tab", { name: /Where everything/i }).click();
-  }],
+  ["report", async (p) => { await p.locator(".rank-row").first().click(); await p.waitForSelector(".ruler"); }],
   ["matrix", async (p) => { await p.getByRole("tab", { name: /Everyone vs everyone/i }).click(); }],
   ["toggle-off", async (p) => {
     await p.locator(".opt input").first().setChecked(false);
     await p.locator(".rank-row").first().click();
-    await p.waitForSelector(".hero");
+    await p.waitForSelector(".ruler");
+  }],
+  // A pair whose dates settle the answer outright takes the other branch of section 2.
+  ["certain", async (p) => {
+    await p.goto("http://localhost:4321/artamatch/?n=Ada&b=1815-12-10&n2=Alan&b2=1912-06-23",
+      { waitUntil: "networkidle" });
+    await p.waitForSelector(".ruler");
   }],
 ];
 
@@ -83,6 +77,17 @@ async function audit(page, tag) {
         out.push(`tap target ${Math.round(r.width)}x${Math.round(r.height)}px: "${(b.textContent || b.getAttribute("aria-label") || "?").trim().slice(0, 24)}"`);
       }
     }
+    // The three instruments must be present and complete wherever the report is.
+    if (document.querySelector(".report")) {
+      const segs = document.querySelectorAll(".anatomy .seg").length;
+      if (segs < 7) out.push(`anatomy bar has ${segs} blocks, expected 7 or 8`);
+      if (document.querySelectorAll(".ruler .tick").length !== 39) {
+        out.push(`sky ruler has ${document.querySelectorAll(".ruler .tick").length} ticks, expected 39`);
+      }
+      if (document.querySelectorAll(".ruler .moon").length !== 2) out.push("sky ruler is missing a Moon");
+      if (!document.querySelector(".landscape .here")) out.push("landscape strip does not mark this pair");
+    }
+
     // A name showing under 70px of itself has lost its column — layout failure, not typography.
     for (const nm of document.querySelectorAll(".person .nm")) {
       if (nm.scrollWidth > nm.clientWidth + 2 && nm.clientWidth < 70) {

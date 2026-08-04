@@ -1,182 +1,29 @@
 /**
  * interpret.ts — the words.
  *
- * A compatibility report that prints "Venus square Mars, orb 2°14′" and stops has told the reader
- * nothing they can use. This module turns each measured fact into a sentence, the way AstroSeek's
- * partner report does.
+ * Every rendered sentence that is not generated from a rule lives here or in src/data/corpus.json.
+ * Two kinds: what each of the eight tests means at full, partial and no marks; and what each of the
+ * 27 birth stars and 12 Moon signs is said to suggest.
  *
- * It is COMPOSITIONAL rather than a table of several hundred hand-written paragraphs: each body has
- * a relational role, each aspect has a mode, and the two combine. Then the pairs the tradition
- * actually leads with — Sun–Moon, Venus–Mars, Moon–Moon and their kin — carry bespoke text that
- * overrides the composition, because those are the ones a reader came for and generic phrasing
- * shows most there.
+ * THE VOCABULARY RULE. The only specialist words allowed on screen are the 12 zodiac sign names.
+ * Everything else is plain English: birth stars are named by their meaning ("The quick starter"),
+ * never transliterated. The reader is assumed to know nothing. Two tests enforce this — one over
+ * the rendered page, one over every string this module can produce — because a string escapes the
+ * first the moment the UI stops rendering it.
  *
- * The voice is plain and non-fatalistic on purpose. These are described as tendencies and shapes,
- * never as predictions or verdicts about people who did not ask to be assessed.
+ * The voice is plain and non-fatalistic: tendencies described, never predictions made.
  */
 
-import { type Body } from "./ephemeris";
-import { type AspectType, type SynAspect } from "./synastry";
 import { type KutaResult, type Dosha } from "./kuta";
 import corpus from "../data/corpus.json";
 
 type Corpus = {
-  pairs: Record<string, { fused: string; easy: string; friction: string; facing: string }>;
   birthStars: { index: number; name: string; title: string; summary: string; inRelationships: string }[];
   moonSigns: { index: number; sign: string; title: string; style: string }[];
 };
 const CORPUS = corpus as Corpus;
 
-// ── bodies ──────────────────────────────────────────────────────────────────────────────────────
-
-type Role = {
-  /** What this body stands for in a relationship reading. */
-  noun: string;
-  /** A short phrase naming what the person brings through it. */
-  brings: string;
-};
-
-const ROLE: Record<Body, Role> = {
-  Sun: { noun: "sense of self", brings: "who they take themselves to be" },
-  Moon: { noun: "emotional weather", brings: "what they need in order to feel safe" },
-  Mercury: { noun: "way of thinking and talking", brings: "how they explain themselves" },
-  Venus: { noun: "way of loving", brings: "what they find beautiful and how they show affection" },
-  Mars: { noun: "drive and temper", brings: "how they pursue things, and how they argue" },
-  Jupiter: { noun: "sense of possibility", brings: "where they are generous and where they overreach" },
-  Saturn: { noun: "sense of duty and limit", brings: "what they take seriously and where they go cold" },
-  Uranus: { noun: "need for freedom", brings: "what they refuse to have decided for them" },
-  Neptune: { noun: "imagination and blind spots", brings: "what they idealise" },
-  Pluto: { noun: "capacity for intensity", brings: "what they will not let go of" },
-};
-
-// ── aspects ─────────────────────────────────────────────────────────────────────────────────────
-
-type Mode = { verb: string; quality: string; tone: "ease" | "friction" | "fusion" | "polarity" };
-
-const MODE: Record<AspectType, Mode> = {
-  conjunction: { verb: "sits directly on", quality: "fused — they amplify each other, for better and worse", tone: "fusion" },
-  opposition: { verb: "faces", quality: "a see-saw: real attraction across a real gap", tone: "polarity" },
-  trine: { verb: "flows with", quality: "easy, and easy enough to be taken for granted", tone: "ease" },
-  square: { verb: "grinds against", quality: "friction that keeps returning until it is worked out", tone: "friction" },
-  sextile: { verb: "opens toward", quality: "an opportunity that has to be taken deliberately", tone: "ease" },
-  quincunx: { verb: "sits awkwardly beside", quality: "a persistent mismatch neither can quite name", tone: "friction" },
-  sesquiquadrate: { verb: "chafes at", quality: "low-level irritation rather than open conflict", tone: "friction" },
-  quintile: { verb: "plays with", quality: "a creative, slightly unusual spark", tone: "ease" },
-  semisquare: { verb: "rubs against", quality: "a small recurring snag", tone: "friction" },
-  semisextile: { verb: "brushes", quality: "a mild, mostly helpful contact", tone: "ease" },
-};
-
-// ── bespoke text for the pairs a report leads with ──────────────────────────────────────────────
-
-type Bespoke = Partial<Record<"fusion" | "ease" | "friction" | "polarity", string>>;
-
-/** Keyed on the SORTED body pair, so it is symmetric like everything else here. */
-const SIGNATURE: Record<string, Bespoke> = {
-  "Moon|Sun": {
-    fusion: "The classical marriage signature. One person's identity sits exactly where the other's " +
-      "emotional needs are — a strong instinctive recognition, often mistaken for having known each " +
-      "other before. It is the single most quoted contact in the tradition.",
-    ease: "The classical marriage signature in its easiest form: what one is naturally reassures the " +
-      "other without either having to work at it. Steadying rather than exciting.",
-    friction: "Identity and emotional need pull against each other. Neither is wrong; they simply " +
-      "want the day arranged differently, and that tends to surface in small domestic decisions " +
-      "rather than big arguments.",
-    polarity: "A genuine pull across a genuine difference: each is drawn to something in the other " +
-      "they do not have themselves. It sustains interest and it does not resolve.",
-  },
-  "Moon|Moon": {
-    fusion: "The same emotional weather. Comfort is instant and needs little explaining — the risk " +
-      "is that shared blind spots go unchallenged, because nobody in the room finds them strange.",
-    ease: "Their emotional rhythms agree. Rest is easy in each other's company and neither has to " +
-      "translate what they are feeling.",
-    friction: "Their emotional rhythms are genuinely out of step — one settles where the other " +
-      "unsettles. Workable, but it needs saying out loud rather than assumed.",
-    polarity: "Opposite emotional needs that answer each other: what one lacks, the other has too " +
-      "much of. Complementary and tiring in roughly equal measure.",
-  },
-  "Mars|Venus": {
-    fusion: "The attraction contact. Desire and affection land on the same point — this is the one " +
-      "the tradition associates with physical chemistry, and it is usually obvious to both.",
-    ease: "Wanting and being wanted line up comfortably. Attraction here is warm rather than " +
-      "urgent, and it lasts.",
-    friction: "Strong attraction that keeps catching on the details — pace, timing, who moves " +
-      "first. Charged rather than comfortable.",
-    polarity: "Classic magnetism across a gap. Pursuit and receptivity sit at opposite ends and " +
-      "keep reaching for each other.",
-  },
-  "Sun|Venus": {
-    fusion: "Being liked and being oneself are the same act here. Easy warmth, and easy flattery.",
-    ease: "One simply finds the other pleasant to be around — an underrated thing to have.",
-    friction: "Affection and self-regard get tangled: what one offers as love, the other can hear " +
-      "as a correction.",
-    polarity: "Attraction that runs through difference in taste rather than agreement.",
-  },
-  "Moon|Venus": {
-    fusion: "Affection and emotional need coincide — a gentle, domestic sort of closeness.",
-    ease: "Kindness comes naturally in both directions. Quietly one of the best contacts to have.",
-    friction: "What one finds affectionate, the other can find insufficient — a mismatch in how " +
-      "care is expressed rather than whether it exists.",
-    polarity: "Each wants to be loved in the way the other does not naturally give.",
-  },
-  "Saturn|Venus": {
-    fusion: "Love meets duty. This is the commitment contact — it makes things last, and it can " +
-      "make them cold. Which of the two depends almost entirely on what else is present.",
-    ease: "Affection with structure under it: unhurried, reliable, and inclined to stay.",
-    friction: "One reaches for warmth and meets a rule. The most common single source of a slow " +
-      "chill in an otherwise good match.",
-    polarity: "Commitment and freedom of affection pull against each other, and keep negotiating.",
-  },
-  "Moon|Saturn": {
-    fusion: "Emotional need meets restraint. Steadying if both want steadying; heavy if one does not.",
-    ease: "One provides the ground the other's feelings can stand on. Undramatic and durable.",
-    friction: "One needs reassurance at exactly the moment the other withdraws into duty.",
-    polarity: "Care and self-sufficiency face each other across the table.",
-  },
-  "Mercury|Mercury": {
-    fusion: "They think in the same idiom — conversation needs no translation.",
-    ease: "Talking is easy. Explanations land the first time, which quietly prevents a great many " +
-      "arguments.",
-    friction: "They reason differently enough that plain statements get misheard. Nothing " +
-      "insurmountable, but it does require repeating things.",
-    polarity: "Opposite ways of thinking that sharpen each other — good argument, tiring small talk.",
-  },
-};
-
-const bespokeFor = (a: Body, b: Body): Bespoke | undefined => SIGNATURE[[a, b].sort().join("|")];
-
-/**
- * One paragraph explaining one connection between the two charts.
- *
- * The corpus covers every pairing of the ten bodies in all four configurations — 55 pairs × 4,
- * plus 23 node pairs written for a possible future feature and currently unreachable — so
- * in practice a reader always gets writing specific to their case rather than a sentence assembled
- * from slots. The compositional fallback below only fires if a corpus entry is ever missing.
- */
-export function explainAspect(asp: SynAspect, nameA: string, nameB: string): string {
-  const bodyA = asp.a.body, bodyB = asp.b.body;
-  const mode = MODE[asp.type];
-
-  // Two slow outer planets say nothing about these two people specifically — say so plainly rather
-  // than dressing up a fact about their birth years as insight.
-  if (isOuter(bodyA) && isOuter(bodyB)) {
-    return `This one is shared by almost everybody born around the same years as ${nameA} and ` +
-      `${nameB}. It is listed for completeness and counts for almost nothing here, because it ` +
-      `describes a generation rather than a pair.`;
-  }
-
-  const key = [bodyA, bodyB].sort().join("|");
-  const entry = CORPUS.pairs[key];
-  const slot = ({ fusion: "fused", ease: "easy", friction: "friction", polarity: "facing" } as const)[mode.tone];
-  const written = entry?.[slot];
-  if (written) return written;
-
-  const custom = bespokeFor(bodyA, bodyB)?.[mode.tone];
-  if (custom) return custom;
-
-  const roleA = ROLE[bodyA], roleB = ROLE[bodyB];
-  return `${nameA}'s ${roleA.noun} ${mode.verb} ${nameB}'s ${roleB.noun}: ${mode.quality}. ` +
-    `In practice this is about ${roleA.brings} meeting ${roleB.brings}.`;
-}
+// ── the birth stars and Moon signs ──────────────────────────────────────────────────────────────
 
 /** What their birth star is said to suggest, in plain words. */
 export function birthStarText(index: number): { title: string; summary: string; inRelationships: string } | null {
@@ -186,9 +33,8 @@ export function birthStarText(index: number): { title: string; summary: string; 
 
 /**
  * The name a birth star goes by on this page: its plain-English title, never the Sanskrit name.
- * The reader is assumed to have no background; "The quick starter" carries meaning where a
- * transliterated name carries none. The traditional names stay in the code and the data for
- * anyone checking the working against another source.
+ * "The quick starter" carries meaning to a reader with no background; a transliterated name carries
+ * none. The traditional names stay in the data for anyone checking against another source.
  */
 export function starTitle(index: number): string {
   return CORPUS.birthStars.find((s) => s.index === index)?.title ?? `star ${index + 1} of 27`;
@@ -200,66 +46,7 @@ export function moonSignText(index: number): { title: string; style: string } | 
   return row ? { title: row.title, style: row.style } : null;
 }
 
-const OUTERS: Body[] = ["Uranus", "Neptune", "Pluto"];
-const isOuter = (b: Body) => OUTERS.includes(b);
-
-/** What each body stands for, as a short plain noun a reader can hold in their head. */
-export const BODY_MEANS: Record<Body, string> = {
-  Sun: "sense of self",
-  Moon: "emotional needs",
-  Mercury: "thinking and talking",
-  Venus: "affection",
-  Mars: "drive",
-  Jupiter: "optimism",
-  Saturn: "duty and limits",
-  Uranus: "need for freedom",
-  Neptune: "imagination",
-  Pluto: "intensity",
-};
-
-/**
- * A one-line label: "her affection — square — his drive".
- *
- * The five MAJOR angle names (conjunction, opposition, trine, square, sextile) are part of the
- * small allowed vocabulary — they are the standard terms, half-known to most readers, and each is
- * introduced with its plain meaning close by. The minor angles are not allowed vocabulary, so they
- * keep their plain phrasings.
- */
-export function aspectLabel(asp: SynAspect, nameA?: string, nameB?: string): string {
-  const left = nameA ? `${nameA}'s ${BODY_MEANS[asp.a.body]}` : BODY_MEANS[asp.a.body];
-  const right = nameB ? `${nameB}'s ${BODY_MEANS[asp.b.body]}` : BODY_MEANS[asp.b.body];
-  const link = asp.def.major ? asp.def.label : asp.def.plain;
-  return `${left} — ${link} — ${right}`;
-}
-
-/**
- * How close a connection is, in words.
- *
- * The tradition measures this in degrees away from exact and calls it the "orb". The number means
- * nothing to most readers, and it is the exactness that carries the meaning, so the words lead and
- * the degrees stay available as a tooltip for anyone who wants to check the working.
- */
-export function closeness(exactness: number): string {
-  if (exactness >= 0.85) return "almost exact";
-  if (exactness >= 0.6) return "very close";
-  if (exactness >= 0.35) return "close";
-  return "loose";
-}
-
-export function formatOrb(orb: number): string {
-  const deg = Math.floor(orb);
-  const min = Math.round((orb - deg) * 60);
-  return min === 60 ? `${deg + 1}°00′` : `${deg}°${String(min).padStart(2, "0")}′`;
-}
-
-/** Degrees into a sign, as the tradition writes them. */
-export function formatDegree(deg: number): string {
-  const d = Math.floor(deg);
-  const m = Math.round((deg - d) * 60);
-  return m === 60 ? `${d + 1}°00′` : `${d}°${String(m).padStart(2, "0")}′`;
-}
-
-// ── kutas ───────────────────────────────────────────────────────────────────────────────────────
+// ── the eight tests ─────────────────────────────────────────────────────────────────────────────
 
 const KUTA_FULL: Record<string, string> = {
   varna: "The way they each go about things sits comfortably — neither is inclined to talk down to the other.",
@@ -270,6 +57,19 @@ const KUTA_FULL: Record<string, string> = {
   gana: "Their basic temperaments match, so nothing has to be explained twice.",
   bhakoot: "Their Moon signs sit at a distance the tradition treats as good for building a life together.",
   nadi: "They are built differently underneath — the strongest single result available anywhere in this system.",
+};
+
+/** Middling results, said differently per test — eight identical "partial" sentences down one page
+ *  reads as a template rather than a reading. */
+const KUTA_PARTIAL: Record<string, string> = {
+  varna: "Somewhere in between, on a test worth a single point either way.",
+  vashya: "Neither yields easily to the other, but neither digs in either.",
+  tara: "Lucky for each other in one direction and not the other, which is the commonest result here.",
+  yoni: "Their instincts are neither the same nor at odds — different, and compatible enough.",
+  grahaMaitri: "Their minds meet part of the way. Not the same wavelength, not opposed ones.",
+  gana: "Their temperaments differ without clashing outright.",
+  bhakoot: "",
+  nadi: "",
 };
 
 const KUTA_NONE: Record<string, string> = {
@@ -283,19 +83,6 @@ const KUTA_NONE: Record<string, string> = {
   nadi: "They are built the same way underneath. This is the heaviest single deduction anywhere in the thirty-six.",
 };
 
-/** Middling results, said differently per test — five identical "partial agreement" sentences down
- *  one page reads as a template rather than a reading. */
-const KUTA_PARTIAL: Record<string, string> = {
-  varna: "Somewhere in between, on a test worth a single point either way.",
-  vashya: "Neither yields easily to the other, but neither digs in either.",
-  tara: "Lucky for each other in one direction and not the other, which is the commonest result here.",
-  yoni: "Their instincts are neither the same nor at odds — different, and compatible enough.",
-  grahaMaitri: "Their minds meet part of the way. Not the same wavelength, not opposed ones.",
-  gana: "Their temperaments differ without clashing outright.",
-  bhakoot: "",
-  nadi: "",
-};
-
 export function explainKuta(k: KutaResult): string {
   if (k.points >= k.maxPoints) return KUTA_FULL[k.key] ?? "";
   if (k.points <= 0) return KUTA_NONE[k.key] ?? "";
@@ -303,28 +90,6 @@ export function explainKuta(k: KutaResult): string {
 }
 
 export function explainDosha(d: Dosha): string {
-  // The heading already says whether it was set aside, so do not repeat it here — an earlier
-  // version appended "on the classical exemptions this one does not stand" underneath a heading
-  // that already said "traditionally set aside", which read as a contradiction.
+  // The heading already says whether it was set aside, so it is not repeated here.
   return `${d.detail} ${d.caveat ?? ""}`.trim();
-}
-
-/** The two or three sentences that go at the very top of a report. */
-export function headlineSummary(gunaTotal: number, ease: number, charge: number): string {
-  const gunaPart = gunaTotal > 18
-    ? `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, above the usual pass mark of 18`
-    : gunaTotal === 18
-      ? `The old eight-part test gives them 18.0 out of 36 — right on the usual pass mark`
-      : `The old eight-part test gives them ${gunaTotal.toFixed(1)} out of 36, under the usual pass mark of 18`;
-
-  const easePart = ease >= 60 ? "what runs between them leans supportive"
-    : ease >= 45 ? "what runs between them is mixed"
-    : "what runs between them leans difficult";
-
-  const chargePart = charge >= 65 ? "and there is a great deal of it"
-    : charge >= 35 ? "and there is a fair amount of it"
-    : "though there is not much of it either way, which usually reads as mild indifference rather than trouble";
-
-  return `${gunaPart}; ${easePart}, ${chargePart}. ` +
-    `The single figure blends the three — it is a summary, not a verdict.`;
 }

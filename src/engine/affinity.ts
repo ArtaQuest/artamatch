@@ -73,6 +73,23 @@
  *     the same-place contact fixed at +1 . 0.884
  *     THE OPPOSITE ANGLE READ AS EASY .... 0.718   ← the one that matters
  *
+ * And two ablations that undercut this model rather than flatter it, reported because the paper
+ * this borrows its shape from reports its own centring as worth "only ~0.003 AUC":
+ *
+ *     the variance weighting switched off ......... r = 0.994, Spearman 0.993
+ *     the whole score from five aspect COUNTS ..... R² = 0.733
+ *
+ * The first says the mathematical centrepiece is nearly INERT. That is not because it is wrong —
+ * it is what taking the average over the unknown hours literally is — but because there is little
+ * for it to do: six of the seven bodies are pinned to within a degree by the date alone, and only
+ * the Moon is genuinely uncertain (mean confidence 0.80 against 0.96–0.98 for the rest). It stays
+ * because it is correct, not because it earns its keep in the ordering, and saying so is better
+ * than letting a derivation imply an importance it does not have.
+ *
+ * The second says a crude tally of how many angles fall inside their orb — five integers, no
+ * kernel, no weights, no hours — already reproduces three quarters of the variance. Everything
+ * else in this file is the remaining quarter.
+ *
  * That last line is not buried. The opposite angle is the single choice this model cannot make for
  * you: the classical texts call it hard, synastry practice very often reads it as attraction, and
  * the two readings order a list of people differently. So it is a SWITCH on the page, shown beside

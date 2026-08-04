@@ -132,7 +132,12 @@ for (const b of Object.keys(BODY_WEIGHT)) BODY_WEIGHT[b] = 1;
 variants.push(["all bodies equal", runAll()]);
 Object.assign(BODY_WEIGHT, saveW);
 
-console.log(`\nROBUSTNESS — rank correlation with the model as shipped (${M} pairs):`);
+// The two that undercut the model rather than flatter it. Reported for the same reason the paper
+// this borrows its shape from reports its own centring as worth "only ~0.003 AUC": an ablation you
+// only publish when it agrees with you is not an ablation.
+// (Both are computed longhand in the test suite; see tests/affinity.test.ts.)
+
+console.log(`\nROBUSTNESS AND ABLATIONS — rank correlation with the model as shipped (${M} pairs):`);
 for (const [label, xs] of variants) {
   console.log(`  ${label.padEnd(26)} spearman ${spearman(baseRun, xs).toFixed(3)}`);
 }

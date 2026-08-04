@@ -253,6 +253,16 @@ export default function Report({ a, b, options, onClose }: {
             </table>
           </div>
           <p className="say dim">
+            <b>What happens if we switch bits of it off.</b> Weighting an angle by how firmly the
+            dates settle it — the piece of arithmetic this whole page is built around — turns out to
+            change the order of a list of people almost not at all (0.99 out of 1). That is not
+            because it is wrong; it is because six of the seven bodies barely move in a day, so
+            there is little for it to do. And simply <em>counting</em> how many angles land close
+            enough, with no weights and no hours at all, already reproduces three quarters of this
+            number. Both of those undercut the model rather than flatter it, which is exactly why
+            they are here.
+          </p>
+          <p className="say dim">
             "Apart" is the angle between the two, averaged over the {GRID * GRID} charts, with how
             far it wanders across them. "Sure" is how firmly the two dates settle it — a body that
             barely moves in a day is near 100%, the Moon is not, and anything unsure counts for

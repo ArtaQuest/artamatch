@@ -181,6 +181,22 @@ Rank correlation with the model as shipped, 1,500 random pairs:
 | the same-place contact fixed at +1 | 0.884 |
 | **the opposite angle read as easy** | **0.718** |
 
+**And two that undercut the model rather than flatter it**, reported because the paper this borrows
+its shape from reports its own centring as worth "only ~0.003 AUC":
+
+| ablation | result |
+|---|---|
+| the variance weighting — the mathematical centrepiece — switched off | **r = 0.994, Spearman 0.993** |
+| the whole score reconstructed from five aspect *counts* (no kernel, no weights, no hours) | **R² = 0.733** |
+
+The first says the weighting is nearly **inert**. That is not because it is wrong — it is what taking
+the average over the unknown hours literally *is* — but because there is little for it to do: six of
+the seven bodies are pinned to within a degree by the date alone, and only the Moon is genuinely
+uncertain (mean confidence 0.80 against 0.96–0.98 for the rest). It stays because it is correct, not
+because it earns its keep in the ordering. The second says a crude tally of how many angles fall
+inside their orb already reproduces three quarters of the variance; everything else in the model is
+the remaining quarter. Both belong on the record.
+
 And the check that the model reads the whole chart rather than only the bodies it can pin down —
 the weighting damps the Moon hardest, so this is the place it could quietly become a Sun-only score:
 

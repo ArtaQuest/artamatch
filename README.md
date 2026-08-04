@@ -119,7 +119,22 @@ none of them does — rank correlation against the model as shipped:
 | the same-place contact fixed at +1 | 0.884 |
 | **the opposite angle read as easy** | **0.718** |
 
-That last row is the one choice the model refuses to make for you, so it is **a switch on the page**.
+**Two more ablations, which undercut the model rather than flatter it** — reported because the paper
+this borrows its shape from reports its own centring as worth "only ~0.003 AUC":
+
+| ablation | result |
+|---|---|
+| the variance weighting switched off | r = 0.994 |
+| the score reconstructed from five aspect *counts* | R² = 0.733 |
+
+So the mathematical centrepiece is nearly **inert**, and a crude tally of aspects already reproduces
+three quarters of the answer. The weighting stays because it is *what taking the average over the
+unknown hours is*, not because it earns its keep in the ordering — six of the seven bodies are pinned
+to within a degree by the date alone, so there is little for it to do. Saying so beats letting a
+derivation imply an importance it does not have.
+
+The opposite-angle row above is the one choice the model refuses to make for you, so it is **a switch
+on the page**.
 The classical texts call being directly opposite hard; writers on couples very often read it as two
 people completing each other. Nothing else we chose moves the ordering nearly as much.
 

@@ -22,10 +22,10 @@ three ways at once:
   You can see the blocks where the answer changes, and see at a glance whether the missing hour
   matters at all.
 
-The whole reading is **one scrolling document** with six numbered sections — what the score is, how
-it is built, how sure it is, what it read, the eight tests one by one, and who these two people are.
-Nothing is behind a tab, because the evidence for a number should not live on a different screen
-from the number.
+The whole reading is **one scrolling document**: the score, then six numbered sections — how it is
+built, how sure it is, what it read, the eight tests one by one, any warnings the tradition raises,
+and who these two people are. Nothing is behind a tab, because the evidence for a number should not
+live on a different screen from the number.
 
 Two experiments were built, verified and then deleted to get here: an *ensemble* of four traditions,
 and an *aspect layer* of 55 planet-pair readings. Both worked; both made the page about more than
@@ -35,7 +35,9 @@ one thing. They are in the git history, and in [METHODS.md](METHODS.md) §5.
 
 - **Percentiles, not flattery.** The traditional "pass mark" of 18/36 is cleared by 71% of random
   pairs (median 21), so "you passed" means little; every score is shown against the distribution it
-  actually comes from, and a drift test keeps those numbers current in CI.
+  actually comes from. A drift test recomputes the distribution in CI and asserts the *embedded*
+  constants and the percentile table against it, cell by cell — so a shifted distribution cannot
+  leave stale numbers on the page.
 - **Every prediction carries a confidence interval.** Not just the report — the hero, the ranking
   rows and the totals all show the range the unknown birth hours allow, so a list of point estimates
   can never hide that two people are statistically indistinguishable. The headline is the *expected*
@@ -93,7 +95,7 @@ everything. Messaging deep-links into ArtaQuest's existing end-to-end-encrypted 
 ```bash
 npm install
 npm run dev       # http://localhost:5173/artamatch/
-npm test          # 64 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
+npm test          # 68 tests — astronomy, rules, symmetry, uncertainty, jargon, drift
 npx vite build
 node tools/contrast.mjs                           # WCAG contrast for every ink/surface pair
 node tools/screenshot.mjs "$PWD/dist" /tmp/shots   # 35-state visual audit at five widths

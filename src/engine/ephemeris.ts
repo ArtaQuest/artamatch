@@ -2,7 +2,7 @@
  * ephemeris.ts — a dependency-free SIDEREAL (Vedic / Jyotish) ephemeris.
  *
  * Places the Sun, Moon and Mercury…Pluto in the sidereal zodiac — the constellation-aligned zodiac
- * fixed to the stars rather than to the moving equinox — for any date between roughly 1700 and 2200.
+ * fixed to the stars rather than to the moving equinox — for any date between 1800 and 2100 — the range parseDate accepts and the tests verify.
  *
  * Tropical longitude is measured from the vernal equinox of date, which precesses westward ~50.3″/yr.
  * Sidereal longitude is measured from a fixed point among the stars. The difference is the AYANAMSA

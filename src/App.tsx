@@ -160,7 +160,7 @@ export default function App() {
         </div>
       </header>
 
-      <div className="cols">
+      <main className="cols">
         <div>
           <section className="panel">
             <h2>Add someone</h2>
@@ -180,7 +180,7 @@ export default function App() {
                 onChange={(e) => setBirthday(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addPerson()} />
             </div>
-            {formError && <p className="error">{formError}</p>}
+            {formError && <p className="error" role="alert">{formError}</p>}
             <button onClick={addPerson}>Add to my list</button>
           </section>
 
@@ -198,7 +198,7 @@ export default function App() {
                 <span className="pill aq">{importResult.people.length} loaded</span>
               )}
             </div>
-            {importError && <p className="error">{importError}</p>}
+            {importError && <p className="error" role="alert">{importError}</p>}
             {importResult && importResult.skipped.length > 0 && (
               <p className="panel-note" style={{ marginTop: "0.6rem" }}>
                 {importResult.skipped.length} member{importResult.skipped.length === 1 ? "" : "s"} skipped:{" "}
@@ -267,7 +267,7 @@ export default function App() {
             </>
           )}
         </div>
-      </div>
+      </main>
 
       <footer className="footer">
         <p>
@@ -329,7 +329,9 @@ function PersonRow({ person, isSelf, onPick, onRemove }: {
           width. An earlier layout put the badges beside this column as flex siblings; on rows with
           two badges the name column collapsed to a few characters and the date wrapped word by
           word. The remove button is the only other sibling — a fixed, small one. */}
-      <button className="who link" onClick={onPick} style={{ textAlign: "left" }}>
+      {/* The selection driving the whole ranking was conveyed by a gold border alone. */}
+      <button className="who link" onClick={onPick} aria-pressed={isSelf}
+        style={{ textAlign: "left" }}>
         <span className="nm">
           {person.name}
           {person.source === "artaquest" && <span className="pill aq">ArtaQuest</span>}
@@ -433,13 +435,15 @@ Every pair, scored on the Moon score. The grid is symmetric by construction, so 
           <thead>
             <tr>
               <th />
-              {people.map((p) => <th key={p.id} title={p.name}>{p.name.slice(0, 8)}</th>)}
+              {people.map((p) => (
+                <th key={p.id} scope="col" title={p.name}>{p.name.slice(0, 8)}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {people.map((row) => (
               <tr key={row.id}>
-                <th title={row.name}>{row.name.slice(0, 12)}</th>
+                <th scope="row" title={row.name}>{row.name.slice(0, 12)}</th>
                 {people.map((col) => {
                   if (row.id === col.id) return <td key={col.id} className="matrix-cell self">—</td>;
                   const v = cells.get(`${row.id}|${col.id}`);
@@ -451,7 +455,8 @@ Every pair, scored on the Moon score. The grid is symmetric by construction, so 
                   return (
                     <td key={col.id} className="matrix-cell">
                       <button className="link" onClick={() => onOpen(row.id, col.id)}
-                        title={`${row.name} & ${col.name} — ${v}`}>
+                        aria-label={`${row.name} and ${col.name} — ${fmtScore(v)} out of 36`}
+                        title={`${row.name} & ${col.name} — ${fmtScore(v)}`}>
                         <span className={`tone-${tone}`}>{v % 1 === 0 ? v : v.toFixed(1)}</span>
                       </button>
                     </td>

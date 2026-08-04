@@ -44,5 +44,14 @@ for (const [n, what] of FILLS) {
   if (!ok) failed++;
   console.log(`  ${what.padEnd(12)} ${token(n)}  ${r.toFixed(2)}  ${ok ? "pass" : "FAIL"}`);
 }
+// Non-text contrast: control borders and instrument ticks need 3:1, not 4.5. WCAG 1.4.11.
+console.log(`\nnon-text against the darkest surface (need 3:1)`);
+for (const n of ["edge"]) {
+  const r = ratio(token(n), WORST);
+  const ok = r >= 3;
+  if (!ok) failed++;
+  console.log(`  --${n.padEnd(6)} ${token(n)}  ${r.toFixed(2)}  ${ok ? "pass" : "FAIL"}`);
+}
+
 console.log(failed ? `\n${failed} FAILING` : "\nall pass");
 process.exitCode = failed ? 1 : 0;

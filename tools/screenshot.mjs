@@ -76,9 +76,22 @@ const STATES = [
 async function audit(page, tag) {
   const problems = await page.evaluate(() => {
     const out = [];
-    const doc = document.documentElement;
-    if (doc.scrollWidth > window.innerWidth + 1) {
-      out.push(`HORIZONTAL OVERFLOW: doc ${doc.scrollWidth}px > viewport ${window.innerWidth}px`);
+    // `html { overflow-x: hidden }` clamps documentElement.scrollWidth to the viewport, so the
+    // obvious check could never fire — this gate was decorative for its whole life. Measure the
+    // body (not clamped), and also walk for any element whose box genuinely exceeds the viewport.
+    if (document.body.scrollWidth > window.innerWidth + 1) {
+      out.push(`HORIZONTAL OVERFLOW: body ${document.body.scrollWidth}px > viewport ${window.innerWidth}px`);
+    }
+    for (const el of document.querySelectorAll("body *")) {
+      const r = el.getBoundingClientRect();
+      if (r.width === 0) continue;
+      // Ignore anything inside a deliberate horizontal scroller.
+      if (el.closest(".scroll-x, .anatomy .host, .hourgrid")) continue;
+      if (r.right > window.innerWidth + 2 || r.left < -2) {
+        out.push(`overflows viewport: <${el.tagName.toLowerCase()} class="${el.className}"> ` +
+          `left ${Math.round(r.left)} right ${Math.round(r.right)} vs ${window.innerWidth}`);
+        break; // one report per state is enough to act on
+      }
     }
     for (const m of document.querySelectorAll(".meter")) {
       const h = m.getBoundingClientRect().height;

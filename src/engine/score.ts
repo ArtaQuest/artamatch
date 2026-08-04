@@ -30,7 +30,7 @@
  * score is shown against the distribution it actually comes from.
  */
 
-import { type Chart, type Placement, chartAt, julianDay, parseDate, SIGNS } from "./ephemeris";
+import { type Chart, type Placement, chartAt, julianDay, parseDate } from "./ephemeris";
 import { nakshatraOf } from "./nakshatra";
 import { type KutaSide, type SymmetricGunaMilan, type KutaKey, gunaMilan } from "./kuta";
 import { type BirthSpan, birthSpan } from "./uncertainty";
@@ -344,4 +344,3 @@ export function rankAgainst<T extends { id: string; birthday: string }>(
     (y.match.distribution.interval.hi - y.match.distribution.interval.lo));
 }
 
-export const signName = (i: number) => SIGNS[i];

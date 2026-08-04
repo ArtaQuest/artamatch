@@ -143,6 +143,48 @@ describe("ArtaMatch app", () => {
     expect(screen.getAllByText(/their birth star, one of the 27/i).length).toBe(2);
   });
 
+  it("names the pair in a real heading and moves focus there when a reading opens", () => {
+    // Opening a reading replaces the whole right-hand column. Focus used to fall to <body>, so a
+    // screen-reader user got silence at the app's central interaction, and heading navigation
+    // skipped straight past whose reading it was.
+    render(<App />);
+    addPerson("Ada", "1815-12-10");
+    addPerson("Turing", "1912-06-23");
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
+    fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
+
+    const h = screen.getByRole("heading", { name: /Ada & Turing/, level: 2 });
+    expect(document.activeElement).toBe(h);
+    // One main landmark, and errors announce themselves.
+    expect(document.querySelectorAll("main").length).toBe(1);
+  });
+
+  it("announces a refused entry instead of failing silently", () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /add to my list/i }));
+    expect(screen.getByRole("alert").textContent).toMatch(/date of birth|calendar date|name/i);
+  });
+
+  it("marks the Landscape bar that matches the score, not the one beside it", () => {
+    // The marker sat on Math.round(score) - 1 while tooltips said "score i+1", so the gold bar
+    // pointed at the wrong score AND disagreed with its own hover text.
+    render(<App />);
+    addPerson("Ada", "1815-12-10");
+    addPerson("Turing", "1912-06-23");
+    const ranking = screen.getByRole("heading", { name: /Ranked against Ada/i }).closest(".panel") as HTMLElement;
+    fireEvent.click(within(ranking).getByRole("button", { name: /Turing/ }));
+
+    const bars = [...document.querySelectorAll(".landscape i")];
+    const marked = bars.findIndex((b) => b.classList.contains("here"));
+    const title = bars[marked].getAttribute("title") ?? "";
+    // The marked bar's own tooltip must name the index it sits at.
+    expect(title).toMatch(new RegExp(`^Score ${marked}:`));
+    // And it must be the bar for the reported score.
+    const hero = document.querySelector(".hero .num")?.textContent ?? "";
+    const shown = parseFloat(hero);
+    expect(Math.abs(marked - shown)).toBeLessThanOrEqual(0.5);
+  });
+
   it("says a shared Moon sign once, not twice in adjacent columns", () => {
     // 1984-02-08 x 1967-08-26 both have the Moon in Aries. Printing the identical paragraph in
     // both columns reads as a bug, so the shared case is stated once above them.

@@ -21,10 +21,6 @@ export type Person = {
   /** YYYY-MM-DD. The only astrological input this system takes. */
   birthday: string;
   source: PersonSource;
-  /** Optional, and used only for Guna Milan's few gendered rules — see kuta.ts, which explains why
-   *  the classical rules have a groom/bride axis and what we do when it is not stated. */
-  role?: "a" | "b" | null;
-  note?: string;
   /** artaquest members only */
   slug?: string;
   avatar?: string;

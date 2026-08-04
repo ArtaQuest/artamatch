@@ -11,7 +11,9 @@
 import { describe, it, expect } from "vitest";
 import { gunaMilan, gunaMilanOrdered, yoniPoints, grahaMaitriPoints, vashyaGroup, bandFor, YONI_ORDER, type KutaSide } from "../src/engine/kuta";
 import { nakshatraOf, NAKSHATRAS } from "../src/engine/nakshatra";
-import { matchPair, rankAgainst } from "../src/engine/score";
+import {
+  matchPair, rankAgainst, PASS_RATE, MEDIAN_SCORE, PERCENTILE_BELOW,
+} from "../src/engine/score";
 import { birthSpan } from "../src/engine/uncertainty";
 import { chartForDate, julianDay, siderealLongitude } from "../src/engine/ephemeris";
 
@@ -444,7 +446,17 @@ describe("calibration drift", () => {
     scores.sort((a, b) => a - b);
     const median = scores[Math.floor(scores.length / 2)];
     const passRate = (scores.filter((x) => x >= 18).length / scores.length) * 100;
-    expect(Math.abs(median - 21)).toBeLessThanOrEqual(1);
-    expect(Math.abs(passRate - 71)).toBeLessThanOrEqual(4);
+    // Assert against the EMBEDDED constants, not against literals — otherwise the "drift test"
+    // compares a recomputation to a hardcoded number and the shipped constants can go stale
+    // untouched, which is exactly what the README claimed it prevented.
+    expect(Math.abs(median - MEDIAN_SCORE)).toBeLessThanOrEqual(1);
+    expect(Math.abs(passRate - PASS_RATE)).toBeLessThanOrEqual(4);
+
+    // And check the percentile TABLE itself, cell by cell, so a shifted distribution cannot hide
+    // behind two summary statistics that happen to survive.
+    const below = (v: number) => (scores.filter((x) => x < v).length / scores.length) * 100;
+    for (let v = 6; v <= 32; v++) {
+      expect(Math.abs(below(v) - PERCENTILE_BELOW[v]), `percentile at ${v}`).toBeLessThanOrEqual(6);
+    }
   });
 });

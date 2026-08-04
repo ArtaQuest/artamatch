@@ -32,9 +32,10 @@ Ephemeris to 1e-8°. JPL's longer-range Table 2a was tried for the outer planets
 worse** over 1900–2100 (`tools/compare-elements.mjs`) — it is fitted across six millennia and is
 looser inside any one century.
 
-Only the Moon's accuracy actually bears on the score — the eight tests read nothing else. The other
-bodies are computed because Mars and Venus feed one of the two warnings, and because the positions
-are worth showing. At 1.4′ the Moon is some 280× finer than the ±6.6° the missing birth time costs.
+Only the Moon's accuracy bears on the score — the eight tests read nothing else. Mars and Venus are
+computed because they feed one of the three warnings. At 1.4′ the Moon is some 280× finer than the
+±6.6° the missing birth time costs, which is the whole reason the uncertainty model matters more
+than the ephemeris does.
 
 ## 2 · What a date alone can and cannot say
 
@@ -65,7 +66,8 @@ right thing to rank on), the **narrowest 90% interval**, the **full support**, a
 likely** reading with its probability. There is one code path — a `detailed` flag once let ranking
 skip the distribution, which meant the ranking and the report could quietly disagree. The displayed chart is taken at
 the middle of the most likely state, *not* at noon: measured over 7,200 dates, noon disagrees with
-the most likely birth star on 6.1% of days, which once made the page show one star and score another.
+the most likely reading on about 6% of days (the birth star alone on roughly 3%, the star-or-sign on
+roughly 6%), which once made the page show one birth star and score another.
 
 The rising point ("ascendant") moves a sign every two hours; nothing that needs it is computed, ever
 — it is refused rather than defaulted.
@@ -78,7 +80,7 @@ independently, reconciled against primary sources (Saravali, BPHS, the Muhurta C
 Drik Panchang), and are pinned by structural invariants in `tests/nakshatra.test.ts` — nine stars
 per temperament, the period-6 constitution cycle, the animal census (13 pairs + one unpaired), the
 seven canonical enemy pairs. That process caught a real transcription error worth 4 of the 36 points
-(see README, "Where the tables came from").
+(see README, "What triple-checking found").
 
 Three of the eight tests are asymmetric in the tradition (written for a groom and a bride). Both
 orderings are always computed and the mean used, because a ranked list must be symmetric —
@@ -137,12 +139,11 @@ existing end-to-end-encrypted chat rather than reimplementing one.
 ## 8 · Reproducing every number in this document
 
 ```bash
-npm test                                   # 64 tests: ephemeris vs golden, rules, symmetry,
+npm test                                   # 68 tests: ephemeris vs golden, rules, symmetry,
                                            # uncertainty, jargon guards, drift
 python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
-npx esbuild src/engine/score.ts  --format=esm --bundle --outfile=/tmp/score.mjs
-npx esbuild src/engine/systems.ts --format=esm --bundle --outfile=/tmp/systems.mjs
-node tools/calibrate.mjs /tmp/score.mjs /tmp/systems.mjs   # every calibration table
+npx esbuild src/engine/score.ts --format=esm --bundle --outfile=/tmp/score.mjs
+node tools/calibrate.mjs /tmp/score.mjs                    # the percentile table + its summary
 node tools/compare-elements.mjs tests/golden.json          # the Table 1 vs 2a decision
 node tools/contrast.mjs                                    # WCAG contrast, every ink/surface pair
 node tools/screenshot.mjs dist shots/                      # 35-state visual audit, five widths

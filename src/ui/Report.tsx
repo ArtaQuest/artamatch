@@ -10,7 +10,7 @@
  * the two brand colours, and none relying on colour alone — every mark is labelled or titled.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { SIGNS, chartAt, julianDay, parseDate } from "../engine/ephemeris";
 import { nakshatraOf } from "../engine/nakshatra";
 import { gunaMilan, type KutaSide } from "../engine/kuta";
@@ -28,7 +28,24 @@ export default function Report({ a, b, options, onClose }: {
   a: Person; b: Person; options: ScoreOptions; onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
   const match = matchPair(a.birthday, b.birthday, options);
+
+  // Opening a reading replaces the whole right-hand column. Without this, focus fell to <body>:
+  // a screen-reader user activated a row, the app's entire output appeared, and nothing was
+  // announced and there was nowhere to navigate to. Moving focus to the heading names the pair and
+  // puts the reading cursor at its start.
+  useEffect(() => {
+    heading.current?.focus();
+  }, [a.id, b.id]);
+
+  // Escape closes the reading — the only exit was a Close button nearly 7,000px above the fold
+  // on a phone.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   /** A link that reproduces this reading anywhere. It carries the two names and dates — inputs,
    *  never conclusions — so the receiving browser computes the whole thing itself. */
@@ -61,12 +78,15 @@ export default function Report({ a, b, options, onClose }: {
 
   return (
     <div className="panel report">
-      <header className="report-head">
+      {/* A real heading, not a styled span: heading navigation used to jump straight from
+          "Everyone (3)" to "How the score is built" with nothing saying whose reading this was.
+          Not <header>, which would expose a SECOND banner landmark on the page. */}
+      <div className="report-head">
         <Avatar person={a} />
         <Avatar person={b} />
-        <span className="names">{a.name} &amp; {b.name}</span>
+        <h2 className="names" ref={heading} tabIndex={-1}>{a.name} &amp; {b.name}</h2>
         <button className="ghost" onClick={onClose}>Close</button>
-      </header>
+      </div>
 
       {/* ── 1 · the answer ───────────────────────────────────────────────────────────────── */}
       <div className="hero">
@@ -87,14 +107,14 @@ export default function Report({ a, b, options, onClose }: {
           <span className="because">
             {match.certain ? (
               <>The two dates settle this outright — no birth time needed. Higher than{" "}
-              <strong>{match.percentile} in 100</strong> randomly paired dates. {match.band.note}</>
+              <strong>{Math.min(99, match.percentile)} in 100</strong> randomly paired dates. {match.band.note}</>
             ) : (
               <>Averaged across every birth time the dates allow. Nine times in ten it lands
               between <strong>{fmt(match.distribution.interval.lo)}</strong> and{" "}
               <strong>{fmt(match.distribution.interval.hi)}</strong>; the single most likely reading
               is <strong>{fmt(match.distribution.modal.score)}</strong> at{" "}
               {Math.round(match.confidence * 100)}%. Higher than{" "}
-              <strong>{match.percentile} in 100</strong> randomly paired dates. {match.band.note}</>
+              <strong>{Math.min(99, match.percentile)} in 100</strong> randomly paired dates. {match.band.note}</>
             )}
           </span>
           <Landscape score={match.distribution.expected} excluded={excluded.length > 0} />
@@ -102,19 +122,27 @@ export default function Report({ a, b, options, onClose }: {
       </div>
 
       <p className="lede">
-        Where the Moon sat when each of them was born is the whole basis of this. Eight old tests
-        compare those two positions, worth 1 to 8 points each, adding up to {match.maxScore}. The
-        traditional pass mark is {TRADITIONAL_PASS}, but {PASS_RATE} in 100 random pairs clear it and
-        the middling pair scores about {MEDIAN_SCORE} — so the percentile above tells you far more
-        than the pass mark does.
+        Where the Moon sat when each of them was born is the whole basis of this.{" "}
+        {shown.length === 8 ? "Eight" : "Seven"} old tests compare those two positions, worth{" "}
+        {Math.min(...shown.map((k) => k.maxPoints))} to {Math.max(...shown.map((k) => k.maxPoints))}{" "}
+        points each and adding up to {match.maxScore}.{" "}
+        {excluded.length === 0 && (
+          <>The traditional pass mark is {TRADITIONAL_PASS}, but {PASS_RATE} in 100 random pairs
+          clear it and the middling pair scores about {MEDIAN_SCORE} — so the percentile above tells
+          you far more than the pass mark does.</>
+        )}
+        {excluded.length > 0 && (
+          <>Because one test is switched off, the percentile above is measured against a separately
+          calibrated {match.maxScore}-point distribution — not the {36}-point one.</>
+        )}
       </p>
 
       {/* ── 2 · how it is built ──────────────────────────────────────────────────────────── */}
       <Section n={1} title="How the score is built">
         <p className="say">
-          {match.maxScore} points split unevenly across eight tests, drawn here to scale. Gold is
-          earned. The two heaviest tests carry {7 + 8} points between them — as much as the other six
-          together — so they usually decide the headline.
+          {match.maxScore} points split unevenly across {shown.length} tests, drawn here to scale.
+          Gold is earned. The three heaviest carry {6 + 7 + 8} points between them — as much as all
+          the others put together — so they usually decide the headline.
         </p>
         <Anatomy kutas={shown} />
       </Section>
@@ -180,8 +208,10 @@ export default function Report({ a, b, options, onClose }: {
         <p className="say">
           Only the two Moons. This is the whole sky as one strip — 360 degrees, cut into the 12 signs
           (tall ticks) and the 27 equal birth-star stretches (short ticks). Each Moon is marked, and
-          the faint band behind it is how far that Moon travelled during the birth day, which is
-          exactly where the uncertainty above comes from.
+          the faint band behind it is how far that Moon travelled during the birth day —{" "}
+          {match.certain
+            ? "here both bands stay inside one stretch all day, which is why the dates settle the answer."
+            : "which is exactly where the uncertainty above comes from."}
         </p>
         <MoonRuler match={match} a={a} b={b} />
       </Section>
@@ -275,6 +305,7 @@ export default function Report({ a, b, options, onClose }: {
         <button className="ghost" onClick={shareReading}>
           {copied ? "Link copied" : "Copy a link to this reading"}
         </button>
+        <button className="ghost" onClick={onClose}>Back to the ranking</button>
       </div>
       <p className="panel-note">
         The link carries only the two names and dates — whoever opens it works everything out fresh.
@@ -306,19 +337,24 @@ function Section({ n, title, children }: { n: number; title: string; children: R
  */
 function Landscape({ score, excluded }: { score: number; excluded: boolean }) {
   const table = excluded ? PERCENTILE_BELOW_NO_VARNA : PERCENTILE_BELOW;
-  // The stored table is cumulative ("share scoring below n"); differencing gives the share AT each
-  // score, which is what a distribution strip draws.
+  // The stored table is cumulative ("share scoring below n"), so differencing gives the share AT
+  // each score: shares[i] = table[i+1] − table[i] = P(score === i). Bar i IS score i.
+  //
+  // This was off by one in both directions at once — the marker sat on Math.round(score) − 1 and
+  // every tooltip said "score i+1" — so the gold "this pair" bar pointed at the wrong score and
+  // the hover text disagreed with the bar it was on. Three reviewers found it independently.
   const shares = table.slice(1).map((v, i) => Math.max(0, v - table[i]));
   const peak = Math.max(...shares, 1);
-  // Bar i covers score i+1, so a score of 25 highlights index 24. Half points round to the nearer.
-  const at = Math.max(0, Math.min(shares.length - 1, Math.round(score) - 1));
+  const at = Math.max(0, Math.min(shares.length - 1, Math.round(score)));
   return (
     <span className="landscape" role="img"
       aria-label={`Distribution of scores across random pairs; this pair scores ${fmt(score)}`}>
       {shares.map((share, i) => (
         <i key={i} className={i === at ? "here" : ""}
-          style={{ height: `${share > 0 ? Math.max(9, (share / peak) * 100) : 3}%` }}
-          title={`Score ${i + 1}: about ${share} in 100 random pairs`} />
+          // The marked bar keeps a floor of its own: at a rare score its true share is ~0, and a
+          // 1px sliver is not a marker.
+          style={{ height: `${i === at ? Math.max(18, (share / peak) * 100) : share > 0 ? Math.max(9, (share / peak) * 100) : 3}%` }}
+          title={`Score ${i}: about ${share} in 100 random pairs`} />
       ))}
     </span>
   );
@@ -330,16 +366,30 @@ function Landscape({ score, excluded }: { score: number; excluded: boolean }) {
  * arithmetic — you can see that the last two blocks are half the board.
  */
 function Anatomy({ kutas }: { kutas: Match["guna"]["kutas"] }) {
+  // Every number here is repeated accessibly in the per-test list below, so the drawing itself is
+  // decorative to a screen reader — otherwise it dumps sixteen context-free numbers into the tree.
   return (
-    <div className="anatomy">
+    <div className="anatomy" aria-hidden="true">
       <span className="host">
         <span className="bar">
           {kutas.map((k, i) => (
             <span key={k.key} className="seg" style={{ flexGrow: k.maxPoints }}
               title={`Test ${i + 1} · ${k.name} — ${fmt(k.points)} of ${k.maxPoints}. ${k.measures}`}>
-              <i style={{ width: `${(k.points / k.maxPoints) * 100}%` }} />
-              <b>{k.points > 0 ? fmt(k.points) : ""}</b>
-              <u>{k.maxPoints}</u>
+              {/* The earned number is drawn TWICE: once dark, once light, the light copy clipped to
+                  the gold fill. Whichever background the digit lands on, the readable copy is the
+                  one on top. A single dark copy centred over the whole block sat on the dark track
+                  whenever a test scored under half — 1.3:1, and "0.5" rendered as "0", a wrong
+                  number rather than a missing one. */}
+              <b className="lo">{k.points > 0 ? fmt(k.points) : ""}</b>
+              <i style={{
+                width: `${(k.points / k.maxPoints) * 100}%`,
+                // The clipped copy must be laid out against the SEGMENT's width, not the fill's,
+                // or it re-centres inside the fill and the two copies drift apart.
+                ["--segw" as string]: `${(k.maxPoints / k.points) * 100}%`,
+              }}>
+                <b className="hi">{k.points > 0 ? fmt(k.points) : ""}</b>
+              </i>
+              <u className={k.points >= k.maxPoints ? "onGold" : ""}>{k.maxPoints}</u>
             </span>
           ))}
         </span>
@@ -364,7 +414,8 @@ function MoonRuler({ match, a, b }: { match: Match; a: Person; b: Person }) {
   const pct = (lon: number) => `${(lon / 360) * 100}%`;
   return (
     <div className="ruler-wrap">
-      <div className="ruler">
+      <div className="ruler" role="img"
+        aria-label={`Where both Moons sat on the 360-degree band, and how far each moved during its birth day`}>
         {Array.from({ length: 27 }, (_, i) => (
           <span key={`n${i}`} className="tick star" style={{ left: pct((i * 360) / 27) }}
             title={starTitle(i)} />

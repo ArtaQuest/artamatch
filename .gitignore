@@ -13,3 +13,9 @@ _*.ts
 *.tmp.ts
 tests/_*
 tools/_*
+
+# The research datasets and their raw query caches — tens of MB, and regenerable in a couple of minutes
+# by `node research/collect.mjs` / `collect-divorce.mjs`. The scripts and the findings are the
+# artefacts; the JSON is not, and every count in research/README.md is reproducible from the scripts.
+research/data/
+research/data-divorce/

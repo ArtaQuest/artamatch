@@ -1,0 +1,189 @@
+"""
+verify_docs.py — prove the SHIPPED docs/ directory works, using only what is inside it.
+
+WHY THIS EXISTS SEPARATELY FROM ship.py. ship.py builds docs/ from web/, and it cannot run in CI: the two
+largest inputs it needs, `web/ephem4.bin` and `web/model.npz`, are deliberately gitignored, and the ephemeris
+is generated from Swiss Ephemeris `.se1` files that are not in the repository either. The copies that ship are
+the ones in docs/. So CI cannot rebuild the page — it can only check the artefact it is about to publish, and
+that is what this does, from docs/ alone.
+
+WHAT IT CHECKS, each one a failure that has actually happened here or is one edit away:
+
+  1. every file the page fetches is present, and `.nojekyll` exists (without it GitHub Pages hides
+     directories beginning with an underscore and serves 404s for files that are plainly there)
+  2. the ephemeris magic in docs/ephem4.bin matches the literal docs/sweshim.py compares against — read from
+     the source, not guessed from a candidate list, because guessing "AQEPH003".."AQEPH009" once rejected a
+     correct AQEPH00A asset and blamed the asset
+  3. model.json is STRUCTURALLY a model: `base` is the list of base models, not a number. Overwriting it with
+     a float while injecting the benchmark produced a file that looked fine and could not be loaded
+  4. the benchmark block has exactly 15 cells, the man x woman keys are the ones the page reads, and
+     absent|absent is absent — the metric is the mean of 15 and a 16th cell would silently change it
+  5. every module named in model.json is in docs/bundle/, and nothing in the bundle imports a package Pyodide
+     will not have
+  6. END TO END: the bundled tradition modules are imported and run on probe couples through the SHIPPED shim
+     and the SHIPPED predictor, and every block must come out at the exact width the model was trained on.
+     A width drift is the failure mode that produces a page which loads, scores, and is wrong.
+
+Usage:  python web/verify_docs.py [docs-dir]
+"""
+import ast
+import glob
+import importlib
+import json
+import os
+import re
+import sys
+
+DOCS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs")
+
+REQUIRED = ["index.html", "ephem4.bin", "tables.json", "model.json", "model.npz",
+            "sweshim.py", "predictor.py", "runner.py", ".nojekyll"]
+ALLOWED_IMPORTS = {"numpy", "astropy", "erfa"}
+LEVELS = ["full", "month", "year", "absent"]
+EXPECTED_CELLS = {f"{a}|{b}" for a in LEVELS for b in LEVELS} - {"absent|absent"}
+
+fails = []
+
+
+def check(label, ok, detail=""):
+    print(f"  [{'OK ' if ok else 'FAIL'}] {label}{('  — ' + detail) if detail else ''}")
+    if not ok:
+        fails.append(label)
+    return ok
+
+
+def third_party(path):
+    """Runtime third-party imports, skipping the self-test guard and the helpers only it calls."""
+    tree = ast.parse(open(path).read())
+    main_blocks = [n for n in tree.body if isinstance(n, ast.If) and "__main__" in ast.dump(n.test)]
+    body = [n for n in tree.body if n not in main_blocks]
+    def names(nodes):
+        out = set()
+        for top in nodes:
+            for n in ast.walk(top):
+                if isinstance(n, ast.Name):
+                    out.add(n.id)
+                elif isinstance(n, ast.Attribute):
+                    out.add(n.attr)
+        return out
+    outside, in_main = names(body), names(main_blocks)
+    mods = set()
+    for top in body:
+        if (isinstance(top, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and top.name in in_main and top.name not in outside):
+            continue
+        for n in ast.walk(top):
+            if isinstance(n, ast.Import):
+                for a in n.names:
+                    mods.add(a.name.split(".")[0])
+            elif isinstance(n, ast.ImportFrom) and n.module and n.level == 0:
+                mods.add(n.module.split(".")[0])
+    return {m for m in mods if m not in sys.stdlib_module_names}
+
+
+def main():
+    print(f"verifying {DOCS}")
+    missing = [f for f in REQUIRED if not os.path.exists(os.path.join(DOCS, f))]
+    check("every file the page fetches is present", not missing, f"missing {missing}" if missing else
+          f"{len(REQUIRED)} files")
+
+    magic = open(os.path.join(DOCS, "ephem4.bin"), "rb").read(8)
+    src = open(os.path.join(DOCS, "sweshim.py")).read()
+    want = sorted(set(re.findall(r'!=\s*b"(AQEPH\w+)"', src)))
+    check("the shipped reader and the shipped asset agree on the magic",
+          len(want) == 1 and magic == want[0].encode(),
+          f"asset {magic!r} vs reader {want}")
+
+    m = json.load(open(os.path.join(DOCS, "model.json")))
+    check("model.json is structurally a model", isinstance(m.get("base"), list) and len(m["base"]) > 0,
+          f"base is {type(m.get('base')).__name__}"
+          + (f" of {len(m['base'])}" if isinstance(m.get("base"), list) else ""))
+
+    bm = m.get("benchmark") or {}
+    cells = set((bm.get("cells") or {}))
+    check("the benchmark carries exactly the 15 man x woman cells", cells == EXPECTED_CELLS,
+          f"{len(cells)} cells; unexpected {sorted(cells - EXPECTED_CELLS)}, "
+          f"missing {sorted(EXPECTED_CELLS - cells)}")
+    check("absent|absent is excluded from the metric", "absent|absent" not in cells)
+    check("the headline metric is present and in range",
+          isinstance(bm.get("benchmark15"), (int, float)) and 0.0 < bm["benchmark15"] < 1.0,
+          f"mean of 15 = {bm.get('benchmark15')}")
+
+    named = sorted({b["slug"] for b in m["base"]}) if isinstance(m.get("base"), list) else []
+    bundled = sorted(os.path.basename(p)[5:-3] for p in glob.glob(os.path.join(DOCS, "bundle", "trad_*.py")))
+    check("every module the model names is bundled", set(named) <= set(bundled),
+          f"{len(named)} named, {len(bundled)} bundled; absent from bundle: {sorted(set(named)-set(bundled))}")
+
+    # What the browser can actually satisfy: the three third-party packages Pyodide loads, every module that
+    # travels IN the bundle (core.py and the trad_* files import each other), and `swisseph` — which is not a
+    # package here at all: sweshim.py registers itself under that name, which is the whole point of the design.
+    local = {os.path.basename(p)[:-3] for p in glob.glob(os.path.join(DOCS, "bundle", "*.py"))}
+    local |= {os.path.basename(p)[:-3] for p in glob.glob(os.path.join(DOCS, "*.py"))}
+    satisfiable = ALLOWED_IMPORTS | local | {"swisseph"}
+    bad = {}
+    for p in glob.glob(os.path.join(DOCS, "bundle", "*.py")):
+        extra = third_party(p) - satisfiable
+        if extra:
+            bad[os.path.basename(p)] = sorted(extra)
+    check(f"every bundle import is satisfiable in the browser ({len(local)} local modules)", not bad, str(bad))
+
+    if fails:
+        print(f"\n{len(fails)} check(s) failed — refusing to publish")
+        raise SystemExit(1)
+
+    # 6. End to end, through the shipped shim and the shipped predictor.
+    sys.path.insert(0, DOCS)
+    sys.path.insert(0, os.path.join(DOCS, "bundle"))
+    import numpy as np
+    import sweshim
+    sweshim.load(os.path.join(DOCS, "ephem4.bin"), os.path.join(DOCS, "tables.json"))
+    sys.modules["swisseph"] = sweshim
+    import predictor
+
+    probes = [("1901-04-11", "1905-09-02"), ("1866-12-25", "1870-01-07"), ("1948-02-29", "1950-11-30"),
+              ("1820-07-04", "1825-03-18"), ("1933-10-10", "1933-10-10"), ("1899-01-01", "1944-06-06")]
+    cand = "/tmp/aq_verify_docs_couples.json"
+    json.dump([{"a": f"a{i}", "b": f"b{i}", "aDob": x, "bDob": y, "aSex": "M", "bSex": "F",
+                "aPrec": 11, "bPrec": 11, "aWin": 1, "bWin": 1, "label": 0}
+               for i, (x, y) in enumerate(probes)], open(cand, "w"))
+    os.environ.update({"AQ_COUPLES": cand, "AQ_NO_PLACE": "1", "AQ_KEEP_ALL_COLS": "1",
+                       "AQ_NO_EPHEM_CACHE": "1", "AQ_EPHEM_CACHE": "/nonexistent.npz"})
+    core = importlib.import_module("core")
+    E = core.load()
+    blocks = {}
+    for slug in sorted(set(named)):
+        for k, v in (importlib.import_module(f"trad_{slug}").build(E) or {}).items():
+            if v is not None:
+                blocks[f"{slug}::{k}"] = np.asarray(v, dtype=np.float32)
+
+    # `full_cols` is the width the block had when the model was fitted and `cols` is how many of them the
+    # model kept. The width is what must still match: if a block grows or shrinks a column, the kept indices
+    # point at different numbers and the page scores confidently against the wrong features.
+    drift = []
+    for b in m["base"]:
+        key = b["key"]
+        if key not in blocks:
+            drift.append(f"{key}: not produced")
+        elif blocks[key].shape[1] != b["full_cols"]:
+            drift.append(f"{key}: built {blocks[key].shape[1]} columns, model trained on {b['full_cols']}")
+    check(f"all {len(m['base'])} blocks build at the width the model was trained on", not drift,
+          "; ".join(drift[:3]))
+
+    stack = predictor.load(open(os.path.join(DOCS, "model.json")).read(),
+                           open(os.path.join(DOCS, "model.npz"), "rb").read())
+    p, _ = stack.proba(blocks)
+    p = np.asarray(p, dtype=float)
+    check("the shipped model scores the probe couples",
+          p.shape == (len(probes),) and np.isfinite(p).all() and ((p >= 0) & (p <= 1)).all(),
+          "  ".join(f"{v:.1%}" for v in p))
+
+    if fails:
+        print(f"\n{len(fails)} check(s) failed — refusing to publish")
+        raise SystemExit(1)
+    print(f"\ndocs/ is publishable — mean of 15 AUCs {bm['benchmark15']:.4f} over "
+          f"{bm.get('n_rows', 0):,} held-out couples")
+
+
+if __name__ == "__main__":
+    main()

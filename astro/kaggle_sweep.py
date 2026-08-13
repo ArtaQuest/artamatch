@@ -51,9 +51,15 @@ def _owner():
     ArtaSwitch rotates ~/.kaggle/kaggle.json between several accounts to spend each one's weekly GPU hours,
     and it explicitly reverts anything that writes that file directly. Hardcoding an owner therefore breaks
     the moment the pool rotates: this session went artafather -> arash0ash -> ashranet, and a dataset owned
-    by one account is 403 to the others. Ask instead:
-        node tools/ticket-agent/kaggle-accounts.mjs pick --expect <hours>
-        node tools/ticket-agent/kaggle-accounts.mjs use <account>
+    by one account is 403 to the others.
+
+    ArtaSwitch is a SEPARATE tool and this repository does not depend on it or on where it is checked out.
+    Point $AQ_KAGGLE_ACCOUNTS at its account script and ask it which account to spend, rather than writing
+    ~/.kaggle/kaggle.json here:
+        "$AQ_KAGGLE_ACCOUNTS" pick --expect <hours>
+        "$AQ_KAGGLE_ACCOUNTS" use <account>
+    With the variable unset this function simply reports whoever is currently authenticated, which is all the
+    rest of this file needs.
     """
     import json as _j
     import os as _o

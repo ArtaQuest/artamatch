@@ -1,11 +1,25 @@
-name: Build, test and deploy to Pages
+name: Verify and publish the ArtaMatch page
+
+# WHAT IS PUBLISHED is docs/ — a static page that computes everything in the browser under Pyodide. There is
+# no build step, and that is deliberate rather than lazy: docs/ contains the ephemeris asset and the exported
+# model, both of which are generated from Swiss Ephemeris .se1 files and a training run that are not in this
+# repository. CI therefore cannot rebuild the page. What it CAN do is refuse to publish a broken one, so every
+# gate below runs against the artefact that is about to go live.
+#
+# This workflow depends on nothing outside this repository: Python with numpy and astropy, and the Chrome the
+# runner already has. No npm project, no sibling checkout.
 
 on:
   push:
-    # The work is staged on feature/artamatch and previewed live from there; main takes over once
-    # it is merged. Pages hosts one site, so whichever of these pushed last is what is served.
-    branches: [main, feature/artamatch]
+    branches: [main, feature/artamatch, research/divorce-study]
+    paths:
+      - 'docs/**'
+      - 'web/**'
+      - '.github/workflows/pages.yml'
   pull_request:
+    paths:
+      - 'docs/**'
+      - 'web/**'
   workflow_dispatch:
 
 permissions:
@@ -13,60 +27,55 @@ permissions:
   pages: write
   id-token: write
 
-# A queued deploy should wait for the running one rather than cancel it — cancelling mid-deploy is
-# how a Pages site ends up serving half of one build and half of another.
+# A queued deploy waits for the running one instead of cancelling it. Cancelling mid-deploy is how a Pages
+# site ends up serving half of one build and half of another.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+
+      - uses: actions/setup-python@v5
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
+          python-version: '3.12'
 
-      # The verification gate. tests/golden.json is committed, so the Swiss Ephemeris comparison
-      # runs here without the 300 MB .se1 files — a regression in the ephemeris fails the build
-      # rather than shipping quietly.
-      - name: Typecheck
-        run: npx tsc -b
-      # Contrast is arithmetic, so it is asserted rather than reviewed. The brand allows two hues
-      # and no third accent, so the only lever is lightness — this fails if any ink drops below
-      # 4.5:1 on the surface it is used against.
-      - name: Contrast
-        run: node tools/contrast.mjs
-      - name: Test against Swiss Ephemeris golden data
-        run: npm test
+      # Exactly the packages Pyodide gives the page. Installing more here would let a gate pass on something
+      # the browser cannot import.
+      - name: Install the browser's own dependencies
+        run: python -m pip install --quiet numpy astropy
 
-      - name: Build
-        run: npx vite build
+      # Ten checks, all against docs/: files present, the asset magic agrees with the shipped reader, the model
+      # is structurally a model, the benchmark carries exactly the 15 man x woman cells, every bundled module is
+      # importable in the browser, all 51 blocks build at their trained width, and the shipped model scores
+      # probe couples end to end through the shipped shim.
+      - name: The artefact verifies against itself
+        run: python web/verify_docs.py docs
 
-      # Load the built bundle in a real browser: console errors, page errors, horizontal overflow
-      # and broken meter layout all fail the deploy instead of shipping quietly.
-      - name: Browser smoke (screenshots + layout assertions)
+      - name: Serve docs/
         run: |
-          npx playwright install --with-deps chromium
-          node tools/screenshot.mjs "$PWD/dist" /tmp/shots
+          python -m http.server 8891 --directory docs --bind 127.0.0.1 &
+          for i in $(seq 1 40); do
+            curl -sf -m 2 -o /dev/null http://127.0.0.1:8891/index.html && break
+            sleep 0.5
+          done
+          curl -sf -m 5 -o /dev/null -w 'index.html -> HTTP %{http_code}\n' http://127.0.0.1:8891/index.html
 
-      # Pages serves no fallback for client-side routes; copying index.html to 404.html means a
-      # deep link resolves instead of showing GitHub's own 404 page.
-      - name: SPA fallback
-        run: cp dist/index.html dist/404.html
+      # Load the page in Chrome and WAIT for Pyodide, then assert the precision grid actually painted 15
+      # numbers, that the headline statistic is not still a placeholder, and that the console is clean.
+      - name: The page renders its own measurements
+        run: node web/browser_verify.mjs http://127.0.0.1:8891/index.html
 
       - uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: docs
 
   deploy:
-    needs: build
-    if: >-
-      github.event_name != 'pull_request' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/feature/artamatch')
+    needs: verify
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

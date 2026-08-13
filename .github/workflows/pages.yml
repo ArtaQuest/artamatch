@@ -10,8 +10,11 @@ name: Verify and publish the ArtaMatch page
 # runner already has. No npm project, no sibling checkout.
 
 on:
+  # Only the branches Pages actually serves. Pushing the same commit to a work branch AND to
+  # feature/artamatch fired two runs that then queued behind each other on the `pages` concurrency group,
+  # doing the same verification twice to deploy the same bytes.
   push:
-    branches: [main, feature/artamatch, research/divorce-study]
+    branches: [main, feature/artamatch]
     paths:
       - 'docs/**'
       - 'web/**'

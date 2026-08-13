@@ -29,20 +29,34 @@ const LEVELS = ["full", "month", "year", "absent"];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const profile = mkdtempSync(join(tmpdir(), "aqchrome-"));
 
+// spawn() reports a missing binary as an ASYNCHRONOUS 'error' event, not a synchronous throw, so a
+// try/catch around it catches nothing: the first candidate here is a macOS path, and on Linux it took the
+// whole process down with an unhandled 'error' before the loop could try google-chrome. Resolve on the
+// event instead, and treat an immediate exit as a failure too.
+function launch(bin) {
+  const args = ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run",
+    "--no-default-browser-check", "--disable-dev-shm-usage",
+    `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, "about:blank"];
+  return new Promise(resolve => {
+    let c;
+    try { c = spawn(bin, args, { stdio: "ignore" }); } catch { return resolve(null); }
+    let settled = false;
+    const fail = () => { if (!settled) { settled = true; resolve(null); } };
+    c.once("error", fail);
+    c.once("exit", fail);
+    setTimeout(() => { if (!settled) { settled = true; resolve(c); } }, 1500);
+  });
+}
+
 let child = null;
+const tried = [];
 for (const bin of CANDIDATES) {
-  try {
-    child = spawn(bin, ["--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run",
-      "--no-default-browser-check", "--disable-dev-shm-usage",
-      `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, "about:blank"],
-      { stdio: "ignore" });
-    await sleep(1200);
-    if (child.exitCode === null) { console.log(`  browser: ${bin}`); break; }
-  } catch { /* try the next candidate */ }
-  child = null;
+  tried.push(bin);
+  child = await launch(bin);
+  if (child) { console.log(`  browser: ${bin}`); break; }
 }
 if (!child) {
-  console.error(`  no Chrome found; tried ${CANDIDATES.join(", ")}`);
+  console.error(`  no usable Chrome; tried ${tried.join(", ")}`);
   process.exit(2);
 }
 

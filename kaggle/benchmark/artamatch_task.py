@@ -21,6 +21,13 @@
 # SIGNED difference between the two dates (woman minus man) is computed here on the same couples and the same
 # fifteen cells, and printed beside the model's number. That is the reference this task is scored against.
 #
+# THE WINDOW MATTERS. Everyone in this data was born 1800-1950. An earlier version ran to 2026, and its
+# dominant effect was exposure rather than anything about the pairing: recorded parenthood ran about 58% for
+# couples born in the 1800s and 2% for the 1990s, because a couple born in 1990 may not have finished having
+# children and any child they do have has not had time to become notable enough to record. Restricting the
+# window leaves a residual gradient of 0.385 across decades against roughly 0.56 before — smaller, real, and
+# not zero.
+#
 # The couples are drawn from the PUBLIC training half of
 # artaquest-foundation/artamatch-two-birth-dates (CC0), so nothing here is a held-out answer key — a
 # benchmark whose answers sit in a public file would be measuring recall, and this one is meant to measure
@@ -48,6 +55,10 @@ NO_DATE = "1900-01-01"
 PROMPT = """You are given {n} couples. For each, the only facts available are the man's date of birth and the
 woman's date of birth — nothing else. No names, no places, no occupations.
 
+Dates are YYYY-MM-DD, and `00` means that part is NOT KNOWN: `1889-00-00` is a birth in 1889 with the month and
+day unrecorded, `1889-04-00` is April 1889 with the day unrecorded. Everyone here was born between 1800 and
+1950, so all of them have had a full lifetime in which to have children.
+
 For each couple, estimate the PROBABILITY that a child exists who names both of them as parents.
 
 Answer with exactly {n} lines, each of the form
@@ -57,12 +68,16 @@ and nothing else. No explanation, no preamble.
 {items}"""
 
 
+# An unknown component is written `00`, the same encoding the dataset itself uses: `1889-00-00` is a year and
+# `1889-04-00` a month. Coarsening is IDEMPOTENT, so a date that only ever had a year is indistinguishable from
+# one coarsened down to a year — which is what makes the `year|year` cell a question about ranking rather than
+# about how well documented somebody is.
 def month_only(d):
-    return d[:8] + "01"
+    return d[:7] + "-00"
 
 
 def year_only(d):
-    return d[:4] + "-01-01"
+    return d[:4] + "-00-00"
 
 
 COARSEN = {"full": None, "month": month_only, "year": year_only, "absent": "absent"}

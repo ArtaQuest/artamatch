@@ -70,8 +70,9 @@
 <div class="wrap">
 <header>
   <h1>Can two <em>birth dates</em> predict whether a couple has children?</h1>
-  <p class="sub">An astrology-only model, trained on every declared partnership between prominent people
-  since 1800, and reported against the one baseline it is allowed: a two-parameter logistic on the signed
+  <p class="sub">An astrology-only model, trained on couples <b>born 1800&ndash;1950</b> — a window chosen so
+  that every one of them has had a full reproductive life — and reported against the one baseline it is
+  allowed: a two-parameter logistic on the signed
   subtraction of the two dates.</p>
 </header>
 
@@ -146,7 +147,8 @@
   <div class="warnbox">
     <b>A score here is a model output, not a fact about anybody.</b> The label is whether two people with a
     declared partnership have a recorded child together — which is a fact about what Wikidata records, not
-    about what happened. Nothing on this page is advice.
+    about what happened. A couple whose child was never written down counts here as a couple without one.
+    Nothing on this page is advice.
   </div>
   <ul>
     <li><b>Astrology only.</b> Every feature comes from a tradition module: charts, aspects, harmonics,
@@ -168,14 +170,21 @@
     <li><b>Person-disjoint validation, five folds of 80/20.</b> A person appears in more than one
       partnership, so folds are split by person group, never by row. Every number in the grid is
       out-of-fold, and a degraded row is scored by the fold-model that never saw it.</li>
-    <li><b>Read this one before believing the headline.</b> The traditions carrying this model all encode a
-      <i>long-baseline calendar</i> — heliacal risings, the Saros and Metonic cycles, the Egyptian civil
-      year, Long Count intervals, the slow Uranian dials. The traditions built from purely <i>cyclic</i>
-      quantities sit near chance: Vedic marriage matching 0.566, East Asian 0.567, Chinese 0.579. And a
-      single non-astrological block of birth cohort plus exposure, excluded from this model because it is
-      not astrology, reaches <b>0.7004</b> on its own — indistinguishable from the best astrological block.
-      The most defensible reading of this page is that it measures <i>when</i> two people were born, and
-      recorded parenthood among prominent people depends heavily on when.</li>
+    <li><b>The window is the experiment.</b> An earlier version of this model was trained on births from 1800
+      to 2026, and its dominant effect was not astrology but <i>exposure</i>: recorded parenthood ran about
+      58% for couples born in the 1800s and 2% for the 1990s, because a couple born in 1990 may not have
+      finished having children and any child they do have has not had time to become notable enough to record.
+      Any smooth function of two dates scores well on that by identifying the era. Restricting the parents to
+      <b>1800&ndash;1950</b> removes the cliff — the rate across decades now spans <b>0.385</b> against
+      roughly 0.56 before, falling from 0.738 for the 1800s and settling near 0.40 from 1900 onwards. That
+      residual is real and it is not zero, so read the per-tradition table below against it rather than
+      against chance.</li>
+    <li><b>A date can say &ldquo;I do not know&rdquo;.</b> A third of the training dates are incomplete, and
+      an unknown component is written <code>00</code> — <code>1889-00-00</code> is a year,
+      <code>1889-04-00</code> a month. Wikidata pads an unknown day with <code>01</code> instead, which would
+      make a year-only birth indistinguishable from a genuine 1 January birthday and let the model read date
+      precision as a proxy for how well documented somebody is. The controls above accept the same encoding,
+      and the model is told the precision rather than left to infer it.</li>
   </ul>
   <p style="margin:18px 0 0" id="pills"></p>
 </div>

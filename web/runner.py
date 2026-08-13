@@ -117,9 +117,31 @@ def _write(rows):
         json.dump(rows, f)
 
 
+# A date whose unknown components are written `00`: `1850-03-17` is a day, `1850-03-00` a month, `1850-00-00`
+# a year. This mirrors kaggle/dates.py deliberately rather than importing it — the browser bundle ships only
+# what the page needs — and the two must agree, because a page that reports precision differently from the
+# training data is scoring the model on a representation it never saw.
+_WINDOW = {11: 1.0, 10: 30.0, 9: 365.0}
+
+
+def _precision(d):
+    if not isinstance(d, str) or len(d) != 10:
+        raise ValueError(f"not a YYYY-MM-DD date: {d!r}")
+    if d[8:10] != "00":
+        return 11
+    return 10 if d[5:7] != "00" else 9
+
+
+def _concrete(d):
+    """A real instant to compute a chart for. The precision travels beside it, so nothing claims to know the day."""
+    return f"{d[:4]}-{'01' if d[5:7] == '00' else d[5:7]}-{'01' if d[8:10] == '00' else d[8:10]}"
+
+
 def _row(a_id, b_id, a_dob, b_dob):
-    return {"a": a_id, "b": b_id, "aDob": a_dob, "bDob": b_dob,
-            "aSex": "M", "bSex": "F", "aPrec": 11, "bPrec": 11, "aWin": 1, "bWin": 1,
+    pa, pb = _precision(a_dob), _precision(b_dob)
+    return {"a": a_id, "b": b_id, "aDob": _concrete(a_dob), "bDob": _concrete(b_dob),
+            "aSex": "M", "bSex": "F",
+            "aPrec": pa, "bPrec": pb, "aWin": _WINDOW[pa], "bWin": _WINDOW[pb],
             "label": 0}
 
 
@@ -146,8 +168,9 @@ def score_pair(dob_a, dob_b):
     if not _acceptable(dob_a, dob_b):
         return {"ok": False,
                 "why": f"outside what this model can answer: both births must fall in "
-                       f"{YEAR_LO}-{YEAR_HI} (the shipped ephemeris and the training range) and be no more "
-                       f"than {int(MAX_GAP_YEARS)} years apart"}
+                       f"{_year_range()[0]}-{_year_range()[1]} — the years it was trained on, chosen so that "
+                       f"every couple has had a full reproductive life — and be no more than "
+                       f"{int(MAX_GAP_YEARS)} years apart"}
     p, P, _ = _build([_row("self", "partner", dob_a, dob_b)])
     if len(p) == 0:
         return {"ok": False, "why": "core.py refused this pair"}
@@ -162,19 +185,40 @@ def score_pair(dob_a, dob_b):
 # The binding range is the intersection. Getting this wrong does not produce an error message — core.load
 # silently returns fewer rows than were asked for, and since it drops them from the MIDDLE of a batch, the
 # surviving scores can no longer be matched to the dates that produced them.
-YEAR_LO, YEAR_HI = 1800, 2026
+# The range this model may be ASKED about is the range it was TRAINED on, not the range the ephemeris covers.
+# The training window is 1800-1950 — deliberately, to keep the exposure effect out of the measurement — so a
+# 1994 birth is extrapolation, and the honest answer to it is a refusal rather than a confident number. The
+# shipped model.json carries the window it was fitted on and that is what is used; the constants here are only
+# the fallback for a build that predates the field.
+YEAR_LO, YEAR_HI = 1800, 1950
 MAX_GAP_YEARS = 60.0
 
 
 def _acceptable(dob_a, dob_b):
+    """Can this model answer about these two dates at all?
+
+    `date.fromisoformat` cannot read `1850-00-00`, so this parses the concrete form. Without that, every
+    coarse date — a third of the training data's own encoding — was refused by the page as malformed.
+    """
     from datetime import date
     try:
-        a, b = date.fromisoformat(dob_a), date.fromisoformat(dob_b)
-    except ValueError:
+        a, b = date.fromisoformat(_concrete(dob_a)), date.fromisoformat(_concrete(dob_b))
+    except (ValueError, TypeError, IndexError):
         return False
-    if not (YEAR_LO <= a.year <= YEAR_HI and YEAR_LO <= b.year <= YEAR_HI):
+    lo, hi = _year_range()
+    if not (lo <= a.year <= hi and lo <= b.year <= hi):
         return False
     return abs((b - a).days) / 365.2425 <= MAX_GAP_YEARS
+
+
+def _year_range():
+    """The window the shipped model was fitted on, falling back to the module constants."""
+    h = getattr(_stack, "h", None) or {}
+    tw = h.get("train_window") or {}
+    try:
+        return int(tw["from"]), int(tw["to"])
+    except (KeyError, TypeError, ValueError):
+        return YEAR_LO, YEAR_HI
 
 
 def _dates(frm, to, step):

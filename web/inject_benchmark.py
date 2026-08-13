@@ -1,0 +1,94 @@
+"""
+inject_benchmark.py — put the measured grid, and the window the model may be asked about, into web/model.json.
+
+WHY THIS IS A SCRIPT AND NOT THREE LINES AT A PROMPT. It was three lines at a prompt, and one of them was
+`m["base"] = result["baseline_auc"]` — which replaced the model's LIST OF 51 BASE MODELS with a float. The file
+still looked like a model and could not be loaded. ship.py refused to bundle it, which is the only reason it did
+not ship. So the keys the exporter owns are now explicitly protected, and the only thing this may add is the
+measurement.
+
+WHAT IT ADDS
+    benchmark      the 15 per-cell AUCs, their mean, the same 15 cells for the signed-gap reference
+    train_window   the years the model was FITTED on, so the page refuses to answer outside them
+
+WHY THE WINDOW TRAVELS WITH THE MODEL. The page used to carry `YEAR_LO, YEAR_HI = 1800, 2026` as constants —
+the span of the shipped ephemeris. That is not the same question as "what was this model trained on", and once
+the training window moved to 1800-1950 the constants silently authorised extrapolation: the page's own default
+inputs were 1994 and 2004, and it would have answered them with confidence. A model that declares its own
+window cannot drift away from the page.
+
+Usage: AQ_MODEL=/tmp/aqfull4 AQ_TRAIN=/tmp/aqscrape3/train.csv ~/.artamatch-venv/bin/python web/inject_benchmark.py
+"""
+import csv
+import json
+import os
+import shutil
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+MODEL = os.environ.get("AQ_MODEL", "/tmp/aqfull4")
+TRAIN = os.environ.get("AQ_TRAIN", "/tmp/aqscrape3/train.csv")
+
+# Everything the exporter writes. This script may ADD keys and may not touch these, because they are the model.
+EXPORTER_OWNS = {"base", "meta", "blocks", "contract", "rate", "hour", "traditions", "tradition_auc"}
+LEVELS = ["full", "month", "year", "absent"]
+EXPECTED = {f"{a}|{b}" for a in LEVELS for b in LEVELS} - {"absent|absent"}
+
+
+def main():
+    m = json.load(open(os.path.join(MODEL, "model.json")))
+    g = json.load(open(os.path.join(MODEL, "grid_result.json")))
+    res = json.load(open(os.path.join(MODEL, "result.json")))
+
+    before = {k: m[k] for k in EXPORTER_OWNS if k in m}
+    if not isinstance(m.get("base"), list) or not m["base"]:
+        raise SystemExit(f"model.json's `base` is a {type(m.get('base')).__name__}, not the list of base "
+                        f"models — this file is not loadable and must not be shipped")
+
+    cells = set(g["per_cell"])
+    if cells != EXPECTED:
+        raise SystemExit(f"the grid has {len(cells)} cells, not the 15 the metric averages; "
+                         f"unexpected {sorted(cells - EXPECTED)}, missing {sorted(EXPECTED - cells)}")
+
+    years = []
+    with open(TRAIN) as f:
+        for r in csv.DictReader(f):
+            years.append(int(r["dob_man"][:4]))
+            years.append(int(r["dob_woman"][:4]))
+    lo, hi = min(years), max(years)
+
+    m["benchmark"] = {
+        "metric": g["metric"],
+        "benchmark15": g["mean15"],
+        "reference15": g["reference_signed_gap_mean15"],
+        "lift": g["lift"],
+        "n_rows": g["couples"],
+        "grid": "man x woman",
+        "excluded": "with neither date there is no input, so the cell cannot rank anyone",
+        "cells": {k: {"stack": v,
+                      "baseline": g["reference_per_cell"][k],
+                      "lift": v - g["reference_per_cell"][k]} for k, v in g["per_cell"].items()},
+    }
+    # Read off the training file itself rather than restated by hand, so the page cannot claim a window the
+    # model was not fitted on.
+    m["train_window"] = {"from": lo, "to": hi, "n": len(years) // 2}
+    m["auc"] = res["cv_auc"]
+    m["n"] = res["n_train"]
+
+    after = {k: m[k] for k in EXPORTER_OWNS if k in m}
+    if after != before:
+        raise SystemExit(f"this script modified keys it does not own: "
+                         f"{sorted(k for k in after if after[k] != before.get(k))}")
+
+    json.dump(m, open(os.path.join(HERE, "model.json"), "w"))
+    shutil.copy2(os.path.join(MODEL, "model.npz"), os.path.join(HERE, "model.npz"))
+
+    print(f"  web/model.json: {len(m['base'])} base models untouched, {len(m['benchmark']['cells'])} cells added")
+    print(f"  mean of 15 AUCs {g['mean15']:.4f}   reference {g['reference_signed_gap_mean15']:.4f}   "
+          f"lift {g['lift']:+.4f}")
+    print(f"  train_window {lo}-{hi} over {len(years)//2:,} couples — the page will refuse anything outside it")
+    print(f"  out-of-fold AUC {res['cv_auc']:.4f}   baseline {res['baseline_auc']:.4f}")
+
+
+if __name__ == "__main__":
+    main()

@@ -58,6 +58,13 @@ jobs:
       - name: The artefact verifies against itself
         run: python web/verify_docs.py docs
 
+      # The layer above the bundle: a date with `00` in it has to survive the browser control, the acceptance
+      # check and core.load() and come back as a probability. Its failure mode is a REFUSAL, which looks
+      # deliberate — the page would say "outside what this model can answer" for a third of the training data's
+      # own encoding and nothing would appear broken.
+      - name: A partly-known date still scores
+        run: python web/test_runner.py docs
+
       - name: Serve docs/
         run: |
           python -m http.server 8891 --directory docs --bind 127.0.0.1 &

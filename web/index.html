@@ -27,6 +27,9 @@
          background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;
          margin:24px 0 8px}
   .stats>div{background:var(--bg2);padding:16px 18px}
+  .dpart{display:flex;gap:6px;flex-wrap:wrap}
+  .dpart .dy{width:6.5em}
+  .dpart select{min-width:5.5em}
   .stats b{display:block;font:600 26px/1.15 var(--mono);color:var(--gold);
            font-variant-numeric:tabular-nums}
   .stats span{display:block;color:var(--ink3);font-size:12px;margin-top:4px;line-height:1.35}
@@ -87,8 +90,8 @@
   <p class="lede">Two dates in, one probability out. Every planetary position is computed here, in your
   browser, when you press the button — there is no lookup table of answers and no cache.</p>
   <div class="grid">
-    <div><label>Born</label><input id="a-dob" type="date" value="1994-02-15"></div>
-    <div><label>Partner born</label><input id="b-dob" type="date" value="2004-01-31"></div>
+    <div><label>His birth date</label><span class="dpart" id="a-dob"></span></div>
+    <div><label>Her birth date</label><span class="dpart" id="b-dob"></span></div>
   </div>
   <p style="margin:16px 0 0"><button id="go-pair" disabled>Score this pair</button></p>
   <div id="pair-out"></div>
@@ -99,9 +102,12 @@
   <p class="lede">Holds one birth date fixed and scores every candidate date in a range, then ranks them.
   There is no city dimension: the model's only inputs are two dates.</p>
   <div class="grid">
-    <div><label>Your birth date</label><input id="f-self" type="date" value="1994-02-15"></div>
-    <div><label>Candidates from</label><input id="f-from" type="date" value="2004-01-01"></div>
-    <div><label>to</label><input id="f-to" type="date" value="2006-12-31"></div>
+    <div><label>One birth date</label><input id="f-self" type="date" value="1889-04-16"
+         min="1800-01-01" max="1950-12-31"></div>
+    <div><label>Candidates from</label><input id="f-from" type="date" value="1893-01-01"
+         min="1800-01-01" max="1950-12-31"></div>
+    <div><label>to</label><input id="f-to" type="date" value="1895-12-31"
+         min="1800-01-01" max="1950-12-31"></div>
     <div><label>Step (days)</label><select id="f-step">
       <option value="1">every day</option><option value="7" selected>every 7 days</option>
       <option value="14">every 14 days</option><option value="30">every 30 days</option></select></div>
@@ -318,9 +324,44 @@ function render(i) {
     + `${i.days.toLocaleString()} days of ephemeris. Nothing precomputed.`);
 }
 
+// A DATE THAT CAN SAY "I DO NOT KNOW". `<input type="date">` cannot express a partial date, and a third of the
+// training data is partial: an unknown component is written `00`, so `1889-00-00` is a year and `1889-04-00` a
+// month. The control therefore holds its three parts as the state, and the string is composed FROM them — never
+// parsed back out of a combined value, which is how a multi-part control silently discards what was picked.
+const MONTHS = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+
+function dateControl(host, year, month, day) {
+  const opts = (n, labels, sel) =>
+    [`<option value="00">—</option>`].concat(
+      Array.from({ length: n }, (_, i) => {
+        const v = String(i + 1).padStart(2, "0");
+        return `<option value="${v}"${v === sel ? " selected" : ""}>${labels ? labels[i] : i + 1}</option>`;
+      })).join("");
+  host.innerHTML =
+    `<input class="dy" type="number" min="1800" max="1950" step="1" value="${year}" aria-label="year">`
+    + `<select class="dm" aria-label="month">${opts(12, MONTHS, month)}</select>`
+    + `<select class="dd" aria-label="day">${opts(31, null, day)}</select>`;
+}
+
+function readDate(host) {
+  const y = String(Math.trunc(Number(host.querySelector(".dy").value) || 0)).padStart(4, "0");
+  let m = host.querySelector(".dm").value;
+  let d = host.querySelector(".dd").value;
+  // Precision is monotone: a day cannot be known when the month is not. Saying so here rather than letting an
+  // impossible pair reach the model, which would compute a chart for a day it was told nothing about.
+  if (m === "00") d = "00";
+  const dim = m === "00" ? 31 : new Date(Number(y), Number(m), 0).getDate();
+  if (d !== "00" && Number(d) > dim) d = String(dim).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+dateControl($("#a-dob"), 1889, "04", "16");
+dateControl($("#b-dob"), 1893, "07", "08");
+
 $("#go-pair").onclick = async () => {
   if (!ready) return;
-  const a = $("#a-dob").value, b = $("#b-dob").value;
+  const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
   $("#pair-out").innerHTML = `<p class="note">computing both charts and every tradition…</p>`;
   const r = JSON.parse(await py.runPythonAsync(
     `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));

@@ -36,6 +36,8 @@ import time
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import dates as D          # noqa: E402  — the one place that understands a date with 00 in it
 ROOT = os.path.dirname(HERE)
 ASTRO = os.path.join(ROOT, "astro")
 WEB = os.path.join(ROOT, "web")
@@ -55,13 +57,20 @@ def log(*a):
 
 
 def rows_from(path, labelled):
+    """Read the published CSV into the shape core.load() wants, precision included.
+
+    The precision is DERIVED from the date rather than assumed. This used to pass `aPrec: 11, aWin: 1` for
+    every row — telling core that every day was known, including for the third of rows that carry only a year
+    as `YYYY-00-00`. core has precision-aware features and an uncertainty window for exactly this case and they
+    were being handed a constant.
+    """
     out = []
     with open(path) as f:
         for i, r in enumerate(csv.DictReader(f)):
-            out.append({"a": f"a{i}", "b": f"b{i}", "aDob": r["dob_man"], "bDob": r["dob_woman"],
-                        "aSex": "M", "bSex": "F", "aPrec": 11, "bPrec": 11, "aWin": 1, "bWin": 1,
-                        "label": int(r["parents_together"]) if labelled else 0,
-                        "_id": r.get("id")})
+            rec = D.couple_record(i, r["dob_man"], r["dob_woman"],
+                                  int(r["parents_together"]) if labelled else 0)
+            rec["_id"] = r.get("id")
+            out.append(rec)
     return out
 
 

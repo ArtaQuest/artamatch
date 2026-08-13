@@ -34,6 +34,9 @@ ROOT = os.path.dirname(HERE)
 ASTRO = os.path.join(ROOT, "astro")
 WEB = os.path.join(ROOT, "web")
 
+sys.path.insert(0, HERE)
+import dates as D          # noqa: E402
+
 MODEL = os.environ.get("AQ_MODEL", "/tmp/aqfull2")
 GRID = os.environ.get("AQ_GRID", "/tmp/aqgrid")
 CHUNK = int(os.environ.get("AQ_CHUNK") or 8000)
@@ -76,9 +79,9 @@ def main():
     log(f"  {len(rows):,} grid rows · {len(MODULES)} tradition modules · chunk {CHUNK:,}")
 
     def couples(chunk):
-        return [{"a": f"a{i}", "b": f"b{i}", "aDob": r["dob_man"], "bDob": r["dob_woman"],
-                 "aSex": "M", "bSex": "F", "aPrec": 11, "bPrec": 11, "aWin": 1, "bWin": 1, "label": 0}
-                for i, r in enumerate(chunk)]
+        # Precision derived from the date, exactly as the trainer does it. If these two ever disagree the model
+        # is scored on a different representation than it was fitted on.
+        return [D.couple_record(i, r["dob_man"], r["dob_woman"]) for i, r in enumerate(chunk)]
 
     def features(chunk):
         json.dump(couples(chunk), open(CAND, "w"))
@@ -171,8 +174,16 @@ def main():
     from sklearn.linear_model import LogisticRegression
 
     def signed_years(df):
-        return ((pd.to_datetime(df["dob_woman"]).astype("int64")
-                 - pd.to_datetime(df["dob_man"]).astype("int64")) / (365.2425 * 86400 * 1e9)).to_numpy()
+        """Signed years, woman minus man, resolution-independent.
+
+        The nanosecond divisor this used to carry was wrong by 1000x because pandas returns microseconds for
+        these columns. A monotone rescaling does not move an AUC, so the reference score was unaffected — but
+        the same expression in the scraper turned a 60-year sanity filter into a no-op, so it is fixed in both
+        places rather than left in the one where it happened not to matter.
+        """
+        dw = pd.to_datetime(df["dob_woman"].map(D.concrete)).to_numpy(dtype="datetime64[D]").astype("int64")
+        dm = pd.to_datetime(df["dob_man"].map(D.concrete)).to_numpy(dtype="datetime64[D]").astype("int64")
+        return (dw - dm) / 365.2425
 
     te = pd.read_csv(os.path.join(GRID, "test.csv"))
     te = te[["id"]].assign(_gap=signed_years(te))

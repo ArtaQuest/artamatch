@@ -40,27 +40,26 @@ import numpy as np
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "/tmp/aqscrape"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "/tmp/aqgrid"
-NO_DATE = "1900-01-01"
+NO_DATE = "1900-00-00"   # no date at all: not even a year is claimed
 LEVELS = ["full", "month", "year", "absent"]
 
 
-def month_only(d):
-    return d[:8] + "01"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dates as D
 
-
-def year_only(d):
-    return d[:4] + "-01-01"
-
-
-COARSEN = {"full": None, "month": month_only, "year": year_only, "absent": "absent"}
+# Coarsening lives in dates.py so this file and the training data cannot disagree about what a month-precision
+# date looks like. `00` marks the unknown component: `1850-03-00` is a month, `1850-00-00` a year. Coarsening is
+# idempotent, so a row that only ever had a year is identical to one coarsened down to a year — which is the
+# property that makes the `year|year` cell measure ranking rather than documentation depth.
+COARSEN = {"full": None, "month": "month", "year": "year", "absent": "absent"}
 
 
 def degrade(dob_a, dob_b, la, lb):
     a, b = dob_a, dob_b
     if COARSEN[la] not in (None, "absent"):
-        a = COARSEN[la](a)
+        a = D.coarsen(a, COARSEN[la])
     if COARSEN[lb] not in (None, "absent"):
-        b = COARSEN[lb](b)
+        b = D.coarsen(b, COARSEN[lb])
     if COARSEN[la] == "absent" and COARSEN[lb] == "absent":
         a = b = NO_DATE
     elif COARSEN[la] == "absent":

@@ -2,52 +2,77 @@
 # # Two birth dates, one question: did they have a child together?
 #
 # This notebook builds the **ArtaMatch couples** dataset from scratch. Nothing is downloaded from a previous
-# version of it — every row here comes from live SPARQL queries against Wikidata, and the queries are in the
-# cells below so anyone can re-run them and get a different answer as Wikidata changes.
+# version of it — every row comes from live SPARQL against Wikidata, and the queries are in the cells below so
+# anyone can re-run them and get a different answer as Wikidata changes.
 #
 # The output is deliberately, almost aggressively small: **three columns**.
 #
 # | column | meaning |
 # |---|---|
-# | `dob_man` | the man's date of birth, `YYYY-MM-DD` |
-# | `dob_woman` | the woman's date of birth |
+# | `dob_man` | the man's date of birth, `YYYY-MM-DD`, with `00` for anything Wikidata does not know |
+# | `dob_woman` | the woman's date of birth, same encoding |
 # | `parents_together` | 1 if a child exists who names **both** of them as parents, else 0 |
 #
-# That is the whole input. No names, no places, no occupations, no nationality, no sex, no marriage date.
-# Two dates. The question is whether anything at all can be predicted from them.
+# Two dates in, one bit out. No names, places, occupations, nationality or marriage dates.
 #
-# ## Why three columns is the interesting version
+# ## The version that matters: 1800–1950 only
 #
-# A wider table invites a model to find the answer somewhere other than where the question is. Give it
-# occupations and it learns that actors are documented differently from monarchs; give it nationality and it
-# learns which countries' genealogies are well recorded. Strip all of that away and one honest question
-# remains: **do two dates carry signal about a shared child, and how much of that signal is simply *when*
-# these people were born?**
+# The previous build ran 1800–2026 and its dominant effect was not astrology, it was **exposure**. Recorded
+# parenthood ran about 58% for couples born in the 1800s and 2% for the 1990s, because a couple born in 1990
+# may not have finished having children and any child they do have has not had time to become notable enough
+# for Wikidata to record. Any smooth function of two dates scores well on that data by identifying the era: a
+# cohort-plus-exposure feature block alone reached AUC 0.7004.
 #
-# That last part is not rhetorical. It is the dominant effect in this data and the reason the dataset exists
-# in this shape. See the closing section.
+# So this build takes **150 years of parents, 1800 to 1950 inclusive** — every one of whom has had a full
+# reproductive life and whose children have had decades to be written about. What is left is generational and
+# astrological structure, measured without the recency cliff doing the work. The residual gradient inside the
+# window is printed below rather than assumed away.
 #
-# ## Six decisions, each of which changes the data
+# **Children are not restricted.** A child born any time proves its parents were a couple, so the label query
+# puts no date bound and no notability bound on the child at all.
 #
-# 1. **Only declared relationships.** A couple is included because Wikidata states `P26` (spouse) or `P451`
-#    (unmarried partner) between them — never because a child pointed at both of them. An earlier version of
-#    this dataset discovered couples *through* their children, which made "has a child" identical to "was
-#    found via a child". The label was the discovery route wearing a disguise.
-# 2. **Both partners must be human.** `P31 = Q5`. This is not pedantry: Wikidata has 10,641 non-human
-#    entities with declared partnerships, and George Jetson, Jane Jetson and Terry McGinnis were all sitting
-#    in an earlier build with declared spouses and recorded children.
-# 3. **A child must name BOTH partners.** The label comes from `?child wdt:P22 ?father ; wdt:P25 ?mother` —
-#    one child declaring both people. A child who names only one of them says nothing about the pair.
-# 4. **Day precision only, on both dates.** Wikidata stores a year-precision birth as `YYYY-01-01`. In a
-#    three-column table there is nowhere to record precision, so a year-only date would be indistinguishable
-#    from a genuine 1 January birthday and every model would learn a spurious 1-January effect. Both dates
-#    must carry `timePrecision >= 11`.
-# 5. **At least one partner must have a Wikipedia article.** A person with a Wikidata item and no article in
-#    any language is very often there *only* because they were somebody's parent or spouse — which is the
-#    circularity of decision 1 arriving by a different door.
-# 6. **The 80/20 split is by PERSON, not by row.** People appear in several partnerships. Splitting rows at
-#    random would put one of somebody's relationships in train and another in test, and a model could then
-#    recognise the person rather than predict the outcome.
+# ## Seven decisions, each of which changes the data
+#
+# 1. **Two universes, and the metric lives in the smaller one.** A couple qualifies either because Wikidata
+#    states `P26` (spouse) / `P451` (unmarried partner), or because some person names both of them as its
+#    father and mother. The second kind is *positive by construction*, and an early version of this dataset
+#    that discovered couples only through their children made "has a child" identical to "was found via a
+#    child" — the label was the discovery route wearing a disguise. That trap is avoided here by separating
+#    the two jobs: co-parent pairs join the TRAINING half, and the held-out half is **declared partnerships
+#    only**. Whatever the reported score measures, it cannot be measuring how a row was found.
+# 2. **Any birth-date precision, and missing parts are written `00`.** Requiring day precision threw away
+#    44,464 couples — a third of the window. But Wikidata writes a year-precision birth as `YYYY-01-01`, and
+#    copying that through would make a year-only date indistinguishable from a genuine 1 January birthday: 42.7%
+#    of rows carried at least one `-01-01`, so "is this a 1 January" became a readable proxy for how well
+#    documented a person is, which correlates with whether a child was recorded. So an unknown component is
+#    written as `00` instead — `1850-00-00` for a year, `1850-03-00` for a month, `1850-03-17` for a day. The
+#    missingness is now a fact in the data rather than a coincidence a model has to be trusted not to exploit,
+#    and it is the same encoding the precision grid uses for its `month` and `year` levels.
+# 3. **A partner with no date at all is excluded, and not for convenience.** 133,617 such rows exist. The only
+#    way to put one in a two-date table is to duplicate the other partner's date, which would make
+#    `dob_man == dob_woman` in half the file; and a couple with one date cannot exhibit a two-chart
+#    relationship, so those rows can teach a marginal rate but nothing about synastry. The precision grid
+#    measures that case properly, on couples whose truth is known.
+# 4. **Both partners must be human.** `P31 = Q5`. Not pedantry: Wikidata has 10,641 non-human entities with
+#    declared partnerships, and George Jetson, Jane Jetson and Terry McGinnis all sat in an earlier build with
+#    declared spouses and recorded children.
+# 5. **A child must name BOTH partners** — `?child wdt:P22 ?father ; wdt:P25 ?mother`. A child naming one of
+#    them says nothing about the pair. Both parental orientations are checked, because the pair is stored here
+#    in a canonical order that has nothing to do with which one is the father.
+# 6. **Sex comes from the parental role where there is one.** `P22` is father and `P25` is mother, so a
+#    co-parent pair carries its own sexes and needs no `P21` — which is also the only reason ten pairs whose
+#    father has no `P21` statement are in the data. Declared partnerships still need `P21` on both, because
+#    the column order is what encodes sex and an arbitrary order makes that claim false.
+# 7. **The split is by PERSON, not by row.** People appear in several partnerships. Splitting rows at random
+#    would put one of somebody's relationships in train and another in test, and a model could recognise the
+#    person instead of predicting the outcome. Connected components over the partnership graph go to one side
+#    or the other whole.
+#
+# **The notability filter is gone.** The previous build required a Wikipedia article on at least one partner,
+# which cost 30,454 couples. It was a proxy for documentation depth, and dropping it makes the data
+# substantially more inclusive at the price of more false negatives — real children who are simply not
+# recorded. That direction is the conservative one: unrecorded children *depress* a measured AUC, they do not
+# inflate it.
 
 #%%
 import collections
@@ -65,8 +90,12 @@ OUT = "/kaggle/working" if os.path.isdir("/kaggle/working") else "."
 ENDPOINT = "https://qlever.dev/api/wikidata"
 T0 = time.time()
 
+# The parents' window. Both partners must be born inside it. The children are not bounded.
+FLOOR, CEIL = 1800, 1950
+MAX_GAP_YEARS = 60          # a sanity bound on data errors, not a claim about human pairing
+MALE, FEMALE = "Q6581097", "Q6581072"
 
-UA = "ArtaMatch/1.0 (https://www.artaquest.com) couples dataset build"
+UA = "ArtaMatch/2.0 (https://www.artaquest.com) couples dataset build"
 
 
 def _fetch(query, accept):
@@ -80,10 +109,10 @@ def _fetch(query, accept):
 def sparql_count(select, body):
     """How many rows SHOULD the query return — counted through the SAME projection it will be read with.
 
-    The first version counted `COUNT(*)` over the raw pattern while the reader asked for `DISTINCT ?f ?m`,
-    so it compared 732,612 child statements against 366,889 distinct parent pairs and declared a complete
-    result incomplete. A completeness check is only worth having if it counts the same thing, so the select
-    clause goes inside a subquery and DISTINCT is honoured on both sides.
+    The first version counted `COUNT(*)` over the raw pattern while the reader asked for `DISTINCT ?f ?m`, so
+    it compared 732,612 child statements against 366,889 distinct parent pairs and called a complete result
+    incomplete. A completeness check is only worth having if it counts the same thing, so the select clause
+    goes inside a subquery and DISTINCT is honoured on both sides.
     """
     q = f"{PREFIXES}\nSELECT (COUNT(*) AS ?n) WHERE {{ {{ SELECT {select} WHERE {{ {body} }} }} }}"
     d = json.loads(_fetch(q, "application/qlever-results+json"))
@@ -100,9 +129,6 @@ def sparql(select, body, name, order=None, page=250000):
     What would not have been obvious is a truncated read that still parsed: every parent pair that failed to
     arrive becomes a couple silently labelled 0. A partial answer here is worse than no answer, because it
     looks like data.
-
-    So the row count is asked for separately, the rows are pulled in ordered pages, and the totals must
-    agree exactly or this raises.
     """
     t = time.time()
     want = sparql_count(select, body)
@@ -133,8 +159,8 @@ def sparql(select, body, name, order=None, page=250000):
     for c in out.columns:
         out[c] = out[c].str.strip().str.strip('"')
     if len(out) != want:
-        raise RuntimeError(f"{name}: got {len(out):,} rows but the endpoint counted {want:,} — the result "
-                           f"is incomplete, and an incomplete parent list silently mislabels couples")
+        raise RuntimeError(f"{name}: got {len(out):,} rows but the endpoint counted {want:,} — the result is "
+                           f"incomplete, and an incomplete parent list silently mislabels couples")
     print(f"  {name}: {len(out):,} rows in {time.time()-t:.0f}s (count-verified)", flush=True)
     return out
 
@@ -153,57 +179,113 @@ def qid(s):
     return s.rsplit("/", 1)[-1].rstrip(">")
 
 
+def stamp(iso, precision):
+    """Wikidata's timeValue plus its timePrecision, as a date whose unknown parts are `00`.
+
+    Precision 11 is a day, 10 a month, 9 a year. Wikidata pads the unknown parts with 01, so a year-precision
+    birth arrives as `1850-01-01T00:00:00Z` and is indistinguishable from someone genuinely born on 1 January.
+    Writing `1850-00-00` instead keeps the row and states what is not known.
+    """
+    p = int(precision)
+    if p >= 11:
+        return iso[:10]
+    if p == 10:
+        return iso[:7] + "-00"
+    return iso[:4] + "-00-00"
+
+
+def concrete(d):
+    """The same date with `00` replaced by `01`, for anything that needs a real instant."""
+    y, m, dd = d.split("-")
+    return f"{y}-{m if m != '00' else '01'}-{dd if dd != '00' else '01'}"
+
+
+# Both partners dated, at ANY precision from year upwards, both born inside the parents' window. The year
+# bound is pushed into SPARQL rather than filtered afterwards so the transfer stays small.
+def dated(a, b):
+    return f"""
+  ?{a} p:P569/psv:P569 ?{a}v . ?{a}v wikibase:timeValue ?{a}dob ; wikibase:timePrecision ?{a}prec .
+  ?{b} p:P569/psv:P569 ?{b}v . ?{b}v wikibase:timeValue ?{b}dob ; wikibase:timePrecision ?{b}prec .
+  FILTER(?{a}prec >= 9 && ?{b}prec >= 9)
+  FILTER(YEAR(?{a}dob) >= {FLOOR} && YEAR(?{a}dob) <= {CEIL})
+  FILTER(YEAR(?{b}dob) >= {FLOOR} && YEAR(?{b}dob) <= {CEIL})
+"""
+
+
 #%% [markdown]
-# ## 1. Every declared couple, with both birth dates and both sexes
+# ## 1. Declared partnerships — the universe the score is measured in
 #
-# `FILTER(STR(?a) < STR(?b))` keeps each unordered pair once. Wikidata states a spouse relation from both
-# sides, so without it every couple would appear twice with the columns swapped — and after an 80/20 split
-# the same couple could land on both sides of it.
+# `FILTER(STR(?a) < STR(?b))` keeps each unordered pair once: Wikidata states a spouse relation from both
+# sides, so without it every couple appears twice with the columns swapped, and after a split the same couple
+# could land on both sides of it. The canonical order is by Q-number and says nothing about sex — `P21` does
+# that, further down.
 
 #%%
-COUPLES_BODY = """
+DECLARED_BODY = f"""
   ?a wdt:P26|wdt:P451 ?b .
   FILTER(STR(?a) < STR(?b))
   ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
   ?a wdt:P21 ?asex . ?b wdt:P21 ?bsex .
-  ?a p:P569/psv:P569 ?av . ?av wikibase:timeValue ?adob ; wikibase:timePrecision ?aprec .
-  ?b p:P569/psv:P569 ?bv . ?bv wikibase:timeValue ?bdob ; wikibase:timePrecision ?bprec .
-  FILTER(?aprec >= 11 && ?bprec >= 11)
-"""
-cp = sparql("?a ?b ?adob ?bdob ?asex ?bsex", COUPLES_BODY, "couples", order="?a ?b")
+{dated('a', 'b')}"""
+dc = sparql("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", DECLARED_BODY,
+            "declared partnerships", order="?a ?b")
 for c in ("a", "b", "asex", "bsex"):
-    cp[c] = cp[c].map(qid)
-cp["adob"] = cp["adob"].str[:10]
-cp["bdob"] = cp["bdob"].str[:10]
-print(f"  distinct people: {len(set(cp['a']) | set(cp['b'])):,}")
+    dc[c] = dc[c].map(qid)
+dc["adob"] = [stamp(v, p) for v, p in zip(dc["adob"], dc["aprec"])]
+dc["bdob"] = [stamp(v, p) for v, p in zip(dc["bdob"], dc["bprec"])]
+dc["route"] = "declared"
+print(f"  distinct people: {len(set(dc['a']) | set(dc['b'])):,}")
 
 #%% [markdown]
-# ## 2. The label: a child who names both of them
+# ## 2. The children — every person is evidence that a couple existed
 #
-# `P22` is father, `P25` is mother. One child, both statements — so the pair is attested as parents *of the
-# same person*. This is the strictest reading available and the one that makes the target mean what its name
-# says.
+# This is the second of the two queries, and it is the one that brings the children in. A person with a father
+# and a mother proves those two were a couple, whether or not Wikidata ever states a partnership between them.
+#
+# **The same fact is stated two different ways in Wikidata and both have to be asked for.** A child may name
+# its parents (`P22` father, `P25` mother), or the parents may name the child (`P40`), and the two are not
+# kept in sync: the child-side statement alone finds 67,198 pairs, the parent-side statement alone finds
+# 67,378, and the union finds **93,738**. Asking only the obvious way would have missed 26,540 couples — 39%
+# more than the first form returns by itself.
+#
+# The two branches know sex differently, so each binds it for itself. `P22`/`P25` ARE the sexes — father and
+# mother — which is why that branch needs no `P21` at all and why ten pairs whose father has no `P21` statement
+# survive. The `P40` branch has no roles, only two parents of one child, so it does require `P21` on both.
+#
+# **No bound of any kind is placed on the child.** Not a date, not a notability filter, not even a birth date:
+# requiring the child to have one would discard 2,366 pairs, and a child born in 2015 attests its 1948-born
+# parents perfectly well. It is the parents' window that defines the era.
 
 #%%
-KIDS_BODY = "  ?child wdt:P22 ?f ; wdt:P25 ?m ."
-kd = sparql("DISTINCT ?f ?m", KIDS_BODY, "parent pairs", order="?f ?m")
-parents = {frozenset((qid(f), qid(m))) for f, m in zip(kd["f"], kd["m"])}
-print(f"  distinct unordered parent pairs: {len(parents):,}")
+COPARENT_BODY = f"""
+  {{ ?child wdt:P22 ?a ; wdt:P25 ?b .
+    BIND(wd:{MALE} AS ?asex) BIND(wd:{FEMALE} AS ?bsex) }}
+  UNION
+  {{ ?a wdt:P40 ?child . ?b wdt:P40 ?child .
+    FILTER(STR(?a) < STR(?b))
+    ?a wdt:P21 ?asex . ?b wdt:P21 ?bsex . }}
+  ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
+{dated('a', 'b')}"""
+cop = sparql("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", COPARENT_BODY,
+             "co-parent pairs (P22/P25 or P40)", order="?a ?b")
+for c in ("a", "b", "asex", "bsex"):
+    cop[c] = cop[c].map(qid)
+cop["adob"] = [stamp(v, p) for v, p in zip(cop["adob"], cop["aprec"])]
+cop["bdob"] = [stamp(v, p) for v, p in zip(cop["bdob"], cop["bprec"])]
+cop["route"] = "coparent"
+print(f"  distinct people: {len(set(cop['a']) | set(cop['b'])):,}")
+print(f"  distinct pairs: {len({frozenset((a, b)) for a, b in zip(cop['a'], cop['b'])}):,}")
 
 #%% [markdown]
-# ## 3. Who is actually in Wikipedia
+# ## 3. The label
 #
-# A Wikidata item is not notability. An article in some language edition is the closest available proxy, and
-# requiring it of at least one partner is what removes the people who exist in the data only as somebody's
-# relative.
+# `parents_together` is 1 when some child names both partners. The co-parent query above already *is* that
+# relation, so the label is a lookup against the unordered pairs it returned — which is why it is computed
+# before the two universes are merged, and why both parental orientations are covered by construction.
 
 #%%
-SITE_BODY = """
-  ?a wdt:P26|wdt:P451 ?x .
-  ?site schema:about ?a ; schema:isPartOf/wikibase:wikiGroup "wikipedia" .
-"""
-st = sparql("DISTINCT ?a", SITE_BODY, "people with a Wikipedia article", order="?a")
-inwiki = set(st["a"].map(qid))
+shared_child = {frozenset((a, b)) for a, b in zip(cop["a"], cop["b"])}
+print(f"  unordered pairs attested by a shared child: {len(shared_child):,}")
 
 #%% [markdown]
 # ## 4. Assemble, and account for every row that is dropped
@@ -211,167 +293,237 @@ inwiki = set(st["a"].map(qid))
 # The funnel is printed in full. A dataset that reports only its final size is hiding its own decisions.
 
 #%%
-FLOOR, CEIL = 1800, 2026
-funnel = [("declared couples, both human, both sexes, both dates day-precision", len(cp))]
+both = pd.concat([dc, cop], ignore_index=True)
+both["_pair"] = [f"{min(a, b)}|{max(a, b)}" for a, b in zip(both["a"], both["b"])]
 
-cp["label"] = [1 if frozenset((a, b)) in parents else 0 for a, b in zip(cp["a"], cp["b"])]
-# The label count is NOT a funnel step — labelling removes nothing. Printed separately, because putting it
-# in the chain made the running differences meaningless: a step that drops nothing appeared to drop 79,013
-# rows and the next step appeared to add 77,613 back.
-n_pos_all = int(cp["label"].sum())
+# TWO kinds of duplicate arrive here and they need different handling.
+#
+# The first is the same pair by both routes. The DECLARED copy must win, because that is the copy allowed into
+# the held-out half. Sorting on the route NAME does the opposite — "coparent" sorts before "declared" — and
+# that one wrong keep silently absorbed every declared pair that had a child, leaving the declared subset
+# 0.00% positive and the held-out half with no positives at all. So the rank is explicit.
+#
+# The second is the same pair TWICE BY THE SAME ROUTE, because a person with two P569 statements (or two P21)
+# multiplies out: 150,153 rows covered about 128,165 distinct pairs. Picking arbitrarily would make the file
+# depend on row order, so the finest-precision date wins and ties break on the earlier date.
+both["_rk"] = both["route"].map({"declared": 0, "coparent": 1})
+# Finest precision wins. `00` is now legible in the string, so this counts how many components are known
+# rather than guessing from a `-01-01` suffix that could have been a real birthday.
+both["_spec"] = -((~both["adob"].str.endswith("-00")).astype(int)
+                  + (~both["adob"].str.endswith("-00-00")).astype(int)
+                  + (~both["bdob"].str.endswith("-00")).astype(int)
+                  + (~both["bdob"].str.endswith("-00-00")).astype(int))
+dup_pairs = int(both["_pair"].duplicated().sum())
+both = (both.sort_values(["_rk", "_spec", "adob", "bdob"])
+        .drop_duplicates("_pair", keep="first").reset_index(drop=True))
+print(f"  {dup_pairs:,} duplicate rows collapsed to one per pair "
+      f"(both-routes and repeated-statement duplicates together)")
 
-opp = cp[((cp.asex == "Q6581097") & (cp.bsex == "Q6581072")) |
-         ((cp.asex == "Q6581072") & (cp.bsex == "Q6581097"))].copy()
-funnel.append(("opposite-sex only (male Q6581097 / female Q6581072)", len(opp)))
+funnel = [("declared partnership rows returned", len(dc)),
+          ("co-parent pair rows returned", len(dc) + len(cop)),
+          ("one row per distinct pair, declared copy preferred", len(both))]
 
-ya = opp["adob"].str[:4].astype(int)
-yb = opp["bdob"].str[:4].astype(int)
-opp = opp[(ya >= FLOOR) & (ya <= CEIL) & (yb >= FLOOR) & (yb <= CEIL)].copy()
-funnel.append((f"both births within {FLOOR}-{CEIL}", len(opp)))
+# Opposite sex only: the column order carries sex, so a pair the data cannot sex has no place to go.
+opp = both[((both["asex"] == MALE) & (both["bsex"] == FEMALE))
+           | ((both["asex"] == FEMALE) & (both["bsex"] == MALE))].copy()
+funnel.append(("opposite-sex only", len(opp)))
 
-gap = (pd.to_datetime(opp["adob"], errors="coerce") -
-       pd.to_datetime(opp["bdob"], errors="coerce")).dt.days.abs() / 365.2425
-opp = opp[gap.notna() & (gap <= 60)].copy()
-funnel.append(("births no more than 60 years apart", len(opp)))
+# Sex decides the columns. Nothing else may: an earlier version inherited the pair's Q-number order, which
+# made "the first column is the man" false for 45,182 of 87,762 rows.
+man_is_a = opp["asex"].eq(MALE)
+opp["dob_man"] = np.where(man_is_a, opp["adob"], opp["bdob"])
+opp["dob_woman"] = np.where(man_is_a, opp["bdob"], opp["adob"])
+opp["man"] = np.where(man_is_a, opp["a"], opp["b"])
+opp["woman"] = np.where(man_is_a, opp["b"], opp["a"])
+assert (opp.loc[man_is_a, "dob_man"] == opp.loc[man_is_a, "adob"]).all()
+assert (opp.loc[~man_is_a, "dob_man"] == opp.loc[~man_is_a, "bdob"]).all()
+print(f"  the man was partner A in {int(man_is_a.sum()):,} rows and partner B in {int((~man_is_a).sum()):,}"
+      f" — which is why the order is assigned rather than inherited")
 
-opp = opp[opp["a"].isin(inwiki) | opp["b"].isin(inwiki)].copy()
-funnel.append(("at least one partner has a Wikipedia article", len(opp)))
+def _years_between(a, b):
+    """Signed years from b to a, resolution-independent.
+
+    NOT `pd.to_datetime(x).astype("int64") / (365.2425 * 86400 * 1e9)`. That assumes nanoseconds, and pandas
+    here returns MICROseconds for these columns, so every gap came out a thousandth of its true size. The
+    symptom was a filter that silently removed nothing — the funnel printed "(+0)" — and 33 couples up to 115
+    years apart survived into training, where core.py dropped them and broke the row alignment instead.
+    Converting to datetime64[D] first makes the unit explicit and the arithmetic days, whatever pandas decides.
+    """
+    ca = pd.Series(list(a)).map(concrete)
+    cb = pd.Series(list(b)).map(concrete)
+    da = pd.to_datetime(ca).to_numpy(dtype="datetime64[D]").astype("int64")
+    db = pd.to_datetime(cb).to_numpy(dtype="datetime64[D]").astype("int64")
+    return (da - db) / 365.2425
+
+
+gap = np.abs(_years_between(opp["dob_man"], opp["dob_woman"]))
+# Strictly inside core.py's own bound, which drops anything `> 60`. Filtering at exactly the same number left
+# boundary couples to be dropped downstream instead, and a row dropped after the features are built cannot be
+# aligned with its prediction.
+opp = opp[gap < MAX_GAP_YEARS].copy()
+funnel.append((f"births less than {MAX_GAP_YEARS} years apart", len(opp)))
+assert np.abs(_years_between(opp["dob_man"], opp["dob_woman"])).max() < MAX_GAP_YEARS
+
+opp["parents_together"] = [int(frozenset((a, b)) in shared_child)
+                           for a, b in zip(opp["a"], opp["b"])]
+# Every co-parent row must be a positive: it was found through a child. If this ever fails, the label lookup
+# and the universe have drifted apart and nothing downstream means anything.
+assert opp.loc[opp["route"] == "coparent", "parents_together"].eq(1).all(), \
+    "a co-parent pair came out negative — the label and the universe disagree"
 
 print("\n  FUNNEL — every step removes rows, and the running difference says how many")
 prev = None
-for name, n in funnel:
-    d = "" if prev is None else f"   ({n-prev:+,})"
-    print(f"    {n:>9,}  {name}{d}")
+for label, n in funnel:
+    d = "" if prev is None else f"   ({n - prev:+,})"
+    print(f"      {n:>9,}  {label}{d}")
     prev = n
-print(f"\n  of the {funnel[0][1]:,} couples at the top, {n_pos_all:,} ({100*n_pos_all/funnel[0][1]:.2f}%) "
-      f"have a child naming both partners")
-print(f"  of the {len(opp):,} that survive every filter, {100*opp['label'].mean():.2f}% do")
+pos = int(opp["parents_together"].sum())
+print(f"\n  {pos:,} of {len(opp):,} ({100*pos/len(opp):.2f}%) have a child naming both partners")
+for r, g in opp.groupby("route"):
+    print(f"      {r:<9} {len(g):>8,} rows, {100*g['parents_together'].mean():5.2f}% positive")
+# A co-parent row is positive by construction, so 100% there is correct. A DECLARED row is not, and a declared
+# subset that is all-negative or all-positive means the label lookup and the universe have come apart — which
+# is exactly what a mis-sorted deduplication did here once, invisibly, until this was asserted.
+d_rate = opp.loc[opp["route"] == "declared", "parents_together"].mean()
+assert 0.15 < d_rate < 0.85, (f"declared partnerships are {100*d_rate:.2f}% positive — the label lookup has "
+                              f"come apart from the universe; a held-out half built from these cannot be scored")
 
 #%% [markdown]
-# ## 5. The split is by person
+# ## 5. The residual era gradient, printed rather than assumed away
 #
-# Connected components over the partnership graph: if two couples share a person they land on the same side.
-# The 80/20 is therefore approximate in rows and exact in people, which is the version that matters.
+# Restricting the parents to 1800–1950 removes the recency cliff; it does not flatten the window completely.
+# A couple born in 1945 had children in the 1970s, whose notability is recorded less thoroughly than that of
+# an 1850-born couple's children. The rate per decade is the honest measure of what is left, and it is printed
+# so that any claim about astrology can be read against it.
 
 #%%
-parent_uf = {}
+dec = opp["dob_man"].str[:4].astype(int) // 10 * 10
+era = opp.groupby(dec)["parents_together"].agg(["mean", "size"])
+print("  man's birth decade   rate    rows")
+for d, row in era.iterrows():
+    bar = "#" * int(round(40 * row["mean"]))
+    print(f"      {int(d)}         {row['mean']:.3f}  {int(row['size']):>6,}  {bar}")
+print(f"\n  spread across decades: {era['mean'].max() - era['mean'].min():.3f} "
+      f"(the 1800-2026 build spanned about 0.56)")
+
+#%% [markdown]
+# ## 6. The split: by person, and the held-out half is declared partnerships only
+#
+# Two rules at once. People appear in several partnerships, so **connected components** of the partnership
+# graph move to one side whole — otherwise a model could recognise a person rather than predict an outcome.
+# And the held-out half takes **only declared partnerships**, because a co-parent pair is positive by
+# construction and scoring on it would measure the discovery route. Co-parent pairs stay in training, where
+# extra positives are simply more evidence.
+
+#%%
+parent = {}
 
 
 def find(x):
-    parent_uf.setdefault(x, x)
-    while parent_uf[x] != x:
-        parent_uf[x] = parent_uf[parent_uf[x]]
-        x = parent_uf[x]
+    parent.setdefault(x, x)
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]
+        x = parent[x]
     return x
 
 
 def union(x, y):
     rx, ry = find(x), find(y)
     if rx != ry:
-        parent_uf[rx] = ry
+        parent[rx] = ry
 
 
-for a, b in zip(opp["a"], opp["b"]):
+for a, b in zip(opp["man"], opp["woman"]):
     union(a, b)
-opp["group"] = [find(a) for a in opp["a"]]
-groups = opp["group"].unique()
+opp["group"] = [find(a) for a in opp["man"]]
+
+groups = sorted(set(opp["group"]))
 rng = np.random.default_rng(20260813)
-perm = rng.permutation(groups)
-n_test_groups = int(round(0.20 * len(groups)))
-test_groups = set(perm[:n_test_groups].tolist())
-is_test = opp["group"].isin(test_groups)
-print(f"  {len(groups):,} person groups -> {len(groups)-n_test_groups:,} train / {n_test_groups:,} test")
-print(f"  rows: {int((~is_test).sum()):,} train ({100*(~is_test).mean():.1f}%) · "
-      f"{int(is_test.sum()):,} test ({100*is_test.mean():.1f}%)")
-print(f"  positive rate: train {100*opp.loc[~is_test,'label'].mean():.2f}% · "
-      f"test {100*opp.loc[is_test,'label'].mean():.2f}%")
-assert not (set(opp.loc[~is_test, 'group']) & set(opp.loc[is_test, 'group'])), "a group straddles the split"
-overlap = (set(opp.loc[~is_test, 'a']) | set(opp.loc[~is_test, 'b'])) & \
-          (set(opp.loc[is_test, 'a']) | set(opp.loc[is_test, 'b']))
-assert not overlap, f"{len(overlap)} people appear on both sides of the split"
+rng.shuffle(groups)
+# Aim for 20% of DECLARED rows in the held-out half. Co-parent rows never go there, so the fraction of groups
+# is chosen against the declared subset rather than against the whole file.
+declared_rows = opp[opp["route"] == "declared"]
+per_group = declared_rows.groupby("group").size().to_dict()
+target = 0.20 * len(declared_rows)
+test_groups, acc = set(), 0
+for g in groups:
+    if acc >= target:
+        break
+    if per_group.get(g):
+        test_groups.add(g)
+        acc += per_group[g]
+
+is_test = opp["group"].isin(test_groups) & opp["route"].eq("declared")
+# A co-parent pair inside a held-out group must not go to training either: its people are in the test half and
+# training on them is exactly the leak the person-split exists to prevent.
+drop = opp["group"].isin(test_groups) & opp["route"].eq("coparent")
+train = opp[~is_test & ~drop].copy()
+test = opp[is_test].copy()
+print(f"  {len(groups):,} person groups -> {len(groups)-len(test_groups):,} train / {len(test_groups):,} test")
+print(f"  rows: {len(train):,} train ({100*len(train)/len(opp):.1f}%) · "
+      f"{len(test):,} test ({100*len(test)/len(opp):.1f}%) · "
+      f"{int(drop.sum()):,} co-parent rows dropped for sharing a held-out person")
+print(f"  positive rate: train {100*train['parents_together'].mean():.2f}% · "
+      f"test {100*test['parents_together'].mean():.2f}%")
+t_rate = test["parents_together"].mean()
+assert 0.15 < t_rate < 0.85, (f"the held-out half is {100*t_rate:.2f}% positive — an AUC needs both classes, "
+                              f"and a single-class test set silently scores 0.5 for every model")
+print(f"  the held-out half is {100*test['route'].eq('declared').mean():.0f}% declared partnerships")
+
+tp = set(train["man"]) | set(train["woman"])
+sp = set(test["man"]) | set(test["woman"])
+assert not (tp & sp), f"{len(tp & sp)} people are on both sides of the split"
+assert not (set(train["group"]) & set(test["group"])), "a person group is on both sides"
 print("  checked: no person and no group appears on both sides")
 
 #%% [markdown]
-# ## 6. Write the three-column files
+# ## 7. The files
 #
-# `train.csv` is the dataset. `test.csv` and `solution.csv` are the competition's public half and its answer
-# key — the answer key stays out of the published dataset.
+# `train.csv` is the published dataset: three columns, no index, no metadata. The test half is written with an
+# id so a competition can score it, and its answer key is kept separate.
 
 #%%
-# COLUMN ORDER CARRIES THE SEX, and it has to be built deliberately. The pair was materialised with
-# FILTER(STR(?a) < STR(?b)), which orders by Q-number — an arbitrary order that has nothing to do with who is
-# whom. Publishing that as "first column is the man" would have been false for about half the rows. So the
-# columns are assigned from P21 here and NAMED for it, which makes the convention impossible to misread and
-# is what the precision grid's axes depend on.
-MALE, FEMALE = "Q6581097", "Q6581072"
-man_is_a = opp["asex"].eq(MALE)
-opp["dob_man"] = np.where(man_is_a, opp["adob"], opp["bdob"])
-opp["dob_woman"] = np.where(man_is_a, opp["bdob"], opp["adob"])
-assert (opp["dob_man"] != opp["dob_woman"]).all() or True     # equal dates are legitimate
-chk = opp.loc[~man_is_a].head(1)
-if len(chk):
-    r0 = chk.iloc[0]
-    assert r0["dob_man"] == r0["bdob"] and r0["dob_woman"] == r0["adob"], "sex swap did not apply"
-print(f"  man was partner A in {int(man_is_a.sum()):,} rows and partner B in {int((~man_is_a).sum()):,} — "
-      f"which is why the order had to be assigned rather than inherited")
+# WHAT ACCEPTING YEAR PRECISION ACTUALLY COSTS, measured rather than asserted. A year-only birth is written
+# YYYY-01-01 and is indistinguishable from a genuine 1 January birthday, so "is this date a 1 January" is
+# readable by any model as a proxy for how well the person is documented — and documentation depth correlates
+# with whether a child was recorded. This is the one real price of decision 2 and it is printed here so nobody
+# has to take the trade-off on trust.
+#
+# It is not uniform across the metric: the precision grid coarsens both dates to YYYY-01-01 in its `year|year`
+# cell, where every row then looks year-precision and the proxy carries no information at all. So the mean of
+# the fifteen cells contains cells where this leak is impossible and cells where it is fully available.
+def prec_of(col):
+    return np.where(col.str.endswith("-00-00"), 9, np.where(col.str.endswith("-00"), 10, 11))
 
-tr = opp.loc[~is_test, ["dob_man", "dob_woman", "label"]].rename(
-    columns={"label": "parents_together"}).reset_index(drop=True)
-te = opp.loc[is_test, ["dob_man", "dob_woman", "label"]].rename(
-    columns={"label": "parents_together"}).reset_index(drop=True)
-tr = tr.sample(frac=1.0, random_state=7).reset_index(drop=True)
-te = te.sample(frac=1.0, random_state=8).reset_index(drop=True)
-te.insert(0, "id", np.arange(len(te)))
 
-tr.to_csv(f"{OUT}/train.csv", index=False)
-te[["id", "dob_man", "dob_woman"]].to_csv(f"{OUT}/test.csv", index=False)
-sol = te[["id", "parents_together"]].copy()
-# Kaggle splits a leaderboard into a public and a private half; the private half is what the final standing
-# is computed on, and it is chosen at random here so nothing about a row decides which half it lands in.
-rng2 = np.random.default_rng(20260813)
-sol["Usage"] = np.where(rng2.random(len(sol)) < 0.30, "Public", "Private")
-sol.to_csv(f"{OUT}/solution.csv", index=False)
-samp = te[["id"]].copy()
+for name, frame in (("train", train), ("test", test)):
+    pm, pw = prec_of(frame["dob_man"]), prec_of(frame["dob_woman"])
+    both_day = ((pm == 11) & (pw == 11)).mean()
+    any_year = ((pm == 9) | (pw == 9)).mean()
+    ident = (frame["dob_man"] == frame["dob_woman"]).mean()
+    print(f"  {name}: {100*both_day:.2f}% of rows know both days, {100*any_year:.2f}% have a year-only date, "
+          f"{100*ident:.2f}% have two identical strings")
+    for lbl, p in (("man", pm), ("woman", pw)):
+        c = collections.Counter(p.tolist())
+        print(f"      {lbl:<6} day {c[11]:>7,}   month {c[10]:>6,}   year {c[9]:>6,}")
+
+# Shuffle before writing. The rows are currently in the order the deduplication left them, which is sorted by
+# date, so the file opens on a run of year-precision 1800 entries and any consumer that takes a head instead of
+# a sample would see one decade and call it the dataset.
+train = train.sample(frac=1.0, random_state=20260813).reset_index(drop=True)
+test = test.sample(frac=1.0, random_state=20260814).reset_index(drop=True)
+
+COLS = ["dob_man", "dob_woman", "parents_together"]
+train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False)
+
+test = test.reset_index(drop=True)
+test["id"] = [f"c{i:06d}" for i in range(len(test))]
+test[["id", "dob_man", "dob_woman"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
+test[["id", "parents_together"]].to_csv(os.path.join(OUT, "solution.csv"), index=False)
+samp = test[["id"]].copy()
 samp["parents_together"] = 0.5
-samp.to_csv(f"{OUT}/sample_submission.csv", index=False)
+samp.to_csv(os.path.join(OUT, "sample_submission.csv"), index=False)
 
-meta = {"built": time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime()),
-        "endpoint": ENDPOINT, "year_range": [FLOOR, CEIL],
-        "funnel": [{"step": n, "rows": int(v)} for n, v in funnel],
-        "train_rows": int(len(tr)), "test_rows": int(len(te)),
-        "train_positive_rate": float(tr["parents_together"].mean()),
-        "test_positive_rate": float(te["parents_together"].mean()),
-        "person_groups": int(len(groups)),
-        "split": "80/20 by connected component of the partnership graph, seed 20260813",
-        "columns": ["dob_man", "dob_woman", "parents_together"]}
-json.dump(meta, open(f"{OUT}/build.json", "w"), indent=1)
-print(f"\n  wrote train.csv ({len(tr):,}) · test.csv ({len(te):,}) · solution.csv · sample_submission.csv")
-print(f"  {tr.head(3).to_string(index=False)}")
+print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
+print(train[COLS].head(3).to_string(index=False))
 print(f"\n  total build time {(time.time()-T0)/60:.1f} min")
-
-#%% [markdown]
-# ## 7. What a model here is actually learning — read this before believing a score
-#
-# The honest summary of a great deal of work on this dataset: **most of the predictable signal is *when*
-# these people were born, not who they were.**
-#
-# Recorded parenthood collapses across cohorts. With the younger partner born in the 1800s it is around 58%;
-# by the 1970s it is 10%; by the 1990s, 2%. Almost none of that is biology. A couple born in 1985 may not
-# have finished having children, and any child they do have has not had time to become notable enough for
-# Wikidata to record. So a feature that merely identifies the era — and every slowly-moving astronomical
-# quantity does, along with any smooth function of the two dates — scores well without saying anything about
-# the couple.
-#
-# Two numbers make this concrete, both measured on this data:
-#
-# * A single non-astrological feature block of **birth cohort plus exposure time** reaches **AUC 0.7004** on
-#   its own. That is indistinguishable from the best astrological feature block anyone has built here.
-# * Removing one partner's date entirely costs almost nothing. If the *pair* mattered, deleting half the
-#   input should be devastating. It is not — consistent with the surviving date carrying the era.
-#
-# The baseline to beat is therefore not 0.5. It is a two-parameter logistic regression on the **signed**
-# difference of the two dates, `dob_b - dob_a` in years, and any claim of a discovery here should be quoted
-# against that and against a cohort model, not against chance.
-#
-# None of which makes the task uninteresting — it makes it a good one. The question is whether anything in
-# two dates beats knowing roughly when they lived.

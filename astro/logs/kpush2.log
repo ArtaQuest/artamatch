@@ -1,0 +1,68 @@
+  payload: 29 files, 33.8 MB, flat
+  creating artafather/artamatch-astro
+{"ref": "", "url": "https://www.kaggle.com/", "status": "Error", "error": "Dataset url's dataset slugs and hashlink are all null", "invalidTags": []}
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  dataset_status: 403 Client Error: Forbidden for url: https://api.kaggle.com/v1/dataset
+  WARNING: dataset never reported ready; pushing anyway
+  pushing artafather/artamatch-parents
+{"ref": "/code/ashranet/artamatch-parents", "url": "https://www.kaggle.com/code/ashranet/artamatch-parents", "versionNumber": 2, "error": null, "invalidTags": [], "invalidDatasetSources": [], "invalidCompetitionSources": [], "invalidKernelSources": [], "invalidModelSources": [], "kernelId": 130442007}
+
+  https://www.kaggle.com/code/artafather/artamatch-parents

@@ -1,0 +1,17 @@
+/Users/arash/.artamatch-venv/lib/python3.14/site-packages/erfa/core.py:133: ErfaWarning: ERFA function "dtf2d" yielded 1 of "dubious year (Note 6)"
+  warn(f'ERFA function "{func_name}" yielded {wmsg}', ErfaWarning)
+47,847 days from 1900-01-01 to 2030-12-31 at 10:00 UT · 18 bodies
+  0/47,847
+  10,000/47,847
+  20,000/47,847
+  30,000/47,847
+  40,000/47,847
+
+wrote /Users/arash/Studio/artamatch/astro/../web/ephem.bin (10.9 MB) and ephem.json
+
+round-trip error at the midpoint day:
+  Sun      lon 0.00217  lat 0.00014  spd 0.00006  ra 0.00541  dec 0.00040  degrees
+  Moon     lon 0.00455  lat 0.00099  spd 0.00042  ra 0.00316  dec 0.00212  degrees
+  Mercury  lon 0.00136  lat 0.00149  spd 0.00014  ra 0.00440  dec 0.00152  degrees
+  Venus    lon 0.00487  lat 0.00129  spd 0.00005  ra 0.00138  dec 0.00134  degrees
+  quantisation step is 360/65535 = 0.0055 deg, so anything at or under that is exact storage

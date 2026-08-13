@@ -1,0 +1,1799 @@
+{
+ "blocks": [
+  {
+   "key": "babylonian_egyptian::bab: goal-year phase, circular",
+   "slug": "babylonian_egyptian",
+   "name": "bab: goal-year phase, circular",
+   "cols": 96,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::bab:_goal-year_phase,_circular.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+   "slug": "babylonian_egyptian",
+   "name": "bab: goal-year recurrence between charts",
+   "cols": 155,
+   "dropped_constant": 5,
+   "file": "babylonian_egyptian::bab:_goal-year_recurrence_between_charts.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab: synodic phase & elongation",
+   "slug": "babylonian_egyptian",
+   "name": "bab: synodic phase & elongation",
+   "cols": 240,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::bab:_synodic_phase_&_elongation.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab: heliacal phenomena, one-hot",
+   "slug": "babylonian_egyptian",
+   "name": "bab: heliacal phenomena, one-hot",
+   "cols": 317,
+   "dropped_constant": 13,
+   "file": "babylonian_egyptian::bab:_heliacal_phenomena,_one-hot.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab: heliacal phenomena, orb kernels",
+   "slug": "babylonian_egyptian",
+   "name": "bab: heliacal phenomena, orb kernels",
+   "cols": 318,
+   "dropped_constant": 12,
+   "file": "babylonian_egyptian::bab:_heliacal_phenomena,_orb_kernels.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab: lunar-visibility month & EAE opposition day",
+   "slug": "babylonian_egyptian",
+   "name": "bab: lunar-visibility month & EAE opposition day",
+   "cols": 156,
+   "dropped_constant": 6,
+   "file": "babylonian_egyptian::bab:_lunar-visibility_month_&_EAE_opposition_day.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL.APIN paths",
+   "slug": "babylonian_egyptian",
+   "name": "bab: EAE eclipse, saros, moon-omens & MUL.APIN paths",
+   "cols": 342,
+   "dropped_constant": 9,
+   "file": "babylonian_egyptian::bab:_EAE_eclipse,_saros,_moon-omens_&_MUL.APIN_paths.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+   "slug": "babylonian_egyptian",
+   "name": "bab+egy: schematic 360-day & Egyptian civil calendars",
+   "cols": 262,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::bab+egy:_schematic_360-day_&_Egyptian_civil_calendars.npy"
+  },
+  {
+   "key": "babylonian_egyptian::egy: 36 decans, one-hot",
+   "slug": "babylonian_egyptian",
+   "name": "egy: 36 decans, one-hot",
+   "cols": 504,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::egy:_36_decans,_one-hot.npy"
+  },
+  {
+   "key": "babylonian_egyptian::egy: decan rulers, Chaldean order",
+   "slug": "babylonian_egyptian",
+   "name": "egy: decan rulers, Chaldean order",
+   "cols": 420,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::egy:_decan_rulers,_Chaldean_order.npy"
+  },
+  {
+   "key": "babylonian_egyptian::egy: decan-pair contacts",
+   "slug": "babylonian_egyptian",
+   "name": "egy: decan-pair contacts",
+   "cols": 390,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::egy:_decan-pair_contacts.npy"
+  },
+  {
+   "key": "babylonian_egyptian::egy: Egyptian bounds (terms)",
+   "slug": "babylonian_egyptian",
+   "name": "egy: Egyptian bounds (terms)",
+   "cols": 428,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::egy:_Egyptian_bounds_(terms).npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab+egy: dodekatemoria, circular & signs",
+   "slug": "babylonian_egyptian",
+   "name": "bab+egy: dodekatemoria, circular & signs",
+   "cols": 504,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::bab+egy:_dodekatemoria,_circular_&_signs.npy"
+  },
+  {
+   "key": "babylonian_egyptian::bab+egy: twelfth-part cross-contacts",
+   "slug": "babylonian_egyptian",
+   "name": "bab+egy: twelfth-part cross-contacts",
+   "cols": 249,
+   "dropped_constant": 0,
+   "file": "babylonian_egyptian::bab+egy:_twelfth-part_cross-contacts.npy"
+  },
+  {
+   "key": "chinese::chi: pillars one-hot (year/month/day, no hour)",
+   "slug": "chinese",
+   "name": "chi: pillars one-hot (year/month/day, no hour)",
+   "cols": 198,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_pillars_one-hot_(year_month_day,_no_hour).npy"
+  },
+  {
+   "key": "chinese::chi: sexagenary cycles circular + partner offsets",
+   "slug": "chinese",
+   "name": "chi: sexagenary cycles circular + partner offsets",
+   "cols": 73,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_sexagenary_cycles_circular_+_partner_offsets.npy"
+  },
+  {
+   "key": "chinese::chi: wu xing counts, visible characters",
+   "slug": "chinese",
+   "name": "chi: wu xing counts, visible characters",
+   "cols": 61,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_wu_xing_counts,_visible_characters.npy"
+  },
+  {
+   "key": "chinese::chi: wu xing counts, hidden stems weighted",
+   "slug": "chinese",
+   "name": "chi: wu xing counts, hidden stems weighted",
+   "cols": 61,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_wu_xing_counts,_hidden_stems_weighted.npy"
+  },
+  {
+   "key": "chinese::chi: partner element relations (sheng/ke, nayin, life stages)",
+   "slug": "chinese",
+   "name": "chi: partner element relations (sheng/ke, nayin, life stages)",
+   "cols": 121,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_partner_element_relations_(sheng_ke,_nayin,_life_stages).npy"
+  },
+  {
+   "key": "chinese::chi: year branch relations (zodiac animals)",
+   "slug": "chinese",
+   "name": "chi: year branch relations (zodiac animals)",
+   "cols": 177,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_year_branch_relations_(zodiac_animals).npy"
+  },
+  {
+   "key": "chinese::chi: day branch relations (day pillar is the self)",
+   "slug": "chinese",
+   "name": "chi: day branch relations (day pillar is the self)",
+   "cols": 166,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_day_branch_relations_(day_pillar_is_the_self).npy"
+  },
+  {
+   "key": "chinese::chi: branch relations across all nine pillar pairs",
+   "slug": "chinese",
+   "name": "chi: branch relations across all nine pillar pairs",
+   "cols": 111,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_branch_relations_across_all_nine_pillar_pairs.npy"
+  },
+  {
+   "key": "chinese::chi: traditional he/chong compatibility tallies",
+   "slug": "chinese",
+   "name": "chi: traditional he/chong compatibility tallies",
+   "cols": 15,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_traditional_he_chong_compatibility_tallies.npy"
+  },
+  {
+   "key": "chinese::chi: 24 jieqi solar terms + jianchu day officer",
+   "slug": "chinese",
+   "name": "chi: 24 jieqi solar terms + jianchu day officer",
+   "cols": 190,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_24_jieqi_solar_terms_+_jianchu_day_officer.npy"
+  },
+  {
+   "key": "chinese::chi: 28 xiu, equal divisions from Spica",
+   "slug": "chinese",
+   "name": "chi: 28 xiu, equal divisions from Spica",
+   "cols": 178,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_28_xiu,_equal_divisions_from_Spica.npy"
+  },
+  {
+   "key": "chinese::chi: 28 xiu, classical unequal widths",
+   "slug": "chinese",
+   "name": "chi: 28 xiu, classical unequal widths",
+   "cols": 178,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_28_xiu,_classical_unequal_widths.npy"
+  },
+  {
+   "key": "chinese::chi: nine star ki (nian/yue zibai)",
+   "slug": "chinese",
+   "name": "chi: nine star ki (nian/yue zibai)",
+   "cols": 181,
+   "dropped_constant": 0,
+   "file": "chinese::chi:_nine_star_ki_(nian_yue_zibai).npy"
+  },
+  {
+   "key": "chinese::chi: eight mansions (bazhai) kua relation",
+   "slug": "chinese",
+   "name": "chi: eight mansions (bazhai) kua relation",
+   "cols": 81,
+   "dropped_constant": 8,
+   "file": "chinese::chi:_eight_mansions_(bazhai)_kua_relation.npy"
+  },
+  {
+   "key": "electional::elec: moon condition at the election",
+   "slug": "electional",
+   "name": "elec: moon condition at the election",
+   "cols": 173,
+   "dropped_constant": 0,
+   "file": "electional::elec:_moon_condition_at_the_election.npy"
+  },
+  {
+   "key": "electional::elec: moon applying vs separating orbs",
+   "slug": "electional",
+   "name": "elec: moon applying vs separating orbs",
+   "cols": 394,
+   "dropped_constant": 0,
+   "file": "electional::elec:_moon_applying_vs_separating_orbs.npy"
+  },
+  {
+   "key": "electional::elec: benefics venus & jupiter at the election",
+   "slug": "electional",
+   "name": "elec: benefics venus & jupiter at the election",
+   "cols": 441,
+   "dropped_constant": 0,
+   "file": "electional::elec:_benefics_venus_&_jupiter_at_the_election.npy"
+  },
+  {
+   "key": "electional::elec: malefics afflicting the lights & venus",
+   "slug": "electional",
+   "name": "elec: malefics afflicting the lights & venus",
+   "cols": 260,
+   "dropped_constant": 0,
+   "file": "electional::elec:_malefics_afflicting_the_lights_&_venus.npy"
+  },
+  {
+   "key": "electional::elec: mercury retrograde & station shadows",
+   "slug": "electional",
+   "name": "elec: mercury retrograde & station shadows",
+   "cols": 56,
+   "dropped_constant": 0,
+   "file": "electional::elec:_mercury_retrograde_&_station_shadows.npy"
+  },
+  {
+   "key": "electional::elec: eclipse proximity & the eclipse degree",
+   "slug": "electional",
+   "name": "elec: eclipse proximity & the eclipse degree",
+   "cols": 140,
+   "dropped_constant": 0,
+   "file": "electional::elec:_eclipse_proximity_&_the_eclipse_degree.npy"
+  },
+  {
+   "key": "electional::elec: seventh-place proxy (solar-sign & noon-MC)",
+   "slug": "electional",
+   "name": "elec: seventh-place proxy (solar-sign & noon-MC)",
+   "cols": 229,
+   "dropped_constant": 0,
+   "file": "electional::elec:_seventh-place_proxy_(solar-sign_&_noon-MC).npy"
+  },
+  {
+   "key": "electional::elec: reception with the natal rulers",
+   "slug": "electional",
+   "name": "elec: reception with the natal rulers",
+   "cols": 357,
+   "dropped_constant": 0,
+   "file": "electional::elec:_reception_with_the_natal_rulers.npy"
+  },
+  {
+   "key": "electional::elec: bonatti & lilly considerations",
+   "slug": "electional",
+   "name": "elec: bonatti & lilly considerations",
+   "cols": 59,
+   "dropped_constant": 0,
+   "file": "electional::elec:_bonatti_&_lilly_considerations.npy"
+  },
+  {
+   "key": "electional::elec: the marriage of the lights",
+   "slug": "electional",
+   "name": "elec: the marriage of the lights",
+   "cols": 106,
+   "dropped_constant": 0,
+   "file": "electional::elec:_the_marriage_of_the_lights.npy"
+  },
+  {
+   "key": "electional::elec: outer planets & chiron on the lights",
+   "slug": "electional",
+   "name": "elec: outer planets & chiron on the lights",
+   "cols": 438,
+   "dropped_constant": 0,
+   "file": "electional::elec:_outer_planets_&_chiron_on_the_lights.npy"
+  },
+  {
+   "key": "electional::elec: election chart aspect-pattern density",
+   "slug": "electional",
+   "name": "elec: election chart aspect-pattern density",
+   "cols": 143,
+   "dropped_constant": 0,
+   "file": "electional::elec:_election_chart_aspect-pattern_density.npy"
+  },
+  {
+   "key": "electional::elec: the election against each nativity",
+   "slug": "electional",
+   "name": "elec: the election against each nativity",
+   "cols": 1208,
+   "dropped_constant": 0,
+   "file": "electional::elec:_the_election_against_each_nativity.npy"
+  },
+  {
+   "key": "electional::elec: progressed & davison charts at the date",
+   "slug": "electional",
+   "name": "elec: progressed & davison charts at the date",
+   "cols": 1070,
+   "dropped_constant": 0,
+   "file": "electional::elec:_progressed_&_davison_charts_at_the_date.npy"
+  },
+  {
+   "key": "harmonics::har: harmonic 5/7/9 conj (Addey creative)",
+   "slug": "harmonics",
+   "name": "har: harmonic 5/7/9 conj (Addey creative)",
+   "cols": 300,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_harmonic_5_7_9_conj_(Addey_creative).npy"
+  },
+  {
+   "key": "harmonics::har: harmonic 2/3/4/6/8/12 conj",
+   "slug": "harmonics",
+   "name": "har: harmonic 2/3/4/6/8/12 conj",
+   "cols": 599,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_harmonic_2_3_4_6_8_12_conj.npy"
+  },
+  {
+   "key": "harmonics::har: harmonic 10/11/13/16 conj",
+   "slug": "harmonics",
+   "name": "har: harmonic 10/11/13/16 conj",
+   "cols": 400,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_harmonic_10_11_13_16_conj.npy"
+  },
+  {
+   "key": "harmonics::har: harmonic 5/7/9 circular cos/sin",
+   "slug": "harmonics",
+   "name": "har: harmonic 5/7/9 circular cos/sin",
+   "cols": 294,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_harmonic_5_7_9_circular_cos_sin.npy"
+  },
+  {
+   "key": "harmonics::har: Addey wave amplitudes N=1..16",
+   "slug": "harmonics",
+   "name": "har: Addey wave amplitudes N=1..16",
+   "cols": 288,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_Addey_wave_amplitudes_N=1..16.npy"
+  },
+  {
+   "key": "harmonics::har: minor-aspect kernels (Kepler/Addey)",
+   "slug": "harmonics",
+   "name": "har: minor-aspect kernels (Kepler/Addey)",
+   "cols": 288,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_minor-aspect_kernels_(Kepler_Addey).npy"
+  },
+  {
+   "key": "harmonics::har: minor-aspect family tallies",
+   "slug": "harmonics",
+   "name": "har: minor-aspect family tallies",
+   "cols": 118,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_minor-aspect_family_tallies.npy"
+  },
+  {
+   "key": "harmonics::har: declination parallels + out-of-bounds",
+   "slug": "harmonics",
+   "name": "har: declination parallels + out-of-bounds",
+   "cols": 485,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_declination_parallels_+_out-of-bounds.npy"
+  },
+  {
+   "key": "harmonics::har: ecliptic latitude contacts",
+   "slug": "harmonics",
+   "name": "har: ecliptic latitude contacts",
+   "cols": 204,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_ecliptic_latitude_contacts.npy"
+  },
+  {
+   "key": "harmonics::har: draconic zodiac synastry",
+   "slug": "harmonics",
+   "name": "har: draconic zodiac synastry",
+   "cols": 346,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_draconic_zodiac_synastry.npy"
+  },
+  {
+   "key": "harmonics::har: draconic-tropical cross contacts",
+   "slug": "harmonics",
+   "name": "har: draconic-tropical cross contacts",
+   "cols": 400,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_draconic-tropical_cross_contacts.npy"
+  },
+  {
+   "key": "harmonics::har: heliocentric + helio-geo contacts",
+   "slug": "harmonics",
+   "name": "har: heliocentric + helio-geo contacts",
+   "cols": 280,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_heliocentric_+_helio-geo_contacts.npy"
+  },
+  {
+   "key": "harmonics::har: speed, stations, applying/separating",
+   "slug": "harmonics",
+   "name": "har: speed, stations, applying/separating",
+   "cols": 552,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_speed,_stations,_applying_separating.npy"
+  },
+  {
+   "key": "harmonics::har: fixed stars conj + parallels",
+   "slug": "harmonics",
+   "name": "har: fixed stars conj + parallels",
+   "cols": 554,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_fixed_stars_conj_+_parallels.npy"
+  },
+  {
+   "key": "harmonics::har: antiscia + Ebertin dial midpoints",
+   "slug": "harmonics",
+   "name": "har: antiscia + Ebertin dial midpoints",
+   "cols": 473,
+   "dropped_constant": 0,
+   "file": "harmonics::har:_antiscia_+_Ebertin_dial_midpoints.npy"
+  },
+  {
+   "key": "hellenistic::hel: synastry ptolemaic orbs 2deg",
+   "slug": "hellenistic",
+   "name": "hel: synastry ptolemaic orbs 2deg",
+   "cols": 245,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_synastry_ptolemaic_orbs_2deg.npy"
+  },
+  {
+   "key": "hellenistic::hel: synastry ptolemaic orbs 4deg",
+   "slug": "hellenistic",
+   "name": "hel: synastry ptolemaic orbs 4deg",
+   "cols": 245,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_synastry_ptolemaic_orbs_4deg.npy"
+  },
+  {
+   "key": "hellenistic::hel: synastry ptolemaic orbs 6deg",
+   "slug": "hellenistic",
+   "name": "hel: synastry ptolemaic orbs 6deg",
+   "cols": 245,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_synastry_ptolemaic_orbs_6deg.npy"
+  },
+  {
+   "key": "hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg",
+   "slug": "hellenistic",
+   "name": "hel: wedding chart ptolemaic orbs 2/4/6/12deg",
+   "cols": 389,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_wedding_chart_ptolemaic_orbs_2_4_6_12deg.npy"
+  },
+  {
+   "key": "hellenistic::hel: whole-sign relations dexter/sinister",
+   "slug": "hellenistic",
+   "name": "hel: whole-sign relations dexter/sinister",
+   "cols": 588,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_whole-sign_relations_dexter_sinister.npy"
+  },
+  {
+   "key": "hellenistic::hel: aversion & whole-sign tallies",
+   "slug": "hellenistic",
+   "name": "hel: aversion & whole-sign tallies",
+   "cols": 90,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_aversion_&_whole-sign_tallies.npy"
+  },
+  {
+   "key": "hellenistic::hel: essential dignity states",
+   "slug": "hellenistic",
+   "name": "hel: essential dignity states",
+   "cols": 183,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_essential_dignity_states.npy"
+  },
+  {
+   "key": "hellenistic::hel: dignity points & almuten",
+   "slug": "hellenistic",
+   "name": "hel: dignity points & almuten",
+   "cols": 510,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_dignity_points_&_almuten.npy"
+  },
+  {
+   "key": "hellenistic::hel: sect proxy, triplicity lords & planetary sect",
+   "slug": "hellenistic",
+   "name": "hel: sect proxy, triplicity lords & planetary sect",
+   "cols": 186,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_sect_proxy,_triplicity_lords_&_planetary_sect.npy"
+  },
+  {
+   "key": "hellenistic::hel: antiscia & contra-antiscia contacts",
+   "slug": "hellenistic",
+   "name": "hel: antiscia & contra-antiscia contacts",
+   "cols": 342,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_antiscia_&_contra-antiscia_contacts.npy"
+  },
+  {
+   "key": "hellenistic::hel: hermetic lots (circular)",
+   "slug": "hellenistic",
+   "name": "hel: hermetic lots (circular)",
+   "cols": 320,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_hermetic_lots_(circular).npy"
+  },
+  {
+   "key": "hellenistic::hel: lot cross-contacts",
+   "slug": "hellenistic",
+   "name": "hel: lot cross-contacts",
+   "cols": 680,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_lot_cross-contacts.npy"
+  },
+  {
+   "key": "hellenistic::hel: Valens synastry testimony count",
+   "slug": "hellenistic",
+   "name": "hel: Valens synastry testimony count",
+   "cols": 86,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_Valens_synastry_testimony_count.npy"
+  },
+  {
+   "key": "hellenistic::hel: sign qualities & solar phase",
+   "slug": "hellenistic",
+   "name": "hel: sign qualities & solar phase",
+   "cols": 330,
+   "dropped_constant": 0,
+   "file": "hellenistic::hel:_sign_qualities_&_solar_phase.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: synodic phase circular, 6 instants",
+   "slug": "lunar_calendrical",
+   "name": "lun: synodic phase circular, 6 instants",
+   "cols": 117,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_synodic_phase_circular,_6_instants.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: eight phases one-hot + pairing",
+   "slug": "lunar_calendrical",
+   "name": "lun: eight phases one-hot + pairing",
+   "cols": 102,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_eight_phases_one-hot_+_pairing.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: manazil 28 (Arabic, ecliptic)",
+   "slug": "lunar_calendrical",
+   "name": "lun: manazil 28 (Arabic, ecliptic)",
+   "cols": 255,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_manazil_28_(Arabic,_ecliptic).npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: nakshatra 27 tropical + partial ashtakoot",
+   "slug": "lunar_calendrical",
+   "name": "lun: nakshatra 27 tropical + partial ashtakoot",
+   "cols": 277,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_nakshatra_27_tropical_+_partial_ashtakoot.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: xiu 28 (Chinese, equatorial)",
+   "slug": "lunar_calendrical",
+   "name": "lun: xiu 28 (Chinese, equatorial)",
+   "cols": 240,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_xiu_28_(Chinese,_equatorial).npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+   "slug": "lunar_calendrical",
+   "name": "lun: synodic/draconic/anomalistic months + beats",
+   "cols": 159,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_synodic_draconic_anomalistic_months_+_beats.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: eclipse proximity + ecliptic limits",
+   "slug": "lunar_calendrical",
+   "name": "lun: eclipse proximity + ecliptic limits",
+   "cols": 170,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_eclipse_proximity_+_ecliptic_limits.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+   "slug": "lunar_calendrical",
+   "name": "lun: saros/inex/metonic/callippic + computus",
+   "cols": 279,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_saros_inex_metonic_callippic_+_computus.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+   "slug": "lunar_calendrical",
+   "name": "lun: 45 pair synodic phases, wedding",
+   "cols": 180,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_45_pair_synodic_phases,_wedding.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: 45 pair synodic phases, births + diff",
+   "slug": "lunar_calendrical",
+   "name": "lun: 45 pair synodic phases, births + diff",
+   "cols": 405,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_45_pair_synodic_phases,_births_+_diff.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: void-of-course + electional Moon",
+   "slug": "lunar_calendrical",
+   "name": "lun: void-of-course + electional Moon",
+   "cols": 58,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_void-of-course_+_electional_Moon.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: hebrew calendar + halakhic windows",
+   "slug": "lunar_calendrical",
+   "name": "lun: hebrew calendar + halakhic windows",
+   "cols": 183,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_hebrew_calendar_+_halakhic_windows.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: islamic hijri (tabular) + seasons",
+   "slug": "lunar_calendrical",
+   "name": "lun: islamic hijri (tabular) + seasons",
+   "cols": 162,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_islamic_hijri_(tabular)_+_seasons.npy"
+  },
+  {
+   "key": "lunar_calendrical::lun: zoroastrian + celtic tree + runic",
+   "slug": "lunar_calendrical",
+   "name": "lun: zoroastrian + celtic tree + runic",
+   "cols": 323,
+   "dropped_constant": 0,
+   "file": "lunar_calendrical::lun:_zoroastrian_+_celtic_tree_+_runic.npy"
+  },
+  {
+   "key": "mesoamerican::meso: tzolkin circular per instant",
+   "slug": "mesoamerican",
+   "name": "meso: tzolkin circular per instant",
+   "cols": 84,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_tzolkin_circular_per_instant.npy"
+  },
+  {
+   "key": "mesoamerican::meso: tzolkin pair differences circular",
+   "slug": "mesoamerican",
+   "name": "meso: tzolkin pair differences circular",
+   "cols": 84,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_tzolkin_pair_differences_circular.npy"
+  },
+  {
+   "key": "mesoamerican::meso: tzolkin day-sign + trecena one-hot",
+   "slug": "mesoamerican",
+   "name": "meso: tzolkin day-sign + trecena one-hot",
+   "cols": 179,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_tzolkin_day-sign_+_trecena_one-hot.npy"
+  },
+  {
+   "key": "mesoamerican::meso: haab + calendar round + year bearer",
+   "slug": "mesoamerican",
+   "name": "meso: haab + calendar round + year bearer",
+   "cols": 185,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_haab_+_calendar_round_+_year_bearer.npy"
+  },
+  {
+   "key": "mesoamerican::meso: long count components + katun wheel",
+   "slug": "mesoamerican",
+   "name": "meso: long count components + katun wheel",
+   "cols": 44,
+   "dropped_constant": 28,
+   "file": "mesoamerican::meso:_long_count_components_+_katun_wheel.npy"
+  },
+  {
+   "key": "mesoamerican::meso: distance numbers (LC intervals)",
+   "slug": "mesoamerican",
+   "name": "meso: distance numbers (LC intervals)",
+   "cols": 4,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_distance_numbers_(LC_intervals).npy"
+  },
+  {
+   "key": "mesoamerican::meso: nine lords of the night G1-G9",
+   "slug": "mesoamerican",
+   "name": "meso: nine lords of the night G1-G9",
+   "cols": 82,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_nine_lords_of_the_night_G1-G9.npy"
+  },
+  {
+   "key": "mesoamerican::meso: 819-day cycle + directional quadrant",
+   "slug": "mesoamerican",
+   "name": "meso: 819-day cycle + directional quadrant",
+   "cols": 59,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_819-day_cycle_+_directional_quadrant.npy"
+  },
+  {
+   "key": "mesoamerican::meso: four world-quarters pairing",
+   "slug": "mesoamerican",
+   "name": "meso: four world-quarters pairing",
+   "cols": 77,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_four_world-quarters_pairing.npy"
+  },
+  {
+   "key": "mesoamerican::meso: day-sign pair relations (allied/antipodal/analog/occult)",
+   "slug": "mesoamerican",
+   "name": "meso: day-sign pair relations (allied/antipodal/analog/occult)",
+   "cols": 110,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_day-sign_pair_relations_(allied_antipodal_analog_occult).npy"
+  },
+  {
+   "key": "mesoamerican::meso: day-sign pair one-hot 20x20",
+   "slug": "mesoamerican",
+   "name": "meso: day-sign pair one-hot 20x20",
+   "cols": 400,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_day-sign_pair_one-hot_20x20.npy"
+  },
+  {
+   "key": "mesoamerican::meso: aztec lord pairs (13 day-lords x 9 night-lords)",
+   "slug": "mesoamerican",
+   "name": "meso: aztec lord pairs (13 day-lords x 9 night-lords)",
+   "cols": 274,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_aztec_lord_pairs_(13_day-lords_x_9_night-lords).npy"
+  },
+  {
+   "key": "mesoamerican::meso: dreamspell oracle (Arguelles, modern)",
+   "slug": "mesoamerican",
+   "name": "meso: dreamspell oracle (Arguelles, modern)",
+   "cols": 147,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_dreamspell_oracle_(Arguelles,_modern).npy"
+  },
+  {
+   "key": "mesoamerican::meso: documented rule tests + tally",
+   "slug": "mesoamerican",
+   "name": "meso: documented rule tests + tally",
+   "cols": 25,
+   "dropped_constant": 0,
+   "file": "mesoamerican::meso:_documented_rule_tests_+_tally.npy"
+  },
+  {
+   "key": "modern_western::mod: element+modality balance (March/Arroyo)",
+   "slug": "modern_western",
+   "name": "mod: element+modality balance (March/Arroyo)",
+   "cols": 200,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_element+modality_balance_(March_Arroyo).npy"
+  },
+  {
+   "key": "modern_western::mod: sign & element pair one-hot",
+   "slug": "modern_western",
+   "name": "mod: sign & element pair one-hot",
+   "cols": 605,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_sign_&_element_pair_one-hot.npy"
+  },
+  {
+   "key": "modern_western::mod: textbook synastry point score",
+   "slug": "modern_western",
+   "name": "mod: textbook synastry point score",
+   "cols": 49,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_textbook_synastry_point_score.npy"
+  },
+  {
+   "key": "modern_western::mod: aspect patterns natal + wedding",
+   "slug": "modern_western",
+   "name": "mod: aspect patterns natal + wedding",
+   "cols": 275,
+   "dropped_constant": 1,
+   "file": "modern_western::mod:_aspect_patterns_natal_+_wedding.npy"
+  },
+  {
+   "key": "modern_western::mod: aspect patterns cross-chart + relationship charts",
+   "slug": "modern_western",
+   "name": "mod: aspect patterns cross-chart + relationship charts",
+   "cols": 184,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_aspect_patterns_cross-chart_+_relationship_charts.npy"
+  },
+  {
+   "key": "modern_western::mod: Juno + Ceres marriage synastry",
+   "slug": "modern_western",
+   "name": "mod: Juno + Ceres marriage synastry",
+   "cols": 329,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_Juno_+_Ceres_marriage_synastry.npy"
+  },
+  {
+   "key": "modern_western::mod: Pallas Vesta Chiron Lilith synastry",
+   "slug": "modern_western",
+   "name": "mod: Pallas Vesta Chiron Lilith synastry",
+   "cols": 404,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_Pallas_Vesta_Chiron_Lilith_synastry.npy"
+  },
+  {
+   "key": "modern_western::mod: Venus-Mars + Sun-Moon cross contacts",
+   "slug": "modern_western",
+   "name": "mod: Venus-Mars + Sun-Moon cross contacts",
+   "cols": 410,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_Venus-Mars_+_Sun-Moon_cross_contacts.npy"
+  },
+  {
+   "key": "modern_western::mod: Sun/Moon midpoint marriage axis",
+   "slug": "modern_western",
+   "name": "mod: Sun/Moon midpoint marriage axis",
+   "cols": 361,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_Sun_Moon_midpoint_marriage_axis.npy"
+  },
+  {
+   "key": "modern_western::mod: midpoint composite chart",
+   "slug": "modern_western",
+   "name": "mod: midpoint composite chart",
+   "cols": 527,
+   "dropped_constant": 15,
+   "file": "modern_western::mod:_midpoint_composite_chart.npy"
+  },
+  {
+   "key": "modern_western::mod: Davison chart + composite dispute",
+   "slug": "modern_western",
+   "name": "mod: Davison chart + composite dispute",
+   "cols": 540,
+   "dropped_constant": 25,
+   "file": "modern_western::mod:_Davison_chart_+_composite_dispute.npy"
+  },
+  {
+   "key": "modern_western::mod: progressed synastry",
+   "slug": "modern_western",
+   "name": "mod: progressed synastry",
+   "cols": 539,
+   "dropped_constant": 17,
+   "file": "modern_western::mod:_progressed_synastry.npy"
+  },
+  {
+   "key": "modern_western::mod: solar return phase + retrogrades",
+   "slug": "modern_western",
+   "name": "mod: solar return phase + retrogrades",
+   "cols": 112,
+   "dropped_constant": 1,
+   "file": "modern_western::mod:_solar_return_phase_+_retrogrades.npy"
+  },
+  {
+   "key": "modern_western::mod: Sabian 360-degree + pentad bins",
+   "slug": "modern_western",
+   "name": "mod: Sabian 360-degree + pentad bins",
+   "cols": 1252,
+   "dropped_constant": 0,
+   "file": "modern_western::mod:_Sabian_360-degree_+_pentad_bins.npy"
+  },
+  {
+   "key": "muhurta::muh: vivaha day-purity checklist [Lahiri]",
+   "slug": "muhurta",
+   "name": "muh: vivaha day-purity checklist [Lahiri]",
+   "cols": 405,
+   "dropped_constant": 11,
+   "file": "muhurta::muh:_vivaha_day-purity_checklist_[Lahiri].npy"
+  },
+  {
+   "key": "muhurta::muh: vivaha day-purity checklist [Raman]",
+   "slug": "muhurta",
+   "name": "muh: vivaha day-purity checklist [Raman]",
+   "cols": 406,
+   "dropped_constant": 10,
+   "file": "muhurta::muh:_vivaha_day-purity_checklist_[Raman].npy"
+  },
+  {
+   "key": "muhurta::muh: vivaha day-purity checklist [Krishnamurti]",
+   "slug": "muhurta",
+   "name": "muh: vivaha day-purity checklist [Krishnamurti]",
+   "cols": 405,
+   "dropped_constant": 11,
+   "file": "muhurta::muh:_vivaha_day-purity_checklist_[Krishnamurti].npy"
+  },
+  {
+   "key": "muhurta::muh: vivaha day-purity checklist [True Citra]",
+   "slug": "muhurta",
+   "name": "muh: vivaha day-purity checklist [True Citra]",
+   "cols": 405,
+   "dropped_constant": 11,
+   "file": "muhurta::muh:_vivaha_day-purity_checklist_[True_Citra].npy"
+  },
+  {
+   "key": "muhurta::muh: masa, chaturmasya & malamasa",
+   "slug": "muhurta",
+   "name": "muh: masa, chaturmasya & malamasa",
+   "cols": 124,
+   "dropped_constant": 0,
+   "file": "muhurta::muh:_masa,_chaturmasya_&_malamasa.npy"
+  },
+  {
+   "key": "muhurta::muh: guru-shukra asta (asta vs udaya)",
+   "slug": "muhurta",
+   "name": "muh: guru-shukra asta (asta vs udaya)",
+   "cols": 117,
+   "dropped_constant": 2,
+   "file": "muhurta::muh:_guru-shukra_asta_(asta_vs_udaya).npy"
+  },
+  {
+   "key": "muhurta::muh: tara bala from both janma nakshatras",
+   "slug": "muhurta",
+   "name": "muh: tara bala from both janma nakshatras",
+   "cols": 294,
+   "dropped_constant": 0,
+   "file": "muhurta::muh:_tara_bala_from_both_janma_nakshatras.npy"
+  },
+  {
+   "key": "muhurta::muh: chandra bala & gochara from janma rasi",
+   "slug": "muhurta",
+   "name": "muh: chandra bala & gochara from janma rasi",
+   "cols": 494,
+   "dropped_constant": 0,
+   "file": "muhurta::muh:_chandra_bala_&_gochara_from_janma_rasi.npy"
+  },
+  {
+   "key": "muhurta::muh: graha bala & affliction at the wedding",
+   "slug": "muhurta",
+   "name": "muh: graha bala & affliction at the wedding",
+   "cols": 424,
+   "dropped_constant": 13,
+   "file": "muhurta::muh:_graha_bala_&_affliction_at_the_wedding.npy"
+  },
+  {
+   "key": "muhurta::muh: yogini dasha + eightfold count",
+   "slug": "muhurta",
+   "name": "muh: yogini dasha + eightfold count",
+   "cols": 226,
+   "dropped_constant": 4,
+   "file": "muhurta::muh:_yogini_dasha_+_eightfold_count.npy"
+  },
+  {
+   "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+   "slug": "muhurta",
+   "name": "muh: the vivaha rule tally (own verdict)",
+   "cols": 156,
+   "dropped_constant": 0,
+   "file": "muhurta::muh:_the_vivaha_rule_tally_(own_verdict).npy"
+  },
+  {
+   "key": "muhurta::elec: applying vs separating + limb expiry",
+   "slug": "muhurta",
+   "name": "elec: applying vs separating + limb expiry",
+   "cols": 246,
+   "dropped_constant": 0,
+   "file": "muhurta::elec:_applying_vs_separating_+_limb_expiry.npy"
+  },
+  {
+   "key": "muhurta::wt: wedding-natal limb pairs, low-rank",
+   "slug": "muhurta",
+   "name": "wt: wedding-natal limb pairs, low-rank",
+   "cols": 206,
+   "dropped_constant": 0,
+   "file": "muhurta::wt:_wedding-natal_limb_pairs,_low-rank.npy"
+  },
+  {
+   "key": "muhurta::wt: progressed & davison muhurta (adaptation)",
+   "slug": "muhurta",
+   "name": "wt: progressed & davison muhurta (adaptation)",
+   "cols": 360,
+   "dropped_constant": 0,
+   "file": "muhurta::wt:_progressed_&_davison_muhurta_(adaptation).npy"
+  },
+  {
+   "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+   "slug": "persian_arabic",
+   "name": "pa: firdaria day-sect lord+sublord",
+   "cols": 35,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_firdaria_day-sect_lord+sublord.npy"
+  },
+  {
+   "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+   "slug": "persian_arabic",
+   "name": "pa: firdaria night-sect lord+sublord",
+   "cols": 35,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_firdaria_night-sect_lord+sublord.npy"
+  },
+  {
+   "key": "persian_arabic::pa: firdaria lords paired",
+   "slug": "persian_arabic",
+   "name": "pa: firdaria lords paired",
+   "cols": 72,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_firdaria_lords_paired.npy"
+  },
+  {
+   "key": "persian_arabic::pa: tasyir 1deg/yr directed-to-natal orbs",
+   "slug": "persian_arabic",
+   "name": "pa: tasyir 1deg/yr directed-to-natal orbs",
+   "cols": 490,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_tasyir_1deg_yr_directed-to-natal_orbs.npy"
+  },
+  {
+   "key": "persian_arabic::pa: tasyir hits + divisor of the years",
+   "slug": "persian_arabic",
+   "name": "pa: tasyir hits + divisor of the years",
+   "cols": 213,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_tasyir_hits_+_divisor_of_the_years.npy"
+  },
+  {
+   "key": "persian_arabic::pa: solar profection + lord of the year",
+   "slug": "persian_arabic",
+   "name": "pa: solar profection + lord of the year",
+   "cols": 166,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_solar_profection_+_lord_of_the_year.npy"
+  },
+  {
+   "key": "persian_arabic::pa: lots day+night reversal (circular)",
+   "slug": "persian_arabic",
+   "name": "pa: lots day+night reversal (circular)",
+   "cols": 132,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_lots_day+night_reversal_(circular).npy"
+  },
+  {
+   "key": "persian_arabic::pa: lot signs + lot lords (one-hot)",
+   "slug": "persian_arabic",
+   "name": "pa: lot signs + lot lords (one-hot)",
+   "cols": 330,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_lot_signs_+_lot_lords_(one-hot).npy"
+  },
+  {
+   "key": "persian_arabic::pa: marriage+children lots cross-chart",
+   "slug": "persian_arabic",
+   "name": "pa: marriage+children lots cross-chart",
+   "cols": 305,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_marriage+children_lots_cross-chart.npy"
+  },
+  {
+   "key": "persian_arabic::pa: triplicity lords of the year",
+   "slug": "persian_arabic",
+   "name": "pa: triplicity lords of the year",
+   "cols": 130,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_triplicity_lords_of_the_year.npy"
+  },
+  {
+   "key": "persian_arabic::pa: al-Biruni aspects applying vs separating",
+   "slug": "persian_arabic",
+   "name": "pa: al-Biruni aspects applying vs separating",
+   "cols": 500,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_al-Biruni_aspects_applying_vs_separating.npy"
+  },
+  {
+   "key": "persian_arabic::pa: al-Biruni dexter/sinister + orb widths",
+   "slug": "persian_arabic",
+   "name": "pa: al-Biruni dexter/sinister + orb widths",
+   "cols": 394,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_al-Biruni_dexter_sinister_+_orb_widths.npy"
+  },
+  {
+   "key": "persian_arabic::pa: reception + mutual reception",
+   "slug": "persian_arabic",
+   "name": "pa: reception + mutual reception",
+   "cols": 305,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_reception_+_mutual_reception.npy"
+  },
+  {
+   "key": "persian_arabic::pa: almuten point score (Ibn Ezra)",
+   "slug": "persian_arabic",
+   "name": "pa: almuten point score (Ibn Ezra)",
+   "cols": 169,
+   "dropped_constant": 0,
+   "file": "persian_arabic::pa:_almuten_point_score_(Ibn_Ezra).npy"
+  },
+  {
+   "key": "tibetan_seasia::tsa: rabjung year animal x element",
+   "slug": "tibetan_seasia",
+   "name": "tsa: rabjung year animal x element",
+   "cols": 127,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::tsa:_rabjung_year_animal_x_element.npy"
+  },
+  {
+   "key": "tibetan_seasia::tsa: animal relations (mthun/dgra/gshed)",
+   "slug": "tibetan_seasia",
+   "name": "tsa: animal relations (mthun/dgra/gshed)",
+   "cols": 223,
+   "dropped_constant": 2,
+   "file": "tibetan_seasia::tsa:_animal_relations_(mthun_dgra_gshed).npy"
+  },
+  {
+   "key": "tibetan_seasia::tsa: element relations (srog + khams)",
+   "slug": "tibetan_seasia",
+   "name": "tsa: element relations (srog + khams)",
+   "cols": 114,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::tsa:_element_relations_(srog_+_khams).npy"
+  },
+  {
+   "key": "tibetan_seasia::tsa: mewa (sme ba dgu) arithmetic",
+   "slug": "tibetan_seasia",
+   "name": "tsa: mewa (sme ba dgu) arithmetic",
+   "cols": 262,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::tsa:_mewa_(sme_ba_dgu)_arithmetic.npy"
+  },
+  {
+   "key": "tibetan_seasia::tsa: parkha (spar kha) pairing",
+   "slug": "tibetan_seasia",
+   "name": "tsa: parkha (spar kha) pairing",
+   "cols": 162,
+   "dropped_constant": 1,
+   "file": "tibetan_seasia::tsa:_parkha_(spar_kha)_pairing.npy"
+  },
+  {
+   "key": "tibetan_seasia::tsa: marriage reckoning tally",
+   "slug": "tibetan_seasia",
+   "name": "tsa: marriage reckoning tally",
+   "cols": 41,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::tsa:_marriage_reckoning_tally.npy"
+  },
+  {
+   "key": "tibetan_seasia::bur: mahabote weekday + year remainder",
+   "slug": "tibetan_seasia",
+   "name": "bur: mahabote weekday + year remainder",
+   "cols": 111,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::bur:_mahabote_weekday_+_year_remainder.npy"
+  },
+  {
+   "key": "tibetan_seasia::bur: mahabote house pairing",
+   "slug": "tibetan_seasia",
+   "name": "bur: mahabote house pairing",
+   "cols": 166,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::bur:_mahabote_house_pairing.npy"
+  },
+  {
+   "key": "tibetan_seasia::thai: rerk mansions + nine classes",
+   "slug": "tibetan_seasia",
+   "name": "thai: rerk mansions + nine classes",
+   "cols": 298,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::thai:_rerk_mansions_+_nine_classes.npy"
+  },
+  {
+   "key": "tibetan_seasia::thai: day colours + animal year",
+   "slug": "tibetan_seasia",
+   "name": "thai: day colours + animal year",
+   "cols": 296,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::thai:_day_colours_+_animal_year.npy"
+  },
+  {
+   "key": "tibetan_seasia::jav: pawukon concurrent cycles",
+   "slug": "tibetan_seasia",
+   "name": "jav: pawukon concurrent cycles",
+   "cols": 208,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::jav:_pawukon_concurrent_cycles.npy"
+  },
+  {
+   "key": "tibetan_seasia::jav: wetonan 35 + neptu",
+   "slug": "tibetan_seasia",
+   "name": "jav: wetonan 35 + neptu",
+   "cols": 189,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::jav:_wetonan_35_+_neptu.npy"
+  },
+  {
+   "key": "tibetan_seasia::jav: neptu marriage verdicts",
+   "slug": "tibetan_seasia",
+   "name": "jav: neptu marriage verdicts",
+   "cols": 117,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::jav:_neptu_marriage_verdicts.npy"
+  },
+  {
+   "key": "tibetan_seasia::bal: padewasan + lunar day",
+   "slug": "tibetan_seasia",
+   "name": "bal: padewasan + lunar day",
+   "cols": 343,
+   "dropped_constant": 0,
+   "file": "tibetan_seasia::bal:_padewasan_+_lunar_day.npy"
+  },
+  {
+   "key": "uranian::ura: 90/45-dial body positions (circular)",
+   "slug": "uranian",
+   "name": "ura: 90/45-dial body positions (circular)",
+   "cols": 216,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_90_45-dial_body_positions_(circular).npy"
+  },
+  {
+   "key": "uranian::ura: cross-chart dial distance 360/90/45/22.5",
+   "slug": "uranian",
+   "name": "ura: cross-chart dial distance 360/90/45/22.5",
+   "cols": 784,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_cross-chart_dial_distance_360_90_45_22.5.npy"
+  },
+  {
+   "key": "uranian::ura: cross-chart 45-dial orb kernels 0.5/1/2deg",
+   "slug": "uranian",
+   "name": "ura: cross-chart 45-dial orb kernels 0.5/1/2deg",
+   "cols": 363,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_cross-chart_45-dial_orb_kernels_0.5_1_2deg.npy"
+  },
+  {
+   "key": "uranian::ura: own-chart midpoint trees (occupation counts)",
+   "slug": "uranian",
+   "name": "ura: own-chart midpoint trees (occupation counts)",
+   "cols": 153,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_own-chart_midpoint_trees_(occupation_counts).npy"
+  },
+  {
+   "key": "uranian::ura: cross-chart midpoint trees (partner on my axes)",
+   "slug": "uranian",
+   "name": "ura: cross-chart midpoint trees (partner on my axes)",
+   "cols": 232,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_cross-chart_midpoint_trees_(partner_on_my_axes).npy"
+  },
+  {
+   "key": "uranian::ura: COSI union/offspring axes contacted (synastry + wedding)",
+   "slug": "uranian",
+   "name": "ura: COSI union/offspring axes contacted (synastry + wedding)",
+   "cols": 624,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_COSI_union_offspring_axes_contacted_(synastry_+_wedding).npy"
+  },
+  {
+   "key": "uranian::ura: COSI axes occupied in own radix",
+   "slug": "uranian",
+   "name": "ura: COSI axes occupied in own radix",
+   "cols": 464,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_COSI_axes_occupied_in_own_radix.npy"
+  },
+  {
+   "key": "uranian::ura: planetary pictures, marriage & children (45-dial)",
+   "slug": "uranian",
+   "name": "ura: planetary pictures, marriage & children (45-dial)",
+   "cols": 400,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_planetary_pictures,_marriage_&_children_(45-dial).npy"
+  },
+  {
+   "key": "uranian::ura: solar-arc directed contacts to partner (45-dial)",
+   "slug": "uranian",
+   "name": "ura: solar-arc directed contacts to partner (45-dial)",
+   "cols": 605,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_solar-arc_directed_contacts_to_partner_(45-dial).npy"
+  },
+  {
+   "key": "uranian::ura: solar-arc directed factors on partner COSI axes",
+   "slug": "uranian",
+   "name": "ura: solar-arc directed factors on partner COSI axes",
+   "cols": 312,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_solar-arc_directed_factors_on_partner_COSI_axes.npy"
+  },
+  {
+   "key": "uranian::ura: solar arc magnitude and dial phase",
+   "slug": "uranian",
+   "name": "ura: solar arc magnitude and dial phase",
+   "cols": 17,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_solar_arc_magnitude_and_dial_phase.npy"
+  },
+  {
+   "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+   "slug": "uranian",
+   "name": "ura: hypotheticals dial positions & cross contacts",
+   "cols": 269,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_hypotheticals_dial_positions_&_cross_contacts.npy"
+  },
+  {
+   "key": "uranian::ura: Uranian offspring/marriage pictures (hypotheticals)",
+   "slug": "uranian",
+   "name": "ura: Uranian offspring/marriage pictures (hypotheticals)",
+   "cols": 260,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_Uranian_offspring_marriage_pictures_(hypotheticals).npy"
+  },
+  {
+   "key": "uranian::ura: the Hamburg tally (contact counts, benefic-malefic balance)",
+   "slug": "uranian",
+   "name": "ura: the Hamburg tally (contact counts, benefic-malefic balance)",
+   "cols": 72,
+   "dropped_constant": 0,
+   "file": "uranian::ura:_the_Hamburg_tally_(contact_counts,_benefic-malefic_balance).npy"
+  },
+  {
+   "key": "vedic_core::ved: ashtakoota 36 + doshas [Lahiri]",
+   "slug": "vedic_core",
+   "name": "ved: ashtakoota 36 + doshas [Lahiri]",
+   "cols": 211,
+   "dropped_constant": 4,
+   "file": "vedic_core::ved:_ashtakoota_36_+_doshas_[Lahiri].npy"
+  },
+  {
+   "key": "vedic_core::ved: ashtakoota 36 + doshas [Raman]",
+   "slug": "vedic_core",
+   "name": "ved: ashtakoota 36 + doshas [Raman]",
+   "cols": 211,
+   "dropped_constant": 4,
+   "file": "vedic_core::ved:_ashtakoota_36_+_doshas_[Raman].npy"
+  },
+  {
+   "key": "vedic_core::ved: ashtakoota 36 + doshas [Krishnamurti]",
+   "slug": "vedic_core",
+   "name": "ved: ashtakoota 36 + doshas [Krishnamurti]",
+   "cols": 211,
+   "dropped_constant": 4,
+   "file": "vedic_core::ved:_ashtakoota_36_+_doshas_[Krishnamurti].npy"
+  },
+  {
+   "key": "vedic_core::ved: ashtakoota 36 + doshas [True Citra]",
+   "slug": "vedic_core",
+   "name": "ved: ashtakoota 36 + doshas [True Citra]",
+   "cols": 211,
+   "dropped_constant": 4,
+   "file": "vedic_core::ved:_ashtakoota_36_+_doshas_[True_Citra].npy"
+  },
+  {
+   "key": "vedic_core::ved: nakshatra 27 + pada 108 circular",
+   "slug": "vedic_core",
+   "name": "ved: nakshatra 27 + pada 108 circular",
+   "cols": 207,
+   "dropped_constant": 0,
+   "file": "vedic_core::ved:_nakshatra_27_+_pada_108_circular.npy"
+  },
+  {
+   "key": "vedic_core::ved: nakshatra/pada one-hot",
+   "slug": "vedic_core",
+   "name": "ved: nakshatra/pada one-hot",
+   "cols": 729,
+   "dropped_constant": 0,
+   "file": "vedic_core::ved:_nakshatra_pada_one-hot.npy"
+  },
+  {
+   "key": "vedic_core::ved: D9 navamsa (marriage varga)",
+   "slug": "vedic_core",
+   "name": "ved: D9 navamsa (marriage varga)",
+   "cols": 564,
+   "dropped_constant": 30,
+   "file": "vedic_core::ved:_D9_navamsa_(marriage_varga).npy"
+  },
+  {
+   "key": "vedic_core::ved: D7 saptamsa (children varga)",
+   "slug": "vedic_core",
+   "name": "ved: D7 saptamsa (children varga)",
+   "cols": 617,
+   "dropped_constant": 18,
+   "file": "vedic_core::ved:_D7_saptamsa_(children_varga).npy"
+  },
+  {
+   "key": "vedic_core::ved: vargas D1 D2 D3 D12 D30 D60",
+   "slug": "vedic_core",
+   "name": "ved: vargas D1 D2 D3 D12 D30 D60",
+   "cols": 588,
+   "dropped_constant": 0,
+   "file": "vedic_core::ved:_vargas_D1_D2_D3_D12_D30_D60.npy"
+  },
+  {
+   "key": "vedic_core::ved: panchanga 5 limbs",
+   "slug": "vedic_core",
+   "name": "ved: panchanga 5 limbs",
+   "cols": 378,
+   "dropped_constant": 0,
+   "file": "vedic_core::ved:_panchanga_5_limbs.npy"
+  },
+  {
+   "key": "vedic_core::ved: vimshottari dasha at wedding",
+   "slug": "vedic_core",
+   "name": "ved: vimshottari dasha at wedding",
+   "cols": 256,
+   "dropped_constant": 0,
+   "file": "vedic_core::ved:_vimshottari_dasha_at_wedding.npy"
+  },
+  {
+   "key": "vedic_core::ved: graha states + avastha",
+   "slug": "vedic_core",
+   "name": "ved: graha states + avastha",
+   "cols": 546,
+   "dropped_constant": 21,
+   "file": "vedic_core::ved:_graha_states_+_avastha.npy"
+  },
+  {
+   "key": "vedic_core::ved: panchadha maitri cross-chart",
+   "slug": "vedic_core",
+   "name": "ved: panchadha maitri cross-chart",
+   "cols": 342,
+   "dropped_constant": 0,
+   "file": "vedic_core::ved:_panchadha_maitri_cross-chart.npy"
+  },
+  {
+   "key": "vedic_core::ved: jaimini chara karakas (DK)",
+   "slug": "vedic_core",
+   "name": "ved: jaimini chara karakas (DK)",
+   "cols": 408,
+   "dropped_constant": 4,
+   "file": "vedic_core::ved:_jaimini_chara_karakas_(DK).npy"
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot 36pt (Lahiri)",
+   "slug": "vedic_match",
+   "name": "vm: ashtakoot 36pt (Lahiri)",
+   "cols": 53,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ashtakoot_36pt_(Lahiri).npy"
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot 36pt (Raman)",
+   "slug": "vedic_match",
+   "name": "vm: ashtakoot 36pt (Raman)",
+   "cols": 53,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ashtakoot_36pt_(Raman).npy"
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot 36pt (Krishnamurti)",
+   "slug": "vedic_match",
+   "name": "vm: ashtakoot 36pt (Krishnamurti)",
+   "cols": 53,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ashtakoot_36pt_(Krishnamurti).npy"
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot 36pt (True Citra)",
+   "slug": "vedic_match",
+   "name": "vm: ashtakoot 36pt (True Citra)",
+   "cols": 53,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ashtakoot_36pt_(True_Citra).npy"
+  },
+  {
+   "key": "vedic_match::vm: ten poruthams (Lahiri)",
+   "slug": "vedic_match",
+   "name": "vm: ten poruthams (Lahiri)",
+   "cols": 43,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ten_poruthams_(Lahiri).npy"
+  },
+  {
+   "key": "vedic_match::vm: ten poruthams (Krishnamurti)",
+   "slug": "vedic_match",
+   "name": "vm: ten poruthams (Krishnamurti)",
+   "cols": 43,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ten_poruthams_(Krishnamurti).npy"
+  },
+  {
+   "key": "vedic_match::vm: ten poruthams (True Citra)",
+   "slug": "vedic_match",
+   "name": "vm: ten poruthams (True Citra)",
+   "cols": 43,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ten_poruthams_(True_Citra).npy"
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot ayanamsa spread (7 modes)",
+   "slug": "vedic_match",
+   "name": "vm: ashtakoot ayanamsa spread (7 modes)",
+   "cols": 29,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ashtakoot_ayanamsa_spread_(7_modes).npy"
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot under the +-6deg moon smear",
+   "slug": "vedic_match",
+   "name": "vm: ashtakoot under the +-6deg moon smear",
+   "cols": 24,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_ashtakoot_under_the_+-6deg_moon_smear.npy"
+  },
+  {
+   "key": "vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)",
+   "slug": "vedic_match",
+   "name": "vm: kuja dosha (moon/sun/venus lagna proxies)",
+   "cols": 182,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_kuja_dosha_(moon_sun_venus_lagna_proxies).npy"
+  },
+  {
+   "key": "vedic_match::vm: nakshatra pair low-rank + kuta vector",
+   "slug": "vedic_match",
+   "name": "vm: nakshatra pair low-rank + kuta vector",
+   "cols": 87,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_nakshatra_pair_low-rank_+_kuta_vector.npy"
+  },
+  {
+   "key": "vedic_match::vm: moon nakshatra/rasi/pada one-hot",
+   "slug": "vedic_match",
+   "name": "vm: moon nakshatra/rasi/pada one-hot",
+   "cols": 110,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_moon_nakshatra_rasi_pada_one-hot.npy"
+  },
+  {
+   "key": "vedic_match::vm: kuta category pairs one-hot",
+   "slug": "vedic_match",
+   "name": "vm: kuta category pairs one-hot",
+   "cols": 330,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_kuta_category_pairs_one-hot.npy"
+  },
+  {
+   "key": "vedic_match::vm: guna milan verdict (total, grade, doshas)",
+   "slug": "vedic_match",
+   "name": "vm: guna milan verdict (total, grade, doshas)",
+   "cols": 29,
+   "dropped_constant": 0,
+   "file": "vedic_match::vm:_guna_milan_verdict_(total,_grade,_doshas).npy"
+  },
+  {
+   "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+   "slug": "wedding_transits",
+   "name": "wt: wedding-to-natal 18x18 circular (both)",
+   "cols": 1296,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_wedding-to-natal_18x18_circular_(both).npy"
+  },
+  {
+   "key": "wedding_transits::wt: Ptolemaic orb sweep 18x18, 2.5-6-10deg",
+   "slug": "wedding_transits",
+   "name": "wt: Ptolemaic orb sweep 18x18, 2.5-6-10deg",
+   "cols": 972,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_Ptolemaic_orb_sweep_18x18,_2.5-6-10deg.npy"
+  },
+  {
+   "key": "wedding_transits::wt: applying vs separating signed 18x18",
+   "slug": "wedding_transits",
+   "name": "wt: applying vs separating signed 18x18",
+   "cols": 648,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_applying_vs_separating_signed_18x18.npy"
+  },
+  {
+   "key": "wedding_transits::wt: minor & harmonic angles 18x18",
+   "slug": "wedding_transits",
+   "name": "wt: minor & harmonic angles 18x18",
+   "cols": 648,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_minor_&_harmonic_angles_18x18.npy"
+  },
+  {
+   "key": "wedding_transits::wt: classical 7x7 Ptolemaic angles 6deg",
+   "slug": "wedding_transits",
+   "name": "wt: classical 7x7 Ptolemaic angles 6deg",
+   "cols": 490,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_classical_7x7_Ptolemaic_angles_6deg.npy"
+  },
+  {
+   "key": "wedding_transits::wt: classical 7x7 orb sweep + families + application",
+   "slug": "wedding_transits",
+   "name": "wt: classical 7x7 orb sweep + families + application",
+   "cols": 784,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_classical_7x7_orb_sweep_+_families_+_application.npy"
+  },
+  {
+   "key": "wedding_transits::wt: order-blind symmetric transit encodings",
+   "slug": "wedding_transits",
+   "name": "wt: order-blind symmetric transit encodings",
+   "cols": 232,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_order-blind_symmetric_transit_encodings.npy"
+  },
+  {
+   "key": "wedding_transits::wt: transits to composite & Davison",
+   "slug": "wedding_transits",
+   "name": "wt: transits to composite & Davison",
+   "cols": 209,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_transits_to_composite_&_Davison.npy"
+  },
+  {
+   "key": "wedding_transits::wt: transits to the progressed charts",
+   "slug": "wedding_transits",
+   "name": "wt: transits to the progressed charts",
+   "cols": 170,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_transits_to_the_progressed_charts.npy"
+  },
+  {
+   "key": "wedding_transits::wt: progressed-to-progressed at the wedding",
+   "slug": "wedding_transits",
+   "name": "wt: progressed-to-progressed at the wedding",
+   "cols": 110,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_progressed-to-progressed_at_the_wedding.npy"
+  },
+  {
+   "key": "wedding_transits::wt: solar arc directed, both contacts",
+   "slug": "wedding_transits",
+   "name": "wt: solar arc directed, both contacts",
+   "cols": 199,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_solar_arc_directed,_both_contacts.npy"
+  },
+  {
+   "key": "wedding_transits::wt: returns & life-stage cycles",
+   "slug": "wedding_transits",
+   "name": "wt: returns & life-stage cycles",
+   "cols": 62,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_returns_&_life-stage_cycles.npy"
+  },
+  {
+   "key": "wedding_transits::wt: the marriage-timing shortlist (compact)",
+   "slug": "wedding_transits",
+   "name": "wt: the marriage-timing shortlist (compact)",
+   "cols": 43,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_the_marriage-timing_shortlist_(compact).npy"
+  },
+  {
+   "key": "wedding_transits::wt: transit testimony counts",
+   "slug": "wedding_transits",
+   "name": "wt: transit testimony counts",
+   "cols": 116,
+   "dropped_constant": 0,
+   "file": "wedding_transits::wt:_transit_testimony_counts.npy"
+  }
+ ],
+ "modules": [
+  {
+   "slug": "babylonian_egyptian",
+   "ok": true,
+   "tradition": "Babylonian & Egyptian (Enuma Anu Enlil omens, Goal-Year periods, MUL.APIN paths, 36 decans, Egyptian bounds, dodekatemoria)",
+   "blocks": 14,
+   "seconds": 0.3
+  },
+  {
+   "slug": "chinese",
+   "ok": true,
+   "tradition": "Chinese (BaZi four pillars, Wu Xing, 24 jieqi, 28 xiu, Nine Star Ki)",
+   "blocks": 14,
+   "seconds": 0.1
+  },
+  {
+   "slug": "electional",
+   "ok": true,
+   "tradition": "Western & medieval electional astrology for marriage (Dorotheus, Sahl, Bonatti, Lilly, and modern electional practice)",
+   "blocks": 14,
+   "seconds": 0.8
+  },
+  {
+   "slug": "harmonics",
+   "ok": true,
+   "tradition": "Harmonics, symmetry and alternative zodiacs (Addey/Hamblin harmonics, Kepler-Addey minor aspects, declination, antiscia, Ebertin dial midpoints, draconic, heliocentric, fixed stars)",
+   "blocks": 15,
+   "seconds": 1.0
+  },
+  {
+   "slug": "hellenistic",
+   "ok": true,
+   "tradition": "Hellenistic & classical Western (Ptolemy, Vettius Valens, Dorotheus, Paulus Alexandrinus)",
+   "blocks": 14,
+   "seconds": 0.4
+  },
+  {
+   "slug": "lunar_calendrical",
+   "ok": true,
+   "tradition": "Lunar cycles, eclipses and the religious calendars (manazil, nakshatra, xiu, Saros, computus, Hebrew, Hijri, Zoroastrian)",
+   "blocks": 14,
+   "seconds": 0.7
+  },
+  {
+   "slug": "mesoamerican",
+   "ok": true,
+   "tradition": "Mesoamerican (Maya Tzolk'in/Haab/Long Count at GMT 584283, Aztec tonalpohualli, Dreamspell)",
+   "blocks": 14,
+   "seconds": 0.1
+  },
+  {
+   "slug": "modern_western",
+   "ok": true,
+   "tradition": "Modern & psychological Western (element balance, aspect patterns, asteroid synastry, composite)",
+   "blocks": 14,
+   "seconds": 3.2
+  },
+  {
+   "slug": "muhurta",
+   "ok": true,
+   "tradition": "Vedic Vivaha Muhurta \u2014 election of the wedding date (Muhurta Chintamani, Kalaprakasika, B. V. Raman)",
+   "blocks": 14,
+   "seconds": 0.3
+  },
+  {
+   "slug": "persian_arabic",
+   "ok": true,
+   "tradition": "Persian & medieval Arabic (Abu Ma'shar, al-Biruni, Ibn Ezra, Bonatti's firdaria)",
+   "blocks": 14,
+   "seconds": 0.3
+  },
+  {
+   "slug": "tibetan_seasia",
+   "ok": true,
+   "tradition": "Tibetan, Burmese, Thai, Javanese and Balinese (nagtsi, Mahabote, rerk, Pawukon wetonan)",
+   "blocks": 14,
+   "seconds": 0.1
+  },
+  {
+   "slug": "uranian",
+   "ok": true,
+   "tradition": "Uranian / Hamburg School (Witte, Sieggruen, Rudolph) & Ebertin cosmobiology",
+   "blocks": 14,
+   "seconds": 2.5
+  },
+  {
+   "slug": "vedic_core",
+   "ok": true,
+   "tradition": "Vedic / Jyotisha core (Parashara BPHS, Muhurta Ashtakoota, Jaimini chara karakas)",
+   "blocks": 14,
+   "seconds": 0.4
+  },
+  {
+   "slug": "vedic_match",
+   "ok": true,
+   "tradition": "Vedic marriage matching (Ashtakoot / Guna Milan 36 points, Kuja dosha, ten Poruthams)",
+   "blocks": 14,
+   "seconds": 0.3
+  },
+  {
+   "slug": "wedding_transits",
+   "ok": true,
+   "tradition": "Wedding-day transits and directions (electional application/separation, secondary progressions, solar arc, composite/Davison, returns and life-stage cycles)",
+   "blocks": 14,
+   "seconds": 1.8
+  }
+ ]
+}

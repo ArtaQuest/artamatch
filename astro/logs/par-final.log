@@ -1,0 +1,35 @@
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  134,957 couples · 44,397 became parents together (32.9%)
+
+  model                                                    cols      AUC  vs baseline
+  ------------------------------------------------------ ------ -------- ------------
+  BASELINE: logistic on the age gap                       2 par   0.5272            —
+  exposure / cohort alone (NOT astrology)                    32   0.6974      +0.1702
+  astrology: lun: saros/inex/metonic/callippic + comp       280   0.6979      +0.1706
+  astrology: har: declination parallels + out-of-boun       486   0.6969      +0.1697
+  astrology: meso: distance numbers (LC intervals)            4   0.6973      +0.1701
+  astrology: ura: hypotheticals dial positions & cros       272   0.6975      +0.1703
+  astrology: lun: 45 pair synodic phases, births + di       405   0.6979      +0.1706
+  astrology: har: ecliptic latitude contacts                204   0.6974      +0.1702
+  context: ctx: EVERYTHING                                  417   0.7079      +0.1807
+
+  ON TOP OF EXPOSURE — does the astrology add anything? 
+  exposure alone                                             32   0.6974            —
+  + lun: saros/inex/metonic/callippic + computus            312   0.6980      +0.0005
+  + har: declination parallels + out-of-bounds              518   0.6987      +0.0012
+  + meso: distance numbers (LC intervals)                    36   0.6975      +0.0000
+  + ura: hypotheticals dial positions & cross contacts      304   0.6975      +0.0001
+  + lun: 45 pair synodic phases, births + diff              437   0.6976      +0.0002
+  + har: ecliptic latitude contacts                         236   0.6973      -0.0002
+  + context (nationality, birthplace, sex)                  449   0.7500      +0.0526
+
+  astrology gain over exposure: mean +0.0003, best +0.0012, helping 0/6
+
+  the fitted baseline: logit p = -0.6136 -0.01729 * gap_years
+    age gap  0y -> P(become parents together) 35.12%
+    age gap  5y -> P(become parents together) 33.18%
+    age gap 10y -> P(become parents together) 31.29%
+    age gap 20y -> P(become parents together) 27.70%
+    age gap 30y -> P(become parents together) 24.37%

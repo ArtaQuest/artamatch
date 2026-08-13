@@ -1,0 +1,338 @@
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_ONLY: restricted to 22 modules — aboriginal_australian, african, astrocartography, babylonian_egyptian, chinese, east_asian_deep, electional, harmonics, hellenistic, houses, indigenous_americas, lunar_calendrical, mesoamerican, modern_western, muhurta, persian_arabic, tibetan_seasia, uranian, vedic_ashtakavarga, vedic_core, vedic_match, wedding_transits
+  aboriginal_australian   17 blocks     7.8s  Aboriginal Australian & Torres Strait Islander (Bo
+  african                 16 blocks     4.8s  African traditions (Ifá/Yorùbá Odù · Akan day-soul
+  astrocartography         7 blocks     1.9s  Astrocartography (Jim Lewis): planetary MC/IC/AS/D
+  babylonian_egyptian     14 blocks     4.6s  Babylonian & Egyptian (Enuma Anu Enlil omens, Goal
+  chinese                 14 blocks     1.3s  Chinese (BaZi four pillars, Wu Xing, 24 jieqi, 28 
+  east_asian_deep         16 blocks     4.3s  East Asian deep: Vietnamese Tử Vi (Purple Star), K
+  electional             SKIPPED — needs a marriage date, and this dataset has none
+  harmonics               15 blocks    17.5s  Harmonics, symmetry and alternative zodiacs (Addey
+  hellenistic             14 blocks     9.2s  Hellenistic & classical Western (Ptolemy, Vettius 
+  houses                   9 blocks     1.7s  Houses and angles (Placidus cusps, the lord of the
+  indigenous_americas     16 blocks     6.5s  Indigenous American beyond Mesoamerica (Inca Collc
+  lunar_calendrical       14 blocks     7.6s  Lunar cycles, eclipses and the religious calendars
+  mesoamerican            14 blocks     1.1s  Mesoamerican (Maya Tzolk'in/Haab/Long Count at GMT
+  modern_western          14 blocks    40.1s  Modern & psychological Western (element balance, a
+  muhurta                SKIPPED — needs a marriage date, and this dataset has none
+  persian_arabic          14 blocks     4.6s  Persian & medieval Arabic (Abu Ma'shar, al-Biruni,
+  tibetan_seasia          14 blocks     2.0s  Tibetan, Burmese, Thai, Javanese and Balinese (nag
+  uranian                 14 blocks    35.9s  Uranian / Hamburg School (Witte, Sieggruen, Rudolp
+  vedic_ashtakavarga      18 blocks    28.3s  Vedic quantitative Jyotisha: Ashtakavarga bindus, 
+  vedic_core              14 blocks     5.8s  Vedic / Jyotisha core (Parashara BPHS, Muhurta Ash
+  vedic_match             14 blocks     4.5s  Vedic marriage matching (Ashtakoot / Guna Milan 36
+  wedding_transits       SKIPPED — needs a marriage date, and this dataset has none
+
+268 blocks, 55,230 columns total, from 19 modules
+  0 cached, 268 to score, 6 workers
+  [  1/268] aboriginal_australian::abo: emu solar phase, place-f    19 cols  68.04%  AUC 0.6016  (hist gradient boosti)
+  [  2/268] aboriginal_australian::abo: emu posture verdict (bre    47 cols  68.14%  AUC 0.6390  (hist gradient boosti)
+  [  3/268] aboriginal_australian::abo: the emu in the sky — axi    84 cols  68.16%  AUC 0.6465  (hist gradient boosti)
+  [  4/268] aboriginal_australian::abo: culmination altitude & h    97 cols  69.45%  AUC 0.6938  (hist gradient boosti)
+  [  5/268] aboriginal_australian::abo: rise azimuths — the hori   113 cols  69.40%  AUC 0.6945  (hist gradient boosti)
+  [  6/268] aboriginal_australian::abo: Seven Sisters and the hu    30 cols  68.16%  AUC 0.6431  (hist gradient boosti)
+  [  7/268] aboriginal_australian::abo: Boorong season marker +    107 cols  68.14%  AUC 0.6456  (hist gradient boosti)
+  [  8/268] aboriginal_australian::abo: Tagai — Crux against the    21 cols  68.14%  AUC 0.6454  (hist gradient boosti)
+  [  9/268] aboriginal_australian::abo: Warrambool — Milky Way t    28 cols  68.10%  AUC 0.6415  (hist gradient boosti)
+  [ 10/268] aboriginal_australian::abo: Pleiades & Orion visibil    52 cols  68.93%  AUC 0.6576  (hist gradient boosti)
+  [ 11/268] aboriginal_australian::abo: heliacal windows — sun's   218 cols  68.10%  AUC 0.6464  (hist gradient boosti)
+  [ 12/268] aboriginal_australian::abo: Barnumbirr — Venus as th    24 cols  68.14%  AUC 0.6347  (hist gradient boosti)
+  [ 13/268] aboriginal_australian::abo: shared sky between the t    36 cols  68.15%  AUC 0.6370  (hist gradient boosti)
+  [ 14/268] african::afr: ifá odù legs, date-derived map (not a     76 cols  67.03%  AUC 0.5108  (hist gradient boosti)
+  [ 15/268] aboriginal_australian::abo: days since heliacal risi   242 cols  68.09%  AUC 0.6468  (hist gradient boosti)
+  [ 16/268] african::afr: ifá figure bits, mark counts & leg sha    42 cols  67.03%  AUC 0.5233  (logistic L2 (C=0.1))
+  [ 17/268] african::afr: yorùbá four-day week & 16-day ifá mont    36 cols  67.03%  AUC 0.5177  (logistic L2 (C=0.1))
+  [ 18/268] aboriginal_australian::abo: named-star visibility cl   226 cols  70.88%  AUC 0.7227  (hist gradient boosti)
+  [ 19/268] african::afr: ifá seniority (bascom order) & the sen    77 cols  67.03%  AUC 0.5198  (logistic L2 (C=0.1))
+  [ 20/268] aboriginal_australian::abo: six- and seven-season ca   120 cols  68.36%  AUC 0.6388  (hist gradient boosti)
+  [ 21/268] african::afr: akan kra day-soul, dawn-boundary margi    40 cols  68.39%  AUC 0.6412  (hist gradient boosti)
+  [ 22/268] african::afr: akan day-soul pair 7x7 (hard and soft)   108 cols  67.03%  AUC 0.5187  (hist gradient boosti)
+  [ 23/268] african::afr: akan adaduanan 42-day cycle & akwasida   108 cols  67.03%  AUC 0.5267  (hist gradient boosti)
+  [ 24/268] aboriginal_australian::abo: star on the horizon at b   134 cols  68.12%  AUC 0.6505  (hist gradient boosti)
+  [ 25/268] african::afr: ethiopian/coptic 13-month grid (pagumē    67 cols  67.01%  AUC 0.5779  (hist gradient boosti)
+  [ 26/268] african::afr: ifá compound odù of the union (256, or   258 cols  67.03%  AUC 0.5195  (hist gradient boosti)
+  [ 27/268] african::afr: dogon sigui 60y & sirius b orbital pha    24 cols  69.45%  AUC 0.6964  (hist gradient boosti)
+  [ 28/268] african::afr: ethiopian tewsak feasts & coptic fixed    98 cols  67.03%  AUC 0.5772  (hist gradient boosti)
+  [ 29/268] african::afr: ge'ez calendar-against-sky drift (mont    38 cols  68.79%  AUC 0.6767  (hist gradient boosti)
+  [ 30/268] african::afr: swahili/ibn mājid solar manzil 28 (nau    98 cols  67.73%  AUC 0.5959  (hist gradient boosti)
+  [ 31/268] african::afr: isilimela & naka heliacal risings, the    99 cols  71.27%  AUC 0.7248  (hist gradient boosti)
+  [ 32/268] african::afr: ethiopian baḥire ḥasab (wenber, meṭqi,   111 cols  68.04%  AUC 0.6770  (hist gradient boosti)
+  [ 33/268] african::afr: sothic sirius rising & solar elongatio    87 cols  71.30%  AUC 0.7240  (hist gradient boosti)
+  [ 34/268] astrocartography::acg: line agreement between the tw    40 cols  67.03%  AUC 0.6108  (hist gradient boosti)
+  [ 35/268] astrocartography::acg: own lines at own birthplace,    172 cols  67.31%  AUC 0.6603  (hist gradient boosti)
+  [ 36/268] astrocartography::acg: own lines at own birthplace,    172 cols  67.05%  AUC 0.6585  (hist gradient boosti)
+  [ 37/268] astrocartography::acg: parans (two bodies angular at    64 cols  67.56%  AUC 0.6266  (hist gradient boosti)
+  [ 38/268] astrocartography::acg: older's lines at younger's bi   180 cols  67.01%  AUC 0.6327  (hist gradient boosti)
+  [ 39/268] astrocartography::acg: younger's lines at older's bi   180 cols  67.03%  AUC 0.6371  (hist gradient boosti)
+  [ 40/268] babylonian_egyptian::bab: goal-year phase, circular     96 cols  69.57%  AUC 0.6942  (hist gradient boosti)
+  [ 41/268] babylonian_egyptian::bab: goal-year recurrence betwe   120 cols  67.02%  AUC 0.5498  (hist gradient boosti)
+  [ 42/268] astrocartography::acg: Davison lines at both birthpl   252 cols  67.03%  AUC 0.6104  (hist gradient boosti)
+  [ 43/268] babylonian_egyptian::bab: lunar-visibility month & E   156 cols  67.03%  AUC 0.5306  (hist gradient boosti)
+  [ 44/268] babylonian_egyptian::bab: heliacal phenomena, one-ho   318 cols  67.02%  AUC 0.5282  (hist gradient boosti)
+  [ 45/268] babylonian_egyptian::bab: synodic phase & elongation   240 cols  67.06%  AUC 0.5966  (hist gradient boosti)
+  [ 46/268] babylonian_egyptian::bab: heliacal phenomena, orb ke   318 cols  67.10%  AUC 0.5861  (hist gradient boosti)
+  [ 47/268] babylonian_egyptian::bab: EAE eclipse, saros, moon-o   342 cols  67.09%  AUC 0.6120  (hist gradient boosti)
+  [ 48/268] babylonian_egyptian::egy: decan-pair contacts          390 cols  67.03%  AUC 0.5370  (hist gradient boosti)
+  [ 49/268] babylonian_egyptian::bab+egy: schematic 360-day & Eg   262 cols  69.71%  AUC 0.7015  (hist gradient boosti)
+  [ 50/268] babylonian_egyptian::egy: decan rulers, Chaldean ord   420 cols  67.08%  AUC 0.5593  (hist gradient boosti)
+  [ 51/268] babylonian_egyptian::bab+egy: twelfth-part cross-con   249 cols  66.93%  AUC 0.5337  (logistic L2 (C=0.1))
+  [ 52/268] chinese::chi: wu xing counts, visible characters        61 cols  67.03%  AUC 0.5322  (hist gradient boosti)
+  [ 53/268] chinese::chi: pillars one-hot (year/month/day, no ho   198 cols  67.03%  AUC 0.5368  (hist gradient boosti)
+  [ 54/268] chinese::chi: sexagenary cycles circular + partner o    73 cols  67.03%  AUC 0.5738  (hist gradient boosti)
+  [ 55/268] chinese::chi: wu xing counts, hidden stems weighted     61 cols  67.02%  AUC 0.5315  (hist gradient boosti)
+  [ 56/268] babylonian_egyptian::egy: Egyptian bounds (terms)      428 cols  67.03%  AUC 0.5525  (hist gradient boosti)
+  [ 57/268] chinese::chi: partner element relations (sheng/ke, n   121 cols  67.03%  AUC 0.5226  (hist gradient boosti)
+  [ 58/268] chinese::chi: traditional he/chong compatibility tal    15 cols  67.03%  AUC 0.5240  (logistic L2 (C=0.1))
+  [ 59/268] chinese::chi: year branch relations (zodiac animals)   177 cols  67.03%  AUC 0.5191  (hist gradient boosti)
+  [ 60/268] chinese::chi: day branch relations (day pillar is th   166 cols  67.03%  AUC 0.5247  (hist gradient boosti)
+  [ 61/268] chinese::chi: branch relations across all nine pilla   111 cols  67.03%  AUC 0.5249  (hist gradient boosti)
+  [ 62/268] babylonian_egyptian::egy: 36 decans, one-hot           504 cols  67.09%  AUC 0.5778  (hist gradient boosti)
+  [ 63/268] chinese::chi: eight mansions (bazhai) kua relation      81 cols  67.03%  AUC 0.5215  (hist gradient boosti)
+  [ 64/268] chinese::chi: 28 xiu, equal divisions from Spica       178 cols  67.03%  AUC 0.5305  (hist gradient boosti)
+  [ 65/268] chinese::chi: 24 jieqi solar terms + jianchu day off   190 cols  67.03%  AUC 0.5395  (hist gradient boosti)
+  [ 66/268] chinese::chi: 28 xiu, classical unequal widths         178 cols  67.04%  AUC 0.5259  (hist gradient boosti)
+  [ 67/268] chinese::chi: nine star ki (nian/yue zibai)            181 cols  67.03%  AUC 0.5250  (hist gradient boosti)
+  [ 68/268] babylonian_egyptian::bab+egy: dodekatemoria, circula   504 cols  67.04%  AUC 0.5517  (hist gradient boosti)
+  [ 69/268] east_asian_deep::ead: tuvi ngu hanh cuc + ziwei fram   166 cols  67.03%  AUC 0.5252  (hist gradient boosti)
+  [ 70/268] east_asian_deep::ead: tuvi couple overlay (hong loan   107 cols  67.03%  AUC 0.5284  (hist gradient boosti)
+  [ 71/268] east_asian_deep::ead: tuvi palace star distributions   158 cols  67.02%  AUC 0.5198  (hist gradient boosti)
+  [ 72/268] east_asian_deep::ead: saju sipseong across the pilla   172 cols  67.03%  AUC 0.5334  (hist gradient boosti)
+  [ 73/268] east_asian_deep::ead: saju gunghap — wonjin, gwimun,    89 cols  67.03%  AUC 0.5428  (hist gradient boosti)
+  [ 74/268] east_asian_deep::ead: saju true-solar-term boundary     18 cols  68.81%  AUC 0.6587  (hist gradient boosti)
+  [ 75/268] east_asian_deep::ead: saju gyeokguk + sin-gang stren   120 cols  67.03%  AUC 0.5388  (hist gradient boosti)
+  [ 76/268] east_asian_deep::ead: sino-viet lunar month, day and   408 cols  67.03%  AUC 0.5365  (hist gradient boosti)
+  [ 77/268] east_asian_deep::ead: japanese day quality — rokuyo,   166 cols  67.03%  AUC 0.5227  (hist gradient boosti)
+  [ 78/268] east_asian_deep::ead: shukuyo pairing — nine relatio   250 cols  67.03%  AUC 0.5259  (hist gradient boosti)
+  [ 79/268] east_asian_deep::ead: onmyodo directions — ten'ichij   156 cols  67.03%  AUC 0.5378  (hist gradient boosti)
+  [ 80/268] east_asian_deep::ead: shukuyo 27 mansions — almanac    255 cols  67.03%  AUC 0.5266  (hist gradient boosti)
+  [ 81/268] east_asian_deep::ead: tuvi minor stars + sinh nien t   376 cols  67.02%  AUC 0.5497  (hist gradient boosti)
+  [ 82/268] east_asian_deep::ead: sanmeigaku jintai seizu + ener   246 cols  67.02%  AUC 0.5385  (hist gradient boosti)
+  [ 83/268] east_asian_deep::ead: chinese almanac additions — 12   372 cols  67.03%  AUC 0.5400  (hist gradient boosti)
+  [ 84/268] east_asian_deep::ead: mongolian zurkhai jaran + tsag   406 cols  67.03%  AUC 0.5522  (hist gradient boosti)
+  [ 85/268] harmonics::har: harmonic 5/7/9 circular cos/sin        294 cols  67.04%  AUC 0.5342  (hist gradient boosti)
+  [ 86/268] harmonics::har: harmonic 5/7/9 conj (Addey creative)   300 cols  67.38%  AUC 0.6435  (hist gradient boosti)
+  [ 87/268] harmonics::har: minor-aspect family tallies            118 cols  67.03%  AUC 0.5316  (hist gradient boosti)
+  [ 88/268] harmonics::har: minor-aspect kernels (Kepler/Addey)    288 cols  67.03%  AUC 0.5302  (hist gradient boosti)
+  [ 89/268] harmonics::har: Addey wave amplitudes N=1..16          288 cols  67.18%  AUC 0.5950  (hist gradient boosti)
+  [ 90/268] harmonics::har: harmonic 10/11/13/16 conj              400 cols  67.30%  AUC 0.6244  (hist gradient boosti)
+  [ 91/268] harmonics::har: ecliptic latitude contacts             204 cols  69.88%  AUC 0.7009  (hist gradient boosti)
+  [ 92/268] harmonics::har: harmonic 2/3/4/6/8/12 conj             600 cols  69.06%  AUC 0.6882  (hist gradient boosti)
+  [ 93/268] harmonics::har: draconic zodiac synastry               346 cols  68.50%  AUC 0.6636  (hist gradient boosti)
+  [ 94/268] harmonics::har: declination parallels + out-of-bound   486 cols  69.78%  AUC 0.7007  (hist gradient boosti)
+  [ 95/268] harmonics::har: heliocentric + helio-geo contacts      286 cols  69.70%  AUC 0.6995  (hist gradient boosti)
+  [ 96/268] hellenistic::hel: synastry ptolemaic orbs 2deg         245 cols  67.11%  AUC 0.5363  (hist gradient boosti)
+  [ 97/268] hellenistic::hel: synastry ptolemaic orbs 4deg         245 cols  67.11%  AUC 0.5364  (hist gradient boosti)
+  [ 98/268] harmonics::har: draconic-tropical cross contacts       400 cols  67.14%  AUC 0.6120  (hist gradient boosti)
+  [ 99/268] hellenistic::hel: synastry ptolemaic orbs 6deg         245 cols  67.06%  AUC 0.5382  (hist gradient boosti)
+  [100/268] harmonics::har: speed, stations, applying/separating   555 cols  69.24%  AUC 0.6940  (hist gradient boosti)
+  [101/268] hellenistic::hel: aversion & whole-sign tallies         90 cols  67.03%  AUC 0.5256  (hist gradient boosti)
+  [102/268] harmonics::har: antiscia + Ebertin dial midpoints      476 cols  67.04%  AUC 0.6171  (hist gradient boosti)
+  [103/268] hellenistic::hel: wedding chart ptolemaic orbs 2/4/6   390 cols  67.02%  AUC 0.5724  (hist gradient boosti)
+  [104/268] hellenistic::hel: essential dignity states             183 cols  67.03%  AUC 0.5554  (hist gradient boosti)
+  [105/268] hellenistic::hel: sect proxy, triplicity lords & pla   186 cols  67.02%  AUC 0.5324  (hist gradient boosti)
+  [106/268] hellenistic::hel: whole-sign relations dexter/sinist   588 cols  67.03%  AUC 0.5278  (hist gradient boosti)
+  [107/268] hellenistic::hel: Valens synastry testimony count       86 cols  67.03%  AUC 0.5229  (hist gradient boosti)
+  [108/268] harmonics::har: fixed stars conj + parallels           554 cols  68.05%  AUC 0.6460  (hist gradient boosti)
+  [109/268] houses::hou: angles (Asc, MC) + partner separations     23 cols  68.10%  AUC 0.6330  (logistic L2 (C=0.1))
+  [110/268] hellenistic::hel: hermetic lots (circular)             320 cols  67.09%  AUC 0.5652  (hist gradient boosti)
+  [111/268] houses::hou: Asc + MC sign one-hots                     60 cols  68.09%  AUC 0.6301  (logistic L2 (C=0.1))
+  [112/268] hellenistic::hel: antiscia & contra-antiscia contact   342 cols  67.03%  AUC 0.5334  (hist gradient boosti)
+  [113/268] hellenistic::hel: dignity points & almuten             510 cols  67.05%  AUC 0.5624  (hist gradient boosti)
+  [114/268] hellenistic::hel: lot cross-contacts                   680 cols  67.03%  AUC 0.5246  (hist gradient boosti)
+  [115/268] houses::hou: placements, older partner                 102 cols  67.08%  AUC 0.6313  (hist gradient boosti)
+  [116/268] houses::hou: placements, younger partner               103 cols  67.03%  AUC 0.6419  (hist gradient boosti)
+  [117/268] houses::hou: overlay counts per house, both directio    24 cols  67.03%  AUC 0.6090  (hist gradient boosti)
+  [118/268] houses::hou: placements, Davison chart                 115 cols  67.01%  AUC 0.6268  (hist gradient boosti)
+  [119/268] hellenistic::hel: sign qualities & solar phase         330 cols  67.10%  AUC 0.5808  (hist gradient boosti)
+  [120/268] indigenous_americas::iam: inca 328-day ceque calenda    36 cols  67.49%  AUC 0.5805  (hist gradient boosti)
+  [121/268] indigenous_americas::iam: inca ceque 41 one-hot, bot    84 cols  67.03%  AUC 0.5281  (hist gradient boosti)
+  [122/268] indigenous_americas::iam: inca collca (pleiades) hel    43 cols  70.05%  AUC 0.7042  (hist gradient boosti)
+  [123/268] indigenous_americas::iam: inca inti raymi, capac ray    37 cols  69.03%  AUC 0.6567  (hist gradient boosti)
+  [124/268] houses::hou: house lords + lord of the 7th             192 cols  68.10%  AUC 0.6276  (hist gradient boosti)
+  [125/268] houses::hou: overlay, older's planets in younger's h   120 cols  67.02%  AUC 0.6272  (hist gradient boosti)
+  [126/268] indigenous_americas::iam: dine dilyehe evening windo    42 cols  68.92%  AUC 0.6586  (hist gradient boosti)
+  [127/268] houses::hou: overlay, younger's planets in older's h   120 cols  67.03%  AUC 0.6315  (hist gradient boosti)
+  [128/268] indigenous_americas::iam: inca dark clouds yacana &     44 cols  69.12%  AUC 0.6576  (hist gradient boosti)
+  [129/268] indigenous_americas::iam: dine nahookos revolving pa    40 cols  70.98%  AUC 0.7222  (hist gradient boosti)
+  [130/268] indigenous_americas::iam: pawnee star chart visibili    38 cols  69.06%  AUC 0.6609  (hist gradient boosti)
+  [131/268] indigenous_americas::iam: hopi horizon sunrise calen    36 cols  68.85%  AUC 0.6534  (hist gradient boosti)
+  [132/268] indigenous_americas::iam: pawnee morning star & even    62 cols  68.80%  AUC 0.6604  (hist gradient boosti)
+  [133/268] indigenous_americas::iam: woodland moon count from t    32 cols  67.35%  AUC 0.5991  (hist gradient boosti)
+  [134/268] indigenous_americas::iam: hopi kiva culmination of o    60 cols  68.95%  AUC 0.6584  (hist gradient boosti)
+  [135/268] indigenous_americas::iam: mapuche we tripantu & puno    41 cols  69.36%  AUC 0.6648  (hist gradient boosti)
+  [136/268] indigenous_americas::iam: lakota sacred hoop, the su   121 cols  67.33%  AUC 0.5699  (hist gradient boosti)
+  [137/268] lunar_calendrical::lun: synodic phase circular, 6 in    99 cols  66.96%  AUC 0.5364  (hist gradient boosti)
+  [138/268] lunar_calendrical::lun: eight phases one-hot + pairi   101 cols  67.03%  AUC 0.5282  (hist gradient boosti)
+  [139/268] indigenous_americas::iam: named moons (cherokee 12,    195 cols  67.03%  AUC 0.5315  (hist gradient boosti)
+  [140/268] lunar_calendrical::lun: manazil 28 (Arabic, ecliptic   255 cols  67.03%  AUC 0.5277  (hist gradient boosti)
+  [141/268] indigenous_americas::iam: birth-hour marginal, which    88 cols  69.49%  AUC 0.6844  (hist gradient boosti)
+  [142/268] lunar_calendrical::lun: nakshatra 27 tropical + part   277 cols  67.03%  AUC 0.5252  (hist gradient boosti)
+  [143/268] lunar_calendrical::lun: xiu 28 (Chinese, equatorial)   240 cols  67.03%  AUC 0.5293  (hist gradient boosti)
+  [144/268] lunar_calendrical::lun: void-of-course + electional     58 cols  67.03%  AUC 0.5040  (logistic L2 (C=0.1))
+  [145/268] lunar_calendrical::lun: synodic/draconic/anomalistic   159 cols  67.76%  AUC 0.5886  (hist gradient boosti)
+  [146/268] lunar_calendrical::lun: eclipse proximity + ecliptic   170 cols  67.02%  AUC 0.5515  (hist gradient boosti)
+  [147/268] lunar_calendrical::lun: 45 pair synodic phases, wedd   180 cols  69.46%  AUC 0.6843  (hist gradient boosti)
+  [148/268] lunar_calendrical::lun: islamic hijri (tabular) + se   162 cols  67.03%  AUC 0.5324  (hist gradient boosti)
+  [149/268] lunar_calendrical::lun: hebrew calendar + halakhic w   183 cols  67.04%  AUC 0.5367  (hist gradient boosti)
+  [150/268] mesoamerican::meso: tzolkin circular per instant        84 cols  67.03%  AUC 0.5139  (hist gradient boosti)
+  [151/268] mesoamerican::meso: tzolkin pair differences circula    84 cols  67.03%  AUC 0.5327  (hist gradient boosti)
+  [152/268] mesoamerican::meso: tzolkin day-sign + trecena one-h   179 cols  67.03%  AUC 0.5036  (hist gradient boosti)
+  [153/268] mesoamerican::meso: distance numbers (LC intervals)      4 cols  69.64%  AUC 0.6995  (hist gradient boosti)
+  [154/268] lunar_calendrical::lun: saros/inex/metonic/callippic   280 cols  69.90%  AUC 0.7026  (hist gradient boosti)
+  [155/268] mesoamerican::meso: long count components + katun wh    69 cols  69.68%  AUC 0.6969  (logistic L2 (C=0.1))
+  [156/268] mesoamerican::meso: 819-day cycle + directional quad    59 cols  67.03%  AUC 0.5274  (hist gradient boosti)
+  [157/268] mesoamerican::meso: nine lords of the night G1-G9       82 cols  67.03%  AUC 0.5352  (hist gradient boosti)
+  [158/268] mesoamerican::meso: haab + calendar round + year bea   185 cols  67.01%  AUC 0.5814  (hist gradient boosti)
+  [159/268] mesoamerican::meso: four world-quarters pairing         77 cols  67.03%  AUC 0.5334  (hist gradient boosti)
+  [160/268] mesoamerican::meso: day-sign pair relations (allied/   110 cols  67.03%  AUC 0.5291  (hist gradient boosti)
+  [161/268] lunar_calendrical::lun: 45 pair synodic phases, birt   405 cols  69.85%  AUC 0.7012  (hist gradient boosti)
+  [162/268] mesoamerican::meso: documented rule tests + tally       25 cols  67.03%  AUC 0.5238  (hist gradient boosti)
+  [163/268] mesoamerican::meso: dreamspell oracle (Arguelles, mo   147 cols  67.03%  AUC 0.5290  (hist gradient boosti)
+  [164/268] mesoamerican::meso: day-sign pair one-hot 20x20        400 cols  67.03%  AUC 0.5153  (logistic L2 (C=0.1))
+  [165/268] modern_western::mod: textbook synastry point score      49 cols  67.08%  AUC 0.5381  (hist gradient boosti)
+  [166/268] mesoamerican::meso: aztec lord pairs (13 day-lords x   274 cols  67.03%  AUC 0.5284  (hist gradient boosti)
+  [167/268] modern_western::mod: element+modality balance (March   200 cols  67.06%  AUC 0.5526  (hist gradient boosti)
+  [168/268] lunar_calendrical::lun: zoroastrian + celtic tree +    323 cols  67.83%  AUC 0.6601  (hist gradient boosti)
+  [169/268] modern_western::mod: aspect patterns cross-chart + r   184 cols  67.00%  AUC 0.5722  (hist gradient boosti)
+  [170/268] modern_western::mod: sign & element pair one-hot       605 cols  67.03%  AUC 0.5459  (hist gradient boosti)
+  [171/268] modern_western::mod: Juno + Ceres marriage synastry    329 cols  67.18%  AUC 0.5441  (hist gradient boosti)
+  [172/268] modern_western::mod: aspect patterns natal + wedding   276 cols  67.10%  AUC 0.5931  (hist gradient boosti)
+  [173/268] modern_western::mod: Pallas Vesta Chiron Lilith syna   404 cols  67.08%  AUC 0.5458  (hist gradient boosti)
+  [174/268] modern_western::mod: Venus-Mars + Sun-Moon cross con   410 cols  67.10%  AUC 0.5313  (hist gradient boosti)
+  [175/268] modern_western::mod: solar return phase + retrograde   113 cols  67.18%  AUC 0.5724  (hist gradient boosti)
+  [176/268] persian_arabic::pa: firdaria day-sect lord+sublord      33 cols  67.04%  AUC 0.5488  (hist gradient boosti)
+  [177/268] persian_arabic::pa: firdaria night-sect lord+sublord    33 cols  67.03%  AUC 0.5496  (hist gradient boosti)
+  [178/268] persian_arabic::pa: firdaria lords paired               48 cols  67.08%  AUC 0.5324  (logistic L2 (C=0.1))
+  [179/268] modern_western::mod: Sun/Moon midpoint marriage axis   361 cols  67.24%  AUC 0.6110  (hist gradient boosti)
+  [180/268] modern_western::mod: progressed synastry               490 cols  67.19%  AUC 0.5621  (hist gradient boosti)
+  [181/268] modern_western::mod: Davison chart + composite dispu   547 cols  69.88%  AUC 0.6991  (hist gradient boosti)
+  [182/268] modern_western::mod: midpoint composite chart          534 cols  69.26%  AUC 0.6831  (hist gradient boosti)
+  [183/268] persian_arabic::pa: solar profection + lord of the y   165 cols  67.31%  AUC 0.5294  (logistic L2 (C=0.1))
+  [184/268] persian_arabic::pa: tasyir hits + divisor of the yea   213 cols  67.20%  AUC 0.5473  (hist gradient boosti)
+  [185/268] persian_arabic::pa: triplicity lords of the year       110 cols  67.12%  AUC 0.5368  (hist gradient boosti)
+  [186/268] persian_arabic::pa: lots day+night reversal (circula   132 cols  67.12%  AUC 0.5700  (hist gradient boosti)
+  [187/268] persian_arabic::pa: tasyir 1deg/yr directed-to-natal   490 cols  67.13%  AUC 0.5359  (hist gradient boosti)
+  [188/268] persian_arabic::pa: marriage+children lots cross-cha   305 cols  67.07%  AUC 0.5285  (hist gradient boosti)
+  [189/268] persian_arabic::pa: almuten point score (Ibn Ezra)     169 cols  67.25%  AUC 0.5623  (hist gradient boosti)
+  [190/268] persian_arabic::pa: lot signs + lot lords (one-hot)    330 cols  67.04%  AUC 0.5522  (hist gradient boosti)
+  [191/268] persian_arabic::pa: al-Biruni aspects applying vs se   500 cols  66.99%  AUC 0.5336  (hist gradient boosti)
+  [192/268] persian_arabic::pa: al-Biruni dexter/sinister + orb    394 cols  67.05%  AUC 0.5416  (hist gradient boosti)
+  [193/268] tibetan_seasia::tsa: animal relations (mthun/dgra/gs   224 cols  67.03%  AUC 0.5211  (hist gradient boosti)
+  [194/268] tibetan_seasia::tsa: element relations (srog + khams   114 cols  67.03%  AUC 0.5262  (hist gradient boosti)
+  [195/268] tibetan_seasia::tsa: rabjung year animal x element     127 cols  67.03%  AUC 0.5487  (hist gradient boosti)
+  [196/268] tibetan_seasia::tsa: marriage reckoning tally           41 cols  67.03%  AUC 0.5275  (hist gradient boosti)
+  [197/268] tibetan_seasia::tsa: parkha (spar kha) pairing         162 cols  67.03%  AUC 0.5227  (hist gradient boosti)
+  [198/268] persian_arabic::pa: reception + mutual reception       305 cols  67.02%  AUC 0.5596  (hist gradient boosti)
+  [199/268] tibetan_seasia::bur: mahabote house pairing            166 cols  67.03%  AUC 0.5240  (hist gradient boosti)
+  [200/268] tibetan_seasia::tsa: mewa (sme ba dgu) arithmetic      262 cols  67.03%  AUC 0.5242  (hist gradient boosti)
+  [201/268] tibetan_seasia::bur: mahabote weekday + year remaind   111 cols  67.16%  AUC 0.6266  (hist gradient boosti)
+  [202/268] tibetan_seasia::jav: wetonan 35 + neptu                189 cols  67.03%  AUC 0.5243  (hist gradient boosti)
+  [203/268] tibetan_seasia::jav: neptu marriage verdicts           117 cols  67.03%  AUC 0.5248  (hist gradient boosti)
+  [204/268] tibetan_seasia::thai: rerk mansions + nine classes     298 cols  67.02%  AUC 0.5268  (hist gradient boosti)
+  [205/268] tibetan_seasia::thai: day colours + animal year        296 cols  67.03%  AUC 0.5291  (hist gradient boosti)
+  [206/268] tibetan_seasia::jav: pawukon concurrent cycles         208 cols  67.03%  AUC 0.5371  (hist gradient boosti)
+  [207/268] modern_western::mod: Sabian 360-degree + pentad bins  1252 cols  67.22%  AUC 0.5534  (hist gradient boosti)
+  [208/268] uranian::ura: own-chart midpoint trees (occupation c   153 cols  67.05%  AUC 0.5441  (hist gradient boosti)
+  [209/268] tibetan_seasia::bal: padewasan + lunar day             343 cols  67.02%  AUC 0.5316  (hist gradient boosti)
+  [210/268] uranian::ura: cross-chart midpoint trees (partner on   232 cols  67.03%  AUC 0.5238  (hist gradient boosti)
+  [211/268] uranian::ura: 90/45-dial body positions (circular)     216 cols  67.67%  AUC 0.6733  (hist gradient boosti)
+  [212/268] uranian::ura: cross-chart 45-dial orb kernels 0.5/1/   363 cols  67.24%  AUC 0.6193  (hist gradient boosti)
+  [213/268] uranian::ura: COSI union/offspring axes contacted (s   624 cols  67.03%  AUC 0.5401  (hist gradient boosti)
+  [214/268] uranian::ura: solar arc magnitude and dial phase        17 cols  67.02%  AUC 0.5386  (hist gradient boosti)
+  [215/268] uranian::ura: planetary pictures, marriage & childre   400 cols  67.06%  AUC 0.5885  (hist gradient boosti)
+  [216/268] uranian::ura: solar-arc directed factors on partner    312 cols  67.03%  AUC 0.5404  (hist gradient boosti)
+  [217/268] uranian::ura: COSI axes occupied in own radix          464 cols  67.12%  AUC 0.6004  (hist gradient boosti)
+  [218/268] uranian::ura: cross-chart dial distance 360/90/45/22   784 cols  69.44%  AUC 0.6959  (hist gradient boosti)
+  [219/268] uranian::ura: the Hamburg tally (contact counts, ben    72 cols  67.02%  AUC 0.5380  (hist gradient boosti)
+  [220/268] vedic_ashtakavarga::av8: SAV per sign + bindus under    92 cols  67.09%  AUC 0.5544  (hist gradient boosti)
+  [221/268] uranian::ura: solar-arc directed contacts to partner   604 cols  67.23%  AUC 0.5550  (hist gradient boosti)
+  [222/268] vedic_ashtakavarga::av8: kakshya + kakshya vedha (ow   102 cols  67.06%  AUC 0.5607  (hist gradient boosti)
+  [223/268] vedic_ashtakavarga::av8: SAV profile pair comparison    70 cols  67.03%  AUC 0.5357  (hist gradient boosti)
+  [224/268] vedic_ashtakavarga::av8: SAV in 12 bhavas from chand    66 cols  67.03%  AUC 0.5337  (hist gradient boosti)
+  [225/268] vedic_ashtakavarga::av8: sodhya pinda (trikona + eka    74 cols  67.08%  AUC 0.5656  (hist gradient boosti)
+  [226/268] vedic_ashtakavarga::av8: SAV stability over the 12 b    54 cols  67.06%  AUC 0.5446  (hist gradient boosti)
+  [227/268] vedic_ashtakavarga::av8: BAV 7 grahas x 12 signs       168 cols  67.06%  AUC 0.5630  (hist gradient boosti)
+  [228/268] vedic_ashtakavarga::sb6: sthana bala, five component    96 cols  67.26%  AUC 0.5792  (hist gradient boosti)
+  [229/268] uranian::ura: hypotheticals dial positions & cross c   272 cols  69.87%  AUC 0.7013  (hist gradient boosti)
+  [230/268] vedic_ashtakavarga::sb6: cross-partner shadbala comp    47 cols  67.18%  AUC 0.5490  (hist gradient boosti)
+  [231/268] uranian::ura: Uranian offspring/marriage pictures (h   260 cols  68.46%  AUC 0.6857  (hist gradient boosti)
+  [232/268] vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta    98 cols  67.60%  AUC 0.6073  (hist gradient boosti)
+  [233/268] vedic_ashtakavarga::sb6: kala bala components + dig    156 cols  67.16%  AUC 0.5730  (hist gradient boosti)
+  [234/268] vedic_ashtakavarga::sb6: shadbala rupas vs classical   144 cols  67.15%  AUC 0.5649  (hist gradient boosti)
+  [235/268] vedic_ashtakavarga::arp: upapada lagna cross-partner   106 cols  67.03%  AUC 0.5842  (hist gradient boosti)
+  [236/268] vedic_ashtakavarga::sb6: drik bala (sphuta drishti)    136 cols  67.07%  AUC 0.5730  (hist gradient boosti)
+  [237/268] vedic_ashtakavarga::av8: 8-contributor BAV with the     76 cols  68.26%  AUC 0.6435  (hist gradient boosti)
+  [238/268] vedic_ashtakavarga::upg: gulika + mandi (day/night m    66 cols  68.10%  AUC 0.6403  (hist gradient boosti)
+  [239/268] vedic_ashtakavarga::arp: arudha padas, lagna margina   126 cols  67.02%  AUC 0.5966  (hist gradient boosti)
+  [240/268] vedic_core::ved: ashtakoota 36 + doshas [Lahiri]       211 cols  67.03%  AUC 0.5264  (logistic L2 (C=0.1))
+  [241/268] vedic_core::ved: ashtakoota 36 + doshas [Raman]        211 cols  67.03%  AUC 0.5295  (logistic L2 (C=0.1))
+  [242/268] vedic_core::ved: ashtakoota 36 + doshas [Krishnamurt   211 cols  67.03%  AUC 0.5273  (logistic L2 (C=0.1))
+  [243/268] vedic_core::ved: ashtakoota 36 + doshas [True Citra]   211 cols  67.03%  AUC 0.5265  (logistic L2 (C=0.1))
+  [244/268] vedic_ashtakavarga::upg: sun-derived upagrahas (exac   338 cols  67.09%  AUC 0.5724  (hist gradient boosti)
+  [245/268] vedic_core::ved: nakshatra 27 + pada 108 circular      207 cols  67.34%  AUC 0.6138  (hist gradient boosti)
+  [246/268] vedic_core::ved: panchanga 5 limbs                     378 cols  67.03%  AUC 0.5320  (hist gradient boosti)
+  [247/268] vedic_core::ved: vimshottari dasha at wedding          256 cols  67.03%  AUC 0.5437  (hist gradient boosti)
+  [248/268] vedic_core::ved: D9 navamsa (marriage varga)           564 cols  67.05%  AUC 0.5756  (hist gradient boosti)
+  [249/268] vedic_core::ved: D7 saptamsa (children varga)          617 cols  67.37%  AUC 0.5910  (hist gradient boosti)
+  [250/268] vedic_match::vm: ashtakoot 36pt (Lahiri)                53 cols  67.03%  AUC 0.5288  (logistic L2 (C=0.1))
+  [251/268] vedic_core::ved: nakshatra/pada one-hot                729 cols  67.04%  AUC 0.5477  (hist gradient boosti)
+  [252/268] vedic_match::vm: ashtakoot 36pt (Raman)                 53 cols  67.03%  AUC 0.5297  (logistic L2 (C=0.1))
+  [253/268] vedic_core::ved: vargas D1 D2 D3 D12 D30 D60           588 cols  67.45%  AUC 0.6113  (hist gradient boosti)
+  [254/268] vedic_match::vm: ashtakoot 36pt (Krishnamurti)          53 cols  67.03%  AUC 0.5289  (logistic L2 (C=0.1))
+  [255/268] vedic_match::vm: ashtakoot 36pt (True Citra)            53 cols  67.03%  AUC 0.5280  (logistic L2 (C=0.1))
+  [256/268] vedic_core::ved: panchadha maitri cross-chart          342 cols  67.03%  AUC 0.5568  (hist gradient boosti)
+  [257/268] vedic_match::vm: ten poruthams (Lahiri)                 43 cols  67.03%  AUC 0.5219  (logistic L2 (C=0.1))
+  [258/268] vedic_match::vm: ten poruthams (Krishnamurti)           43 cols  67.03%  AUC 0.5220  (logistic L2 (C=0.1))
+  [259/268] vedic_match::vm: ashtakoot under the +-6deg moon sme    24 cols  67.02%  AUC 0.5265  (hist gradient boosti)
+  [260/268] vedic_match::vm: ashtakoot ayanamsa spread (7 modes)    29 cols  67.03%  AUC 0.5295  (logistic L2 (C=0.1))
+  [261/268] vedic_match::vm: ten poruthams (True Citra)             43 cols  67.03%  AUC 0.5217  (logistic L2 (C=0.1))
+  [262/268] vedic_match::vm: nakshatra pair low-rank + kuta vect    87 cols  67.05%  AUC 0.5300  (hist gradient boosti)
+  [263/268] vedic_match::vm: moon nakshatra/rasi/pada one-hot      110 cols  67.03%  AUC 0.5119  (hist gradient boosti)
+  [264/268] vedic_match::vm: guna milan verdict (total, grade, d    29 cols  67.03%  AUC 0.5286  (logistic L2 (C=0.1))
+  [265/268] vedic_core::ved: jaimini chara karakas (DK)            408 cols  67.12%  AUC 0.5460  (hist gradient boosti)
+  [266/268] vedic_match::vm: kuja dosha (moon/sun/venus lagna pr   182 cols  67.03%  AUC 0.5484  (hist gradient boosti)
+  [267/268] vedic_match::vm: kuta category pairs one-hot           330 cols  67.03%  AUC 0.5237  (hist gradient boosti)
+  [268/268] vedic_core::ved: graha states + avastha                546 cols  67.39%  AUC 0.6146  (hist gradient boosti)
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+top 20 blocks by AUC:
+  0.7248   71.27%     99 cols  african::afr: isilimela & naka heliacal risings, the southern year
+  0.7240   71.30%     87 cols  african::afr: sothic sirius rising & solar elongation
+  0.7227   70.88%    226 cols  aboriginal_australian::abo: named-star visibility classes at each birthplace
+  0.7222   70.98%     40 cols  indigenous_americas::iam: dine nahookos revolving pair, midnight
+  0.7042   70.05%     43 cols  indigenous_americas::iam: inca collca (pleiades) heliacal rising
+  0.7026   69.90%    280 cols  lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.7015   69.71%    262 cols  babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars
+  0.7013   69.87%    272 cols  uranian::ura: hypotheticals dial positions & cross contacts
+  0.7012   69.85%    405 cols  lunar_calendrical::lun: 45 pair synodic phases, births + diff
+  0.7009   69.88%    204 cols  harmonics::har: ecliptic latitude contacts
+  0.7007   69.78%    486 cols  harmonics::har: declination parallels + out-of-bounds
+  0.6995   69.70%    286 cols  harmonics::har: heliocentric + helio-geo contacts
+  0.6995   69.64%      4 cols  mesoamerican::meso: distance numbers (LC intervals)
+  0.6991   69.88%    547 cols  modern_western::mod: Davison chart + composite dispute
+  0.6969   69.68%     69 cols  mesoamerican::meso: long count components + katun wheel
+  0.6964   69.45%     24 cols  african::afr: dogon sigui 60y & sirius b orbital phase
+  0.6959   69.44%    784 cols  uranian::ura: cross-chart dial distance 360/90/45/22.5
+  0.6945   69.40%    113 cols  aboriginal_australian::abo: rise azimuths — the horizon calendar
+  0.6942   69.57%     96 cols  babylonian_egyptian::bab: goal-year phase, circular
+  0.6940   69.24%    555 cols  harmonics::har: speed, stations, applying/separating
+SCREEN DONE

@@ -1,0 +1,236 @@
+{
+ "all": 0.731141682760506,
+ "scored_in_window": 0.7012089785457516,
+ "refit_in_window": 0.7017714805252895,
+ "n_all": 60000,
+ "n_window": 36210,
+ "rate_all": 0.3294166666666667,
+ "rate_window": 0.2404308202154101,
+ "per_block": [
+  {
+   "key": "african::afr: isilimela & naka heliacal risings, the southern year",
+   "auc_1800": 0.724633365242796,
+   "auc_1900": 0.6932509647616196
+  },
+  {
+   "key": "african::afr: sothic sirius rising & solar elongation",
+   "auc_1800": 0.7236959425480035,
+   "auc_1900": 0.692374555681444
+  },
+  {
+   "key": "aboriginal_australian::abo: named-star visibility classes at each birthplace",
+   "auc_1800": 0.7223889191852912,
+   "auc_1900": 0.6913690715429384
+  },
+  {
+   "key": "indigenous_americas::iam: dine nahookos revolving pair, midnight",
+   "auc_1800": 0.7212881159766187,
+   "auc_1900": 0.6887396668122002
+  },
+  {
+   "key": "indigenous_americas::iam: inca collca (pleiades) heliacal rising",
+   "auc_1800": 0.7052697435201634,
+   "auc_1900": 0.6670456207977835
+  },
+  {
+   "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+   "auc_1800": 0.7018343767175333,
+   "auc_1900": 0.6637813419315772
+  },
+  {
+   "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+   "auc_1800": 0.701717058122136,
+   "auc_1900": 0.6651537421885932
+  },
+  {
+   "key": "lunar_calendrical::lun: 45 pair synodic phases, births + diff",
+   "auc_1800": 0.7006668676320444,
+   "auc_1900": 0.6622789770770514
+  },
+  {
+   "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+   "auc_1800": 0.7005355269388598,
+   "auc_1900": 0.662160373941223
+  },
+  {
+   "key": "harmonics::har: declination parallels + out-of-bounds",
+   "auc_1800": 0.6997643914101793,
+   "auc_1900": 0.6614689263668032
+  },
+  {
+   "key": "harmonics::har: ecliptic latitude contacts",
+   "auc_1800": 0.6996375977446693,
+   "auc_1900": 0.6602923562808716
+  },
+  {
+   "key": "modern_western::mod: Davison chart + composite dispute",
+   "auc_1800": 0.6989940587789465,
+   "auc_1900": 0.6595817794378499
+  },
+  {
+   "key": "mesoamerican::meso: distance numbers (LC intervals)",
+   "auc_1800": 0.698256616021149,
+   "auc_1900": 0.6584105653800773
+  },
+  {
+   "key": "african::afr: dogon sigui 60y & sirius b orbital phase",
+   "auc_1800": 0.6965595410545137,
+   "auc_1900": 0.6547607360112321
+  },
+  {
+   "key": "uranian::ura: cross-chart dial distance 360/90/45/22.5",
+   "auc_1800": 0.6958597433098507,
+   "auc_1900": 0.655580302284958
+  },
+  {
+   "key": "mesoamerican::meso: long count components + katun wheel",
+   "auc_1800": 0.6954501719297683,
+   "auc_1900": 0.6552340230577911
+  },
+  {
+   "key": "babylonian_egyptian::bab: goal-year phase, circular",
+   "auc_1800": 0.6941876732230023,
+   "auc_1900": 0.6528413944459612
+  },
+  {
+   "key": "aboriginal_australian::abo: culmination altitude & hours above the horizon",
+   "auc_1800": 0.6937293394980182,
+   "auc_1900": 0.6475227185800729
+  },
+  {
+   "key": "aboriginal_australian::abo: rise azimuths \u2014 the horizon calendar",
+   "auc_1800": 0.6935066954699576,
+   "auc_1900": 0.6478855607761901
+  },
+  {
+   "key": "harmonics::har: heliocentric + helio-geo contacts",
+   "auc_1800": 0.688058947636594,
+   "auc_1900": 0.6448867133015725
+  },
+  {
+   "key": "uranian::ura: Uranian offspring/marriage pictures (hypotheticals)",
+   "auc_1800": 0.6861770258094434,
+   "auc_1900": 0.6401949453928184
+  },
+  {
+   "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+   "auc_1800": 0.6839465264012581,
+   "auc_1900": 0.636208456766291
+  },
+  {
+   "key": "indigenous_americas::iam: birth-hour marginal, which named stars were up",
+   "auc_1800": 0.6837263646277965,
+   "auc_1900": 0.6353330896580655
+  },
+  {
+   "key": "modern_western::mod: midpoint composite chart",
+   "auc_1800": 0.6806814606232402,
+   "auc_1900": 0.6334682730858887
+  },
+  {
+   "key": "east_asian_deep::ead: saju true-solar-term boundary from birthplace",
+   "auc_1800": 0.659396629798668,
+   "auc_1900": 0.624325480815555
+  },
+  {
+   "key": "astrocartography::acg: own lines at own birthplace, older",
+   "auc_1800": 0.6584122297439804,
+   "auc_1900": 0.6148308632709624
+  },
+  {
+   "key": "astrocartography::acg: own lines at own birthplace, younger",
+   "auc_1800": 0.6568646766651186,
+   "auc_1900": 0.6222209710206343
+  },
+  {
+   "key": "houses::hou: placements, younger partner",
+   "auc_1800": 0.6451030633932804,
+   "auc_1900": 0.6043851738224706
+  },
+  {
+   "key": "vedic_ashtakavarga::av8: 8-contributor BAV with the lagna marginalised",
+   "auc_1800": 0.6437922122782888,
+   "auc_1900": 0.6066731750865685
+  },
+  {
+   "key": "vedic_ashtakavarga::upg: gulika + mandi (day/night marginalised)",
+   "auc_1800": 0.6395146739568329,
+   "auc_1900": 0.602189016434608
+  },
+  {
+   "key": "astrocartography::acg: younger's lines at older's birthplace",
+   "auc_1800": 0.6359421009713645,
+   "auc_1900": 0.6071805339894507
+  },
+  {
+   "key": "tibetan_seasia::bur: mahabote weekday + year remainder",
+   "auc_1800": 0.6327320427851915,
+   "auc_1900": 0.6425405140410544
+  },
+  {
+   "key": "houses::hou: angles (Asc, MC) + partner separations",
+   "auc_1800": 0.6318441626982083,
+   "auc_1900": 0.5949460898329999
+  },
+  {
+   "key": "houses::hou: overlay, younger's planets in older's houses",
+   "auc_1800": 0.6280096709846348,
+   "auc_1900": 0.5950782386041762
+  },
+  {
+   "key": "vedic_core::ved: graha states + avastha",
+   "auc_1800": 0.626752323522025,
+   "auc_1900": 0.5783786209840772
+  },
+  {
+   "key": "babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL.APIN paths",
+   "auc_1800": 0.6254963291019423,
+   "auc_1900": 0.5778834963770948
+  },
+  {
+   "key": "vedic_core::ved: vargas D1 D2 D3 D12 D30 D60",
+   "auc_1800": 0.6142023674408926,
+   "auc_1900": 0.5791472684481906
+  },
+  {
+   "key": "vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala",
+   "auc_1800": 0.6125038306601889,
+   "auc_1900": 0.554083650109511
+  },
+  {
+   "key": "vedic_core::ved: nakshatra 27 + pada 108 circular",
+   "auc_1800": 0.6058132000930154,
+   "auc_1900": 0.5716431347220368
+  },
+  {
+   "key": "modern_western::mod: Sun/Moon midpoint marriage axis",
+   "auc_1800": 0.5914305171008511,
+   "auc_1900": 0.5559669653380076
+  },
+  {
+   "key": "hellenistic::hel: sign qualities & solar phase",
+   "auc_1800": 0.5887818954862042,
+   "auc_1900": 0.5480891270147688
+  },
+  {
+   "key": "hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg",
+   "auc_1800": 0.58426133387673,
+   "auc_1900": 0.5453619460584778
+  },
+  {
+   "key": "mesoamerican::meso: haab + calendar round + year bearer",
+   "auc_1800": 0.5830282682460881,
+   "auc_1900": 0.5653619294370416
+  },
+  {
+   "key": "chinese::chi: sexagenary cycles circular + partner offsets",
+   "auc_1800": 0.5752523605074928,
+   "auc_1900": 0.5598710337744912
+  },
+  {
+   "key": "persian_arabic::pa: lots day+night reversal (circular)",
+   "auc_1800": 0.5699489437073006,
+   "auc_1900": 0.5434454944514806
+  }
+ ]
+}

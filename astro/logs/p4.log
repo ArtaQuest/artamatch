@@ -1,0 +1,45 @@
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_ONLY: restricted to 15 modules — babylonian_egyptian, chinese, harmonics, hellenistic, lunar_calendrical, mesoamerican, modern_western, persian_arabic, tibetan_seasia, uranian, vedic_core, vedic_match, geo4, precision, cohort
+  babylonian_egyptian     14 blocks    17.7s  Babylonian & Egyptian (Enuma Anu Enlil omens, Goal
+  chinese                 14 blocks     4.2s  Chinese (BaZi four pillars, Wu Xing, 24 jieqi, 28 
+  harmonics               15 blocks    56.2s  Harmonics, symmetry and alternative zodiacs (Addey
+  hellenistic             14 blocks    52.7s  Hellenistic & classical Western (Ptolemy, Vettius 
+  lunar_calendrical       14 blocks    26.3s  Lunar cycles, eclipses and the religious calendars
+  mesoamerican            14 blocks     5.3s  Mesoamerican (Maya Tzolk'in/Haab/Long Count at GMT
+  modern_western          14 blocks   100.0s  Modern & psychological Western (element balance, a
+  persian_arabic          14 blocks    14.6s  Persian & medieval Arabic (Abu Ma'shar, al-Biruni,
+  tibetan_seasia          14 blocks     9.3s  Tibetan, Burmese, Thai, Javanese and Balinese (nag
+  uranian                 14 blocks    87.2s  Uranian / Hamburg School (Witte, Sieggruen, Rudolp
+  vedic_core              14 blocks    25.3s  Vedic / Jyotisha core (Parashara BPHS, Muhurta Ash
+  vedic_match             14 blocks    15.4s  Vedic marriage matching (Ashtakoot / Guna Milan 36
+  cohort                   3 blocks     0.3s  Context: birth cohort and exposure to the censorin
+  geo4                     2 blocks     0.3s  Context: two birthplaces as real coordinates (the 
+  precision                6 blocks     2.0s  Context: date precision and per-body reliability (
+
+180 blocks, 44,443 columns total, from 15 modules
+  0 cached, 180 to score, 6 workers
+  [  1/180] babylonian_egyptian::bab: goal-year recurrence betwe   120 cols  67.15%  AUC 0.5398  (hist gradient boosti)
+  [  2/180] babylonian_egyptian::bab: goal-year phase, circular     96 cols  69.64%  AUC 0.6939  (hist gradient boosti)
+  [  3/180] babylonian_egyptian::bab: lunar-visibility month & E   156 cols  67.15%  AUC 0.5382  (hist gradient boosti)
+  [  4/180] babylonian_egyptian::bab: synodic phase & elongation   240 cols  67.17%  AUC 0.6137  (hist gradient boosti)
+  [  5/180] babylonian_egyptian::bab: heliacal phenomena, orb ke   318 cols  67.18%  AUC 0.6095  (hist gradient boosti)
+  [  6/180] babylonian_egyptian::bab: heliacal phenomena, one-ho   318 cols  67.14%  AUC 0.5472  (hist gradient boosti)
+  [  7/180] babylonian_egyptian::bab+egy: schematic 360-day & Eg   262 cols  69.65%  AUC 0.6967  (hist gradient boosti)
+  [  8/180] babylonian_egyptian::bab: EAE eclipse, saros, moon-o   342 cols  67.22%  AUC 0.6371  (hist gradient boosti)
+Traceback (most recent call last):
+  File "<string>", line 7, in <module>
+    run.screen()
+    ~~~~~~~~~~^^
+  File "/Users/arash/Studio/artamatch/astro/run.py", line 264, in screen
+    for item, res in _pmap(_screen_one, [(t["key"], files[t["key"]]) for t in todo]):
+                     ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arash/Studio/artamatch/astro/run.py", line 102, in _pmap
+    yield futs[f], f.result()
+                   ~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py", line 447, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py", line 396, in __get_result
+    raise self._exception
+concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.

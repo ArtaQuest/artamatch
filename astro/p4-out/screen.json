@@ -1,0 +1,72 @@
+[
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "slug": "babylonian_egyptian",
+  "kind": "tradition",
+  "name": "bab: goal-year phase, circular",
+  "cols": 96,
+  "dropped_constant": 0,
+  "file": "babylonian_egyptian::bab:_goal-year_phase,_circular.npy",
+  "hash": "221a5b212b83488a",
+  "model": "hist gradient boosting",
+  "acc": 0.6964264356586544,
+  "auc": 0.6938730282575524,
+  "acc_sd": 0.001510475337155179
+ },
+ {
+  "key": "babylonian_egyptian::bab: synodic phase & elongation",
+  "slug": "babylonian_egyptian",
+  "kind": "tradition",
+  "name": "bab: synodic phase & elongation",
+  "cols": 240,
+  "dropped_constant": 0,
+  "file": "babylonian_egyptian::bab:_synodic_phase_&_elongation.npy",
+  "hash": "cd1dcbcdc6e96602",
+  "model": "hist gradient boosting",
+  "acc": 0.6716903915457035,
+  "auc": 0.6137404188434201,
+  "acc_sd": 0.0012913372487141177
+ },
+ {
+  "key": "babylonian_egyptian::bab: heliacal phenomena, orb kernels",
+  "slug": "babylonian_egyptian",
+  "kind": "tradition",
+  "name": "bab: heliacal phenomena, orb kernels",
+  "cols": 318,
+  "dropped_constant": 12,
+  "file": "babylonian_egyptian::bab:_heliacal_phenomena,_orb_kernels.npy",
+  "hash": "ea0fd876a17fd688",
+  "model": "hist gradient boosting",
+  "acc": 0.6718458901504178,
+  "auc": 0.6094512761031321,
+  "acc_sd": 0.0013168933536194278
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "slug": "babylonian_egyptian",
+  "kind": "tradition",
+  "name": "bab: goal-year recurrence between charts",
+  "cols": 120,
+  "dropped_constant": 40,
+  "file": "babylonian_egyptian::bab:_goal-year_recurrence_between_charts.npy",
+  "hash": "390fd0812fb368e0",
+  "model": "hist gradient boosting",
+  "acc": 0.6714967322801657,
+  "auc": 0.539848247373387,
+  "acc_sd": 0.0012391754336775961
+ },
+ {
+  "key": "babylonian_egyptian::bab: lunar-visibility month & EAE opposition day",
+  "slug": "babylonian_egyptian",
+  "kind": "tradition",
+  "name": "bab: lunar-visibility month & EAE opposition day",
+  "cols": 156,
+  "dropped_constant": 6,
+  "file": "babylonian_egyptian::bab:_lunar-visibility_month_&_EAE_opposition_day.npy",
+  "hash": "19d39aa0f2b6d5f1",
+  "model": "hist gradient boosting",
+  "acc": 0.6715117003157225,
+  "auc": 0.5382172017791124,
+  "acc_sd": 0.0012500297929504505
+ }
+]

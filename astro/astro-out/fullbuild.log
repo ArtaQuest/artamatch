@@ -1,0 +1,179 @@
+===== CHUNKED COLLECT (134,957 couples, 51 blocks, two dates only) =====
+134,957 couples in 7 chunks of up to 22,000
+
+  chunk 00 [0..22,000) building…
+  chunk 00 done in 182s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 01 [22,000..44,000) building…
+  chunk 01 done in 201s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 02 [44,000..66,000) building…
+  chunk 02 done in 168s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 03 [66,000..88,000) building…
+  chunk 03 done in 165s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 04 [88,000..110,000) building…
+  chunk 04 done in 154s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 05 [110,000..132,000) building…
+  chunk 05 done in 123s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 06 [132,000..134,957) building…
+  chunk 06 done in 72s · 51 blocks, 12,627 columns total, from 23 modules
+
+merging 51 blocks across 7 chunks
+  aboriginal_australian::abo: named-star visibility classes at each  134,957 x    84  (-226 constant)
+  aboriginal_australian::abo: emu solar phase, place-free            134,957 x    19
+  aboriginal_australian::abo: six- and seven-season calendars in cou 134,957 x    81  (-51 constant)
+  african::afr: dogon sigui 60y & sirius b orbital phase             134,957 x    24
+  african::afr: isilimela & naka heliacal risings, the southern year 134,957 x    79  (-24 constant)
+  african::afr: sothic sirius rising & solar elongation              134,957 x    77  (-16 constant)
+  babylonian_egyptian::bab: goal-year phase, circular                134,957 x    96
+  babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL.API 134,957 x   342  (-9 constant)
+  babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil c 134,957 x   262
+  chinese::chi: sexagenary cycles circular + partner offsets         134,957 x    73
+  chinese::chi: 24 jieqi solar terms + jianchu day officer           134,957 x   190
+  chinese::chi: 28 xiu, classical unequal widths                     134,957 x   178
+  east_asian_deep::ead: sino-viet lunar month, day and leap (3 zones 134,957 x   408
+  east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar year b 134,957 x   406
+  east_asian_deep::ead: chinese almanac additions — 12 day gods, tai 134,957 x   372
+  harmonics::har: declination parallels + out-of-bounds              134,957 x   486  (-16 constant)
+  harmonics::har: ecliptic latitude contacts                         134,957 x   204
+  harmonics::har: heliocentric + helio-geo contacts                  134,957 x   286  (-2 constant)
+  hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg         134,957 x   390  (-30 constant)
+  hellenistic::hel: hermetic lots (circular)                         134,957 x   320
+  hellenistic::hel: sign qualities & solar phase                     134,957 x   330  (-6 constant)
+  indigenous_americas::iam: inca dark clouds yacana & yutu at midnig 134,957 x     8  (-36 constant)
+  indigenous_americas::iam: dine nahookos revolving pair, midnight   134,957 x    11  (-29 constant)
+  indigenous_americas::iam: mapuche we tripantu & punon choyke       134,957 x     6  (-35 constant)
+  lunar_calendrical::lun: saros/inex/metonic/callippic + computus    134,957 x   280  (-17 constant)
+  lunar_calendrical::lun: 45 pair synodic phases, wedding            134,957 x   180
+  lunar_calendrical::lun: 45 pair synodic phases, births + diff      134,957 x   405
+  mesoamerican::meso: haab + calendar round + year bearer            134,957 x   185
+  mesoamerican::meso: long count components + katun wheel            134,957 x    69  (-3 constant)
+  mesoamerican::meso: distance numbers (LC intervals)                134,957 x     4
+  modern_western::mod: Sun/Moon midpoint marriage axis               134,957 x   361
+  modern_western::mod: midpoint composite chart                      134,957 x   534  (-8 constant)
+  modern_western::mod: Davison chart + composite dispute             134,957 x   547  (-18 constant)
+  persian_arabic::pa: tasyir hits + divisor of the years             134,957 x   213  (-36 constant)
+  persian_arabic::pa: reception + mutual reception                   134,957 x   305
+  persian_arabic::pa: almuten point score (Ibn Ezra)                 134,957 x   169
+  tibetan_seasia::tsa: rabjung year animal x element                 134,957 x   127
+  tibetan_seasia::bur: mahabote weekday + year remainder             134,957 x   111
+  tibetan_seasia::thai: rerk mansions + nine classes                 134,957 x   298
+  uranian::ura: cross-chart dial distance 360/90/45/22.5             134,957 x   784
+  uranian::ura: hypotheticals dial positions & cross contacts        134,957 x   272
+  uranian::ura: Uranian offspring/marriage pictures (hypotheticals)  134,957 x   260
+  vedic_ashtakavarga::sb6: sthana bala, five components              134,957 x    96  (-4 constant)
+  vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala         134,957 x    98  (-6 constant)
+  vedic_ashtakavarga::upg: sun-derived upagrahas (exact)             134,957 x   338  (-2 constant)
+  vedic_core::ved: nakshatra 27 + pada 108 circular                  134,957 x   207
+  vedic_core::ved: vargas D1 D2 D3 D12 D30 D60                       134,957 x   588
+  vedic_core::ved: graha states + avastha                            134,957 x   546  (-21 constant)
+  vedic_match::vm: ashtakoot 36pt (Lahiri)                           134,957 x    53
+  vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)         134,957 x   182
+  vedic_match::vm: nakshatra pair low-rank + kuta vector             134,957 x    87  (-1 constant)
+
+51 blocks · 12,031 columns · 134,957 rows · 596 constant columns pruned globally
+wrote manifest.json and /Users/arash/Studio/artamatch/astro/blocks/
+removed /Users/arash/Studio/artamatch/astro/chunks
+===== FIT + EXPORT =====
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  134,957 couples · 44,397 became parents together (32.9%)
+  51 blocks · 12,031 columns · 17 traditions
+  inputs: the two birth dates, 08:00 UT — no birthplace, no houses, no Ascendant
+  5 person-disjoint folds over 110,650 person groups
+
+  BASELINE  signed age gap (dob_woman - dob_man, years)   AUC 0.5028
+            logit p = -0.7172 +0.00095 * gap
+
+  fitting 51 blocks x 2 model kinds, out-of-fold, on 4 workers…
+    [ 1/51] 0.6951  hgb   aboriginal_australian::abo: named-star visibility classes at e
+    [ 2/51] 0.6304  hgb   aboriginal_australian::abo: emu solar phase, place-free
+    [ 3/51] 0.5550  hgb   aboriginal_australian::abo: six- and seven-season calendars in
+    [ 4/51] 0.6986  hgb   african::afr: dogon sigui 60y & sirius b orbital phase
+    [ 5/51] 0.7015  hgb   african::afr: isilimela & naka heliacal risings, the southern 
+    [ 6/51] 0.7016  hgb   african::afr: sothic sirius rising & solar elongation
+    [ 7/51] 0.6938  hgb   babylonian_egyptian::bab: goal-year phase, circular
+    [ 8/51] 0.6434  hgb   babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL
+    [ 9/51] 0.7025  hgb   babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civ
+    [10/51] 0.5843  hgb   chinese::chi: sexagenary cycles circular + partner offsets
+    [11/51] 0.5475  hgb   chinese::chi: 24 jieqi solar terms + jianchu day officer
+    [12/51] 0.5335  hgb   chinese::chi: 28 xiu, classical unequal widths
+    [13/51] 0.5437  hgb   east_asian_deep::ead: sino-viet lunar month, day and leap (3 z
+    [14/51] 0.5583  hgb   east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar ye
+    [15/51] 0.5439  hgb   east_asian_deep::ead: chinese almanac additions — 12 day gods,
+    [16/51] 0.7016  hgb   harmonics::har: declination parallels + out-of-bounds
+    [17/51] 0.7001  hgb   harmonics::har: ecliptic latitude contacts
+    [18/51] 0.6994  hgb   harmonics::har: heliocentric + helio-geo contacts
+    [19/51] 0.6137  hgb   hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg
+    [20/51] 0.5970  hgb   hellenistic::hel: hermetic lots (circular)
+    [21/51] 0.6177  hgb   hellenistic::hel: sign qualities & solar phase
+    [22/51] 0.6472  hgb   indigenous_americas::iam: inca dark clouds yacana & yutu at mi
+    [23/51] 0.7011  hgb   indigenous_americas::iam: dine nahookos revolving pair, midnig
+    [24/51] 0.6444  hgb   indigenous_americas::iam: mapuche we tripantu & punon choyke
+    [25/51] 0.7020  hgb   lunar_calendrical::lun: saros/inex/metonic/callippic + computu
+    [26/51] 0.6836  hgb   lunar_calendrical::lun: 45 pair synodic phases, wedding
+    [27/51] 0.7011  hgb   lunar_calendrical::lun: 45 pair synodic phases, births + diff
+    [28/51] 0.5884  hgb   mesoamerican::meso: haab + calendar round + year bearer
+    [29/51] 0.6946  logit mesoamerican::meso: long count components + katun wheel
+    [30/51] 0.6972  hgb   mesoamerican::meso: distance numbers (LC intervals)
+    [31/51] 0.6521  hgb   modern_western::mod: Sun/Moon midpoint marriage axis
+    [32/51] 0.6849  hgb   modern_western::mod: midpoint composite chart
+    [33/51] 0.7001  hgb   modern_western::mod: Davison chart + composite dispute
+    [34/51] 0.5534  hgb   persian_arabic::pa: tasyir hits + divisor of the years
+    [35/51] 0.6047  hgb   persian_arabic::pa: reception + mutual reception
+    [36/51] 0.5740  hgb   persian_arabic::pa: almuten point score (Ibn Ezra)
+    [37/51] 0.5616  hgb   tibetan_seasia::tsa: rabjung year animal x element
+    [38/51] 0.6651  hgb   tibetan_seasia::bur: mahabote weekday + year remainder
+    [39/51] 0.5349  hgb   tibetan_seasia::thai: rerk mansions + nine classes
+    [40/51] 0.6979  hgb   uranian::ura: cross-chart dial distance 360/90/45/22.5
+    [41/51] 0.7010  hgb   uranian::ura: hypotheticals dial positions & cross contacts
+    [42/51] 0.6896  hgb   uranian::ura: Uranian offspring/marriage pictures (hypothetica
+    [43/51] 0.6033  hgb   vedic_ashtakavarga::sb6: sthana bala, five components
+    [44/51] 0.6377  hgb   vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala
+    [45/51] 0.5813  hgb   vedic_ashtakavarga::upg: sun-derived upagrahas (exact)
+    [46/51] 0.6496  hgb   vedic_core::ved: nakshatra 27 + pada 108 circular
+    [47/51] 0.6443  hgb   vedic_core::ved: vargas D1 D2 D3 D12 D30 D60
+    [48/51] 0.6552  hgb   vedic_core::ved: graha states + avastha
+    [49/51] 0.5289  hgb   vedic_match::vm: ashtakoot 36pt (Lahiri)
+    [50/51] 0.5641  hgb   vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)
+    [51/51] 0.5418  hgb   vedic_match::vm: nakshatra pair low-rank + kuta vector
+  base models done in 2274s
+
+  meta logistic over 51 out-of-fold columns
+    C=0.01  AUC 0.7166
+    C=0.03  AUC 0.7166
+    C=0.1   AUC 0.7166
+    C=0.3   AUC 0.7166
+    C=1.0   AUC 0.7166
+
+  STACK  AUC 0.7166   baseline 0.5028   lift +0.2138   (meta C=0.01)
+
+  tradition                    AUC  blocks
+  african                   0.7028  3
+  indigenous_americas       0.7028  3
+  harmonics                 0.7021  3
+  lunar_calendrical         0.7006  3
+  uranian                   0.7002  3
+  babylonian_egyptian       0.6994  3
+  modern_western            0.6982  3
+  mesoamerican              0.6970  3
+  aboriginal_australian     0.6967  3
+  vedic_core                0.6661  3
+  tibetan_seasia            0.6613  3
+  hellenistic               0.6503  3
+  vedic_ashtakavarga        0.6308  3
+  persian_arabic            0.6051  3
+  chinese                   0.5794  3
+  east_asian_deep           0.5667  3
+  vedic_match               0.5656  3
+
+  ROBUSTNESS TO MISSING DATES — AUC within each precision stratum, on real rows
+  stratum                          rows    rate    stack  baseline     lift
+  both dates to the day         105,566   32.2%   0.7104    0.4964  +0.2140
+  one date to the month           1,064   36.2%   0.6996    0.5143  +0.1852
+  one date to the year only      28,327   35.4%   0.7353    0.5198  +0.2155
+  one date unknown entirely           0  too few rows to score
+
+  wrote web/model.json and web/model.npz  (2.37 MB compressed, 5.1 MB raw)
+  wrote astro-out/fit-ship.json
+===== DONE =====

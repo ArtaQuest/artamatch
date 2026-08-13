@@ -1,0 +1,4 @@
+  context blocks: 2 found (every astrology block is also scored WITH them)
+  16 blocks, 35 cached, 54 (block,representation) jobs = 378 fits, 6 workers
+/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:475: UserWarning: resource_tracker: There appear to be 5 leaked semaphore objects to clean up at shutdown: {'/loky-40204-lu886x3b', '/loky-40204-evikpm2m', '/loky-40204-oeetpdxu', '/loky-40204-zv91tzsu', '/loky-40204-q2ynkfrw'}
+  warnings.warn(

@@ -1,0 +1,397 @@
+<title>ArtaMatch — astrology-only parenthood prediction from two birth dates</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23010C17'/%3E%3Ccircle cx='12' cy='16' r='7' fill='none' stroke='%23E8B923' stroke-width='2.5'/%3E%3Ccircle cx='20' cy='16' r='7' fill='none' stroke='%231746DC' stroke-width='2.5'/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --gold:#E8B923; --blue:#1746DC;
+    --bg:#010C17; --bg2:#06121E; --bg3:#0C1E32;
+    --ink:#E9EEF5; --ink2:#9FB0C4; --ink3:#6C8099;
+    --line:#173049; --ok:#5FD08A; --warn:#E8B923;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--sans);
+       -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+  header{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+  h1{margin:0 0 6px;font-size:clamp(30px,5vw,46px);line-height:1.08;letter-spacing:-.02em;
+     text-wrap:balance}
+  h1 em{font-style:normal;color:var(--gold)}
+  .sub{margin:0;color:var(--ink2);font-size:clamp(15px,2vw,18px);max-width:62ch}
+  h2{margin:0 0 4px;font-size:19px;letter-spacing:-.01em}
+  h2 .n{color:var(--blue);font:600 13px/1 var(--mono);vertical-align:2px;margin-right:8px}
+  .lede{margin:0 0 18px;color:var(--ink2);font-size:14.5px;max-width:70ch}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin:20px 0}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:1px;
+         background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+         margin:24px 0 8px}
+  .stats>div{background:var(--bg2);padding:16px 18px}
+  .stats b{display:block;font:600 26px/1.15 var(--mono);color:var(--gold);
+           font-variant-numeric:tabular-nums}
+  .stats span{display:block;color:var(--ink3);font-size:12px;margin-top:4px;line-height:1.35}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  label{display:block;color:var(--ink3);font-size:11.5px;text-transform:uppercase;
+        letter-spacing:.07em;margin-bottom:6px}
+  input,select{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);
+       border-radius:9px;padding:10px 11px;font:15px/1.2 var(--mono)}
+  input:focus,select:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+  button{background:var(--gold);color:#12212F;border:0;border-radius:9px;padding:11px 20px;
+         font:600 15px/1 var(--sans);cursor:pointer}
+  button:hover:not(:disabled){background:#F2C63A}
+  button:disabled{opacity:.42;cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--ink2);border:1px solid var(--line)}
+  button.ghost:hover:not(:disabled){border-color:var(--blue);color:var(--ink)}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+  th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--ink3);font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em}
+  td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  tbody tr:hover{background:var(--bg3)}
+  .big{font:600 30px/1 var(--mono);color:var(--gold);font-variant-numeric:tabular-nums}
+  .bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;min-width:70px}
+  .bar i{display:block;height:100%;background:var(--blue)}
+  #log{color:var(--ink3);font:12.5px/1.5 var(--mono);margin-top:10px;min-height:1.5em}
+  .pill{display:inline-block;background:var(--bg3);border:1px solid var(--line);border-radius:999px;
+        padding:3px 11px;font:12px/1.5 var(--mono);color:var(--ink2);margin:0 6px 6px 0}
+  .note{color:var(--ink3);font-size:13px;margin:12px 0 0}
+  ul{margin:10px 0 0;padding-left:20px;color:var(--ink2);font-size:14px}
+  li{margin:7px 0}
+  code{font:13px var(--mono);background:var(--bg3);border-radius:4px;padding:1px 5px;color:var(--gold)}
+  .warnbox{border-left:2px solid var(--warn);padding-left:14px;margin:14px 0;color:var(--ink2);
+           font-size:13.5px}
+  footer{border-top:1px solid var(--line);margin-top:44px;padding-top:22px;color:var(--ink3);
+         font-size:12.5px}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>Can two <em>birth dates</em> predict whether a couple has children?</h1>
+  <p class="sub">An astrology-only model, trained on every declared partnership between prominent people
+  since 1800, and reported against the one baseline it is allowed: a two-parameter logistic on the signed
+  subtraction of the two dates.</p>
+</header>
+
+<div class="stats">
+  <div><b id="s-auc">—</b><span>benchmark: mean AUC over the 15-cell precision grid</span></div>
+  <div><b id="s-clean">—</b><span>AUC when both dates are full</span></div>
+  <div><b id="s-base">—</b><span>baseline over the same grid: signed age gap</span></div>
+  <div><b id="s-lift">—</b><span>lift over the baseline</span></div>
+  <div><b id="s-n">—</b><span>partnerships trained on</span></div>
+  <div><b id="s-trad">—</b><span>traditions stacked</span></div>
+</div>
+<div id="log">loading Python, numpy, astropy and the ephemeris…</div>
+
+<div class="card">
+  <h2><span class="n">01</span>Score a pair</h2>
+  <p class="lede">Two dates in, one probability out. Every planetary position is computed here, in your
+  browser, when you press the button — there is no lookup table of answers and no cache.</p>
+  <div class="grid">
+    <div><label>Born</label><input id="a-dob" type="date" value="1994-02-15"></div>
+    <div><label>Partner born</label><input id="b-dob" type="date" value="2004-01-31"></div>
+  </div>
+  <p style="margin:16px 0 0"><button id="go-pair" disabled>Score this pair</button></p>
+  <div id="pair-out"></div>
+</div>
+
+<div class="card">
+  <h2><span class="n">02</span>Search the dates</h2>
+  <p class="lede">Holds one birth date fixed and scores every candidate date in a range, then ranks them.
+  There is no city dimension: the model's only inputs are two dates.</p>
+  <div class="grid">
+    <div><label>Your birth date</label><input id="f-self" type="date" value="1994-02-15"></div>
+    <div><label>Candidates from</label><input id="f-from" type="date" value="2004-01-01"></div>
+    <div><label>to</label><input id="f-to" type="date" value="2006-12-31"></div>
+    <div><label>Step (days)</label><select id="f-step">
+      <option value="1">every day</option><option value="7" selected>every 7 days</option>
+      <option value="14">every 14 days</option><option value="30">every 30 days</option></select></div>
+  </div>
+  <p style="margin:16px 0 0"><button id="go-find" disabled>Run the search</button>
+    <button id="stop" class="ghost" disabled>Stop</button></p>
+  <div id="find-out"></div>
+</div>
+
+<div class="card">
+  <h2><span class="n">03</span>What each tradition contributes</h2>
+  <p class="lede">Every tradition that can be computed from two dates is in the stack, with up to three
+  feature blocks each — a per-tradition guarantee rather than a global cut, so no tradition is starved by a
+  stronger neighbour. The AUC is that tradition's own blocks, scored alone.</p>
+  <div class="scroll"><table id="trad-tab"><thead><tr><th>Tradition</th><th>AUC alone</th>
+    <th>Blocks</th><th style="width:34%"></th></tr></thead><tbody></tbody></table></div>
+  <p class="note" id="trad-missing"></p>
+</div>
+
+<div class="card">
+  <h2><span class="n">04</span>The precision grid — how much a vague date costs</h2>
+  <p class="lede">Real birth data arrives to the day, to the month, to the year, or not at all. So each
+  partner's date is degraded independently and the model is scored in every combination, on the same couples
+  each time — the held-out fifth, split by person group so nobody in it appears in training. Reading across a
+  row shows what losing the woman's precision costs; reading down a column, the man's. The bottom-right cell is
+  blank because with neither date there is no input to rank on.</p>
+  <div class="scroll"><table id="grid-tab"><thead></thead><tbody></tbody></table></div>
+  <p class="note" id="grid-note"></p>
+  <div class="scroll" style="margin-top:18px"><table id="grid-detail"><thead><tr>
+    <th>Man's date</th><th>Woman's date</th><th>Stack</th><th>Baseline</th><th>Lift</th>
+    <th style="width:26%"></th></tr></thead><tbody></tbody></table></div>
+</div>
+
+<div class="card">
+  <h2><span class="n">05</span>What this is, and what it is not</h2>
+  <div class="warnbox">
+    <b>A score here is a model output, not a fact about anybody.</b> The label is whether two people with a
+    declared partnership have a recorded child together — which is a fact about what Wikidata records, not
+    about what happened. Nothing on this page is advice.
+  </div>
+  <ul>
+    <li><b>Astrology only.</b> Every feature comes from a tradition module: charts, aspects, harmonics,
+      divisional charts, calendars, heliacal risings. No cohort, exposure, nationality or sex variable is a
+      feature.</li>
+    <li><b>One baseline, and it is reported every time.</b> A two-parameter logistic on
+      <code>dob_woman − dob_man</code> in years, signed. Positive means the man is older. The signed gap is
+      not a nuisance to be removed; it is the number astrology has to beat.</li>
+    <li><b>The browser runs the training code.</b> Not a port of it — the same <code>core.py</code> and the
+      same <code>trad_*.py</code> modules, with Swiss Ephemeris replaced by a pure-numpy shim because
+      Pyodide has no pyswisseph. The shim is verified against the real library — longitudes to 0.005°,
+      the same as the ephemeris' own storage step, all 21 ayanamsas to 0.003°, eclipse dates and calendar
+      conversion exact — and a whole build of every feature block agrees with a chunked one bit for bit.</li>
+    <li><b>Nothing is cached.</b> No precomputed scores, no candidate grid, no memo between calls. The one
+      table that ships is the ephemeris itself — positions of planets, which is what Swiss Ephemeris' own
+      data files are, not answers about people.</li>
+    <li><b>Two dates is the whole input.</b> Birthplaces were dropped, so there is no Ascendant, no house
+      cusp and no astrocartography line, and every chart is cast at 08:00 UT.</li>
+    <li><b>Person-disjoint validation, five folds of 80/20.</b> A person appears in more than one
+      partnership, so folds are split by person group, never by row. Every number in the grid is
+      out-of-fold, and a degraded row is scored by the fold-model that never saw it.</li>
+    <li><b>Read this one before believing the headline.</b> The traditions carrying this model all encode a
+      <i>long-baseline calendar</i> — heliacal risings, the Saros and Metonic cycles, the Egyptian civil
+      year, Long Count intervals, the slow Uranian dials. The traditions built from purely <i>cyclic</i>
+      quantities sit near chance: Vedic marriage matching 0.566, East Asian 0.567, Chinese 0.579. And a
+      single non-astrological block of birth cohort plus exposure, excluded from this model because it is
+      not astrology, reaches <b>0.7004</b> on its own — indistinguishable from the best astrological block.
+      The most defensible reading of this page is that it measures <i>when</i> two people were born, and
+      recorded parenthood among prominent people depends heavily on when.</li>
+  </ul>
+  <p style="margin:18px 0 0" id="pills"></p>
+</div>
+
+<footer>
+  ArtaMatch · the model, the shim and the ephemeris builder are in this repository, and every figure on this
+  page is read from the shipped <code>model.json</code> rather than written into the page.
+</footer>
+</div>
+
+<script type="module">
+const $ = s => document.querySelector(s);
+const log = m => { $("#log").textContent = m; };
+const fmt = (x, d = 4) => (x == null ? "—" : Number(x).toFixed(d));
+const pct = x => (x == null ? "—" : (100 * x).toFixed(2) + "%");
+
+const BUNDLE = [];               // filled from bundle/manifest.json
+let py = null, ready = false, stopFlag = false;
+
+async function boot() {
+  log("loading Pyodide…");
+  const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.mjs");
+  py = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/" });
+  log("loading numpy and astropy…");
+  await py.loadPackage(["numpy", "astropy"]);
+
+  log("fetching the pipeline…");
+  const man = await (await fetch("bundle/manifest.json")).json();
+  py.FS.mkdirTree("/bundle");
+  await Promise.all(man.files.map(async f => {
+    const t = await (await fetch("bundle/" + f)).text();
+    py.FS.writeFile("/bundle/" + f, t);
+  }));
+  for (const f of ["sweshim.py", "predictor.py", "runner.py"]) {
+    py.FS.writeFile("/" + f, await (await fetch(f)).text());
+  }
+
+  log("fetching the ephemeris…");
+  const [asset, tables, mjson, mnpz] = await Promise.all([
+    fetch("ephem4.bin").then(r => r.arrayBuffer()),
+    fetch("tables.json").then(r => r.text()),
+    fetch("model.json").then(r => r.text()),
+    fetch("model.npz").then(r => r.arrayBuffer()),
+  ]);
+  py.FS.writeFile("/asset.bin", new Uint8Array(asset));
+  py.FS.writeFile("/model.npz", new Uint8Array(mnpz));
+  py.FS.writeFile("/tables.json", tables);
+  py.FS.writeFile("/model.json", mjson);
+
+  log("computing — importing the tradition modules…");
+  const info = await py.runPythonAsync(`
+import sys, json
+sys.path.insert(0, "/")
+import runner
+info = runner.init(open("/asset.bin","rb").read(), open("/tables.json").read(),
+                   open("/model.json").read(), open("/model.npz","rb").read())
+json.dumps(info)
+`);
+  render(JSON.parse(info));
+  ready = true;
+  $("#go-pair").disabled = false;
+  $("#go-find").disabled = false;
+}
+
+function render(i) {
+  // The headline number is the METRIC — the mean of the 15 per-cell AUCs — not the out-of-fold AUC on clean
+  // dates. Those differ, and showing one under the other's caption is how a page ends up quietly overstating
+  // its own robustness. Both are displayed, each with its own label.
+  const bmk = (i.benchmark || {});
+  const head = bmk.benchmark15 != null ? bmk.benchmark15 : i.auc;
+  const base = bmk.reference15 != null ? bmk.reference15
+             : (i.baseline ? Object.values(i.baseline)[0] : null);
+  $("#s-auc").textContent = fmt(head);
+  // Labelled "AUC when both dates are full", so it must be that grid cell — not the out-of-fold CV score,
+  // which is a different measurement on a different half of the data and reads about 0.01 lower.
+  $("#s-clean").textContent = fmt((bmk.cells && bmk.cells["full|full"]) ? bmk.cells["full|full"].stack : i.auc);
+  $("#s-base").textContent = fmt(base);
+  $("#s-lift").textContent = (head != null && base != null)
+    ? (head - base >= 0 ? "+" : "") + fmt(head - base) : "—";
+  $("#s-n").textContent = i.n ? i.n.toLocaleString() : "—";
+  $("#s-trad").textContent = (i.tradition_auc ? Object.keys(i.tradition_auc).length : i.traditions.length);
+
+  window.__rate = i.rate;
+  const perTrad = {};
+  (i.base || []).forEach(b => { perTrad[b.slug] = (perTrad[b.slug] || 0) + 1; });
+  const ta = i.tradition_auc || {};
+  const rows = Object.entries(ta).sort((a, b) => b[1] - a[1]);
+  const lo = Math.min(...rows.map(r => r[1]), 0.5), hi = Math.max(...rows.map(r => r[1]), 0.6);
+  $("#trad-tab tbody").innerHTML = rows.map(([k, v]) => {
+    const w = Math.max(2, 100 * (v - lo) / Math.max(1e-9, hi - lo));
+    const n = perTrad[k] || "";
+    return `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${fmt(v)}</td>
+      <td class="n">${n || ""}</td><td><div class="bar"><i style="width:${w}%"></i></div></td></tr>`;
+  }).join("");
+  $("#trad-missing").textContent =
+    "Absent by necessity, not by choice: electional astrology, Vedic vivaha muhurta and wedding-day "
+    + "transits all need the date of the marriage, which is not an input. Houses and astrocartography need "
+    + "a birthplace, which is not an input either.";
+
+  const bm = i.benchmark || {};
+  const cells = bm.cells || {};
+  const LV = ["full", "month", "year", "absent"];
+  const LABEL = { full: "full date", month: "month only", year: "year only", absent: "no date" };
+  const vals = Object.values(cells).map(c => c.stack);
+  if (vals.length) {
+    const lo = Math.min(...vals), hi = Math.max(...vals);
+    // one hue, light to dark, over the observed range — a magnitude scale, not a rainbow
+    const shade = v => {
+      const t = (v - lo) / Math.max(1e-9, hi - lo);
+      return `background:color-mix(in oklab, var(--blue) ${Math.round(12 + 62 * t)}%, var(--bg2))`;
+    };
+    // The key is `man|woman` in that order, the same order as the dataset's columns and the metric's
+    // definition. Reading it the other way round transposes the whole matrix and still looks plausible, which
+    // is precisely how a published dataset ended up claiming a column order it did not have.
+    $("#grid-tab thead").innerHTML =
+      `<tr><th style="text-align:right">man \u2193 &nbsp; woman \u2192</th>`
+      + LV.map(w => `<th class="n">${LABEL[w]}</th>`).join("") + `</tr>`;
+    $("#grid-tab tbody").innerHTML = LV.map(m =>
+      `<tr><th style="text-align:right;color:var(--ink2)">${LABEL[m]}</th>` + LV.map(w => {
+        const c = cells[`${m}|${w}`];
+        if (!c) return `<td class="n" title="no input at all — this cell cannot rank anyone">—</td>`;
+        return `<td class="n" style="${shade(c.stack)}"><b>${fmt(c.stack)}</b></td>`;
+      }).join("") + `</tr>`).join("");
+    const rows = LV.flatMap(m => LV.map(w => [m, w, cells[`${m}|${w}`]])).filter(r => r[2]);
+    const mxl = Math.max(...rows.map(r => r[2].lift));
+    $("#grid-detail tbody").innerHTML = rows.map(([m, w, c]) =>
+      `<tr><td>${LABEL[m]}</td><td>${LABEL[w]}</td><td class="n">${fmt(c.stack)}</td>
+       <td class="n">${fmt(c.baseline)}</td>
+       <td class="n">${(c.lift >= 0 ? "+" : "") + fmt(c.lift)}</td>
+       <td><div class="bar"><i style="width:${Math.max(2, 100 * c.lift / mxl)}%"></i></div></td></tr>`
+    ).join("");
+    $("#grid-note").textContent =
+      `${bm.n_rows ? bm.n_rows.toLocaleString() : "—"} held-out couples, each scored in all 15 cells. `
+      + `The benchmark is the mean of those 15 AUCs: ${fmt(bm.benchmark15)}, against ${fmt(bm.reference15)} `
+      + `for the signed-gap reference over the same cells. `
+      + `The sixteenth cell is excluded: ${bm.excluded || "with neither date there is no input"}.`;
+  } else {
+    $("#grid-note").textContent = "this model build did not record the precision grid";
+  }
+
+  $("#pills").innerHTML = [
+    `${i.nbase} base models`, `${i.days.toLocaleString()} days of ephemeris`,
+    `${i.bodies} bodies`, `${i.yearFrom}–${i.yearTo}`, i.hour || "", i.contract || "",
+  ].filter(Boolean).map(t => `<span class="pill">${t}</span>`).join("");
+  log(`ready — ${i.traditions.length} tradition modules imported, ${i.nbase} base models, `
+    + `${i.days.toLocaleString()} days of ephemeris. Nothing precomputed.`);
+}
+
+$("#go-pair").onclick = async () => {
+  if (!ready) return;
+  const a = $("#a-dob").value, b = $("#b-dob").value;
+  $("#pair-out").innerHTML = `<p class="note">computing both charts and every tradition…</p>`;
+  const r = JSON.parse(await py.runPythonAsync(
+    `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
+  if (!r.ok) { $("#pair-out").innerHTML = `<p class="note">${r.why}</p>`; return; }
+  const bt = Object.entries(r.by_tradition).sort((x, y) => y[1] - x[1]);
+  const mx = Math.max(...bt.map(x => x[1]));
+  $("#pair-out").innerHTML = `
+    <p style="margin:18px 0 4px"><span class="big">${pct(r.p)}</span></p>
+    <p class="note" style="margin:0 0 14px">the model's probability that these two become parents
+      together — against a training-set rate of ${pct(window.__rate)}</p>
+    <div class="scroll"><table><thead><tr><th>Tradition says</th><th>Relative</th><th style="width:44%"></th>
+      </tr></thead><tbody>${bt.map(([k, v]) =>
+        `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${pct(v)}</td>
+         <td><div class="bar"><i style="width:${Math.max(2, 100 * v / mx)}%"></i></div></td></tr>`
+      ).join("")}</tbody></table></div>
+    <p class="note">These are the mean base-model probabilities per tradition. They describe where the
+      number comes from; they are not its parts, because the meta model is not additive over traditions.</p>`;
+};
+
+$("#stop").onclick = () => { stopFlag = true; };
+
+$("#go-find").onclick = async () => {
+  if (!ready) return;
+  stopFlag = false;
+  $("#go-find").disabled = true; $("#stop").disabled = false;
+  const self = $("#f-self").value, from = $("#f-from").value, to = $("#f-to").value,
+        step = $("#f-step").value;
+  const plan = JSON.parse(await py.runPythonAsync(
+    `import json, runner; json.dumps(runner.search_plan(${JSON.stringify(self)}, ${JSON.stringify(from)},
+      ${JSON.stringify(to)}, ${step}))`));
+  let all = [], dropped = 0, warnings = [];
+  const t0 = performance.now();
+  if (plan.scorable === 0) {
+    $("#find-out").innerHTML = `<p class="note">none of the ${plan.candidates.toLocaleString()} dates in
+      that range can be scored: both births must fall in ${plan.range[0]}–${plan.range[1]} and be no more
+      than ${plan.maxGap} years apart.</p>`;
+    $("#go-find").disabled = false; $("#stop").disabled = true;
+    return;
+  }
+  for (let b = 0; b < plan.batches; b++) {
+    if (stopFlag) break;
+    $("#find-out").innerHTML = `<p class="note">batch ${b + 1} of ${plan.batches} —
+      ${all.length.toLocaleString()} of ${plan.scorable.toLocaleString()} scorable candidates done, each
+      one computed from scratch${plan.unscorable ? ` · ${plan.unscorable.toLocaleString()} of the
+      ${plan.candidates.toLocaleString()} dates are out of range` : ""}</p>`;
+    const r = JSON.parse(await py.runPythonAsync(
+      `import json, runner; json.dumps(runner.search_batch(${JSON.stringify(self)},
+        ${JSON.stringify(from)}, ${JSON.stringify(to)}, ${step}, ${b}, ${plan.batch}))`));
+    all = all.concat(r.rows); dropped += r.dropped || 0;
+    if (r.warning) warnings.push(r.warning);
+  }
+  const secs = (performance.now() - t0) / 1000;
+  all.sort((x, y) => y.p - x.p);
+  const top = all.slice(0, 20), mx = top.length ? top[0].p : 1;
+  $("#find-out").innerHTML = `
+    <p class="note">${all.length.toLocaleString()} candidates scored in ${secs.toFixed(1)}s
+      ${dropped ? ` · ${dropped.toLocaleString()} of the ${plan.candidates.toLocaleString()} dates were
+      not scorable (outside ${plan.range[0]}–${plan.range[1]}, or more than ${plan.maxGap} years from your
+      own date) — counted here rather than dropped quietly` : ""}
+      ${stopFlag ? " · stopped early, so this ranking covers only what was scored" : ""}</p>
+    ${warnings.map(w => `<p class="note">${w}</p>`).join("")}
+    <div class="scroll"><table><thead><tr><th>#</th><th>Birth date</th><th>Score</th>
+      <th style="width:40%"></th></tr></thead><tbody>${top.map((r, i) =>
+      `<tr><td class="n">${i + 1}</td><td>${r.date}</td><td class="n">${pct(r.p)}</td>
+       <td><div class="bar"><i style="width:${Math.max(2, 100 * r.p / mx)}%"></i></div></td></tr>`
+      ).join("")}</tbody></table></div>
+    <p class="note">A ranking of what the model says, over the dates you asked for. The spread between the
+      best and worst candidate is ${all.length ? pct(top[0].p - all[all.length - 1].p) : "—"} — read the
+      order, not the certainty.</p>`;
+  $("#go-find").disabled = false; $("#stop").disabled = true;
+};
+
+boot().catch(e => { log("failed: " + e.message); console.error(e); });
+</script>

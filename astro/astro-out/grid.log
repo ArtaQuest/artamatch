@@ -1,0 +1,99 @@
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  134,957 couples · 44,397 became parents (32.9%)
+  51 blocks · 12,031 columns · 17 traditions · two dates at 08:00 UT
+  5 person-disjoint folds (80/20 each) over 110,650 person groups
+    fold 0: 107,965 train / 26,992 test
+    fold 1: 107,965 train / 26,992 test
+    fold 2: 107,966 train / 26,991 test
+    fold 3: 107,966 train / 26,991 test
+    fold 4: 107,966 train / 26,991 test
+
+  BASELINE  signed age gap, clean input   AUC 0.5028
+
+  fitting 51 blocks x 2 kinds x 5 folds on 3 workers…
+    [ 1/51] 0.7016  hgb   african::afr: sothic sirius rising & solar elongation
+    [ 2/51] 0.7015  hgb   african::afr: isilimela & naka heliacal risings, the souther
+    [ 3/51] 0.7020  hgb   lunar_calendrical::lun: saros/inex/metonic/callippic + compu
+    [ 4/51] 0.7011  hgb   lunar_calendrical::lun: 45 pair synodic phases, births + dif
+    [ 5/51] 0.7011  hgb   indigenous_americas::iam: dine nahookos revolving pair, midn
+    [ 6/51] 0.7001  hgb   harmonics::har: ecliptic latitude contacts
+    [ 7/51] 0.7010  hgb   uranian::ura: hypotheticals dial positions & cross contacts
+    [ 8/51] 0.6972  hgb   mesoamerican::meso: distance numbers (LC intervals)
+    [ 9/51] 0.6946  logit mesoamerican::meso: long count components + katun wheel
+    [10/51] 0.7016  hgb   harmonics::har: declination parallels + out-of-bounds
+    [11/51] 0.6951  hgb   aboriginal_australian::abo: named-star visibility classes at
+    [12/51] 0.7001  hgb   modern_western::mod: Davison chart + composite dispute
+    [13/51] 0.6994  hgb   harmonics::har: heliocentric + helio-geo contacts
+    [14/51] 0.7025  hgb   babylonian_egyptian::bab+egy: schematic 360-day & Egyptian c
+    [15/51] 0.6986  hgb   african::afr: dogon sigui 60y & sirius b orbital phase
+    [16/51] 0.6938  hgb   babylonian_egyptian::bab: goal-year phase, circular
+    [17/51] 0.6979  hgb   uranian::ura: cross-chart dial distance 360/90/45/22.5
+    [18/51] 0.6836  hgb   lunar_calendrical::lun: 45 pair synodic phases, wedding
+    [19/51] 0.6849  hgb   modern_western::mod: midpoint composite chart
+    [20/51] 0.6896  hgb   uranian::ura: Uranian offspring/marriage pictures (hypotheti
+    [21/51] 0.6444  hgb   indigenous_americas::iam: mapuche we tripantu & punon choyke
+    [22/51] 0.6472  hgb   indigenous_americas::iam: inca dark clouds yacana & yutu at 
+    [23/51] 0.6521  hgb   modern_western::mod: Sun/Moon midpoint marriage axis
+    [24/51] 0.6651  hgb   tibetan_seasia::bur: mahabote weekday + year remainder
+    [25/51] 0.6443  hgb   vedic_core::ved: vargas D1 D2 D3 D12 D30 D60
+    [26/51] 0.6496  hgb   vedic_core::ved: nakshatra 27 + pada 108 circular
+    [27/51] 0.6304  hgb   aboriginal_australian::abo: emu solar phase, place-free
+    [28/51] 0.6377  hgb   vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala
+    [29/51] 0.6552  hgb   vedic_core::ved: graha states + avastha
+    [30/51] 0.5884  hgb   mesoamerican::meso: haab + calendar round + year bearer
+    [31/51] 0.6434  hgb   babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & M
+    [32/51] 0.6033  hgb   vedic_ashtakavarga::sb6: sthana bala, five components
+    [33/51] 0.5813  hgb   vedic_ashtakavarga::upg: sun-derived upagrahas (exact)
+    [34/51] 0.5740  hgb   persian_arabic::pa: almuten point score (Ibn Ezra)
+    [35/51] 0.6177  hgb   hellenistic::hel: sign qualities & solar phase
+    [36/51] 0.5843  hgb   chinese::chi: sexagenary cycles circular + partner offsets
+    [37/51] 0.6137  hgb   hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg
+    [38/51] 0.5534  hgb   persian_arabic::pa: tasyir hits + divisor of the years
+    [39/51] 0.6047  hgb   persian_arabic::pa: reception + mutual reception
+    [40/51] 0.5550  hgb   aboriginal_australian::abo: six- and seven-season calendars 
+    [41/51] 0.5970  hgb   hellenistic::hel: hermetic lots (circular)
+    [42/51] 0.5475  hgb   chinese::chi: 24 jieqi solar terms + jianchu day officer
+    [43/51] 0.5583  hgb   east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar 
+    [44/51] 0.5437  hgb   east_asian_deep::ead: sino-viet lunar month, day and leap (3
+    [45/51] 0.5641  hgb   vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)
+    [46/51] 0.5439  hgb   east_asian_deep::ead: chinese almanac additions — 12 day god
+    [47/51] 0.5616  hgb   tibetan_seasia::tsa: rabjung year animal x element
+    [48/51] 0.5335  hgb   chinese::chi: 28 xiu, classical unequal widths
+    [49/51] 0.5418  hgb   vedic_match::vm: nakshatra pair low-rank + kuta vector
+    [50/51] 0.5289  hgb   vedic_match::vm: ashtakoot 36pt (Lahiri)
+    [51/51] 0.5349  hgb   tibetan_seasia::thai: rerk mansions + nine classes
+  base models done in 1869s
+
+  STACK, clean input, out-of-fold over all rows   AUC 0.7166
+  packed 5 fold-models for the grid
+
+  GRID on 84,356 couples with both dates to the day and both sexes known (30.3% became parents)
+
+    woman x man        stack  baseline     lift   (out-of-fold over all 84,356)
+  ----------------- -------- --------- --------
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+Traceback (most recent call last):
+  File "/Users/arash/Studio/artamatch/astro/fit_grid.py", line 383, in <module>
+    main()
+    ~~~~^^
+  File "/Users/arash/Studio/artamatch/astro/fit_grid.py", line 244, in main
+    grid = benchmark(fold_files, fold_of, y, E.n)
+  File "/Users/arash/Studio/artamatch/astro/fit_grid.py", line 336, in benchmark
+    for k, v in (mod.build(E) or {}).items():
+                 ~~~~~~~~~^^^
+  File "/Users/arash/Studio/artamatch/astro/trad_indigenous_americas.py", line 643, in build
+    Q = {0: _partner(E, 0), 1: _partner(E, 1)}
+            ~~~~~~~~^^^^^^
+  File "/Users/arash/Studio/artamatch/astro/trad_indigenous_americas.py", line 601, in _partner
+    jd_nm = _new_moon_before(E, s)
+  File "/Users/arash/Studio/artamatch/astro/trad_indigenous_americas.py", line 474, in _new_moon_before
+    m = swe.calc_ut(float(g[k]), swe.MOON, swe.FLG_SWIEPH | swe.FLG_SPEED)[0]
+        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/arash/Studio/artamatch/web/sweshim.py", line 333, in calc_ut
+    raise Error(f"jd {jd} is outside body {code}'s shipped span")
+RuntimeError: jd 2378491.434863624 is outside body 1's shipped span

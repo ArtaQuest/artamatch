@@ -1,0 +1,16 @@
+model: P(became parents together) · 3 blocks · cross-validated AUC 0.7403
+grid: 1 dates x 937 cities = 937 candidates
+  1 batches of up to 213 dates x 937 cities
+  batch 1/1 · 937 scored · best so far 0.0772
+
+  TOP 5 candidate partners
+
+    #  birth date   city                       country               score
+  ---  ------------ -------------------------- ------------------ --------
+    1  1994-06-15   Honolulu metropolitan area United States        0.0772
+    2  1994-06-15   Greater Rio de Janeiro     Brazil               0.0703
+    3  1994-06-15   Nova Iguaçu                Brazil               0.0703
+    4  1994-06-15   Greater Belo Horizonte     Brazil               0.0696
+    5  1994-06-15   Belo Horizonte             Brazil               0.0696
+
+  full ranking (top 2000) written to partner-search.json

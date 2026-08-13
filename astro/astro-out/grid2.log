@@ -1,0 +1,42 @@
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  134,957 couples · 44,397 became parents (32.9%)
+  51 blocks · 12,031 columns · 17 traditions · two dates at 08:00 UT
+  5 person-disjoint folds (80/20 each) over 110,650 person groups
+    fold 0: 107,965 train / 26,992 test
+    fold 1: 107,965 train / 26,992 test
+    fold 2: 107,966 train / 26,991 test
+    fold 3: 107,966 train / 26,991 test
+    fold 4: 107,966 train / 26,991 test
+
+  BASELINE  signed age gap, clean input   AUC 0.5028
+
+  fitting 51 blocks x 2 kinds x 5 folds on 3 workers…
+    [ 1/51] 0.7016  hgb   african::afr: sothic sirius rising & solar elongation
+    [ 2/51] 0.7015  hgb   african::afr: isilimela & naka heliacal risings, the souther
+    [ 3/51] 0.7020  hgb   lunar_calendrical::lun: saros/inex/metonic/callippic + compu
+    [ 4/51] 0.7011  hgb   lunar_calendrical::lun: 45 pair synodic phases, births + dif
+    [ 5/51] 0.7011  hgb   indigenous_americas::iam: dine nahookos revolving pair, midn
+    [ 6/51] 0.7001  hgb   harmonics::har: ecliptic latitude contacts
+    [ 7/51] 0.7010  hgb   uranian::ura: hypotheticals dial positions & cross contacts
+    [ 8/51] 0.6972  hgb   mesoamerican::meso: distance numbers (LC intervals)
+    [ 9/51] 0.6946  logit mesoamerican::meso: long count components + katun wheel
+    [10/51] 0.7016  hgb   harmonics::har: declination parallels + out-of-bounds
+    [11/51] 0.6951  hgb   aboriginal_australian::abo: named-star visibility classes at
+    [12/51] 0.7001  hgb   modern_western::mod: Davison chart + composite dispute
+    [13/51] 0.6994  hgb   harmonics::har: heliocentric + helio-geo contacts
+    [14/51] 0.7025  hgb   babylonian_egyptian::bab+egy: schematic 360-day & Egyptian c
+    [15/51] 0.6986  hgb   african::afr: dogon sigui 60y & sirius b orbital phase
+    [16/51] 0.6938  hgb   babylonian_egyptian::bab: goal-year phase, circular
+    [17/51] 0.6979  hgb   uranian::ura: cross-chart dial distance 360/90/45/22.5
+    [18/51] 0.6836  hgb   lunar_calendrical::lun: 45 pair synodic phases, wedding
+    [19/51] 0.6849  hgb   modern_western::mod: midpoint composite chart
+    [20/51] 0.6896  hgb   uranian::ura: Uranian offspring/marriage pictures (hypotheti
+    [21/51] 0.6444  hgb   indigenous_americas::iam: mapuche we tripantu & punon choyke
+    [22/51] 0.6472  hgb   indigenous_americas::iam: inca dark clouds yacana & yutu at 
+    [23/51] 0.6521  hgb   modern_western::mod: Sun/Moon midpoint marriage axis
+    [24/51] 0.6651  hgb   tibetan_seasia::bur: mahabote weekday + year remainder
+/opt/homebrew/Cellar/python@3.14/3.14.6/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:475: UserWarning: resource_tracker: There appear to be 5 leaked semaphore objects to clean up at shutdown: {'/loky-61283-tudmd9k4', '/loky-61283-dumi53vw', '/loky-61283-o9dyp9eo', '/loky-61283-w9goda8a', '/loky-61283-17t8eobg'}
+  warnings.warn(

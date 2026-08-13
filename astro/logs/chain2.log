@@ -1,0 +1,123 @@
+  context blocks: 2 found (every astrology block is also scored WITH them)
+  14 blocks, 0 cached, 52 (block,representation) jobs = 312 fits, 6 workers
+  [   5/52] best so far 0.6800 89.18%  topk/hist gradient boos/uranian::ura: hypotheticals dial posit
+  [  10/52] best so far 0.6886 89.18%  topk/lightgbm/babylonian_egyptian::bab+egy: schemati
+  [  15/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  20/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  25/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  30/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  35/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  40/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  45/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  [  50/52] best so far 0.7004 89.18%  raw/lightgbm/mesoamerican::meso: distance numbers (
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+312 (block, representation, model) results
+top 30 by AUC:
+  0.7004 +-0.0032   89.18%  +ctx raw       lightgbm               mesoamerican::meso: distance numbers (LC intervals)
+  0.6974 +-0.0038   89.18%  +ctx raw       xgboost                mesoamerican::meso: distance numbers (LC intervals)
+  0.6959 +-0.0030   89.18%  +ctx raw       hist gradient boosting mesoamerican::meso: distance numbers (LC intervals)
+  0.6933 +-0.0038   89.18%  +ctx raw       lightgbm               mesoamerican::meso: long count components + katun wheel
+  0.6920 +-0.0039   89.18%  +ctx raw       catboost               mesoamerican::meso: distance numbers (LC intervals)
+  0.6911 +-0.0040   89.18%  +ctx raw       lightgbm               babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars
+  0.6908 +-0.0039   89.18%  +ctx raw       xgboost                mesoamerican::meso: long count components + katun wheel
+  0.6907 +-0.0029   89.17%  +ctx topk      lightgbm               lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.6907 +-0.0038   89.17%  +ctx raw       xgboost                lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.6899 +-0.0041   89.17%  +ctx topk      lightgbm               mesoamerican::meso: long count components + katun wheel
+  0.6899 +-0.0038   89.19%  +ctx raw       hist gradient boosting mesoamerican::meso: long count components + katun wheel
+  0.6898 +-0.0039   89.18%  +ctx topk      xgboost                lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.6898 +-0.0037   89.18%  +ctx topk      hist gradient boosting lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.6897 +-0.0034   89.18%  +ctx topk      xgboost                lunar_calendrical::lun: 45 pair synodic phases, births + diff
+  0.6897 +-0.0046   89.18%  +ctx raw       xgboost                babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars
+  0.6896 +-0.0028   89.19%  +ctx topk      lightgbm               harmonics::har: ecliptic latitude contacts
+  0.6895 +-0.0037   89.18%  +ctx topk      xgboost                harmonics::har: ecliptic latitude contacts
+  0.6893 +-0.0023   89.18%  +ctx raw       hist gradient boosting lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.6892 +-0.0036   89.18%  +ctx topk      lightgbm               lunar_calendrical::lun: 45 pair synodic phases, births + diff
+  0.6892 +-0.0028   89.18%  +ctx topk      hist gradient boosting harmonics::har: ecliptic latitude contacts
+  0.6891 +-0.0035   89.18%  +ctx raw       hist gradient boosting babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars
+  0.6889 +-0.0039   89.18%  +ctx topk      hist gradient boosting mesoamerican::meso: long count components + katun wheel
+  0.6888 +-0.0042   89.18%  +ctx topk      xgboost                mesoamerican::meso: long count components + katun wheel
+  0.6887 +-0.0032   89.18%  +ctx topk      hist gradient boosting lunar_calendrical::lun: 45 pair synodic phases, births + diff
+  0.6886 +-0.0034   89.18%  +ctx topk      lightgbm               babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars
+  0.6886 +-0.0036   89.18%  +ctx topk      catboost               harmonics::har: ecliptic latitude contacts
+  0.6885 +-0.0030   89.18%  +ctx raw       xgboost                uranian::ura: hypotheticals dial positions & cross contacts
+  0.6883 +-0.0029   89.18%  +ctx raw       lightgbm               lunar_calendrical::lun: saros/inex/metonic/callippic + computus
+  0.6882 +-0.0035   89.18%  +ctx topk      catboost               lunar_calendrical::lun: 45 pair synodic phases, births + diff
+  0.6881 +-0.0039   89.18%  +ctx topk      xgboost                babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  [  1/40] oof  89.18%  AUC 0.6171  raw       lightgbm             mesoamerican::meso: distance numbers (LC int
+  [  2/40] oof  89.18%  AUC 0.6188  raw       xgboost              mesoamerican::meso: distance numbers (LC int
+  [  3/40] oof  89.18%  AUC 0.6182  raw       hist gradient boosti mesoamerican::meso: distance numbers (LC int
+  [  4/40] oof  89.18%  AUC 0.6156  raw       lightgbm             mesoamerican::meso: long count components + 
+  [  5/40] oof  89.18%  AUC 0.6170  raw       lightgbm             babylonian_egyptian::bab+egy: schematic 360-
+  [  6/40] oof  89.18%  AUC 0.6170  raw       xgboost              mesoamerican::meso: long count components + 
+  [  7/40] oof  89.18%  AUC 0.6106  topk      lightgbm             lunar_calendrical::lun: saros/inex/metonic/c
+  [  8/40] oof  89.18%  AUC 0.6178  raw       xgboost              lunar_calendrical::lun: saros/inex/metonic/c
+  [  9/40] oof  89.18%  AUC 0.6123  topk      lightgbm             mesoamerican::meso: long count components + 
+  [ 10/40] oof  89.18%  AUC 0.6164  topk      xgboost              lunar_calendrical::lun: saros/inex/metonic/c
+  [ 11/40] oof  89.18%  AUC 0.6183  topk      xgboost              lunar_calendrical::lun: 45 pair synodic phas
+  [ 12/40] oof  89.18%  AUC 0.6203  raw       xgboost              babylonian_egyptian::bab+egy: schematic 360-
+  [ 13/40] oof  89.18%  AUC 0.6102  topk      lightgbm             harmonics::har: ecliptic latitude contacts
+  [ 14/40] oof  89.18%  AUC 0.6130  topk      xgboost              harmonics::har: ecliptic latitude contacts
+  [ 15/40] oof  89.18%  AUC 0.6163  topk      lightgbm             lunar_calendrical::lun: 45 pair synodic phas
+  [ 16/40] oof  89.18%  AUC 0.6173  topk      hist gradient boosti harmonics::har: ecliptic latitude contacts
+  [ 17/40] oof  89.18%  AUC 0.6196  raw       hist gradient boosti babylonian_egyptian::bab+egy: schematic 360-
+  [ 18/40] oof  89.18%  AUC 0.6189  topk      hist gradient boosti lunar_calendrical::lun: 45 pair synodic phas
+  [ 19/40] oof  89.18%  AUC 0.6175  raw       xgboost              uranian::ura: hypotheticals dial positions &
+  [ 20/40] oof  89.18%  AUC 0.6169  raw       hist gradient boosti uranian::ura: hypotheticals dial positions &
+  [ 21/40] oof  89.18%  AUC 0.6149  topk      lightgbm             harmonics::har: declination parallels + out-
+  [ 22/40] oof  89.18%  AUC 0.6137  raw       lightgbm             uranian::ura: hypotheticals dial positions &
+  [ 23/40] oof  89.18%  AUC 0.6126  topk      hist gradient boosti lunar_calendrical::lun: 45 pair synodic phas
+  [ 24/40] oof  89.18%  AUC 0.6092  topk      lightgbm             lunar_calendrical::lun: 45 pair synodic phas
+  [ 25/40] oof  89.18%  AUC 0.6122  topk      xgboost              lunar_calendrical::lun: 45 pair synodic phas
+  [ 26/40] oof  89.18%  AUC 0.6094  raw       lightgbm             babylonian_egyptian::bab: goal-year phase, c
+  [ 27/40] oof  89.18%  AUC 0.6174  raw       xgboost              harmonics::har: declination parallels + out-
+  [ 28/40] oof  89.18%  AUC 0.6115  raw       xgboost              babylonian_egyptian::bab: goal-year phase, c
+  [ 29/40] oof  89.18%  AUC 0.6190  topk      xgboost              harmonics::har: declination parallels + out-
+  [ 30/40] oof  89.18%  AUC 0.6168  raw       catboost             babylonian_egyptian::bab: goal-year phase, c
+  [ 31/40] oof  89.18%  AUC 0.6110  raw       xgboost              modern_western::mod: Davison chart + composi
+  [ 32/40] oof  89.18%  AUC 0.6134  raw       hist gradient boosti modern_western::mod: Davison chart + composi
+  [ 33/40] oof  89.18%  AUC 0.6061  raw       lightgbm             modern_western::mod: Davison chart + composi
+  [ 34/40] oof  89.18%  AUC 0.5983  raw       lightgbm             harmonics::har: heliocentric + helio-geo con
+  [ 35/40] oof  89.18%  AUC 0.6040  raw       hist gradient boosti harmonics::har: heliocentric + helio-geo con
+  [ 36/40] oof  89.18%  AUC 0.5976  raw       xgboost              harmonics::har: heliocentric + helio-geo con
+  [ 37/40] oof  89.17%  AUC 0.6166  raw       lightgbm             nationality::ctx: citizenship one-hot, both 
+  [ 38/40] oof  89.17%  AUC 0.6438  raw       lightgbm             nationality::ctx: EVERYTHING
+  [ 39/40] oof  89.18%  AUC 0.6126  raw       xgboost              nationality::ctx: citizenship one-hot, both 
+  [ 40/40] oof  89.18%  AUC 0.6133  raw       hist gradient boosti nationality::ctx: citizenship one-hot, both 
+
+OOF matrix (70000, 40) written
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  40 base models over 70,000 couples
+
+  mean of all                    acc  89.18%   AUC 0.6397
+  greedy ensemble (Caruana)      acc  89.18%   AUC 0.6814
+  meta logistic (C=0.03)         acc  89.10%   AUC 0.6770
+  meta logistic (C=0.3)          acc  89.10%   AUC 0.6768
+  meta logistic (C=3)            acc  89.10%   AUC 0.6768
+  rank mean of top 12            acc  54.14%   AUC 0.6391
+
+  best single base model: 89.17% AUC 0.6438
+    raw / lightgbm / nationality::ctx: EVERYTHING
+CHAIN COMPLETE

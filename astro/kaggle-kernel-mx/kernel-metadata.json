@@ -1,0 +1,15 @@
+{
+ "id": "artafather/artamatch-sweep-mx",
+ "title": "ArtaMatch sweep mx",
+ "code_file": "sweep.ipynb",
+ "language": "python",
+ "kernel_type": "notebook",
+ "is_private": true,
+ "enable_gpu": false,
+ "enable_internet": true,
+ "dataset_sources": [
+  "artafather/artamatch-astro"
+ ],
+ "competition_sources": [],
+ "kernel_sources": []
+}

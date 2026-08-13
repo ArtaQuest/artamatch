@@ -1,0 +1,52 @@
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  [  1/32] oof  89.18%  AUC 0.7023  +ctx raw       lightgbm           mesoamerican::meso: distance numbers (
+  [  2/32] oof  89.18%  AUC 0.6991  +ctx raw       xgboost            mesoamerican::meso: distance numbers (
+  [  3/32] oof  89.18%  AUC 0.6970  +ctx raw       hist gradient boos mesoamerican::meso: distance numbers (
+  [  4/32] oof  89.19%  AUC 0.6954  +ctx raw       lightgbm           mesoamerican::meso: long count compone
+  [  5/32] oof  89.19%  AUC 0.6936  +ctx raw       lightgbm           babylonian_egyptian::bab+egy: schemati
+  [  6/32] oof  89.18%  AUC 0.6936  +ctx raw       xgboost            mesoamerican::meso: long count compone
+  [  7/32] oof  89.17%  AUC 0.6942  +ctx topk      lightgbm           lunar_calendrical::lun: saros/inex/met
+  [  8/32] oof  89.17%  AUC 0.6934  +ctx raw       xgboost            lunar_calendrical::lun: saros/inex/met
+  [  9/32] oof  89.18%  AUC 0.6920  +ctx topk      lightgbm           mesoamerican::meso: long count compone
+  [ 10/32] oof  89.18%  AUC 0.6924  +ctx topk      xgboost            lunar_calendrical::lun: saros/inex/met
+  [ 11/32] oof  89.18%  AUC 0.6924  +ctx topk      xgboost            lunar_calendrical::lun: 45 pair synodi
+  [ 12/32] oof  89.18%  AUC 0.6922  +ctx raw       xgboost            babylonian_egyptian::bab+egy: schemati
+  [ 13/32] oof  89.18%  AUC 0.6927  +ctx topk      lightgbm           harmonics::har: ecliptic latitude cont
+  [ 14/32] oof  89.18%  AUC 0.6929  +ctx topk      xgboost            harmonics::har: ecliptic latitude cont
+  [ 15/32] oof  89.18%  AUC 0.6925  +ctx topk      lightgbm           lunar_calendrical::lun: 45 pair synodi
+  [ 16/32] oof  89.18%  AUC 0.6923  +ctx topk      hist gradient boos harmonics::har: ecliptic latitude cont
+  [ 17/32] oof  89.18%  AUC 0.6916  +ctx raw       hist gradient boos babylonian_egyptian::bab+egy: schemati
+  [ 18/32] oof  89.18%  AUC 0.6919  +ctx topk      hist gradient boos lunar_calendrical::lun: 45 pair synodi
+  [ 19/32] oof  89.18%  AUC 0.6906  +ctx raw       xgboost            uranian::ura: hypotheticals dial posit
+  [ 20/32] oof  89.18%  AUC 0.6899  +ctx raw       hist gradient boos uranian::ura: hypotheticals dial posit
+  [ 21/32] oof  89.18%  AUC 0.6904  +ctx topk      lightgbm           harmonics::har: declination parallels 
+  [ 22/32] oof  89.18%  AUC 0.6907  +ctx raw       lightgbm           uranian::ura: hypotheticals dial posit
+  [ 23/32] oof  89.18%  AUC 0.6884  +ctx topk      hist gradient boos lunar_calendrical::lun: 45 pair synodi
+  [ 24/32] oof  89.18%  AUC 0.6886  +ctx topk      lightgbm           lunar_calendrical::lun: 45 pair synodi
+  [ 25/32] oof  89.18%  AUC 0.6885  +ctx topk      xgboost            lunar_calendrical::lun: 45 pair synodi
+  [ 26/32] oof  89.17%  AUC 0.6913  +ctx raw       lightgbm           babylonian_egyptian::bab: goal-year ph
+  [ 27/32] oof  89.18%  AUC 0.6895  +ctx raw       xgboost            harmonics::har: declination parallels 
+  [ 28/32] oof  89.18%  AUC 0.6893  +ctx raw       xgboost            babylonian_egyptian::bab: goal-year ph
+  [ 29/32] oof  89.18%  AUC 0.6887  +ctx topk      xgboost            harmonics::har: declination parallels 
+  [ 30/32] oof  89.18%  AUC 0.6871  +ctx raw       catboost           babylonian_egyptian::bab: goal-year ph
+  [ 31/32] oof  89.18%  AUC 0.6857  +ctx raw       xgboost            modern_western::mod: Davison chart + c
+  [ 32/32] oof  89.18%  AUC 0.6860  +ctx raw       hist gradient boos modern_western::mod: Davison chart + c
+
+OOF matrix (70000, 32) written
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  32 base models over 70,000 couples
+
+  mean of all                    acc  89.18%   AUC 0.6975
+  greedy ensemble (Caruana)      acc  89.18%   AUC 0.7019
+  meta logistic (C=0.03)         acc  89.10%   AUC 0.7007
+  meta logistic (C=0.3)          acc  89.10%   AUC 0.7005
+  meta logistic (C=3)            acc  89.10%   AUC 0.7005
+  rank mean of top 12            acc  54.27%   AUC 0.6985
+
+  best single base model: 89.18% AUC 0.7023
+    raw / lightgbm / mesoamerican::meso: distance numbers (LC intervals)
+CHAIN COMPLETE

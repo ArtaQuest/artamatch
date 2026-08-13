@@ -1,0 +1,1458 @@
+{
+ "blocks": 237,
+ "exact": 99,
+ "entries": 10698800,
+ "flips": 722,
+ "rel_median": 5.475821418309789e-06,
+ "rel_p95": 0.00045653196539525314,
+ "rel_worst": 0.0022547973106116868,
+ "missing_under_shim": [],
+ "both_sides_raised": [],
+ "shape_mismatch": [],
+ "no_variance": [
+  "aboriginal_australian::abo: Boorong season marker + Stanbridge's verdicts",
+  "aboriginal_australian::abo: Seven Sisters and the hunter at dusk",
+  "aboriginal_australian::abo: Tagai \u2014 Crux against the sea horizon",
+  "aboriginal_australian::abo: Warrambool \u2014 Milky Way tilt & the bulge",
+  "aboriginal_australian::abo: culmination altitude & hours above the horizon",
+  "aboriginal_australian::abo: days since heliacal rising/setting, circular",
+  "aboriginal_australian::abo: emu posture verdict (breeding-season reading)",
+  "aboriginal_australian::abo: heliacal windows \u2014 sun's depth at marker rise/set",
+  "aboriginal_australian::abo: rise azimuths \u2014 the horizon calendar",
+  "aboriginal_australian::abo: shared sky between the two birthplaces",
+  "aboriginal_australian::abo: star on the horizon at birth, 12-hour marginal",
+  "aboriginal_australian::abo: the emu in the sky \u2014 axis tilt at dusk/midnight/dawn"
+ ],
+ "thresholds": {
+  "typical": 0.01,
+  "flip": 0.005
+ },
+ "verdict": "FAIL",
+ "problems": [
+  "1 blocks exceed the boundary-flip threshold 0.005: [('uranian::ura: the Hamburg tally (contact', 0.0101)]"
+ ],
+ "detail": [
+  {
+   "block": "harmonics::har: speed, stations, applying/separating",
+   "rel": 0.0022547973106116868,
+   "max": 1.9999999997351885,
+   "flip_frac": 0.0005206463195691203
+  },
+  {
+   "block": "lunar_calendrical::lun: manazil 28 (Arabic, ecliptic)",
+   "rel": 0.001032326691303592,
+   "max": 6.0,
+   "flip_frac": 0.000196078431372549
+  },
+  {
+   "block": "vedic_core::ved: graha states + avastha",
+   "rel": 0.0007822879069743013,
+   "max": 2.0,
+   "flip_frac": 0.0002469135802469136
+  },
+  {
+   "block": "uranian::ura: the Hamburg tally (contact counts, benefic-malefic balance)",
+   "rel": 0.0007670740597511673,
+   "max": 2.0,
+   "flip_frac": 0.010069444444444445
+  },
+  {
+   "block": "uranian::ura: own-chart midpoint trees (occupation counts)",
+   "rel": 0.0007506950185628617,
+   "max": 1.0,
+   "flip_frac": 0.002875816993464052
+  },
+  {
+   "block": "vedic_match::vm: moon nakshatra/rasi/pada one-hot",
+   "rel": 0.0007001400420140048,
+   "max": 1.0,
+   "flip_frac": 0.0001818181818181818
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (Raman)",
+   "rel": 0.000651637244361542,
+   "max": 5.0,
+   "flip_frac": 0.0012264150943396227
+  },
+  {
+   "block": "harmonics::har: minor-aspect family tallies",
+   "rel": 0.0005974456523442301,
+   "max": 1.0,
+   "flip_frac": 0.001016949152542373
+  },
+  {
+   "block": "harmonics::har: harmonic 10/11/13/16 conj",
+   "rel": 0.0005922873301178102,
+   "max": 0.01133083453774153,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab: heliacal phenomena, one-hot",
+   "rel": 0.0005764957996862421,
+   "max": 1.0,
+   "flip_frac": 0.0001818181818181818
+  },
+  {
+   "block": "persian_arabic::pa: al-Biruni aspects applying vs separating",
+   "rel": 0.000489797444212613,
+   "max": 2.0,
+   "flip_frac": 0.00029
+  },
+  {
+   "block": "uranian::ura: cross-chart midpoint trees (partner on my axes)",
+   "rel": 0.0004888927486141328,
+   "max": 1.0,
+   "flip_frac": 0.001336206896551724
+  },
+  {
+   "block": "babylonian_egyptian::egy: Egyptian bounds (terms)",
+   "rel": 0.0004484417695905338,
+   "max": 1.0,
+   "flip_frac": 0.00014018691588785047
+  },
+  {
+   "block": "uranian::ura: solar-arc directed factors on partner COSI axes",
+   "rel": 0.00043858122022160994,
+   "max": 0.004591192384682863,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab: heliacal phenomena, orb kernels",
+   "rel": 0.0004271953798287039,
+   "max": 0.023479170630672397,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: ashtakoota 36 + doshas [Raman]",
+   "rel": 0.0003517391376090698,
+   "max": 6.0,
+   "flip_frac": 0.00044186046511627907
+  },
+  {
+   "block": "harmonics::har: harmonic 5/7/9 conj (Addey creative)",
+   "rel": 0.00033173521157440925,
+   "max": 0.007270159503658169,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: vargas D1 D2 D3 D12 D30 D60",
+   "rel": 0.0003108093515317185,
+   "max": 3.0,
+   "flip_frac": 0.0002806122448979592
+  },
+  {
+   "block": "uranian::ura: cross-chart 45-dial orb kernels 0.5/1/2deg",
+   "rel": 0.00029629405344966663,
+   "max": 0.006315848664118273,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: D9 navamsa (marriage varga)",
+   "rel": 0.0002843144397111024,
+   "max": 2.0,
+   "flip_frac": 0.00013468013468013467
+  },
+  {
+   "block": "persian_arabic::pa: lot signs + lot lords (one-hot)",
+   "rel": 0.0002811543705460549,
+   "max": 1.0,
+   "flip_frac": 9.09090909090909e-05
+  },
+  {
+   "block": "modern_western::mod: Sabian 360-degree + pentad bins",
+   "rel": 0.0002803521696991228,
+   "max": 1.0,
+   "flip_frac": 2.795527156549521e-05
+  },
+  {
+   "block": "indigenous_americas::iam: birth-hour marginal, which named stars were up",
+   "rel": 0.0002785238092425924,
+   "max": 0.40287223797152405,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "harmonics::har: harmonic 2/3/4/6/8/12 conj",
+   "rel": 0.00027089079450050025,
+   "max": 0.008745616678011547,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab+egy: twelfth-part cross-contacts",
+   "rel": 0.0002628311279857557,
+   "max": 1.0,
+   "flip_frac": 8.032128514056225e-05
+  },
+  {
+   "block": "uranian::ura: COSI union/offspring axes contacted (synastry + wedding)",
+   "rel": 0.0002599252138450196,
+   "max": 0.0018567265730432547,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab+egy: dodekatemoria, circular & signs",
+   "rel": 0.00024190162230118824,
+   "max": 1.0,
+   "flip_frac": 5.9523809523809524e-05
+  },
+  {
+   "block": "babylonian_egyptian::egy: decan rulers, Chaldean order",
+   "rel": 0.0002392990244002319,
+   "max": 1.0,
+   "flip_frac": 4.761904761904762e-05
+  },
+  {
+   "block": "babylonian_egyptian::egy: decan-pair contacts",
+   "rel": 0.00023336587758332453,
+   "max": 1.0,
+   "flip_frac": 2.564102564102564e-05
+  },
+  {
+   "block": "babylonian_egyptian::bab: synodic phase & elongation",
+   "rel": 0.00022607718158744943,
+   "max": 1.0,
+   "flip_frac": 4.1666666666666665e-05
+  },
+  {
+   "block": "vedic_core::ved: panchanga 5 limbs",
+   "rel": 0.00019885137171435718,
+   "max": 1.0,
+   "flip_frac": 5.291005291005291e-05
+  },
+  {
+   "block": "harmonics::har: Addey wave amplitudes N=1..16",
+   "rel": 0.00017832897214145087,
+   "max": 0.0003423297083884336,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "harmonics::har: harmonic 5/7/9 circular cos/sin",
+   "rel": 0.00016822988426434894,
+   "max": 0.0008392431611668888,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: jaimini chara karakas (DK)",
+   "rel": 0.00016053220674659897,
+   "max": 1.0,
+   "flip_frac": 4.854368932038835e-05
+  },
+  {
+   "block": "uranian::ura: Uranian offspring/marriage pictures (hypotheticals)",
+   "rel": 0.00015903208968837392,
+   "max": 44.99890685064,
+   "flip_frac": 1.923076923076923e-05
+  },
+  {
+   "block": "vedic_match::vm: kuta category pairs one-hot",
+   "rel": 0.00014547859349066156,
+   "max": 1.0,
+   "flip_frac": 3.0303030303030302e-05
+  },
+  {
+   "block": "persian_arabic::pa: reception + mutual reception",
+   "rel": 0.0001406968545519989,
+   "max": 1.0,
+   "flip_frac": 0.00014754098360655738
+  },
+  {
+   "block": "hellenistic::hel: sign qualities & solar phase",
+   "rel": 0.0001375515667767599,
+   "max": 1.0,
+   "flip_frac": 5.9523809523809524e-05
+  },
+  {
+   "block": "modern_western::mod: textbook synastry point score",
+   "rel": 0.00013116781487064954,
+   "max": 1.0,
+   "flip_frac": 0.0008163265306122449
+  },
+  {
+   "block": "harmonics::har: ecliptic latitude contacts",
+   "rel": 0.00013022308204006084,
+   "max": 1.0,
+   "flip_frac": 9.80392156862745e-05
+  },
+  {
+   "block": "uranian::ura: solar-arc directed contacts to partner (45-dial)",
+   "rel": 0.00013009409449992213,
+   "max": 0.009540847887336668,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: eclipse proximity + ecliptic limits",
+   "rel": 0.0001279265733107853,
+   "max": 1.0,
+   "flip_frac": 5.3763440860215054e-05
+  },
+  {
+   "block": "harmonics::har: minor-aspect kernels (Kepler/Addey)",
+   "rel": 0.00012645636054809425,
+   "max": 0.0020003580842515856,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::egy: 36 decans, one-hot",
+   "rel": 0.00012073632210407382,
+   "max": 1.0,
+   "flip_frac": 1.984126984126984e-05
+  },
+  {
+   "block": "harmonics::har: antiscia + Ebertin dial midpoints",
+   "rel": 0.00012026014696618437,
+   "max": 1.0,
+   "flip_frac": 5.252100840336135e-05
+  },
+  {
+   "block": "harmonics::har: draconic-tropical cross contacts",
+   "rel": 0.00011142915104408023,
+   "max": 0.0012989197330195434,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "uranian::ura: 90/45-dial body positions (circular)",
+   "rel": 0.00011015359820970008,
+   "max": 0.0003822998330208355,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: aspect patterns cross-chart + relationship charts",
+   "rel": 0.00010553449782344995,
+   "max": 1.0,
+   "flip_frac": 0.00010869565217391305
+  },
+  {
+   "block": "babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL.APIN paths",
+   "rel": 0.000102812574111421,
+   "max": 2.0,
+   "flip_frac": 4.2735042735042735e-05
+  },
+  {
+   "block": "uranian::ura: COSI axes occupied in own radix",
+   "rel": 0.00010076656847736546,
+   "max": 0.005183922418638076,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: synastry ptolemaic orbs 2deg",
+   "rel": 9.697360195793206e-05,
+   "max": 0.001502377389962839,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: antiscia & contra-antiscia contacts",
+   "rel": 9.505302408719616e-05,
+   "max": 1.0,
+   "flip_frac": 2.9239766081871346e-05
+  },
+  {
+   "block": "vedic_core::ved: nakshatra 27 + pada 108 circular",
+   "rel": 9.027917763848708e-05,
+   "max": 0.9991469195349367,
+   "flip_frac": 2.4154589371980676e-05
+  },
+  {
+   "block": "persian_arabic::pa: marriage+children lots cross-chart",
+   "rel": 8.861323426029263e-05,
+   "max": 0.001114148313812069,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: nakshatra/pada one-hot",
+   "rel": 8.839525379730335e-05,
+   "max": 1.0,
+   "flip_frac": 1.3717421124828532e-05
+  },
+  {
+   "block": "harmonics::har: draconic zodiac synastry",
+   "rel": 8.814016516851132e-05,
+   "max": 0.0017362602986826792,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: tasyir 1deg/yr directed-to-natal orbs",
+   "rel": 8.344510841885785e-05,
+   "max": 0.000981901284072051,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: almuten point score (Ibn Ezra)",
+   "rel": 8.044946758897683e-05,
+   "max": 2.0,
+   "flip_frac": 0.00020710059171597634
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot under the +-6deg moon smear",
+   "rel": 7.48398810820891e-05,
+   "max": 0.23464976382449088,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: synastry ptolemaic orbs 4deg",
+   "rel": 7.447761491239448e-05,
+   "max": 0.0007510339307983394,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "uranian::ura: cross-chart dial distance 360/90/45/22.5",
+   "rel": 7.416870962782532e-05,
+   "max": 0.005385536118339473,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "uranian::ura: hypotheticals dial positions & cross contacts",
+   "rel": 7.388349659543525e-05,
+   "max": 0.007367607282617428,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "harmonics::har: fixed stars conj + parallels",
+   "rel": 7.327274006704835e-05,
+   "max": 1.0,
+   "flip_frac": 7.142857142857143e-06
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot ayanamsa spread (7 modes)",
+   "rel": 7.198050461675078e-05,
+   "max": 0.714285714285714,
+   "flip_frac": 0.000689655172413793
+  },
+  {
+   "block": "vedic_core::ved: vimshottari dasha at wedding",
+   "rel": 6.803719496709462e-05,
+   "max": 1.0,
+   "flip_frac": 0.00025390625
+  },
+  {
+   "block": "hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg",
+   "rel": 6.620672610028924e-05,
+   "max": 0.001368315804186504,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "uranian::ura: planetary pictures, marriage & children (45-dial)",
+   "rel": 6.597641538476213e-05,
+   "max": 0.005115753345961593,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: synastry ptolemaic orbs 6deg",
+   "rel": 6.357071273792444e-05,
+   "max": 0.0005061403413268994,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: Venus-Mars + Sun-Moon cross contacts",
+   "rel": 6.31706914112827e-05,
+   "max": 1.0,
+   "flip_frac": 1.2195121951219513e-05
+  },
+  {
+   "block": "harmonics::har: heliocentric + helio-geo contacts",
+   "rel": 6.140966426060248e-05,
+   "max": 0.0008139479484446932,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: essential dignity states",
+   "rel": 4.7994618324987133e-05,
+   "max": 1.0,
+   "flip_frac": 2.2831050228310503e-05
+  },
+  {
+   "block": "african::afr: swahili/ibn m\u0101jid solar manzil 28 (nautical)",
+   "rel": 4.355499145125824e-05,
+   "max": 0.08333333333333337,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: synodic phase circular, 6 instants",
+   "rel": 3.9528306546256707e-05,
+   "max": 0.0003501404670909758,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::sb6: cross-partner shadbala comparison",
+   "rel": 3.9352126019703975e-05,
+   "max": 0.2500418235356676,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: nakshatra pair low-rank + kuta vector",
+   "rel": 3.8315315102374865e-05,
+   "max": 1.0,
+   "flip_frac": 0.00011363636363636364
+  },
+  {
+   "block": "persian_arabic::pa: al-Biruni dexter/sinister + orb widths",
+   "rel": 3.681618344042925e-05,
+   "max": 0.0025267016182599633,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: Pallas Vesta Chiron Lilith synastry",
+   "rel": 3.5107269669604885e-05,
+   "max": 0.005238566393700239,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: lots day+night reversal (circular)",
+   "rel": 3.3660072730802595e-05,
+   "max": 0.00028229616722330597,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: hermetic lots (circular)",
+   "rel": 3.2764351984826675e-05,
+   "max": 0.00028886667944666433,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: void-of-course + electional Moon",
+   "rel": 3.254809246677523e-05,
+   "max": 0.0009528619586492981,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "harmonics::har: declination parallels + out-of-bounds",
+   "rel": 3.251731625472285e-05,
+   "max": 1.0,
+   "flip_frac": 5.976095617529881e-05
+  },
+  {
+   "block": "vedic_ashtakavarga::sb6: drik bala (sphuta drishti)",
+   "rel": 3.2432040224971104e-05,
+   "max": 0.017630046433396274,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: SAV stability over the 12 birth-hour slots",
+   "rel": 3.236837062987591e-05,
+   "max": 0.41666666666666785,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: dignity points & almuten",
+   "rel": 3.1959955806357594e-05,
+   "max": 1.0,
+   "flip_frac": 9.80392156862745e-05
+  },
+  {
+   "block": "lunar_calendrical::lun: nakshatra 27 tropical + partial ashtakoot",
+   "rel": 3.193218054598595e-05,
+   "max": 1.0,
+   "flip_frac": 3.610108303249098e-05
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: kakshya + kakshya vedha (own and cross)",
+   "rel": 3.156540752733796e-05,
+   "max": 1.0,
+   "flip_frac": 0.00024509803921568627
+  },
+  {
+   "block": "vedic_ashtakavarga::sb6: sthana bala, five components",
+   "rel": 2.8308538733173036e-05,
+   "max": 15.000338101006946,
+   "flip_frac": 0.00045
+  },
+  {
+   "block": "modern_western::mod: Juno + Ceres marriage synastry",
+   "rel": 2.792027111174156e-05,
+   "max": 0.005360569796039272,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: isilimela & naka heliacal risings, the southern year",
+   "rel": 2.7614343720643585e-05,
+   "max": 0.0030945272565361392,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: sothic sirius rising & solar elongation",
+   "rel": 2.7406196786644866e-05,
+   "max": 0.0019290050150857496,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala",
+   "rel": 2.678521062820133e-05,
+   "max": 1.0,
+   "flip_frac": 0.0003846153846153846
+  },
+  {
+   "block": "lunar_calendrical::lun: 45 pair synodic phases, births + diff",
+   "rel": 2.5684369538007193e-05,
+   "max": 0.00016464514055545068,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::sb6: shadbala rupas vs classical minima",
+   "rel": 2.261767101182039e-05,
+   "max": 14.999052132816587,
+   "flip_frac": 0.00010416666666666667
+  },
+  {
+   "block": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+   "rel": 2.0707009214173136e-05,
+   "max": 9.01065493141423e-05,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: tasyir hits + divisor of the years",
+   "rel": 1.703308995377899e-05,
+   "max": 0.0014358388131396893,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "aboriginal_australian::abo: Barnumbirr \u2014 Venus as the morning star",
+   "rel": 1.5699843633921158e-05,
+   "max": 0.005024537616634461,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+   "rel": 1.5033929179984628e-05,
+   "max": 0.0005427076706847611,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: midpoint composite chart",
+   "rel": 1.496551549647109e-05,
+   "max": 1.0,
+   "flip_frac": 1.845018450184502e-05
+  },
+  {
+   "block": "aboriginal_australian::abo: Pleiades & Orion visibility windows",
+   "rel": 1.3369220809555373e-05,
+   "max": 0.0027630278761030524,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: progressed synastry",
+   "rel": 1.3221303405423069e-05,
+   "max": 0.005359856941311136,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab: lunar-visibility month & EAE opposition day",
+   "rel": 1.314576445835502e-05,
+   "max": 0.0005920699288777254,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: Sun/Moon midpoint marriage axis",
+   "rel": 1.23072878113559e-05,
+   "max": 0.004879866049293469,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (Lahiri)",
+   "rel": 1.2254549080569679e-05,
+   "max": 1.0,
+   "flip_frac": 9.433962264150943e-05
+  },
+  {
+   "block": "modern_western::mod: Davison chart + composite dispute",
+   "rel": 1.1122781026896368e-05,
+   "max": 0.00534148412160107,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: firdaria lords paired",
+   "rel": 1.0816980911099533e-05,
+   "max": 0.0005344957674409123,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: hopi horizon sunrise calendar",
+   "rel": 1.0593963608170352e-05,
+   "max": 0.00037442398615661343,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: dine dilyehe evening window & orion-scorpius",
+   "rel": 9.733043194791266e-06,
+   "max": 4.738283819225031e-05,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: aspect patterns natal + wedding",
+   "rel": 9.176032791929582e-06,
+   "max": 0.0028109779216345387,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: solar return phase + retrogrades",
+   "rel": 8.924654376386273e-06,
+   "max": 1.0,
+   "flip_frac": 0.00026548672566371683
+  },
+  {
+   "block": "chinese::chi: 28 xiu, equal divisions from Spica",
+   "rel": 8.623661298094786e-06,
+   "max": 0.0003863101022201221,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: 28 xiu, classical unequal widths",
+   "rel": 8.611124900085623e-06,
+   "max": 0.0012698571261119396,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "uranian::ura: solar arc magnitude and dial phase",
+   "rel": 8.299348730883295e-06,
+   "max": 0.0050193782530243425,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "aboriginal_australian::abo: emu solar phase, place-free",
+   "rel": 7.169215830203423e-06,
+   "max": 0.0045091495314864005,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::thai: rerk mansions + nine classes",
+   "rel": 7.010995306824265e-06,
+   "max": 0.00033727372194131133,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: lot cross-contacts",
+   "rel": 6.856980171933286e-06,
+   "max": 0.0008520787672640084,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::sb6: kala bala components + dig bala proxies",
+   "rel": 6.52943301332189e-06,
+   "max": 0.006112098641793295,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: inca inti raymi, capac raymi & zenith passage",
+   "rel": 6.007193409927761e-06,
+   "max": 0.005019378252995921,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: shukuyo 27 mansions \u2014 almanac rule vs the moon",
+   "rel": 5.695867277603735e-06,
+   "max": 0.000337273721942033,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: xiu 28 (Chinese, equatorial)",
+   "rel": 5.475821418309789e-06,
+   "max": 0.001362007082201827,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: hopi kiva culmination of orion & pleiades",
+   "rel": 5.239766924492933e-06,
+   "max": 0.002763027876170554,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: 24 jieqi solar terms + jianchu day officer",
+   "rel": 4.927894594647713e-06,
+   "max": 0.00018155856173862617,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::bal: padewasan + lunar day",
+   "rel": 4.8395350459620845e-06,
+   "max": 0.00026619617246606553,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: pawnee morning star & evening star",
+   "rel": 3.929431013992256e-06,
+   "max": 0.010425274311785415,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: inca dark clouds yacana & yutu at midnight",
+   "rel": 3.5840676113112216e-06,
+   "max": 0.002763027876104829,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: pawnee star chart visibility",
+   "rel": 2.648414067306186e-06,
+   "max": 0.002763027876104829,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: inca collca (pleiades) heliacal rising",
+   "rel": 2.64071121551971e-06,
+   "max": 0.0027233784260829452,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::upg: sun-derived upagrahas (exact)",
+   "rel": 2.6272233250924446e-06,
+   "max": 0.0006140872898158234,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: mapuche we tripantu & punon choyke",
+   "rel": 2.5483496021869575e-06,
+   "max": 0.002763027876104829,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: lakota sacred hoop, the sun's station",
+   "rel": 2.514020523516143e-06,
+   "max": 0.0027233784260829452,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: ge'ez calendar-against-sky drift (month vs sign)",
+   "rel": 2.006396373355434e-06,
+   "max": 0.004696902606013964,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: solar profection + lord of the year",
+   "rel": 1.8581695665506838e-06,
+   "max": 0.0003603568543989466,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+   "rel": 1.544739072904045e-06,
+   "max": 4.4133423395653626e-05,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "aboriginal_australian::abo: six- and seven-season calendars in country",
+   "rel": 1.5087138296299013e-06,
+   "max": 0.005019378252995921,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: sect proxy, triplicity lords & planetary sect",
+   "rel": 1.0009281302743684e-06,
+   "max": 8.4937104159577e-05,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: woodland moon count from the solstice",
+   "rel": 4.41352029135222e-07,
+   "max": 0.0005654478445649147,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+   "rel": 2.1913937887902338e-07,
+   "max": 2.8477961695083653e-05,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: akan kra day-soul, dawn-boundary marginalised",
+   "rel": 6.37966897406562e-08,
+   "max": 5.983731234948664e-07,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: akan day-soul pair 7x7 (hard and soft)",
+   "rel": 1.6270676412075014e-08,
+   "max": 5.437621590775876e-07,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "aboriginal_australian::abo: named-star visibility classes at each birthplace",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: akan adaduanan 42-day cycle & akwasidae",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: dogon sigui 60y & sirius b orbital phase",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: ethiopian ba\u1e25ire \u1e25asab (wenber, me\u1e6dqi, abekt\u0113, tinte)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: ethiopian tewsak feasts & coptic fixed feasts",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: ethiopian/coptic 13-month grid (pagum\u0113)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: if\u00e1 compound od\u00f9 of the union (256, ordered)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: if\u00e1 figure bits, mark counts & leg sharing",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: if\u00e1 od\u00f9 legs, date-derived map (not a divination)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: if\u00e1 seniority (bascom order) & the senior od\u00f9",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "african::afr: yor\u00f9b\u00e1 four-day week & 16-day if\u00e1 month (phase only)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab: goal-year phase, circular",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "babylonian_egyptian::bab: goal-year recurrence between charts",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: branch relations across all nine pillar pairs",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: day branch relations (day pillar is the self)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: eight mansions (bazhai) kua relation",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: nine star ki (nian/yue zibai)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: partner element relations (sheng/ke, nayin, life stages)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: pillars one-hot (year/month/day, no hour)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: sexagenary cycles circular + partner offsets",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: traditional he/chong compatibility tallies",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: wu xing counts, hidden stems weighted",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: wu xing counts, visible characters",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "chinese::chi: year branch relations (zodiac animals)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: chinese almanac additions \u2014 12 day gods, taiyuan, xiu pairs",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: japanese day quality \u2014 rokuyo, nichiyo, sanrinbo",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar year boundary",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: onmyodo directions \u2014 ten'ichijin, hasshojin, kimon",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: saju gunghap \u2014 wonjin, gwimun, sinsal",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: saju gyeokguk + sin-gang strength",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: saju sipseong across the pillars",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: sanmeigaku jintai seizu + energy total + isoho",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: shukuyo pairing \u2014 nine relations, both directions",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: sino-viet lunar month, day and leap (3 zones)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: tuvi couple overlay (hong loan, thien hi, spouse-palace sets)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: tuvi minor stars + sinh nien tu hoa",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: tuvi ngu hanh cuc + ziwei frame (hour-marginalised)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "east_asian_deep::ead: tuvi palace star distributions (menh, the, tu tuc, phuc duc)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: Valens synastry testimony count",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: aversion & whole-sign tallies",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "hellenistic::hel: whole-sign relations dexter/sinister",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: dine nahookos revolving pair, midnight",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: inca 328-day ceque calendar (zuidema)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: inca ceque 41 one-hot, both partners",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "indigenous_americas::iam: named moons (cherokee 12, ordinal 13)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: eight phases one-hot + pairing",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: hebrew calendar + halakhic windows",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: islamic hijri (tabular) + seasons",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "lunar_calendrical::lun: zoroastrian + celtic tree + runic",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: 819-day cycle + directional quadrant",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: aztec lord pairs (13 day-lords x 9 night-lords)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: day-sign pair one-hot 20x20",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: day-sign pair relations (allied/antipodal/analog/occult)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: distance numbers (LC intervals)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: documented rule tests + tally",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: dreamspell oracle (Arguelles, modern)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: four world-quarters pairing",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: haab + calendar round + year bearer",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: long count components + katun wheel",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: nine lords of the night G1-G9",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: tzolkin circular per instant",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: tzolkin day-sign + trecena one-hot",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "mesoamerican::meso: tzolkin pair differences circular",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: element+modality balance (March/Arroyo)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "modern_western::mod: sign & element pair one-hot",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: firdaria day-sect lord+sublord",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: firdaria night-sect lord+sublord",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "persian_arabic::pa: triplicity lords of the year",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::bur: mahabote house pairing",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::bur: mahabote weekday + year remainder",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::jav: neptu marriage verdicts",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::jav: pawukon concurrent cycles",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::jav: wetonan 35 + neptu",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::thai: day colours + animal year",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::tsa: animal relations (mthun/dgra/gshed)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::tsa: element relations (srog + khams)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::tsa: marriage reckoning tally",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::tsa: mewa (sme ba dgu) arithmetic",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::tsa: parkha (spar kha) pairing",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "tibetan_seasia::tsa: rabjung year animal x element",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::arp: arudha padas, lagna marginalised",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::arp: upapada lagna cross-partner",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: BAV 7 grahas x 12 signs",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: SAV in 12 bhavas from chandra/surya lagna",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: SAV per sign + bindus under each graha",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: SAV profile pair comparison",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_ashtakavarga::av8: sodhya pinda (trikona + ekadhipatya)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: D7 saptamsa (children varga)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: ashtakoota 36 + doshas [Krishnamurti]",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: ashtakoota 36 + doshas [Lahiri]",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: ashtakoota 36 + doshas [True Citra]",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_core::ved: panchadha maitri cross-chart",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (Krishnamurti)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (True Citra)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: guna milan verdict (total, grade, doshas)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: ten poruthams (Krishnamurti)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: ten poruthams (Lahiri)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  },
+  {
+   "block": "vedic_match::vm: ten poruthams (True Citra)",
+   "rel": 0.0,
+   "max": 0.0,
+   "flip_frac": 0.0
+  }
+ ]
+}

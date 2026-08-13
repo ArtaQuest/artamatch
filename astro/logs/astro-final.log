@@ -1,0 +1,52 @@
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+60,000 rows · 45 astrology base models · meta logistic C=0.03
+  [ 1/45] oof 0.7246  african::afr: isilimela & naka heliacal risings, the sou
+  [ 2/45] oof 0.7237  african::afr: sothic sirius rising & solar elongation
+  [ 3/45] oof 0.7224  aboriginal_australian::abo: named-star visibility classe
+  [ 4/45] oof 0.7213  indigenous_americas::iam: dine nahookos revolving pair, 
+  [ 5/45] oof 0.7053  indigenous_americas::iam: inca collca (pleiades) heliaca
+  [ 6/45] oof 0.7018  lunar_calendrical::lun: saros/inex/metonic/callippic + c
+  [ 7/45] oof 0.7017  babylonian_egyptian::bab+egy: schematic 360-day & Egypti
+  [ 8/45] oof 0.7005  uranian::ura: hypotheticals dial positions & cross conta
+  [ 9/45] oof 0.7007  lunar_calendrical::lun: 45 pair synodic phases, births +
+  [10/45] oof 0.6996  harmonics::har: ecliptic latitude contacts
+  [11/45] oof 0.6998  harmonics::har: declination parallels + out-of-bounds
+  [12/45] oof 0.6881  harmonics::har: heliocentric + helio-geo contacts
+  [13/45] oof 0.6983  mesoamerican::meso: distance numbers (LC intervals)
+  [14/45] oof 0.6990  modern_western::mod: Davison chart + composite dispute
+  [15/45] oof 0.6955  mesoamerican::meso: long count components + katun wheel
+  [16/45] oof 0.6966  african::afr: dogon sigui 60y & sirius b orbital phase
+  [17/45] oof 0.6959  uranian::ura: cross-chart dial distance 360/90/45/22.5
+  [18/45] oof 0.6935  aboriginal_australian::abo: rise azimuths — the horizon 
+  [19/45] oof 0.6942  babylonian_egyptian::bab: goal-year phase, circular
+  [20/45] oof 0.6937  aboriginal_australian::abo: culmination altitude & hours
+  [21/45] oof 0.6862  uranian::ura: Uranian offspring/marriage pictures (hypot
+  [22/45] oof 0.6837  indigenous_americas::iam: birth-hour marginal, which nam
+  [23/45] oof 0.6839  lunar_calendrical::lun: 45 pair synodic phases, wedding
+  [24/45] oof 0.6807  modern_western::mod: midpoint composite chart
+  [25/45] oof 0.6584  astrocartography::acg: own lines at own birthplace, olde
+  [26/45] oof 0.6594  east_asian_deep::ead: saju true-solar-term boundary from
+  [27/45] oof 0.6569  astrocartography::acg: own lines at own birthplace, youn
+  [28/45] oof 0.6438  vedic_ashtakavarga::av8: 8-contributor BAV with the lagn
+  [29/45] oof 0.6451  houses::hou: placements, younger partner
+  [30/45] oof 0.6395  vedic_ashtakavarga::upg: gulika + mandi (day/night margi
+  [31/45] oof 0.6359  astrocartography::acg: younger's lines at older's birthp
+  [32/45] oof 0.6318  houses::hou: angles (Asc, MC) + partner separations
+  [33/45] oof 0.6280  houses::hou: overlay, younger's planets in older's house
+  [34/45] oof 0.6327  tibetan_seasia::bur: mahabote weekday + year remainder
+  [35/45] oof 0.6268  vedic_core::ved: graha states + avastha
+  [36/45] oof 0.6058  vedic_core::ved: nakshatra 27 + pada 108 circular
+  [37/45] oof 0.6255  babylonian_egyptian::bab: EAE eclipse, saros, moon-omens
+  [38/45] oof 0.6142  vedic_core::ved: vargas D1 D2 D3 D12 D30 D60
+  [39/45] oof 0.5914  modern_western::mod: Sun/Moon midpoint marriage axis
+  [40/45] oof 0.6125  vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta pha
+  [41/45] oof 0.5830  mesoamerican::meso: haab + calendar round + year bearer
+  [42/45] oof 0.5888  hellenistic::hel: sign qualities & solar phase
+  [43/45] oof 0.5753  chinese::chi: sexagenary cycles circular + partner offse
+  [44/45] oof 0.5843  hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12d
+  [45/45] oof 0.5699  persian_arabic::pa: lots day+night reversal (circular)
+
+stacked cross-validated AUC 0.7311
+wrote astro-final.joblib (18.3 MB)

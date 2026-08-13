@@ -1,0 +1,15 @@
+{
+ "id": "ashranet/artamatch-parents",
+ "title": "ArtaMatch parents",
+ "code_file": "sweep.ipynb",
+ "language": "python",
+ "kernel_type": "notebook",
+ "is_private": true,
+ "enable_gpu": true,
+ "enable_internet": true,
+ "dataset_sources": [
+  "ashranet/artamatch-astro"
+ ],
+ "competition_sources": [],
+ "kernel_sources": []
+}

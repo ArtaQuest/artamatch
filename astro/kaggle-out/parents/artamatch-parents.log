@@ -1,0 +1,88 @@
+[{"stream_name":"stderr","time":5.607813832,"data":"/usr/local/lib/python3.12/dist-packages/nbformat/__init__.py:96: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":5.607904562,"data":"  validate(nb)\n"}
+,{"stream_name":"stderr","time":6.343413878,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.34344793,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.343451963,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.343454895,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":6.907271121,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":6.907302138,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":6.907305633,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":6.907308293,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":8.126172839,"data":"Tesla P100-PCIE-16GB, 16384 MiB\n"}
+,{"stream_name":"stdout","time":10.009195362,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 69.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":10.211034857,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 69.3 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":29.110038612,"data":"pyswisseph 2.10.03\n"}
+,{"stream_name":"stdout","time":31.331482498,"data":"xgboost 3.2.0\n"}
+,{"stream_name":"stdout","time":35.799864357,"data":"lightgbm 4.6.0\n"}
+,{"stream_name":"stdout","time":36.35807166,"data":"catboost 1.2.10\n"}
+,{"stream_name":"stdout","time":36.358099811,"data":"4 cores\n"}
+,{"stream_name":"stdout","time":36.369521065,"data":"benchmark: couples-parents.json\n"}
+,{"stream_name":"stdout","time":36.558633223,"data":"payload at /kaggle/input/datasets/ashranet/artamatch-astro\n"}
+,{"stream_name":"stdout","time":36.558667628,"data":"32 files: core.py, couples-parents.json, ctx_cohort.py, ctx_geo4.py, ctx_nationality.py, ctx_precision.py ...\n"}
+,{"stream_name":"stdout","time":36.558674426,"data":"couples: /kaggle/input/datasets/ashranet/artamatch-astro/couples-parents.json 100903814 bytes\n"}
+,{"stream_name":"stdout","time":36.55867994,"data":"four-input contract enforced: no citizenship, no sex, place as coordinates\n"}
+,{"stream_name":"stdout","time":110.219784528,"data":"  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the\n"}
+,{"stream_name":"stdout","time":110.219818021,"data":"                 Davison midpoint chart, and the three marriage-date modules are skipped.\n"}
+,{"stream_name":"stderr","time":168.56467861,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":168.564719861,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":168.564743541,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":168.564806796,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":168.56489834,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":168.565023593,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":168.565365884,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":168.565373461,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":168.565377177,"data":"Exception encountered at \"In [3]\":\n"}
+,{"stream_name":"stderr","time":168.565380939,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":168.565384461,"data":"OSError                                   Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":168.56538797299999,"data":"/tmp/ipykernel_23/1945206109.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":168.565391872,"data":"     47 sys.path.insert(0, SRC)\n"}
+,{"stream_name":"stderr","time":168.565395589,"data":"     48 from core import load\n"}
+,{"stream_name":"stderr","time":168.565404341,"data":"---\u003e 49 E = load()\n"}
+,{"stream_name":"stderr","time":168.565424354,"data":"     50 print(f\"{E.n:,} couples, {int(E.Y.sum()):,} per class, {len(set(E.gid.tolist())):,} person groups\")\n"}
+,{"stream_name":"stderr","time":168.565428791,"data":"\n"}
+,{"stream_name":"stderr","time":168.565432807,"data":"/kaggle/input/datasets/ashranet/artamatch-astro/core.py in load(force)\n"}
+,{"stream_name":"stderr","time":168.565436669,"data":"    346             DEC[s, :, k], RA[s, :, k], HELIO[s, :, k] = col[4], col[5], col[6]\n"}
+,{"stream_name":"stderr","time":168.565440996,"data":"    347             AYA[:, s, k] = ay\n"}
+,{"stream_name":"stderr","time":168.56544439,"data":"--\u003e 348     np.savez_compressed(CACHE, LON=LON, LAT=LAT, DIST=DIST, SPD=SPD, DEC=DEC, RA=RA,\n"}
+,{"stream_name":"stderr","time":168.565448328,"data":"    349                         HELIO=HELIO, AYA=AYA)\n"}
+,{"stream_name":"stderr","time":168.565451846,"data":"    350     return _mk(recs, Y, JD, LON, LAT, DIST, SPD, DEC, RA, HELIO, AYA, HAS_WED)\n"}
+,{"stream_name":"stderr","time":168.565455419,"data":"\n"}
+,{"stream_name":"stderr","time":168.56545862,"data":"/usr/local/lib/python3.12/dist-packages/numpy/lib/_npyio_impl.py in savez_compressed(file, *args, **kwds)\n"}
+,{"stream_name":"stderr","time":168.565462244,"data":"    736 \n"}
+,{"stream_name":"stderr","time":168.56546551,"data":"    737     \"\"\"\n"}
+,{"stream_name":"stderr","time":168.565468949,"data":"--\u003e 738     _savez(file, args, kwds, True)\n"}
+,{"stream_name":"stderr","time":168.565472349,"data":"    739 \n"}
+,{"stream_name":"stderr","time":168.565475711,"data":"    740 \n"}
+,{"stream_name":"stderr","time":168.565478976,"data":"\n"}
+,{"stream_name":"stderr","time":168.565482246,"data":"/usr/local/lib/python3.12/dist-packages/numpy/lib/_npyio_impl.py in _savez(file, args, kwds, compress, allow_pickle, pickle_kwargs)\n"}
+,{"stream_name":"stderr","time":168.565485917,"data":"    762         compression = zipfile.ZIP_STORED\n"}
+,{"stream_name":"stderr","time":168.565489389,"data":"    763 \n"}
+,{"stream_name":"stderr","time":168.565492611,"data":"--\u003e 764     zipf = zipfile_factory(file, mode=\"w\", compression=compression)\n"}
+,{"stream_name":"stderr","time":168.565496379,"data":"    765 \n"}
+,{"stream_name":"stderr","time":168.565504296,"data":"    766     for key, val in namedict.items():\n"}
+,{"stream_name":"stderr","time":168.565516391,"data":"\n"}
+,{"stream_name":"stderr","time":168.565518729,"data":"/usr/local/lib/python3.12/dist-packages/numpy/lib/_npyio_impl.py in zipfile_factory(file, *args, **kwargs)\n"}
+,{"stream_name":"stderr","time":168.565521125,"data":"    100     import zipfile\n"}
+,{"stream_name":"stderr","time":168.565523404,"data":"    101     kwargs['allowZip64'] = True\n"}
+,{"stream_name":"stderr","time":168.56552568,"data":"--\u003e 102     return zipfile.ZipFile(file, *args, **kwargs)\n"}
+,{"stream_name":"stderr","time":168.565528001,"data":"    103 \n"}
+,{"stream_name":"stderr","time":168.565530198,"data":"    104 \n"}
+,{"stream_name":"stderr","time":168.565532386,"data":"\n"}
+,{"stream_name":"stderr","time":168.565534569,"data":"/usr/lib/python3.12/zipfile/__init__.py in __init__(self, file, mode, compression, allowZip64, compresslevel, strict_timestamps, metadata_encoding)\n"}
+,{"stream_name":"stderr","time":168.565537096,"data":"   1350             while True:\n"}
+,{"stream_name":"stderr","time":168.565539324,"data":"   1351                 try:\n"}
+,{"stream_name":"stderr","time":168.565541572,"data":"-\u003e 1352                     self.fp = io.open(file, filemode)\n"}
+,{"stream_name":"stderr","time":168.56554444,"data":"   1353                 except OSError:\n"}
+,{"stream_name":"stderr","time":168.565546782,"data":"   1354                     if filemode in modeDict:\n"}
+,{"stream_name":"stderr","time":168.565549106,"data":"\n"}
+,{"stream_name":"stderr","time":168.565551295,"data":"OSError: [Errno 30] Read-only file system: '/kaggle/input/datasets/ashranet/artamatch-astro/ephem-par2.npz'\n"}
+,{"stream_name":"stderr","time":168.565553808,"data":"\n"}
+,{"stream_name":"stderr","time":170.581679866,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":170.581706858,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":170.726776656,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":170.726800057,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":171.374438563,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":171.669962182,"data":"[NbConvertApp] Writing 23507 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":173.942402985,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":174.730527553,"data":"[NbConvertApp] Writing 319480 bytes to __results__.html\n"}
+]

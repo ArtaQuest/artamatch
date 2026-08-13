@@ -1,0 +1,25 @@
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  134,957 couples · 44,397 became parents together (32.9%)
+  birthplace known: A 75.1% · B 66.3% · both 53.3%
+  birth date known: both 100.0%
+
+  model (four inputs only)                               cols      AUC  vs baseline
+  ---------------------------------------------------- ------ -------- ------------
+  BASELINE: logistic on the age gap                     2 par   0.5272            —
+  dates only: gap + cohort + precision                    101   0.7032      +0.1760
+  places only: two coordinate pairs                        22   0.6674      +0.1402
+  ALL FOUR INPUTS, no astrology                           123   0.7390      +0.2118
+  best astrology block alone (lun: saros/inex/meto)       280   0.6979      +0.1706
+  ALL FOUR INPUTS + best astrology block                  403   0.7375      +0.2103
+
+  does astrology add to the four inputs?              
+  + lun: saros/inex/metonic/callippic + computus          403   0.7375      -0.0015
+  + har: declination parallels + out-of-bounds            609   0.7365      -0.0025
+  + meso: distance numbers (LC intervals)                 127   0.7391      +0.0001
+  + ura: hypotheticals dial positions & cross contacts    395   0.7371      -0.0020
+  + lun: 45 pair synodic phases, births + diff            528   0.7364      -0.0027
+  + har: ecliptic latitude contacts                       327   0.7367      -0.0023
+
+  astrology gain over the four inputs: mean -0.0018, best +0.0001, helping 0/6

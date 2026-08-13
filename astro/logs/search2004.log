@@ -1,0 +1,33 @@
+model: P(became parents together) · 3 blocks · cross-validated AUC 0.7403
+grid: 366 dates x 937 cities = 342,942 candidates
+  3 batches of up to 160 dates x 937 cities
+  batch 1/3 · 149,920 scored · best so far 0.0690
+  batch 2/3 · 299,840 scored · best so far 0.0690
+  batch 3/3 · 342,942 scored · best so far 0.0690
+
+  TOP 20 candidate partners
+
+    #  birth date   city                       country               score
+  ---  ------------ -------------------------- ------------------ --------
+    1  2004-01-01   Honolulu metropolitan area United States        0.0690
+    2  2004-01-02   Honolulu metropolitan area United States        0.0690
+    3  2004-01-03   Honolulu metropolitan area United States        0.0690
+    4  2004-01-04   Honolulu metropolitan area United States        0.0690
+    5  2004-01-05   Honolulu metropolitan area United States        0.0690
+    6  2004-01-06   Honolulu metropolitan area United States        0.0690
+    7  2004-01-07   Honolulu metropolitan area United States        0.0690
+    8  2004-01-08   Honolulu metropolitan area United States        0.0690
+    9  2004-01-09   Honolulu metropolitan area United States        0.0690
+   10  2004-01-10   Honolulu metropolitan area United States        0.0690
+   11  2004-01-11   Honolulu metropolitan area United States        0.0690
+   12  2004-01-12   Honolulu metropolitan area United States        0.0690
+   13  2004-01-13   Honolulu metropolitan area United States        0.0690
+   14  2004-01-14   Honolulu metropolitan area United States        0.0690
+   15  2004-01-15   Honolulu metropolitan area United States        0.0690
+   16  2004-01-16   Honolulu metropolitan area United States        0.0690
+   17  2004-01-17   Honolulu metropolitan area United States        0.0690
+   18  2004-01-18   Honolulu metropolitan area United States        0.0690
+   19  2004-01-19   Honolulu metropolitan area United States        0.0690
+   20  2004-01-20   Honolulu metropolitan area United States        0.0690
+
+  full ranking (top 2000) written to partner-search.json

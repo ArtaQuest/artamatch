@@ -1,0 +1,21 @@
+  subsample: 70,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  70,000 couples · 7,576 with a prominent child (10.8%)
+
+  model                                                 params/cols      AUC  vs baseline
+  ---------------------------------------------------- ------------ -------- ------------
+  BASELINE: logistic on the age gap                        2 params   0.4949            —
+  best astrology block alone (Uranian dials)                    272   0.6060      +0.1110
+  age gap + era                                                   2   0.6138      +0.1189
+  age gap + era + birth country, sex, precision                 210   0.6860      +0.1911
+  …and the best astrology block on top                          482   0.6692      +0.1743
+
+  the fitted baseline: logit p = -2.0903 -0.00277 * gap_years
+    age gap  0y -> P(prominent child) 11.00%
+    age gap  2y -> P(prominent child) 10.95%
+    age gap  5y -> P(prominent child) 10.87%
+    age gap 10y -> P(prominent child) 10.74%
+    age gap 20y -> P(prominent child) 10.47%
+    age gap 30y -> P(prominent child) 10.22%

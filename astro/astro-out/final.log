@@ -1,0 +1,206 @@
+===== 1/3 CHUNKED COLLECT (all births 1800-2026, 51 blocks) =====
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  AQ_DUMP_ROWS: wrote 134,957 rows to /Users/arash/Studio/artamatch/astro/astro-out/rows.json and stopped before the ephemeris
+134,957 couples in 7 chunks of up to 22,000
+
+  chunk 00 [0..22,000) building…
+  chunk 00 done in 189s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 01 [22,000..44,000) building…
+  chunk 01 done in 154s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 02 [44,000..66,000) building…
+  chunk 02 done in 237s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 03 [66,000..88,000) building…
+  chunk 03 done in 168s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 04 [88,000..110,000) building…
+  chunk 04 done in 4099s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 05 [110,000..132,000) building…
+  chunk 05 done in 2753s · 51 blocks, 12,627 columns total, from 23 modules
+  chunk 06 [132,000..134,957) building…
+  chunk 06 done in 222s · 51 blocks, 12,627 columns total, from 23 modules
+
+merging 51 blocks across 7 chunks
+  african::afr: sothic sirius rising & solar elongation              134,957 x    77  (-16 constant)
+  african::afr: isilimela & naka heliacal risings, the southern year 134,957 x    79  (-24 constant)
+  lunar_calendrical::lun: saros/inex/metonic/callippic + computus    134,957 x   280  (-17 constant)
+  lunar_calendrical::lun: 45 pair synodic phases, births + diff      134,957 x   405
+  indigenous_americas::iam: dine nahookos revolving pair, midnight   134,957 x    11  (-29 constant)
+  harmonics::har: ecliptic latitude contacts                         134,957 x   204
+  uranian::ura: hypotheticals dial positions & cross contacts        134,957 x   272
+  mesoamerican::meso: distance numbers (LC intervals)                134,957 x     4
+  mesoamerican::meso: long count components + katun wheel            134,957 x    69  (-3 constant)
+  harmonics::har: declination parallels + out-of-bounds              134,957 x   486  (-16 constant)
+  aboriginal_australian::abo: named-star visibility classes at each  134,957 x    84  (-226 constant)
+  modern_western::mod: Davison chart + composite dispute             134,957 x   547  (-18 constant)
+  harmonics::har: heliocentric + helio-geo contacts                  134,957 x   286  (-2 constant)
+  babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil c 134,957 x   262
+  african::afr: dogon sigui 60y & sirius b orbital phase             134,957 x    24
+  babylonian_egyptian::bab: goal-year phase, circular                134,957 x    96
+  uranian::ura: cross-chart dial distance 360/90/45/22.5             134,957 x   784
+  lunar_calendrical::lun: 45 pair synodic phases, wedding            134,957 x   180
+  modern_western::mod: midpoint composite chart                      134,957 x   534  (-8 constant)
+  uranian::ura: Uranian offspring/marriage pictures (hypotheticals)  134,957 x   260
+  indigenous_americas::iam: mapuche we tripantu & punon choyke       134,957 x     6  (-35 constant)
+  indigenous_americas::iam: inca dark clouds yacana & yutu at midnig 134,957 x     8  (-36 constant)
+  modern_western::mod: Sun/Moon midpoint marriage axis               134,957 x   361
+  tibetan_seasia::bur: mahabote weekday + year remainder             134,957 x   111
+  vedic_core::ved: vargas D1 D2 D3 D12 D30 D60                       134,957 x   588
+  vedic_core::ved: nakshatra 27 + pada 108 circular                  134,957 x   207
+  aboriginal_australian::abo: emu solar phase, place-free            134,957 x    19
+  vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala         134,957 x    98  (-6 constant)
+  vedic_core::ved: graha states + avastha                            134,957 x   546  (-21 constant)
+  mesoamerican::meso: haab + calendar round + year bearer            134,957 x   185
+  babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL.API 134,957 x   342  (-9 constant)
+  vedic_ashtakavarga::sb6: sthana bala, five components              134,957 x    96  (-4 constant)
+  vedic_ashtakavarga::upg: sun-derived upagrahas (exact)             134,957 x   338  (-2 constant)
+  persian_arabic::pa: almuten point score (Ibn Ezra)                 134,957 x   169
+  hellenistic::hel: sign qualities & solar phase                     134,957 x   330  (-6 constant)
+  chinese::chi: sexagenary cycles circular + partner offsets         134,957 x    73
+  hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg         134,957 x   390  (-30 constant)
+  persian_arabic::pa: tasyir hits + divisor of the years             134,957 x   213  (-36 constant)
+  persian_arabic::pa: reception + mutual reception                   134,957 x   305
+  aboriginal_australian::abo: six- and seven-season calendars in cou 134,957 x    81  (-51 constant)
+  hellenistic::hel: hermetic lots (circular)                         134,957 x   320
+  chinese::chi: 24 jieqi solar terms + jianchu day officer           134,957 x   190
+  east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar year b 134,957 x   406
+  east_asian_deep::ead: sino-viet lunar month, day and leap (3 zones 134,957 x   408
+  vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)         134,957 x   182
+  east_asian_deep::ead: chinese almanac additions — 12 day gods, tai 134,957 x   372
+  tibetan_seasia::tsa: rabjung year animal x element                 134,957 x   127
+  chinese::chi: 28 xiu, classical unequal widths                     134,957 x   178
+  vedic_match::vm: nakshatra pair low-rank + kuta vector             134,957 x    87  (-1 constant)
+  vedic_match::vm: ashtakoot 36pt (Lahiri)                           134,957 x    53
+  tibetan_seasia::thai: rerk mansions + nine classes                 134,957 x   298
+
+51 blocks · 12,031 columns · 134,957 rows · 596 constant columns pruned globally
+wrote manifest.json and /Users/arash/Studio/artamatch/astro/blocks/
+removed /Users/arash/Studio/artamatch/astro/chunks
+===== 2/3 CHUNK EQUIVALENCE =====
+
+comparing 249 blocks: 400 rows whole vs 200+200 concatenated
+
+  EQUIVALENT — all 249 blocks bit-identical between a whole build and a chunked one
+===== 3/3 FIT + 16-CELL GRID =====
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  134,957 couples · 44,397 became parents (32.9%)
+  51 blocks · 12,031 columns · 17 traditions · two dates at 08:00 UT
+  5 person-disjoint folds (80/20 each) over 110,650 person groups
+    fold 0: 107,965 train / 26,992 test
+    fold 1: 107,965 train / 26,992 test
+    fold 2: 107,966 train / 26,991 test
+    fold 3: 107,966 train / 26,991 test
+    fold 4: 107,966 train / 26,991 test
+
+  BASELINE  signed age gap, clean input   AUC 0.5028
+
+  fitting 51 blocks x 2 kinds x 5 folds on 3 workers…
+    [ 1/51] 0.7016  hgb   african::afr: sothic sirius rising & solar elongation
+    [ 2/51] 0.7015  hgb   african::afr: isilimela & naka heliacal risings, the souther
+    [ 3/51] 0.7020  hgb   lunar_calendrical::lun: saros/inex/metonic/callippic + compu
+    [ 4/51] 0.7011  hgb   lunar_calendrical::lun: 45 pair synodic phases, births + dif
+    [ 5/51] 0.7011  hgb   indigenous_americas::iam: dine nahookos revolving pair, midn
+    [ 6/51] 0.7001  hgb   harmonics::har: ecliptic latitude contacts
+    [ 7/51] 0.7010  hgb   uranian::ura: hypotheticals dial positions & cross contacts
+    [ 8/51] 0.6972  hgb   mesoamerican::meso: distance numbers (LC intervals)
+    [ 9/51] 0.6946  logit mesoamerican::meso: long count components + katun wheel
+    [10/51] 0.7016  hgb   harmonics::har: declination parallels + out-of-bounds
+    [11/51] 0.6951  hgb   aboriginal_australian::abo: named-star visibility classes at
+    [12/51] 0.7001  hgb   modern_western::mod: Davison chart + composite dispute
+    [13/51] 0.6994  hgb   harmonics::har: heliocentric + helio-geo contacts
+    [14/51] 0.7025  hgb   babylonian_egyptian::bab+egy: schematic 360-day & Egyptian c
+    [15/51] 0.6986  hgb   african::afr: dogon sigui 60y & sirius b orbital phase
+    [16/51] 0.6938  hgb   babylonian_egyptian::bab: goal-year phase, circular
+    [17/51] 0.6979  hgb   uranian::ura: cross-chart dial distance 360/90/45/22.5
+    [18/51] 0.6836  hgb   lunar_calendrical::lun: 45 pair synodic phases, wedding
+    [19/51] 0.6849  hgb   modern_western::mod: midpoint composite chart
+    [20/51] 0.6896  hgb   uranian::ura: Uranian offspring/marriage pictures (hypotheti
+    [21/51] 0.6444  hgb   indigenous_americas::iam: mapuche we tripantu & punon choyke
+    [22/51] 0.6472  hgb   indigenous_americas::iam: inca dark clouds yacana & yutu at 
+    [23/51] 0.6521  hgb   modern_western::mod: Sun/Moon midpoint marriage axis
+    [24/51] 0.6651  hgb   tibetan_seasia::bur: mahabote weekday + year remainder
+    [25/51] 0.6443  hgb   vedic_core::ved: vargas D1 D2 D3 D12 D30 D60
+    [26/51] 0.6496  hgb   vedic_core::ved: nakshatra 27 + pada 108 circular
+    [27/51] 0.6304  hgb   aboriginal_australian::abo: emu solar phase, place-free
+    [28/51] 0.6377  hgb   vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala
+    [29/51] 0.6552  hgb   vedic_core::ved: graha states + avastha
+    [30/51] 0.5884  hgb   mesoamerican::meso: haab + calendar round + year bearer
+    [31/51] 0.6434  hgb   babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & M
+    [32/51] 0.6033  hgb   vedic_ashtakavarga::sb6: sthana bala, five components
+    [33/51] 0.5813  hgb   vedic_ashtakavarga::upg: sun-derived upagrahas (exact)
+    [34/51] 0.5740  hgb   persian_arabic::pa: almuten point score (Ibn Ezra)
+    [35/51] 0.6177  hgb   hellenistic::hel: sign qualities & solar phase
+    [36/51] 0.5843  hgb   chinese::chi: sexagenary cycles circular + partner offsets
+    [37/51] 0.6137  hgb   hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg
+    [38/51] 0.5534  hgb   persian_arabic::pa: tasyir hits + divisor of the years
+    [39/51] 0.6047  hgb   persian_arabic::pa: reception + mutual reception
+    [40/51] 0.5550  hgb   aboriginal_australian::abo: six- and seven-season calendars 
+    [41/51] 0.5970  hgb   hellenistic::hel: hermetic lots (circular)
+    [42/51] 0.5475  hgb   chinese::chi: 24 jieqi solar terms + jianchu day officer
+    [43/51] 0.5583  hgb   east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar 
+    [44/51] 0.5437  hgb   east_asian_deep::ead: sino-viet lunar month, day and leap (3
+    [45/51] 0.5641  hgb   vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)
+    [46/51] 0.5439  hgb   east_asian_deep::ead: chinese almanac additions — 12 day god
+    [47/51] 0.5616  hgb   tibetan_seasia::tsa: rabjung year animal x element
+    [48/51] 0.5335  hgb   chinese::chi: 28 xiu, classical unequal widths
+    [49/51] 0.5418  hgb   vedic_match::vm: nakshatra pair low-rank + kuta vector
+    [50/51] 0.5289  hgb   vedic_match::vm: ashtakoot 36pt (Lahiri)
+    [51/51] 0.5349  hgb   tibetan_seasia::thai: rerk mansions + nine classes
+  base models done in 2385s
+
+  STACK, clean input, out-of-fold over all rows   AUC 0.7166
+  packed 5 fold-models for the grid
+
+  GRID on 84,356 couples with both dates to the day and both sexes known (30.3% became parents)
+
+    woman x man        stack  baseline     lift   (out-of-fold over all 84,356)
+  ----------------- -------- --------- --------
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+     full x full      0.6878    0.5216  +0.1663
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+     full x month     0.6867    0.5216  +0.1652
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+  AQ_NO_PLACE: birthplaces dropped — inputs are the two birth dates only, 08:00 UT
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+full|year: core kept 15999 of 16000 rows — a degraded date was refused, so scores could not be aligned to couples

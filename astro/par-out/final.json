@@ -1,0 +1,46 @@
+{
+ "baseline_agegap_2param": 0.5272051259601471,
+ "n": 134957,
+ "rate": 0.3289714501656083,
+ "exposure / cohort alone (NOT astrology)": {
+  "cols": 32,
+  "auc": 0.6974396915477369
+ },
+ "astrology: lun: saros/inex/metonic/callippic + comp": {
+  "cols": 280,
+  "auc": 0.6978517846843024
+ },
+ "astrology: har: declination parallels + out-of-boun": {
+  "cols": 486,
+  "auc": 0.6969444099221679
+ },
+ "astrology: meso: distance numbers (LC intervals)": {
+  "cols": 4,
+  "auc": 0.6972696530445543
+ },
+ "astrology: ura: hypotheticals dial positions & cros": {
+  "cols": 272,
+  "auc": 0.6975257076051918
+ },
+ "astrology: lun: 45 pair synodic phases, births + di": {
+  "cols": 405,
+  "auc": 0.6978536385156304
+ },
+ "astrology: har: ecliptic latitude contacts": {
+  "cols": 204,
+  "auc": 0.6973631902574992
+ },
+ "context: ctx: EVERYTHING": {
+  "cols": 417,
+  "auc": 0.7079045046029436
+ },
+ "exposure_alone": 0.6974396915477369,
+ "gains_over_exposure": {
+  "lun: saros/inex/metonic/callippic + computus": 0.0005290169534025724,
+  "har: declination parallels + out-of-bounds": 0.0012208943631469849,
+  "meso: distance numbers (LC intervals)": 1.0913441728988005e-05,
+  "ura: hypotheticals dial positions & cross contacts": 7.539535866196712e-05,
+  "lun: 45 pair synodic phases, births + diff": 0.00015557284852996123,
+  "har: ecliptic latitude contacts": -0.00017262468928957997
+ }
+}

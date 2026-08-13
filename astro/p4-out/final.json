@@ -1,0 +1,33 @@
+{
+ "baseline": 0.5272051259601471,
+ "n": 134957,
+ "rate": 0.3289714501656083,
+ "dates only: gap + cohort + precision": {
+  "cols": 101,
+  "auc": 0.7032386005502791
+ },
+ "places only: two coordinate pairs": {
+  "cols": 22,
+  "auc": 0.667394439658085
+ },
+ "ALL FOUR INPUTS, no astrology": {
+  "cols": 123,
+  "auc": 0.7390262632994334
+ },
+ "best astrology block alone (lun: saros/inex/meto)": {
+  "cols": 280,
+  "auc": 0.6978517846843024
+ },
+ "ALL FOUR INPUTS + best astrology block": {
+  "cols": 403,
+  "auc": 0.7375088565308706
+ },
+ "gains_over_four_inputs": {
+  "lun: saros/inex/metonic/callippic + computus": -0.0015174067685628234,
+  "har: declination parallels + out-of-bounds": -0.0024914116385718055,
+  "meso: distance numbers (LC intervals)": 6.936390904710432e-05,
+  "ura: hypotheticals dial positions & cross contacts": -0.0019535474812825138,
+  "lun: 45 pair synodic phases, births + diff": -0.002662363688741287,
+  "har: ecliptic latitude contacts": -0.002297856575520729
+ }
+}

@@ -1,0 +1,22 @@
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  29,476 couples · 7,280 became parents together (24.7%)
+
+  model                                                  cols      AUC  vs baseline
+  ---------------------------------------------------- ------ -------- ------------
+  BASELINE: logistic on the age gap                     2 par   0.5415            —
+  best astrology block (meso: distance numbers (LC)         4   0.5282      -0.0132
+  best context block (nationality, birthplace, sex)       417   0.5835      +0.0421
+  astrology + context                                     421   0.6059      +0.0644
+  age gap + best astrology block                            5   0.5290      -0.0125
+  age gap + context                                       418   0.6018      +0.0604
+  age gap + context + astrology                           422   0.6062      +0.0648
+
+  the fitted baseline: logit p = -0.9513 -0.02502 * gap_years
+    age gap  0y -> P(become parents together) 27.86%
+    age gap  2y -> P(become parents together) 26.87%
+    age gap  5y -> P(become parents together) 25.42%
+    age gap 10y -> P(become parents together) 23.12%
+    age gap 20y -> P(become parents together) 18.97%
+    age gap 30y -> P(become parents together) 15.42%

@@ -1,0 +1,94 @@
+  subsample: 60,000 couples
+  DOB-ONLY MODE: no marriage date. Slots 'wedding', 'prog_older' and 'prog_younger' all carry the
+                 Davison midpoint chart, and the three marriage-date modules are skipped.
+
+  60,000 couples · 19,765 became parents together (32.9%)
+  268 astrology blocks screened · 45 chosen as base models (max 3 per tradition)
+
+    african                  0.7248, 0.7240, 0.6964
+    aboriginal_australian    0.7227, 0.6945, 0.6938
+    indigenous_americas      0.7222, 0.7042, 0.6844
+    lunar_calendrical        0.7026, 0.7012, 0.6843
+    babylonian_egyptian      0.7015, 0.6942, 0.6120
+    uranian                  0.7013, 0.6959, 0.6857
+    harmonics                0.7009, 0.7007, 0.6995
+    mesoamerican             0.6995, 0.6969, 0.5814
+    modern_western           0.6991, 0.6831, 0.6110
+    astrocartography         0.6603, 0.6585, 0.6371
+    east_asian_deep          0.6587
+    vedic_ashtakavarga       0.6435, 0.6403, 0.6073
+    houses                   0.6419, 0.6330, 0.6315
+    tibetan_seasia           0.6266
+    vedic_core               0.6146, 0.6138, 0.6113
+    hellenistic              0.5808, 0.5724
+    chinese                  0.5738
+    persian_arabic           0.5700
+
+  THE TWO PERMITTED BASELINES, each a 2-parameter logistic on one signed subtraction
+  baseline                                          AUC   fitted
+  -------------------------------------------- --------   ----------------------------------
+  signed age gap (dob_woman - dob_man)           0.5078   logit p = -0.7156 +0.00102 * x   (per year)
+  signed distance gap (birthplaces, E+)          0.4984   logit p = -0.7108 -0.00085 * x   (per 1000 km)
+
+  the stronger of the two (signed age gap (dob_woman - dob_man)) is used as the reference: 0.5078
+
+  building out-of-fold predictions for 45 base models…
+    [ 1/45] 0.7248 -> oof 0.7246  african::afr: isilimela & naka heliacal risings, the
+    [ 2/45] 0.7240 -> oof 0.7237  african::afr: sothic sirius rising & solar elongatio
+    [ 3/45] 0.7227 -> oof 0.7224  aboriginal_australian::abo: named-star visibility cl
+    [ 4/45] 0.7222 -> oof 0.7213  indigenous_americas::iam: dine nahookos revolving pa
+    [ 5/45] 0.7042 -> oof 0.7053  indigenous_americas::iam: inca collca (pleiades) hel
+    [ 6/45] 0.7026 -> oof 0.7018  lunar_calendrical::lun: saros/inex/metonic/callippic
+    [ 7/45] 0.7015 -> oof 0.7017  babylonian_egyptian::bab+egy: schematic 360-day & Eg
+    [ 8/45] 0.7013 -> oof 0.7005  uranian::ura: hypotheticals dial positions & cross c
+    [ 9/45] 0.7012 -> oof 0.7007  lunar_calendrical::lun: 45 pair synodic phases, birt
+    [10/45] 0.7009 -> oof 0.6996  harmonics::har: ecliptic latitude contacts
+    [11/45] 0.7007 -> oof 0.6998  harmonics::har: declination parallels + out-of-bound
+    [12/45] 0.6995 -> oof 0.6881  harmonics::har: heliocentric + helio-geo contacts
+    [13/45] 0.6995 -> oof 0.6983  mesoamerican::meso: distance numbers (LC intervals)
+    [14/45] 0.6991 -> oof 0.6990  modern_western::mod: Davison chart + composite dispu
+    [15/45] 0.6969 -> oof 0.6955  mesoamerican::meso: long count components + katun wh
+    [16/45] 0.6964 -> oof 0.6966  african::afr: dogon sigui 60y & sirius b orbital pha
+    [17/45] 0.6959 -> oof 0.6959  uranian::ura: cross-chart dial distance 360/90/45/22
+    [18/45] 0.6945 -> oof 0.6935  aboriginal_australian::abo: rise azimuths — the hori
+    [19/45] 0.6942 -> oof 0.6942  babylonian_egyptian::bab: goal-year phase, circular
+    [20/45] 0.6938 -> oof 0.6937  aboriginal_australian::abo: culmination altitude & h
+    [21/45] 0.6857 -> oof 0.6862  uranian::ura: Uranian offspring/marriage pictures (h
+    [22/45] 0.6844 -> oof 0.6837  indigenous_americas::iam: birth-hour marginal, which
+    [23/45] 0.6843 -> oof 0.6839  lunar_calendrical::lun: 45 pair synodic phases, wedd
+    [24/45] 0.6831 -> oof 0.6807  modern_western::mod: midpoint composite chart
+    [25/45] 0.6603 -> oof 0.6584  astrocartography::acg: own lines at own birthplace, 
+    [26/45] 0.6587 -> oof 0.6594  east_asian_deep::ead: saju true-solar-term boundary 
+    [27/45] 0.6585 -> oof 0.6569  astrocartography::acg: own lines at own birthplace, 
+    [28/45] 0.6435 -> oof 0.6438  vedic_ashtakavarga::av8: 8-contributor BAV with the 
+    [29/45] 0.6419 -> oof 0.6451  houses::hou: placements, younger partner
+    [30/45] 0.6403 -> oof 0.6395  vedic_ashtakavarga::upg: gulika + mandi (day/night m
+    [31/45] 0.6371 -> oof 0.6359  astrocartography::acg: younger's lines at older's bi
+    [32/45] 0.6330 -> oof 0.6318  houses::hou: angles (Asc, MC) + partner separations
+    [33/45] 0.6315 -> oof 0.6280  houses::hou: overlay, younger's planets in older's h
+    [34/45] 0.6266 -> oof 0.6327  tibetan_seasia::bur: mahabote weekday + year remaind
+    [35/45] 0.6146 -> oof 0.6268  vedic_core::ved: graha states + avastha
+    [36/45] 0.6138 -> oof 0.6058  vedic_core::ved: nakshatra 27 + pada 108 circular
+    [37/45] 0.6120 -> oof 0.6255  babylonian_egyptian::bab: EAE eclipse, saros, moon-o
+    [38/45] 0.6113 -> oof 0.6142  vedic_core::ved: vargas D1 D2 D3 D12 D30 D60
+    [39/45] 0.6110 -> oof 0.5914  modern_western::mod: Sun/Moon midpoint marriage axis
+    [40/45] 0.6073 -> oof 0.6125  vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta
+    [41/45] 0.5814 -> oof 0.5830  mesoamerican::meso: haab + calendar round + year bea
+    [42/45] 0.5808 -> oof 0.5888  hellenistic::hel: sign qualities & solar phase
+    [43/45] 0.5738 -> oof 0.5753  chinese::chi: sexagenary cycles circular + partner o
+    [44/45] 0.5724 -> oof 0.5843  hellenistic::hel: wedding chart ptolemaic orbs 2/4/6
+    [45/45] 0.5700 -> oof 0.5699  persian_arabic::pa: lots day+night reversal (circula
+
+  stacked model                                 AUC  vs baseline
+  ---------------------------------------- -------- ------------
+  mean of all base models                    0.7199      +0.2121
+  rank mean of all                           0.7151      +0.2073
+  meta logistic (C=0.03)                     0.7311      +0.2234
+  meta logistic (C=0.3)                      0.7311      +0.2233
+  meta logistic (C=3)                        0.7311      +0.2233
+  greedy ensemble (Caruana)                  0.7278      +0.2201
+
+  best single astrology block: 0.7246  african::afr: isilimela & naka heliacal risings, the southern year
+  BEST STACK: meta logistic (C=0.03) at 0.7311 (+0.2234 over the baseline)
+
+  wrote astro-out/astro-stack.json and astro-oof.npy

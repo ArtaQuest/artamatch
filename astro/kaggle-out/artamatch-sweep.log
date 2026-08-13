@@ -1,0 +1,46 @@
+[{"stream_name":"stderr","time":7.754637066,"data":"/usr/local/lib/python3.12/dist-packages/nbformat/__init__.py:96: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":7.7547175,"data":"  validate(nb)\n"}
+,{"stream_name":"stderr","time":8.892481046,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.892515886,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.892522668,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.892527892,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.737121322,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.737161938,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.73716821,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.737173591,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":14.125530285,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 58.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":14.328226908,"data":"     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 58.6 MB/s eta 0:00:00\n"}
+,{"stream_name":"stdout","time":40.570216195,"data":"pyswisseph 2.10.03\n"}
+,{"stream_name":"stdout","time":44.092535765,"data":"xgboost 3.2.0\n"}
+,{"stream_name":"stdout","time":47.917813923,"data":"lightgbm 4.6.0\n"}
+,{"stream_name":"stdout","time":49.130576816,"data":"catboost 1.2.10\n"}
+,{"stream_name":"stdout","time":49.130619593,"data":"4 cores\n"}
+,{"stream_name":"stderr","time":50.090896617,"data":"Traceback (most recent call last):\n"}
+,{"stream_name":"stderr","time":50.090926304,"data":"  File \"\u003cstring\u003e\", line 1, in \u003cmodule\u003e\n"}
+,{"stream_name":"stderr","time":50.090934557,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 131, in execute_notebook\n"}
+,{"stream_name":"stderr","time":50.091021288,"data":"    raise_for_execution_errors(nb, output_path)\n"}
+,{"stream_name":"stderr","time":50.091896197,"data":"  File \"/usr/local/lib/python3.12/dist-packages/papermill/execute.py\", line 251, in raise_for_execution_errors\n"}
+,{"stream_name":"stderr","time":50.091927639,"data":"    raise error\n"}
+,{"stream_name":"stderr","time":50.091934218,"data":"papermill.exceptions.PapermillExecutionError: \n"}
+,{"stream_name":"stderr","time":50.09193958,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":50.09194479,"data":"Exception encountered at \"In [2]\":\n"}
+,{"stream_name":"stderr","time":50.091950783,"data":"---------------------------------------------------------------------------\n"}
+,{"stream_name":"stderr","time":50.091956793,"data":"AssertionError                            Traceback (most recent call last)\n"}
+,{"stream_name":"stderr","time":50.091969238,"data":"/tmp/ipykernel_16/2016583212.py in \u003ccell line: 0\u003e()\n"}
+,{"stream_name":"stderr","time":50.091993798,"data":"      3     if os.path.isdir(cand):\n"}
+,{"stream_name":"stderr","time":50.091997918,"data":"      4         SRC = cand\n"}
+,{"stream_name":"stderr","time":50.092001826,"data":"----\u003e 5 assert SRC, f\"dataset not mounted; saw {os.listdir('/kaggle/input')}\"\n"}
+,{"stream_name":"stderr","time":50.092005387,"data":"      6 print(sorted(os.listdir(SRC))[:8], \"...\", len(os.listdir(SRC)), \"files\")\n"}
+,{"stream_name":"stderr","time":50.092008936,"data":"      7 \n"}
+,{"stream_name":"stderr","time":50.092011999,"data":"\n"}
+,{"stream_name":"stderr","time":50.092014862,"data":"AssertionError: dataset not mounted; saw ['datasets']\n"}
+,{"stream_name":"stderr","time":50.092017895,"data":"\n"}
+,{"stream_name":"stderr","time":53.130160036,"data":"/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":53.130200227,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":53.345813589,"data":"/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":53.34586572,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":54.103232596,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":54.526924562,"data":"[NbConvertApp] Writing 10165 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":57.874622408,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":59.037128797,"data":"[NbConvertApp] Writing 294872 bytes to __results__.html\n"}
+]

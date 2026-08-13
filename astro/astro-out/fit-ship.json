@@ -1,0 +1,303 @@
+{
+ "auc": 0.7165967132922345,
+ "baseline": 0.5027551786200497,
+ "meta_C": 0.01,
+ "n": 134957,
+ "rate": 0.3289714501656083,
+ "tradition_auc": {
+  "babylonian_egyptian": 0.6993684423095152,
+  "lunar_calendrical": 0.7005885759638519,
+  "harmonics": 0.7020645448081639,
+  "african": 0.7027984093149737,
+  "indigenous_americas": 0.7027607290460128,
+  "uranian": 0.7001619988917454,
+  "modern_western": 0.6981617438646452,
+  "mesoamerican": 0.6970250482894023,
+  "aboriginal_australian": 0.6967458401751113,
+  "tibetan_seasia": 0.6613440808890567,
+  "vedic_core": 0.6661145010096423,
+  "vedic_ashtakavarga": 0.6308280228720131,
+  "hellenistic": 0.6502715067614714,
+  "persian_arabic": 0.6050915015427378,
+  "chinese": 0.5793864131442206,
+  "vedic_match": 0.5655881390133084,
+  "east_asian_deep": 0.5667279790257371
+ },
+ "robustness": {
+  "both dates to the day": {
+   "rows": 105566,
+   "rate": 0.32189341265180077,
+   "stack": 0.7104220361921679,
+   "baseline": 0.4964206423305669
+  },
+  "one date to the month": {
+   "rows": 1064,
+   "rate": 0.3618421052631579,
+   "stack": 0.6995562611173805,
+   "baseline": 0.5143335309756517
+  },
+  "one date to the year only": {
+   "rows": 28327,
+   "rate": 0.3541144491121545,
+   "stack": 0.7352863861426169,
+   "baseline": 0.5197705924489352
+  }
+ },
+ "base": [
+  {
+   "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+   "kind": "hgb",
+   "auc": 0.7024642580524055
+  },
+  {
+   "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+   "kind": "hgb",
+   "auc": 0.7020461314764687
+  },
+  {
+   "key": "harmonics::har: declination parallels + out-of-bounds",
+   "kind": "hgb",
+   "auc": 0.7015881300544293
+  },
+  {
+   "key": "african::afr: sothic sirius rising & solar elongation",
+   "kind": "hgb",
+   "auc": 0.701559355687174
+  },
+  {
+   "key": "african::afr: isilimela & naka heliacal risings, the southern year",
+   "kind": "hgb",
+   "auc": 0.7014848307226533
+  },
+  {
+   "key": "indigenous_americas::iam: dine nahookos revolving pair, midnight",
+   "kind": "hgb",
+   "auc": 0.701101139868864
+  },
+  {
+   "key": "lunar_calendrical::lun: 45 pair synodic phases, births + diff",
+   "kind": "hgb",
+   "auc": 0.7010554415027088
+  },
+  {
+   "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+   "kind": "hgb",
+   "auc": 0.7010065760658868
+  },
+  {
+   "key": "harmonics::har: ecliptic latitude contacts",
+   "kind": "hgb",
+   "auc": 0.7000814503122763
+  },
+  {
+   "key": "modern_western::mod: Davison chart + composite dispute",
+   "kind": "hgb",
+   "auc": 0.7000767042454084
+  },
+  {
+   "key": "harmonics::har: heliocentric + helio-geo contacts",
+   "kind": "hgb",
+   "auc": 0.6993745022375211
+  },
+  {
+   "key": "african::afr: dogon sigui 60y & sirius b orbital phase",
+   "kind": "hgb",
+   "auc": 0.6986001408369601
+  },
+  {
+   "key": "uranian::ura: cross-chart dial distance 360/90/45/22.5",
+   "kind": "hgb",
+   "auc": 0.6979429881615055
+  },
+  {
+   "key": "mesoamerican::meso: distance numbers (LC intervals)",
+   "kind": "hgb",
+   "auc": 0.6972214861366497
+  },
+  {
+   "key": "aboriginal_australian::abo: named-star visibility classes at each birthplace",
+   "kind": "hgb",
+   "auc": 0.6950771284615098
+  },
+  {
+   "key": "mesoamerican::meso: long count components + katun wheel",
+   "kind": "logit",
+   "auc": 0.6946425036945799
+  },
+  {
+   "key": "babylonian_egyptian::bab: goal-year phase, circular",
+   "kind": "hgb",
+   "auc": 0.6938442802626654
+  },
+  {
+   "key": "uranian::ura: Uranian offspring/marriage pictures (hypotheticals)",
+   "kind": "hgb",
+   "auc": 0.6896424919052723
+  },
+  {
+   "key": "modern_western::mod: midpoint composite chart",
+   "kind": "hgb",
+   "auc": 0.6848500308780374
+  },
+  {
+   "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+   "kind": "hgb",
+   "auc": 0.6836149611159781
+  },
+  {
+   "key": "tibetan_seasia::bur: mahabote weekday + year remainder",
+   "kind": "hgb",
+   "auc": 0.6651371084547064
+  },
+  {
+   "key": "vedic_core::ved: graha states + avastha",
+   "kind": "hgb",
+   "auc": 0.6551565974239337
+  },
+  {
+   "key": "modern_western::mod: Sun/Moon midpoint marriage axis",
+   "kind": "hgb",
+   "auc": 0.6520642679832807
+  },
+  {
+   "key": "vedic_core::ved: nakshatra 27 + pada 108 circular",
+   "kind": "hgb",
+   "auc": 0.6496287157758884
+  },
+  {
+   "key": "indigenous_americas::iam: inca dark clouds yacana & yutu at midnight",
+   "kind": "hgb",
+   "auc": 0.6472020348981813
+  },
+  {
+   "key": "indigenous_americas::iam: mapuche we tripantu & punon choyke",
+   "kind": "hgb",
+   "auc": 0.6443575974149003
+  },
+  {
+   "key": "vedic_core::ved: vargas D1 D2 D3 D12 D30 D60",
+   "kind": "hgb",
+   "auc": 0.6442531008714656
+  },
+  {
+   "key": "babylonian_egyptian::bab: EAE eclipse, saros, moon-omens & MUL.APIN paths",
+   "kind": "hgb",
+   "auc": 0.6434179859847118
+  },
+  {
+   "key": "vedic_ashtakavarga::sb6: cheshta bala + ishta/kashta phala",
+   "kind": "hgb",
+   "auc": 0.6376760046639098
+  },
+  {
+   "key": "aboriginal_australian::abo: emu solar phase, place-free",
+   "kind": "hgb",
+   "auc": 0.6304068372940632
+  },
+  {
+   "key": "hellenistic::hel: sign qualities & solar phase",
+   "kind": "hgb",
+   "auc": 0.6176870307507328
+  },
+  {
+   "key": "hellenistic::hel: wedding chart ptolemaic orbs 2/4/6/12deg",
+   "kind": "hgb",
+   "auc": 0.6136956275636521
+  },
+  {
+   "key": "persian_arabic::pa: reception + mutual reception",
+   "kind": "hgb",
+   "auc": 0.6046819642484916
+  },
+  {
+   "key": "vedic_ashtakavarga::sb6: sthana bala, five components",
+   "kind": "hgb",
+   "auc": 0.6032676925324276
+  },
+  {
+   "key": "hellenistic::hel: hermetic lots (circular)",
+   "kind": "hgb",
+   "auc": 0.5970458744496632
+  },
+  {
+   "key": "mesoamerican::meso: haab + calendar round + year bearer",
+   "kind": "hgb",
+   "auc": 0.5884006817184588
+  },
+  {
+   "key": "chinese::chi: sexagenary cycles circular + partner offsets",
+   "kind": "hgb",
+   "auc": 0.5842518530951181
+  },
+  {
+   "key": "vedic_ashtakavarga::upg: sun-derived upagrahas (exact)",
+   "kind": "hgb",
+   "auc": 0.5813130089996292
+  },
+  {
+   "key": "persian_arabic::pa: almuten point score (Ibn Ezra)",
+   "kind": "hgb",
+   "auc": 0.5739784082361278
+  },
+  {
+   "key": "vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)",
+   "kind": "hgb",
+   "auc": 0.5641311636390929
+  },
+  {
+   "key": "tibetan_seasia::tsa: rabjung year animal x element",
+   "kind": "hgb",
+   "auc": 0.5616494135122856
+  },
+  {
+   "key": "east_asian_deep::ead: mongolian zurkhai jaran + tsagaan sar year boundary",
+   "kind": "hgb",
+   "auc": 0.5582667356833632
+  },
+  {
+   "key": "aboriginal_australian::abo: six- and seven-season calendars in country",
+   "kind": "hgb",
+   "auc": 0.5550347692302213
+  },
+  {
+   "key": "persian_arabic::pa: tasyir hits + divisor of the years",
+   "kind": "hgb",
+   "auc": 0.5533701810383999
+  },
+  {
+   "key": "chinese::chi: 24 jieqi solar terms + jianchu day officer",
+   "kind": "hgb",
+   "auc": 0.5475292391743911
+  },
+  {
+   "key": "east_asian_deep::ead: chinese almanac additions \u2014 12 day gods, taiyuan, xiu pairs",
+   "kind": "hgb",
+   "auc": 0.5439449389387482
+  },
+  {
+   "key": "east_asian_deep::ead: sino-viet lunar month, day and leap (3 zones)",
+   "kind": "hgb",
+   "auc": 0.543748699569719
+  },
+  {
+   "key": "vedic_match::vm: nakshatra pair low-rank + kuta vector",
+   "kind": "hgb",
+   "auc": 0.541817268978915
+  },
+  {
+   "key": "tibetan_seasia::thai: rerk mansions + nine classes",
+   "kind": "hgb",
+   "auc": 0.5348839971419933
+  },
+  {
+   "key": "chinese::chi: 28 xiu, classical unequal widths",
+   "kind": "hgb",
+   "auc": 0.5335014460008718
+  },
+  {
+   "key": "vedic_match::vm: ashtakoot 36pt (Lahiri)",
+   "kind": "hgb",
+   "auc": 0.5288898773502109
+  }
+ ]
+}

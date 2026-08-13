@@ -1,0 +1,3962 @@
+[
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 1296,
+  "acc": 0.6638894337787399,
+  "acc_sd": 0.01737265254572302,
+  "auc": 0.7285612287862737,
+  "auc_sd": 0.01870926938590876
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 1296,
+  "acc": 0.6597283397910844,
+  "acc_sd": 0.022075443285281226,
+  "auc": 0.7264505956090621,
+  "auc_sd": 0.019000907246713203
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 262,
+  "acc": 0.6687828281621511,
+  "acc_sd": 0.019055526255605793,
+  "auc": 0.7204776942719453,
+  "auc_sd": 0.0095721784679587
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 262,
+  "acc": 0.6626621262376651,
+  "acc_sd": 0.010693138661259972,
+  "auc": 0.7202704060876928,
+  "auc_sd": 0.012546830652928664
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 1296,
+  "acc": 0.6618776181091435,
+  "acc_sd": 0.020461680080766577,
+  "auc": 0.7180904517610204,
+  "auc_sd": 0.017683643048565928
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 262,
+  "acc": 0.6577448715128282,
+  "acc_sd": 0.013294685675436855,
+  "auc": 0.7151625965251334,
+  "auc_sd": 0.01587033928485696
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 1296,
+  "acc": 0.6529692001327808,
+  "acc_sd": 0.02429758494086014,
+  "auc": 0.7148513254824199,
+  "auc_sd": 0.020704995378286465
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 1296,
+  "acc": 0.6415806192250557,
+  "acc_sd": 0.015898927292291542,
+  "auc": 0.7140767423410617,
+  "auc_sd": 0.017112174678177404
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 1296,
+  "acc": 0.6397565924429792,
+  "acc_sd": 0.016477234730263288,
+  "auc": 0.7136439405473809,
+  "auc_sd": 0.016806726286919732
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 262,
+  "acc": 0.6608554578045138,
+  "acc_sd": 0.013541596763339273,
+  "auc": 0.7121156569507835,
+  "auc_sd": 0.016030197771467743
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 1296,
+  "acc": 0.639415524859118,
+  "acc_sd": 0.013966850239088174,
+  "auc": 0.7118614586471184,
+  "auc_sd": 0.015969725437286853
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 4,
+  "acc": 0.6417586076867359,
+  "acc_sd": 0.019868116332169002,
+  "auc": 0.7095356584207944,
+  "auc_sd": 0.02092728129859984
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 4,
+  "acc": 0.6442969850797541,
+  "acc_sd": 0.020986788936795762,
+  "auc": 0.7093859929663563,
+  "auc_sd": 0.021607643172474343
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 4,
+  "acc": 0.6444844920197413,
+  "acc_sd": 0.019850352781894728,
+  "auc": 0.7092825776615379,
+  "auc_sd": 0.021643980178966554
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 262,
+  "acc": 0.6512712167024888,
+  "acc_sd": 0.014350447149566513,
+  "auc": 0.708947287379495,
+  "auc_sd": 0.015424268418088227
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 280,
+  "acc": 0.6558939732015765,
+  "acc_sd": 0.017712090041439355,
+  "auc": 0.7081465421681697,
+  "auc_sd": 0.01758758243275521
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 262,
+  "acc": 0.6585064865499028,
+  "acc_sd": 0.01183741917247641,
+  "auc": 0.7072667224565876,
+  "auc_sd": 0.01368600048537978
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "inter",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 4,
+  "acc": 0.6428484890916494,
+  "acc_sd": 0.024516957960160016,
+  "auc": 0.7070813341523867,
+  "auc_sd": 0.021676685128498352
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "inter",
+  "model": "LDA",
+  "cols": 4,
+  "acc": 0.6439203812231338,
+  "acc_sd": 0.023438400066931445,
+  "auc": 0.7070213613924572,
+  "auc_sd": 0.02201775989478653
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "inter",
+  "model": "logistic L2 (C=1)",
+  "cols": 4,
+  "acc": 0.6426659909536829,
+  "acc_sd": 0.024451094845438247,
+  "auc": 0.7066940396427548,
+  "auc_sd": 0.021592056802195423
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 280,
+  "acc": 0.6550386920757371,
+  "acc_sd": 0.009966915936578146,
+  "auc": 0.7066240932310283,
+  "auc_sd": 0.01775282887687831
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 4,
+  "acc": 0.6296368965773063,
+  "acc_sd": 0.0225545024706666,
+  "auc": 0.7059223677529501,
+  "auc_sd": 0.018533193899206848
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 1296,
+  "acc": 0.6438218060089689,
+  "acc_sd": 0.013616550839107407,
+  "auc": 0.7055148186191895,
+  "auc_sd": 0.014636384347729622
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 262,
+  "acc": 0.6505559933937617,
+  "acc_sd": 0.015345143809393103,
+  "auc": 0.7047209867342559,
+  "auc_sd": 0.016230349507778165
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 280,
+  "acc": 0.6459389989691153,
+  "acc_sd": 0.02176250126664015,
+  "auc": 0.7039566124133498,
+  "auc_sd": 0.021612853225793163
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "inter",
+  "model": "extra trees",
+  "cols": 4,
+  "acc": 0.6305509629293504,
+  "acc_sd": 0.02557872339783497,
+  "auc": 0.7017888457906123,
+  "auc_sd": 0.01716294377129212
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 1296,
+  "acc": 0.6434041133367243,
+  "acc_sd": 0.017366993231493866,
+  "auc": 0.6996870105590909,
+  "auc_sd": 0.017585400244116246
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 280,
+  "acc": 0.6522781850045466,
+  "acc_sd": 0.01441690192694082,
+  "auc": 0.6988525717154366,
+  "auc_sd": 0.016457585419001764
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 280,
+  "acc": 0.6444908023860126,
+  "acc_sd": 0.021657733185807913,
+  "auc": 0.6984018405378857,
+  "auc_sd": 0.02248964325495584
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 280,
+  "acc": 0.6430464360482684,
+  "acc_sd": 0.018968487463124736,
+  "auc": 0.6979626070875482,
+  "auc_sd": 0.022301729604639702
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 280,
+  "acc": 0.65214809940165,
+  "acc_sd": 0.010065010765350733,
+  "auc": 0.6977200226797927,
+  "auc_sd": 0.013695330767318712
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 96,
+  "acc": 0.6386996348146884,
+  "acc_sd": 0.01257162730718714,
+  "auc": 0.6950893751969831,
+  "auc_sd": 0.010685156922225535
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 262,
+  "acc": 0.6487342937214436,
+  "acc_sd": 0.011742032067990396,
+  "auc": 0.6950304161134878,
+  "auc_sd": 0.009120939961164198
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 272,
+  "acc": 0.6354195956396254,
+  "acc_sd": 0.02044856644102614,
+  "auc": 0.6945565840623137,
+  "auc_sd": 0.01891539568902382
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 72,
+  "acc": 0.6292776770447489,
+  "acc_sd": 0.023276018096428517,
+  "auc": 0.6911746463713866,
+  "auc_sd": 0.01945057904423204
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 72,
+  "acc": 0.6296461133391599,
+  "acc_sd": 0.0199571244626123,
+  "auc": 0.6908915218848071,
+  "auc_sd": 0.018580415692961157
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 280,
+  "acc": 0.641952025645307,
+  "acc_sd": 0.02828999978510046,
+  "auc": 0.6903074502926256,
+  "auc_sd": 0.026385340130155713
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 72,
+  "acc": 0.6365637582687408,
+  "acc_sd": 0.01832604495477833,
+  "auc": 0.6895812483985582,
+  "auc_sd": 0.017640866448993722
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 96,
+  "acc": 0.6376392383279906,
+  "acc_sd": 0.020071181227473468,
+  "auc": 0.6883651170523732,
+  "auc_sd": 0.010508430223522542
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 72,
+  "acc": 0.6320177669683036,
+  "acc_sd": 0.020099590851565916,
+  "auc": 0.6883075619650294,
+  "auc_sd": 0.018752813794091844
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 272,
+  "acc": 0.6294672915371731,
+  "acc_sd": 0.012939198871663792,
+  "auc": 0.6877831458073664,
+  "auc_sd": 0.01702033243067756
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 272,
+  "acc": 0.6267161497052616,
+  "acc_sd": 0.02152358480601248,
+  "auc": 0.6875878144111254,
+  "auc_sd": 0.01894423367029218
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 4,
+  "acc": 0.6169893906581934,
+  "acc_sd": 0.019675945958131224,
+  "auc": 0.6873211876565221,
+  "auc_sd": 0.015026904316716596
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 272,
+  "acc": 0.6309344892795674,
+  "acc_sd": 0.0156257303023639,
+  "auc": 0.6855746988611213,
+  "auc_sd": 0.01459745583370939
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 96,
+  "acc": 0.6305315616226395,
+  "acc_sd": 0.01706109585465505,
+  "auc": 0.6847607718616163,
+  "auc_sd": 0.011537193225357314
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "inter",
+  "model": "random forest",
+  "cols": 4,
+  "acc": 0.6236900314413014,
+  "acc_sd": 0.018765858748033108,
+  "auc": 0.6847150922518603,
+  "auc_sd": 0.013661547557007093
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 262,
+  "acc": 0.6358859901002674,
+  "acc_sd": 0.008390802385647274,
+  "auc": 0.684627775287256,
+  "auc_sd": 0.011422256685273366
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 272,
+  "acc": 0.6258011840265238,
+  "acc_sd": 0.02205981950641601,
+  "auc": 0.6843113597252637,
+  "auc_sd": 0.019152516276845458
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 96,
+  "acc": 0.6379499364381518,
+  "acc_sd": 0.016302140125895738,
+  "auc": 0.684107931747495,
+  "auc_sd": 0.01148214759223756
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 1296,
+  "acc": 0.6316395095622369,
+  "acc_sd": 0.022277333461181756,
+  "auc": 0.6813500870331541,
+  "auc_sd": 0.017664281650380274
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 272,
+  "acc": 0.6331229716362212,
+  "acc_sd": 0.016057611790381305,
+  "auc": 0.6808741312858997,
+  "auc_sd": 0.014250795763427736
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 280,
+  "acc": 0.6332665666455204,
+  "acc_sd": 0.02164567037326585,
+  "auc": 0.6807027798409563,
+  "auc_sd": 0.021568288678401833
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 96,
+  "acc": 0.6313697499035751,
+  "acc_sd": 0.008173842860076776,
+  "auc": 0.679587189871987,
+  "auc_sd": 0.0053802953450559745
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 96,
+  "acc": 0.6371196954148215,
+  "acc_sd": 0.00825532000010247,
+  "auc": 0.6794529646960649,
+  "auc_sd": 0.010357240219931342
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 272,
+  "acc": 0.6301919803468723,
+  "acc_sd": 0.014017571949051908,
+  "auc": 0.6792981417332062,
+  "auc_sd": 0.01813715001655939
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 96,
+  "acc": 0.6298026349740868,
+  "acc_sd": 0.015658575773427996,
+  "auc": 0.6790529085203441,
+  "auc_sd": 0.010438583684776046
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "inter",
+  "model": "hist gradient boosting",
+  "cols": 4,
+  "acc": 0.6219016807329034,
+  "acc_sd": 0.00999528812021432,
+  "auc": 0.6785287567999136,
+  "auc_sd": 0.010463333697066807
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 262,
+  "acc": 0.6344209666351129,
+  "acc_sd": 0.00734397214029527,
+  "auc": 0.6784774741580772,
+  "auc_sd": 0.014860448014183665
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 72,
+  "acc": 0.6279954271124812,
+  "acc_sd": 0.022181924025601544,
+  "auc": 0.6770496156755473,
+  "auc_sd": 0.021749675488219253
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 96,
+  "acc": 0.631455647627361,
+  "acc_sd": 0.014578417633269935,
+  "auc": 0.6768695733814255,
+  "auc_sd": 0.012090083269818886
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 1296,
+  "acc": 0.629994075613894,
+  "acc_sd": 0.02011852133492819,
+  "auc": 0.6755185336596267,
+  "auc_sd": 0.017460427701077173
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 72,
+  "acc": 0.6187490545900944,
+  "acc_sd": 0.01821989009731954,
+  "auc": 0.6740601866733932,
+  "auc_sd": 0.014556685362200497
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 72,
+  "acc": 0.6244079958734127,
+  "acc_sd": 0.017656267939031436,
+  "auc": 0.6734058568290744,
+  "auc_sd": 0.015477804684753642
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 1296,
+  "acc": 0.618366740351551,
+  "acc_sd": 0.019921863074247124,
+  "auc": 0.6733831654004532,
+  "auc_sd": 0.019348707797115873
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 1296,
+  "acc": 0.6196199905859302,
+  "acc_sd": 0.020964834860594594,
+  "auc": 0.6729165624242444,
+  "auc_sd": 0.019199510918037645
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 1296,
+  "acc": 0.6198011492418859,
+  "acc_sd": 0.021038652364767988,
+  "auc": 0.6728910097412667,
+  "auc_sd": 0.019261441230591675
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 262,
+  "acc": 0.6237717313183428,
+  "acc_sd": 0.010441802862398533,
+  "auc": 0.6724707795867264,
+  "auc_sd": 0.013124373619085538
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 96,
+  "acc": 0.624778153079367,
+  "acc_sd": 0.016672798677587662,
+  "auc": 0.6724263884573963,
+  "auc_sd": 0.015903959947150426
+ },
+ {
+  "key": "mesoamerican::meso: distance numbers (LC intervals)",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 4,
+  "acc": 0.6102829031604688,
+  "acc_sd": 0.022072919593068344,
+  "auc": 0.672321833708308,
+  "auc_sd": 0.013083208948928475
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 124,
+  "acc": 0.6299076857498953,
+  "acc_sd": 0.006126899077373616,
+  "auc": 0.6722430016345047,
+  "auc_sd": 0.0137666793658763
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 72,
+  "acc": 0.6231251361976208,
+  "acc_sd": 0.016420637824586824,
+  "auc": 0.6708308630514935,
+  "auc_sd": 0.019371639405072957
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 272,
+  "acc": 0.6186967847252477,
+  "acc_sd": 0.014375315093029022,
+  "auc": 0.6699320211185308,
+  "auc_sd": 0.013443834962293741
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 124,
+  "acc": 0.6286386695895719,
+  "acc_sd": 0.011279537852769294,
+  "auc": 0.6682038318743677,
+  "auc_sd": 0.0171439197310885
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 124,
+  "acc": 0.6286397266770565,
+  "acc_sd": 0.010516233545106677,
+  "auc": 0.6680925376039679,
+  "auc_sd": 0.017046299966593563
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 280,
+  "acc": 0.6207646524904635,
+  "acc_sd": 0.019001763481287716,
+  "auc": 0.6678680246774786,
+  "auc_sd": 0.028319716762025864
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 280,
+  "acc": 0.61641480538602,
+  "acc_sd": 0.023168636050071304,
+  "auc": 0.6674252612871756,
+  "auc_sd": 0.027546035452358744
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 72,
+  "acc": 0.6225881262572975,
+  "acc_sd": 0.02186601842096797,
+  "auc": 0.6671584804250164,
+  "auc_sd": 0.016105436228308144
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 180,
+  "acc": 0.6240835066123558,
+  "acc_sd": 0.016194891053235332,
+  "auc": 0.6667938198822569,
+  "auc_sd": 0.01682420901817581
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 180,
+  "acc": 0.6255228731683226,
+  "acc_sd": 0.011027401026260049,
+  "auc": 0.6658929167018481,
+  "auc_sd": 0.01526258993460845
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 1296,
+  "acc": 0.6148424370109092,
+  "acc_sd": 0.01419723875632879,
+  "auc": 0.6658031758911096,
+  "auc_sd": 0.012468373329768724
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 280,
+  "acc": 0.6180512408959979,
+  "acc_sd": 0.02330001986436343,
+  "auc": 0.6658026987442569,
+  "auc_sd": 0.028473590150603897
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 180,
+  "acc": 0.6242560012153533,
+  "acc_sd": 0.011613477013950135,
+  "auc": 0.6653793620380246,
+  "auc_sd": 0.015718783920749508
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 185,
+  "acc": 0.6390242980390022,
+  "acc_sd": 0.018027030230194637,
+  "auc": 0.6651043703410582,
+  "auc_sd": 0.02256320426685403
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 72,
+  "acc": 0.6193588907893182,
+  "acc_sd": 0.018012255622202183,
+  "auc": 0.6638002193616844,
+  "auc_sd": 0.016308216462911782
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 180,
+  "acc": 0.6219063555581267,
+  "acc_sd": 0.011754355487272918,
+  "auc": 0.6628419043362583,
+  "auc_sd": 0.015185211845617708
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 185,
+  "acc": 0.6402820420719448,
+  "acc_sd": 0.016612571526748596,
+  "auc": 0.662160946880392,
+  "auc_sd": 0.02212744707191567
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 262,
+  "acc": 0.6231588526879219,
+  "acc_sd": 0.014872510875704795,
+  "auc": 0.6617514526702394,
+  "auc_sd": 0.01968585617101623
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 546,
+  "acc": 0.6429856680093378,
+  "acc_sd": 0.01107518009490337,
+  "auc": 0.6615436513451993,
+  "auc_sd": 0.017388701709543947
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 17,
+  "acc": 0.6121304773889235,
+  "acc_sd": 0.016495727927278995,
+  "auc": 0.6614274210517923,
+  "auc_sd": 0.025099487536664227
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 17,
+  "acc": 0.6084861770603223,
+  "acc_sd": 0.017138880470229295,
+  "auc": 0.6614123877368537,
+  "auc_sd": 0.024688399647826795
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 17,
+  "acc": 0.6108599344416965,
+  "acc_sd": 0.01729065025890828,
+  "auc": 0.6613405336128021,
+  "auc_sd": 0.02512309859868431
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 17,
+  "acc": 0.6094129998367377,
+  "acc_sd": 0.01727700951265253,
+  "auc": 0.6610068269375577,
+  "auc_sd": 0.024991781221010898
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 17,
+  "acc": 0.6094129998367377,
+  "acc_sd": 0.01727700951265253,
+  "auc": 0.6610068269375577,
+  "auc_sd": 0.024991781221010898
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 17,
+  "acc": 0.6112220640539019,
+  "acc_sd": 0.015457108773433145,
+  "auc": 0.6609160053431955,
+  "auc_sd": 0.02496155871005562
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 17,
+  "acc": 0.6112220640539019,
+  "acc_sd": 0.015457108773433145,
+  "auc": 0.6609160053431955,
+  "auc_sd": 0.02496155871005562
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "inter",
+  "model": "LDA",
+  "cols": 17,
+  "acc": 0.6101207447403019,
+  "acc_sd": 0.016743207345178587,
+  "auc": 0.6600082087543109,
+  "auc_sd": 0.0267059960408128
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 180,
+  "acc": 0.6224681548335645,
+  "acc_sd": 0.010478205159433589,
+  "auc": 0.6599271433855793,
+  "auc_sd": 0.01815784142565593
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 17,
+  "acc": 0.6092303898642674,
+  "acc_sd": 0.016506441375702865,
+  "auc": 0.6598756432733983,
+  "auc_sd": 0.025499730037947525
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 17,
+  "acc": 0.6092303898642674,
+  "acc_sd": 0.016506441375702865,
+  "auc": 0.6598756432733983,
+  "auc_sd": 0.025499730037947525
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 180,
+  "acc": 0.6264460437456384,
+  "acc_sd": 0.01283437301541017,
+  "auc": 0.6598550007041787,
+  "auc_sd": 0.02057347681879394
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "inter",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 17,
+  "acc": 0.6084699481457573,
+  "acc_sd": 0.01900805555723693,
+  "auc": 0.659580939735425,
+  "auc_sd": 0.026506935770056767
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 72,
+  "acc": 0.6162381052185837,
+  "acc_sd": 0.017127765452919413,
+  "auc": 0.6585514515752856,
+  "auc_sd": 0.012332461456838141
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 160,
+  "acc": 0.6077713460573231,
+  "acc_sd": 0.014056122013216014,
+  "auc": 0.6577950152278035,
+  "auc_sd": 0.025158719468172157
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 546,
+  "acc": 0.6346466493224707,
+  "acc_sd": 0.010882646205115497,
+  "auc": 0.6577390684624431,
+  "auc_sd": 0.011019678451047557
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 216,
+  "acc": 0.6254169913751009,
+  "acc_sd": 0.012259682036839113,
+  "auc": 0.6572614930192825,
+  "auc_sd": 0.01794222058431673
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 216,
+  "acc": 0.6186964575142229,
+  "acc_sd": 0.011223692794423945,
+  "auc": 0.6572495950861974,
+  "auc_sd": 0.01558043783446393
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 546,
+  "acc": 0.6504218642591436,
+  "acc_sd": 0.013850837620067516,
+  "auc": 0.6571560875752979,
+  "auc_sd": 0.016228090822411816
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 124,
+  "acc": 0.6219677049877197,
+  "acc_sd": 0.019880559134713066,
+  "auc": 0.657043407501776,
+  "auc_sd": 0.010353177849968809
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 160,
+  "acc": 0.607768456580575,
+  "acc_sd": 0.014369592830313943,
+  "auc": 0.6568321441727186,
+  "auc_sd": 0.02502648206390513
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 262,
+  "acc": 0.6143602441973247,
+  "acc_sd": 0.014183442166294071,
+  "auc": 0.6568045300151646,
+  "auc_sd": 0.015481311171757215
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 216,
+  "acc": 0.6192737107635298,
+  "acc_sd": 0.013627299560308021,
+  "auc": 0.6565898678384434,
+  "auc_sd": 0.015891639239639436
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 262,
+  "acc": 0.6119473757506562,
+  "acc_sd": 0.015356131457587631,
+  "auc": 0.6560798174078979,
+  "auc_sd": 0.01828335238310491
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 160,
+  "acc": 0.6079547598103896,
+  "acc_sd": 0.015184779962645879,
+  "auc": 0.6559281352055681,
+  "auc_sd": 0.02463465810655186
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 216,
+  "acc": 0.6296201407319302,
+  "acc_sd": 0.016085305052452675,
+  "auc": 0.6558952671978808,
+  "auc_sd": 0.019361254148728864
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "inter",
+  "model": "logistic L2 (C=1)",
+  "cols": 17,
+  "acc": 0.6095488343174675,
+  "acc_sd": 0.019461910376227493,
+  "auc": 0.6547051448238521,
+  "auc_sd": 0.025350674981819758
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 546,
+  "acc": 0.6311821532385626,
+  "acc_sd": 0.013144844800590253,
+  "auc": 0.6543017233389405,
+  "auc_sd": 0.01356003160286829
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 72,
+  "acc": 0.6162906488915775,
+  "acc_sd": 0.016438599244702895,
+  "auc": 0.6538343626403936,
+  "auc_sd": 0.015616754690573132
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 272,
+  "acc": 0.6090152701179247,
+  "acc_sd": 0.012711184496821954,
+  "auc": 0.6538307989432733,
+  "auc_sd": 0.020949156183678506
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 280,
+  "acc": 0.6135347011997561,
+  "acc_sd": 0.02199429574961587,
+  "auc": 0.6537007645400899,
+  "auc_sd": 0.017830452030404637
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 280,
+  "acc": 0.6157237910587494,
+  "acc_sd": 0.022664485870483295,
+  "auc": 0.6536590539025028,
+  "auc_sd": 0.01887770705039731
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 124,
+  "acc": 0.6178059320251524,
+  "acc_sd": 0.015437144799305833,
+  "auc": 0.6535552972210613,
+  "auc_sd": 0.010366156812965589
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 72,
+  "acc": 0.610742545603969,
+  "acc_sd": 0.015426197333673564,
+  "auc": 0.653248849411227,
+  "auc_sd": 0.016808652966359135
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 124,
+  "acc": 0.6341222705411558,
+  "acc_sd": 0.016633820671042927,
+  "auc": 0.6530565567445874,
+  "auc_sd": 0.015103307471792504
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 124,
+  "acc": 0.6339369197284924,
+  "acc_sd": 0.015770314440097678,
+  "auc": 0.6524568212408076,
+  "auc_sd": 0.015362261381925164
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 180,
+  "acc": 0.6208527064151873,
+  "acc_sd": 0.007499788464274649,
+  "auc": 0.6520234880548277,
+  "auc_sd": 0.012057047267608043
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 159,
+  "acc": 0.6282823477719053,
+  "acc_sd": 0.012142180677555677,
+  "auc": 0.6511598342417828,
+  "auc_sd": 0.018482866300480395
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 124,
+  "acc": 0.6299372601393898,
+  "acc_sd": 0.015059400066600056,
+  "auc": 0.651050750477533,
+  "auc_sd": 0.01597797206438087
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 185,
+  "acc": 0.6099646040372486,
+  "acc_sd": 0.010897067344001171,
+  "auc": 0.6508619621661706,
+  "auc_sd": 0.014340810444677452
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 185,
+  "acc": 0.6337565116718014,
+  "acc_sd": 0.015642432311812022,
+  "auc": 0.6500278901617746,
+  "auc_sd": 0.014870206946370772
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 438,
+  "acc": 0.6079227848573847,
+  "acc_sd": 0.015758871298894122,
+  "auc": 0.6498026517296408,
+  "auc_sd": 0.018159341715699728
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 438,
+  "acc": 0.6106559067579549,
+  "acc_sd": 0.012424739167061587,
+  "auc": 0.6492503856164293,
+  "auc_sd": 0.016199414095546295
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 180,
+  "acc": 0.6182864286078746,
+  "acc_sd": 0.01635028170692831,
+  "auc": 0.6489526212548345,
+  "auc_sd": 0.01833328401055568
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 62,
+  "acc": 0.6026604078913609,
+  "acc_sd": 0.009955946456290783,
+  "auc": 0.6488701988932885,
+  "auc_sd": 0.017968607379175768
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 44,
+  "acc": 0.6021447023473404,
+  "acc_sd": 0.0141831755231887,
+  "auc": 0.6487665979449453,
+  "auc_sd": 0.020180795109169654
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 44,
+  "acc": 0.6021447023473404,
+  "acc_sd": 0.0141831755231887,
+  "auc": 0.6487665979449453,
+  "auc_sd": 0.020180795109169654
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 62,
+  "acc": 0.5993883223931482,
+  "acc_sd": 0.012786473590745449,
+  "auc": 0.6485714111862884,
+  "auc_sd": 0.01732933532650027
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 62,
+  "acc": 0.604503341978496,
+  "acc_sd": 0.008932765520187715,
+  "auc": 0.6484422504333948,
+  "auc_sd": 0.018504675124619372
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 91,
+  "acc": 0.6079082442121131,
+  "acc_sd": 0.022900930172385304,
+  "auc": 0.6480458913939853,
+  "auc_sd": 0.01993724191146639
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 180,
+  "acc": 0.6121125859109819,
+  "acc_sd": 0.01272040216704999,
+  "auc": 0.6477803955957375,
+  "auc_sd": 0.01449335161825224
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 72,
+  "acc": 0.5984961034934553,
+  "acc_sd": 0.0127423112904148,
+  "auc": 0.6477254071005997,
+  "auc_sd": 0.013518504585495524
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 438,
+  "acc": 0.6162847952889773,
+  "acc_sd": 0.010059593079127079,
+  "auc": 0.6476259491173001,
+  "auc_sd": 0.014497981184676658
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 44,
+  "acc": 0.6019345172712862,
+  "acc_sd": 0.014887150962977795,
+  "auc": 0.647495664933,
+  "auc_sd": 0.01898382534974889
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 91,
+  "acc": 0.6023091538472884,
+  "acc_sd": 0.018493669617398133,
+  "auc": 0.6474785527571826,
+  "auc_sd": 0.020680815168247237
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 62,
+  "acc": 0.6025178954210948,
+  "acc_sd": 0.008680784170212223,
+  "auc": 0.6473482213165054,
+  "auc_sd": 0.018138570002432446
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 91,
+  "acc": 0.6108281036394557,
+  "acc_sd": 0.01740149470550687,
+  "auc": 0.6472659744508387,
+  "auc_sd": 0.01867458199608904
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 62,
+  "acc": 0.604864776989024,
+  "acc_sd": 0.007839447871599977,
+  "auc": 0.647257366906643,
+  "auc_sd": 0.017924083957670145
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 160,
+  "acc": 0.5967047841204081,
+  "acc_sd": 0.010169070644473905,
+  "auc": 0.6471859946385474,
+  "auc_sd": 0.021485226773323134
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 44,
+  "acc": 0.6017590510807054,
+  "acc_sd": 0.015956653054390993,
+  "auc": 0.6471435301747162,
+  "auc_sd": 0.018696686090371485
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 272,
+  "acc": 0.6032365828524198,
+  "acc_sd": 0.015415324112767604,
+  "auc": 0.6470967648803267,
+  "auc_sd": 0.01790963708641751
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 1296,
+  "acc": 0.612764884394911,
+  "acc_sd": 0.022080288408578213,
+  "auc": 0.6469568057866646,
+  "auc_sd": 0.019147577493691163
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 44,
+  "acc": 0.6021341808759809,
+  "acc_sd": 0.018466385964933836,
+  "auc": 0.6468973510290803,
+  "auc_sd": 0.024262982761761986
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 44,
+  "acc": 0.6021341808759809,
+  "acc_sd": 0.018466385964933836,
+  "auc": 0.6468973510290803,
+  "auc_sd": 0.024262982761761986
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 272,
+  "acc": 0.5904080323459575,
+  "acc_sd": 0.019557117238970866,
+  "auc": 0.6467786607321965,
+  "auc_sd": 0.015019927091107034
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 180,
+  "acc": 0.6068965735493297,
+  "acc_sd": 0.013074036819351518,
+  "auc": 0.6467123019590304,
+  "auc_sd": 0.017899062705494483
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 272,
+  "acc": 0.606079147032426,
+  "acc_sd": 0.022271727856149327,
+  "auc": 0.6464881972781631,
+  "auc_sd": 0.024754257137829874
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 44,
+  "acc": 0.6019648138913074,
+  "acc_sd": 0.02034636395337751,
+  "auc": 0.6461540033198445,
+  "auc_sd": 0.02430169851034333
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 44,
+  "acc": 0.6019648138913074,
+  "acc_sd": 0.02034636395337751,
+  "auc": 0.6461540033198445,
+  "auc_sd": 0.02430169851034333
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 280,
+  "acc": 0.5997103961474536,
+  "acc_sd": 0.01933417533619006,
+  "auc": 0.6461298962975723,
+  "auc_sd": 0.018091892197716224
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 62,
+  "acc": 0.602333448499506,
+  "acc_sd": 0.009700024319876594,
+  "auc": 0.6460694750305216,
+  "auc_sd": 0.017453151962925784
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 62,
+  "acc": 0.6017873193395606,
+  "acc_sd": 0.009725298109729141,
+  "auc": 0.6460546441116727,
+  "auc_sd": 0.017356650684635284
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 44,
+  "acc": 0.603399380780965,
+  "acc_sd": 0.016775479916721615,
+  "auc": 0.6459456059193697,
+  "auc_sd": 0.02187491397680847
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 44,
+  "acc": 0.603399380780965,
+  "acc_sd": 0.016775479916721615,
+  "auc": 0.6459456059193697,
+  "auc_sd": 0.02187491397680847
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 185,
+  "acc": 0.6326926412175627,
+  "acc_sd": 0.018590078366002686,
+  "auc": 0.6458965893643922,
+  "auc_sd": 0.019797137669868552
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 44,
+  "acc": 0.6012294529877156,
+  "acc_sd": 0.016566258255609357,
+  "auc": 0.6458622218127396,
+  "auc_sd": 0.0170159446226516
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 180,
+  "acc": 0.6097730213529442,
+  "acc_sd": 0.013967138136581158,
+  "auc": 0.6457805501922458,
+  "auc_sd": 0.017266968327612563
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 272,
+  "acc": 0.6003457157627602,
+  "acc_sd": 0.017633304034059754,
+  "auc": 0.6457561004078203,
+  "auc_sd": 0.01592570338997211
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 72,
+  "acc": 0.6101345087515424,
+  "acc_sd": 0.01512529460857209,
+  "auc": 0.6457232171261696,
+  "auc_sd": 0.015246293338551882
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 124,
+  "acc": 0.6143426951234208,
+  "acc_sd": 0.009786946081169262,
+  "auc": 0.6456656378867953,
+  "auc_sd": 0.009356587034986917
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 62,
+  "acc": 0.5970623687366897,
+  "acc_sd": 0.013245493225402707,
+  "auc": 0.645453017272718,
+  "auc_sd": 0.017246429905651516
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 280,
+  "acc": 0.5989905176421092,
+  "acc_sd": 0.0185569863063899,
+  "auc": 0.6453555285858309,
+  "auc_sd": 0.01795746955656241
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 280,
+  "acc": 0.5988080481200171,
+  "acc_sd": 0.01839636483566149,
+  "auc": 0.6453269591778077,
+  "auc_sd": 0.01801393000760438
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 143,
+  "acc": 0.6275642803957585,
+  "acc_sd": 0.008771608879315534,
+  "auc": 0.644839155806018,
+  "auc_sd": 0.013546926580542603
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 143,
+  "acc": 0.6262823206131135,
+  "acc_sd": 0.0076365288431864495,
+  "auc": 0.6447434651734917,
+  "auc_sd": 0.013987561142511947
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 180,
+  "acc": 0.6112131154120299,
+  "acc_sd": 0.017835838114767355,
+  "auc": 0.644658127140461,
+  "auc_sd": 0.015164448440864137
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 272,
+  "acc": 0.5921822928261972,
+  "acc_sd": 0.016579067899307912,
+  "auc": 0.6446317071769778,
+  "auc_sd": 0.014930482883107155
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 185,
+  "acc": 0.6183086624336077,
+  "acc_sd": 0.020458648634769483,
+  "auc": 0.6442935718138793,
+  "auc_sd": 0.021474915716211684
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 438,
+  "acc": 0.6197155842165939,
+  "acc_sd": 0.012031042013851257,
+  "auc": 0.6442596920059049,
+  "auc_sd": 0.015450570967311474
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 91,
+  "acc": 0.6066754278415505,
+  "acc_sd": 0.015664735499316768,
+  "auc": 0.6437397110053203,
+  "auc_sd": 0.019144915686250086
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 185,
+  "acc": 0.6232767399081199,
+  "acc_sd": 0.020378010435080193,
+  "auc": 0.643282715707486,
+  "auc_sd": 0.02335878682282015
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 62,
+  "acc": 0.605029452258227,
+  "acc_sd": 0.021452635451241073,
+  "auc": 0.6429580542478064,
+  "auc_sd": 0.020300121425584162
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 185,
+  "acc": 0.6160135620908113,
+  "acc_sd": 0.019858423475663578,
+  "auc": 0.6426341203312509,
+  "auc_sd": 0.02213785427839441
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 262,
+  "acc": 0.6011126400189354,
+  "acc_sd": 0.017592255296416302,
+  "auc": 0.6426208207084587,
+  "auc_sd": 0.016424093874424405
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 62,
+  "acc": 0.5985274534664125,
+  "acc_sd": 0.008881261014561923,
+  "auc": 0.6425617218931376,
+  "auc_sd": 0.017344121802332704
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 44,
+  "acc": 0.5988624026160881,
+  "acc_sd": 0.011601688650078202,
+  "auc": 0.6421106996040825,
+  "auc_sd": 0.020294302238454052
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 44,
+  "acc": 0.6002775493302589,
+  "acc_sd": 0.023575550428649207,
+  "auc": 0.641853740612826,
+  "auc_sd": 0.026236648817619723
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 44,
+  "acc": 0.6002775493302589,
+  "acc_sd": 0.023575550428649207,
+  "auc": 0.641853740612826,
+  "auc_sd": 0.026236648817619723
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 44,
+  "acc": 0.6003151974670883,
+  "acc_sd": 0.010537307683841831,
+  "auc": 0.641731789609547,
+  "auc_sd": 0.0199708320519436
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 91,
+  "acc": 0.6010459400146535,
+  "acc_sd": 0.01577273757683958,
+  "auc": 0.641718628452343,
+  "auc_sd": 0.021742940892819165
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 160,
+  "acc": 0.5981456388700384,
+  "acc_sd": 0.013089530174151003,
+  "auc": 0.641131673253756,
+  "auc_sd": 0.02127540339938565
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 44,
+  "acc": 0.5986917021895697,
+  "acc_sd": 0.01404963645342417,
+  "auc": 0.6410416342987515,
+  "auc_sd": 0.01786391402503203
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 180,
+  "acc": 0.6020088296828511,
+  "acc_sd": 0.017278285938965153,
+  "auc": 0.640849944874179,
+  "auc_sd": 0.022341298147848177
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 44,
+  "acc": 0.5966601695788005,
+  "acc_sd": 0.021483328076403442,
+  "auc": 0.6402737142260979,
+  "auc_sd": 0.02707653292826596
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 44,
+  "acc": 0.5966601695788005,
+  "acc_sd": 0.021483328076403442,
+  "auc": 0.6402737142260979,
+  "auc_sd": 0.02707653292826596
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 124,
+  "acc": 0.6060286839665313,
+  "acc_sd": 0.012794211151733625,
+  "auc": 0.6399875412444018,
+  "auc_sd": 0.00841895275694694
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 180,
+  "acc": 0.5998197977447471,
+  "acc_sd": 0.015886223336968545,
+  "auc": 0.6396241754005016,
+  "auc_sd": 0.02246916761206493
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 180,
+  "acc": 0.5996428114122472,
+  "acc_sd": 0.015744927529083824,
+  "auc": 0.6394120313809113,
+  "auc_sd": 0.02258048365540603
+ },
+ {
+  "key": "lunar_calendrical::lun: saros/inex/metonic/callippic + computus",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 280,
+  "acc": 0.6074569461283494,
+  "acc_sd": 0.018290079193355117,
+  "auc": 0.6394115532297603,
+  "auc_sd": 0.013437878969450609
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 262,
+  "acc": 0.6027616312005155,
+  "acc_sd": 0.016946034141312082,
+  "auc": 0.6394021789114737,
+  "auc_sd": 0.016771456164050277
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 262,
+  "acc": 0.6029404580960805,
+  "acc_sd": 0.016796018373030557,
+  "auc": 0.6393019608252577,
+  "auc_sd": 0.016711187955735212
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 124,
+  "acc": 0.6087196208948449,
+  "acc_sd": 0.006482406290031147,
+  "auc": 0.6391428075146406,
+  "auc_sd": 0.008477358977389271
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 124,
+  "acc": 0.6079916094442043,
+  "acc_sd": 0.009503801100718497,
+  "auc": 0.6391263840066994,
+  "auc_sd": 0.009563639153436802
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 124,
+  "acc": 0.6083305504351535,
+  "acc_sd": 0.011873896625111442,
+  "auc": 0.6390066127152598,
+  "auc_sd": 0.009545656270868624
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 143,
+  "acc": 0.6009212659492291,
+  "acc_sd": 0.007888369695847459,
+  "auc": 0.6388150244772086,
+  "auc_sd": 0.010929085576613875
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 159,
+  "acc": 0.6163674553726619,
+  "acc_sd": 0.01762176081194158,
+  "auc": 0.6385140065427669,
+  "auc_sd": 0.02169118891240732
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 143,
+  "acc": 0.6151848522175505,
+  "acc_sd": 0.009050547544744252,
+  "auc": 0.6384443428027687,
+  "auc_sd": 0.012945129769583716
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 72,
+  "acc": 0.611562670718172,
+  "acc_sd": 0.017462837366441,
+  "auc": 0.6383863401288964,
+  "auc_sd": 0.014462497003592114
+ },
+ {
+  "key": "babylonian_egyptian::bab+egy: schematic 360-day & Egyptian civil calendars",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 262,
+  "acc": 0.6014378278583068,
+  "acc_sd": 0.015058856970866364,
+  "auc": 0.6383443007870113,
+  "auc_sd": 0.01819061800934732
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 160,
+  "acc": 0.6014063834995096,
+  "acc_sd": 0.015037205538306656,
+  "auc": 0.6378072911309699,
+  "auc_sd": 0.018405187405173832
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 143,
+  "acc": 0.6003717325261774,
+  "acc_sd": 0.008794045010314576,
+  "auc": 0.6377642275508911,
+  "auc_sd": 0.01069502270568183
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 156,
+  "acc": 0.6119509844535227,
+  "acc_sd": 0.005696606012828708,
+  "auc": 0.6377377103452857,
+  "auc_sd": 0.009333383102066798
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 438,
+  "acc": 0.6106283778405761,
+  "acc_sd": 0.015689135498201074,
+  "auc": 0.6374216586054601,
+  "auc_sd": 0.014476869036932889
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 156,
+  "acc": 0.6127077286331892,
+  "acc_sd": 0.014123117546338158,
+  "auc": 0.6373878763767638,
+  "auc_sd": 0.010410108435001456
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 62,
+  "acc": 0.6019244573333816,
+  "acc_sd": 0.017911429220343764,
+  "auc": 0.6373517548398411,
+  "auc_sd": 0.01801856014319922
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 72,
+  "acc": 0.6106697212183736,
+  "acc_sd": 0.015438812739433332,
+  "auc": 0.6373389108335449,
+  "auc_sd": 0.014131817439881265
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 185,
+  "acc": 0.6147385624446331,
+  "acc_sd": 0.01802925374208831,
+  "auc": 0.6373168481941907,
+  "auc_sd": 0.023635878754564136
+ },
+ {
+  "key": "mesoamerican::meso: long count components + katun wheel",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 72,
+  "acc": 0.6110299588386191,
+  "acc_sd": 0.015339537711695873,
+  "auc": 0.6372823319402613,
+  "auc_sd": 0.014176458846600298
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 143,
+  "acc": 0.6126067317682993,
+  "acc_sd": 0.015279101130039965,
+  "auc": 0.6370172688636274,
+  "auc_sd": 0.01293590355797177
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 156,
+  "acc": 0.6121526028928376,
+  "acc_sd": 0.014036823987452048,
+  "auc": 0.636826664309437,
+  "auc_sd": 0.01832504084848417
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 156,
+  "acc": 0.6136006403592111,
+  "acc_sd": 0.012930631863880939,
+  "auc": 0.6365675180165029,
+  "auc_sd": 0.018003401364483872
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 124,
+  "acc": 0.602148488156399,
+  "acc_sd": 0.00836921518940724,
+  "auc": 0.6364697038721595,
+  "auc_sd": 0.009697248006455767
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 143,
+  "acc": 0.6023778413139355,
+  "acc_sd": 0.010192528038214337,
+  "auc": 0.6362011476665299,
+  "auc_sd": 0.011330916072317728
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 62,
+  "acc": 0.5962008940248168,
+  "acc_sd": 0.013031564958009684,
+  "auc": 0.6360594142426075,
+  "auc_sd": 0.019971886638753246
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 124,
+  "acc": 0.6201625100490729,
+  "acc_sd": 0.014306496792461761,
+  "auc": 0.6359740188272486,
+  "auc_sd": 0.015099224686185145
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 62,
+  "acc": 0.5960084667724214,
+  "acc_sd": 0.01566783352630276,
+  "auc": 0.6357118003991926,
+  "auc_sd": 0.020474261167506842
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 180,
+  "acc": 0.6025703596859849,
+  "acc_sd": 0.01956899425883712,
+  "auc": 0.6356059749679112,
+  "auc_sd": 0.021720682021472187
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 124,
+  "acc": 0.6190738943557094,
+  "acc_sd": 0.013811585038139309,
+  "auc": 0.6353874964189363,
+  "auc_sd": 0.015671472779882522
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 156,
+  "acc": 0.6095898725660938,
+  "acc_sd": 0.011089864787702665,
+  "auc": 0.6353282225562278,
+  "auc_sd": 0.008889995648913449
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 156,
+  "acc": 0.611966719191013,
+  "acc_sd": 0.013776511724455227,
+  "auc": 0.6353155476182406,
+  "auc_sd": 0.01779991169126279
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 1296,
+  "acc": 0.5919077448892405,
+  "acc_sd": 0.019021026015549638,
+  "auc": 0.6351490992356924,
+  "auc_sd": 0.016212714497837618
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 185,
+  "acc": 0.6156306066845145,
+  "acc_sd": 0.020056685459475067,
+  "auc": 0.6350333742188845,
+  "auc_sd": 0.022097703117752564
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 143,
+  "acc": 0.6146438013239663,
+  "acc_sd": 0.010684977829851693,
+  "auc": 0.6346762179549037,
+  "auc_sd": 0.013805737351245045
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 91,
+  "acc": 0.5981636543158667,
+  "acc_sd": 0.017950435711271185,
+  "auc": 0.6345617804123723,
+  "auc_sd": 0.018916894288813563
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 143,
+  "acc": 0.6188269983722758,
+  "acc_sd": 0.0048159510817324695,
+  "auc": 0.634347748872341,
+  "auc_sd": 0.015556787662223093
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 185,
+  "acc": 0.6107365966325538,
+  "acc_sd": 0.019002421543146988,
+  "auc": 0.6342540462569133,
+  "auc_sd": 0.02458390718297692
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 438,
+  "acc": 0.6075506063151028,
+  "acc_sd": 0.014292653127097195,
+  "auc": 0.6342304518932533,
+  "auc_sd": 0.016097849194754616
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 156,
+  "acc": 0.6101675448039023,
+  "acc_sd": 0.018451001051456268,
+  "auc": 0.6340403082096746,
+  "auc_sd": 0.018347681066546405
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 91,
+  "acc": 0.5927404062337329,
+  "acc_sd": 0.01954322446273225,
+  "auc": 0.6335816754896634,
+  "auc_sd": 0.02369144105405388
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 160,
+  "acc": 0.5981169338372654,
+  "acc_sd": 0.015224961926251297,
+  "auc": 0.6331146597801526,
+  "auc_sd": 0.02176812708014806
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 180,
+  "acc": 0.5992915656862501,
+  "acc_sd": 0.019790710615358486,
+  "auc": 0.6330029810713969,
+  "auc_sd": 0.019624722251728594
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 156,
+  "acc": 0.6094336770292628,
+  "acc_sd": 0.018743061820279117,
+  "auc": 0.632998317537744,
+  "auc_sd": 0.01826685051766265
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 185,
+  "acc": 0.6083578089377345,
+  "acc_sd": 0.02147709116214538,
+  "auc": 0.6329262748115654,
+  "auc_sd": 0.0237898070368331
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 91,
+  "acc": 0.5898165608557648,
+  "acc_sd": 0.021421588979601527,
+  "auc": 0.6324483888020107,
+  "auc_sd": 0.021429789583306273
+ },
+ {
+  "key": "lunar_calendrical::lun: 45 pair synodic phases, wedding",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 180,
+  "acc": 0.598931995841144,
+  "acc_sd": 0.0205213950025461,
+  "auc": 0.6324073181692529,
+  "auc_sd": 0.020166472359613736
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 156,
+  "acc": 0.6090743191535078,
+  "acc_sd": 0.0171224330437774,
+  "auc": 0.6323606777435641,
+  "auc_sd": 0.017919204792533547
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 91,
+  "acc": 0.5918336946736571,
+  "acc_sd": 0.016869131782384302,
+  "auc": 0.6322320120486495,
+  "auc_sd": 0.01574675997757171
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 143,
+  "acc": 0.6030795221564516,
+  "acc_sd": 0.011262850627104798,
+  "auc": 0.6321387007085277,
+  "auc_sd": 0.016221941866822413
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 156,
+  "acc": 0.6116037671771333,
+  "acc_sd": 0.008468832555203051,
+  "auc": 0.6321304758425967,
+  "auc_sd": 0.01205722845519328
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 62,
+  "acc": 0.5854931474280011,
+  "acc_sd": 0.012662373507099364,
+  "auc": 0.6320891276342532,
+  "auc_sd": 0.01866715376106543
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 17,
+  "acc": 0.5968849582453137,
+  "acc_sd": 0.013843969020101557,
+  "auc": 0.6318083172453253,
+  "auc_sd": 0.016630890263097
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 124,
+  "acc": 0.614534485783677,
+  "acc_sd": 0.012845078895727348,
+  "auc": 0.6317045232643268,
+  "auc_sd": 0.01562899241009723
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 272,
+  "acc": 0.5920244976180288,
+  "acc_sd": 0.011756307637785273,
+  "auc": 0.6314095043549577,
+  "auc_sd": 0.018682169366351975
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 143,
+  "acc": 0.6009082171038581,
+  "acc_sd": 0.011463822643984047,
+  "auc": 0.6311860605212121,
+  "auc_sd": 0.00841532772149457
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 216,
+  "acc": 0.5982550472078249,
+  "acc_sd": 0.012153922652025691,
+  "auc": 0.6309086502702356,
+  "auc_sd": 0.013427306878686028
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 62,
+  "acc": 0.585509966101579,
+  "acc_sd": 0.010916730865708478,
+  "auc": 0.6309031162007464,
+  "auc_sd": 0.017427178830396236
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 156,
+  "acc": 0.6103617063954424,
+  "acc_sd": 0.008558822696781924,
+  "auc": 0.6308532151741167,
+  "auc_sd": 0.012514636047187399
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 91,
+  "acc": 0.5903816858263774,
+  "acc_sd": 0.018355160544185678,
+  "auc": 0.6307562815740548,
+  "auc_sd": 0.02277737650350709
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 143,
+  "acc": 0.6003683755558192,
+  "acc_sd": 0.00916265134990747,
+  "auc": 0.6306969033366436,
+  "auc_sd": 0.008410291187456176
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 62,
+  "acc": 0.5814424856446445,
+  "acc_sd": 0.02032699627339024,
+  "auc": 0.6304164839034554,
+  "auc_sd": 0.019561165768992257
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 185,
+  "acc": 0.6043736349654885,
+  "acc_sd": 0.021943939817972945,
+  "auc": 0.6301248130728643,
+  "auc_sd": 0.024012044695778806
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 546,
+  "acc": 0.6048709125499578,
+  "acc_sd": 0.01440001868213945,
+  "auc": 0.6301077241831556,
+  "auc_sd": 0.009983186113219838
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 160,
+  "acc": 0.5939591864315785,
+  "acc_sd": 0.018708017911911127,
+  "auc": 0.6299390348828993,
+  "auc_sd": 0.021470621012270416
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 185,
+  "acc": 0.6034691125370406,
+  "acc_sd": 0.02180167087467941,
+  "auc": 0.629907083055089,
+  "auc_sd": 0.02405633375847164
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 272,
+  "acc": 0.5862216882467712,
+  "acc_sd": 0.008663702246586776,
+  "auc": 0.6297034096313825,
+  "auc_sd": 0.017406056306636893
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 272,
+  "acc": 0.5856855114648841,
+  "acc_sd": 0.008377158331326615,
+  "auc": 0.6295621880742963,
+  "auc_sd": 0.017030539224442462
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 91,
+  "acc": 0.5863893535179487,
+  "acc_sd": 0.020814748099159223,
+  "auc": 0.629361335711482,
+  "auc_sd": 0.020090823680550474
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 143,
+  "acc": 0.5956006777502032,
+  "acc_sd": 0.013000491943881797,
+  "auc": 0.6293106419357626,
+  "auc_sd": 0.010892878283551932
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 546,
+  "acc": 0.6037867099256682,
+  "acc_sd": 0.010712184727763195,
+  "auc": 0.6284631854823638,
+  "auc_sd": 0.006842523731099878
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 91,
+  "acc": 0.5898504543485816,
+  "acc_sd": 0.007720028063152524,
+  "auc": 0.6278049354191935,
+  "auc_sd": 0.010458337736969211
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 156,
+  "acc": 0.6031071908022791,
+  "acc_sd": 0.020161727631275078,
+  "auc": 0.627771952621788,
+  "auc_sd": 0.019215498170423596
+ },
+ {
+  "key": "muhurta::muh: masa, chaturmasya & malamasa",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 124,
+  "acc": 0.5983210662454568,
+  "acc_sd": 0.025568907539504845,
+  "auc": 0.6277560028407025,
+  "auc_sd": 0.023056404451270142
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 143,
+  "acc": 0.5980121908442437,
+  "acc_sd": 0.012307170168080228,
+  "auc": 0.6271712910357528,
+  "auc_sd": 0.007272125160739706
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 546,
+  "acc": 0.6034211864141907,
+  "acc_sd": 0.012571926196547853,
+  "auc": 0.6271662547914376,
+  "auc_sd": 0.009900182505354724
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 159,
+  "acc": 0.5926123780166791,
+  "acc_sd": 0.017569348736023758,
+  "auc": 0.6269260901594899,
+  "auc_sd": 0.019341651570110745
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 156,
+  "acc": 0.6081771059019115,
+  "acc_sd": 0.007232861272223697,
+  "auc": 0.6268556087126452,
+  "auc_sd": 0.012644238356067755
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 62,
+  "acc": 0.5827038051657385,
+  "acc_sd": 0.018410593721418962,
+  "auc": 0.626832791015258,
+  "auc_sd": 0.020311301813878167
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 160,
+  "acc": 0.5928688900899565,
+  "acc_sd": 0.01935911884959136,
+  "auc": 0.6266638486203643,
+  "auc_sd": 0.021546953827334216
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 438,
+  "acc": 0.6252056518661928,
+  "acc_sd": 0.010737665716445468,
+  "auc": 0.6265363307285507,
+  "auc_sd": 0.01564708735187093
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 438,
+  "acc": 0.613385687741888,
+  "acc_sd": 0.0155399345364235,
+  "auc": 0.6265082713388087,
+  "auc_sd": 0.014263987834250128
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 185,
+  "acc": 0.6041996467054183,
+  "acc_sd": 0.021742527461969332,
+  "auc": 0.6262251001347592,
+  "auc_sd": 0.022734680904697043
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 143,
+  "acc": 0.5967548234065096,
+  "acc_sd": 0.0129422386366699,
+  "auc": 0.6259100522610829,
+  "auc_sd": 0.007723353666774167
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 143,
+  "acc": 0.5956738569137907,
+  "acc_sd": 0.011805890204519194,
+  "auc": 0.6258179824369194,
+  "auc_sd": 0.007736450680010878
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 216,
+  "acc": 0.5951188864467746,
+  "acc_sd": 0.021606737842932607,
+  "auc": 0.6257275964183762,
+  "auc_sd": 0.02616038127143196
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 156,
+  "acc": 0.6016669463684176,
+  "acc_sd": 0.02068233109484559,
+  "auc": 0.6257175005141193,
+  "auc_sd": 0.01929910397976939
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 156,
+  "acc": 0.6009469175289663,
+  "acc_sd": 0.021412192005252607,
+  "auc": 0.6256572109896652,
+  "auc_sd": 0.01931526182268307
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 546,
+  "acc": 0.6014165356670316,
+  "acc_sd": 0.013466909582645053,
+  "auc": 0.6252279722112896,
+  "auc_sd": 0.00987305156840177
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 546,
+  "acc": 0.6030951902396084,
+  "acc_sd": 0.008906806825812415,
+  "auc": 0.6246243201206846,
+  "auc_sd": 0.009227083154412214
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 185,
+  "acc": 0.601632648318631,
+  "acc_sd": 0.019886769016523156,
+  "auc": 0.6233257787321623,
+  "auc_sd": 0.023489409828097593
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 17,
+  "acc": 0.585137748033763,
+  "acc_sd": 0.008258234653592085,
+  "auc": 0.6220321653822998,
+  "auc_sd": 0.012181982090120391
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 17,
+  "acc": 0.585137748033763,
+  "acc_sd": 0.008258234653592085,
+  "auc": 0.6220321653822998,
+  "auc_sd": 0.012181982090120391
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 216,
+  "acc": 0.5898698518513339,
+  "acc_sd": 0.012672718915822416,
+  "auc": 0.6219714145305233,
+  "auc_sd": 0.02173358514688621
+ },
+ {
+  "key": "wedding_transits::wt: wedding-to-natal 18x18 circular (both)",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 1296,
+  "acc": 0.5849882528331034,
+  "acc_sd": 0.01006557916192577,
+  "auc": 0.6211017863254189,
+  "auc_sd": 0.01566757059494609
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 91,
+  "acc": 0.5838565193771166,
+  "acc_sd": 0.011122368031516183,
+  "auc": 0.6202221791227173,
+  "auc_sd": 0.016485026514720898
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 143,
+  "acc": 0.6011260055586634,
+  "acc_sd": 0.014354166252306347,
+  "auc": 0.6199487095999514,
+  "auc_sd": 0.012076913526188346
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 546,
+  "acc": 0.5878969385771335,
+  "acc_sd": 0.01528082805392936,
+  "auc": 0.6196994378403374,
+  "auc_sd": 0.01789480188469072
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 546,
+  "acc": 0.584601177964178,
+  "acc_sd": 0.017285705682417128,
+  "auc": 0.6190403685647874,
+  "auc_sd": 0.016888887620702984
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 185,
+  "acc": 0.5905096824040257,
+  "acc_sd": 0.0209294692846315,
+  "auc": 0.6189519498028243,
+  "auc_sd": 0.019684019770109366
+ },
+ {
+  "key": "electional::elec: election chart aspect-pattern density",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 143,
+  "acc": 0.589767562457949,
+  "acc_sd": 0.015413562425100585,
+  "auc": 0.6188183927385574,
+  "auc_sd": 0.015437260876628266
+ },
+ {
+  "key": "uranian::ura: hypotheticals dial positions & cross contacts",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 272,
+  "acc": 0.5804462724074171,
+  "acc_sd": 0.013239673507034082,
+  "auc": 0.6176658872217455,
+  "auc_sd": 0.016484599463307274
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 156,
+  "acc": 0.5918269657077653,
+  "acc_sd": 0.010800080359135197,
+  "auc": 0.6157419113972131,
+  "auc_sd": 0.008559206660103687
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 216,
+  "acc": 0.584851568522267,
+  "acc_sd": 0.015429596523375654,
+  "auc": 0.6156963690181455,
+  "auc_sd": 0.02117600205435376
+ },
+ {
+  "key": "mesoamerican::meso: haab + calendar round + year bearer",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 185,
+  "acc": 0.5860358800452501,
+  "acc_sd": 0.008605607706289606,
+  "auc": 0.6150281766488221,
+  "auc_sd": 0.017009259220132873
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "inter",
+  "model": "random forest",
+  "cols": 17,
+  "acc": 0.5793824267705621,
+  "acc_sd": 0.00902257887744727,
+  "auc": 0.614115238436307,
+  "auc_sd": 0.010470924004020311
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 17,
+  "acc": 0.5762922955921345,
+  "acc_sd": 0.009619585004842866,
+  "auc": 0.6137106594705571,
+  "auc_sd": 0.012263441140394946
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 17,
+  "acc": 0.5762922955921345,
+  "acc_sd": 0.009619585004842866,
+  "auc": 0.6137106594705571,
+  "auc_sd": 0.012263441140394946
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 159,
+  "acc": 0.5840286788849994,
+  "acc_sd": 0.01625271953809892,
+  "auc": 0.613610237889263,
+  "auc_sd": 0.024468013514091568
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 159,
+  "acc": 0.589931037923853,
+  "acc_sd": 0.018006419160437524,
+  "auc": 0.6136000627278535,
+  "auc_sd": 0.0200842740547966
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 216,
+  "acc": 0.5817349175396236,
+  "acc_sd": 0.013614374386426095,
+  "auc": 0.6132123513327129,
+  "auc_sd": 0.015874494545909
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "inter",
+  "model": "extra trees",
+  "cols": 17,
+  "acc": 0.5815274435272932,
+  "acc_sd": 0.007334490262045255,
+  "auc": 0.612725370051154,
+  "auc_sd": 0.010267265912551764
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 438,
+  "acc": 0.5852976559909316,
+  "acc_sd": 0.017090417500054998,
+  "auc": 0.6125948876516584,
+  "auc_sd": 0.01769477089415289
+ },
+ {
+  "key": "wedding_transits::wt: returns & life-stage cycles",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 62,
+  "acc": 0.5724334132594298,
+  "acc_sd": 0.014908288595615533,
+  "auc": 0.6117374016394321,
+  "auc_sd": 0.015901793710600333
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 44,
+  "acc": 0.5785975422101763,
+  "acc_sd": 0.011480456676380998,
+  "auc": 0.6117038368436306,
+  "auc_sd": 0.016470164950976494
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 44,
+  "acc": 0.5785975422101763,
+  "acc_sd": 0.011480456676380998,
+  "auc": 0.6117038368436306,
+  "auc_sd": 0.016470164950976494
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 216,
+  "acc": 0.5849734844943517,
+  "acc_sd": 0.014890257320154525,
+  "auc": 0.6116116095042057,
+  "auc_sd": 0.02104825100942635
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 91,
+  "acc": 0.5793236994772353,
+  "acc_sd": 0.010875671513191581,
+  "auc": 0.6115624987423478,
+  "auc_sd": 0.014878210547653327
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "inter",
+  "model": "hist gradient boosting",
+  "cols": 17,
+  "acc": 0.5773858011869183,
+  "acc_sd": 0.012029037089970997,
+  "auc": 0.6110148384052203,
+  "auc_sd": 0.012031398279057179
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 216,
+  "acc": 0.586959054551704,
+  "acc_sd": 0.013609123399306583,
+  "auc": 0.6108008007187022,
+  "auc_sd": 0.021074880613910853
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 216,
+  "acc": 0.5865961845173795,
+  "acc_sd": 0.014029074055691306,
+  "auc": 0.610766405991612,
+  "auc_sd": 0.021068012061894934
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 216,
+  "acc": 0.5788884046831542,
+  "acc_sd": 0.015296574441125026,
+  "auc": 0.6104664544786818,
+  "auc_sd": 0.021286435412657033
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 216,
+  "acc": 0.5785304431985376,
+  "acc_sd": 0.016976205602810508,
+  "auc": 0.6096879844550395,
+  "auc_sd": 0.021348968212658574
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 160,
+  "acc": 0.5760924917509795,
+  "acc_sd": 0.017172963193104195,
+  "auc": 0.6087291255533158,
+  "auc_sd": 0.016680076589207365
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 160,
+  "acc": 0.5763073840921917,
+  "acc_sd": 0.020439385421749626,
+  "auc": 0.6085861528793916,
+  "auc_sd": 0.020067195305332883
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 17,
+  "acc": 0.5780512474098298,
+  "acc_sd": 0.010309286982863864,
+  "auc": 0.6077578029264881,
+  "auc_sd": 0.014073848776323037
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 17,
+  "acc": 0.5713960514030053,
+  "acc_sd": 0.013019818793503966,
+  "auc": 0.6076118791722878,
+  "auc_sd": 0.017035201931585888
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 17,
+  "acc": 0.5713960514030053,
+  "acc_sd": 0.013019818793503966,
+  "auc": 0.6076118791722878,
+  "auc_sd": 0.017035201931585888
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 160,
+  "acc": 0.5750595652267882,
+  "acc_sd": 0.024391045945365793,
+  "auc": 0.6068484160186142,
+  "auc_sd": 0.022299883337544138
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 546,
+  "acc": 0.5855778752278833,
+  "acc_sd": 0.016469046933524824,
+  "auc": 0.6066636253271969,
+  "auc_sd": 0.017375518151162797
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 160,
+  "acc": 0.5730102213960987,
+  "acc_sd": 0.015029975289506043,
+  "auc": 0.6057702465307659,
+  "auc_sd": 0.01812746738330063
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 91,
+  "acc": 0.5686309059195945,
+  "acc_sd": 0.008162893789342237,
+  "auc": 0.605357899471457,
+  "auc_sd": 0.010550153566522197
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 44,
+  "acc": 0.5744595925029475,
+  "acc_sd": 0.014104876358361836,
+  "auc": 0.6053207962152987,
+  "auc_sd": 0.020365894721468034
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 44,
+  "acc": 0.5744595925029475,
+  "acc_sd": 0.014104876358361836,
+  "auc": 0.6053207962152987,
+  "auc_sd": 0.020365894721468034
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 546,
+  "acc": 0.5850238710422755,
+  "acc_sd": 0.015965234458071843,
+  "auc": 0.6049873987803042,
+  "auc_sd": 0.017307386319457694
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 546,
+  "acc": 0.5844824532228949,
+  "acc_sd": 0.0160770760761534,
+  "auc": 0.6048820621602953,
+  "auc_sd": 0.01724643767717622
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 44,
+  "acc": 0.5786860735527991,
+  "acc_sd": 0.016707649864452948,
+  "auc": 0.6044764882389725,
+  "auc_sd": 0.0166331313970959
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 44,
+  "acc": 0.5786860735527991,
+  "acc_sd": 0.016707649864452948,
+  "auc": 0.6044764882389725,
+  "auc_sd": 0.0166331313970959
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 156,
+  "acc": 0.5819152990420509,
+  "acc_sd": 0.014589930379412707,
+  "auc": 0.6041890193841303,
+  "auc_sd": 0.009655605768848436
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 216,
+  "acc": 0.5790307349732422,
+  "acc_sd": 0.019446616930150075,
+  "auc": 0.6041833045941963,
+  "auc_sd": 0.02465123135757564
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "raw",
+  "model": "extra trees",
+  "cols": 160,
+  "acc": 0.5695918861962168,
+  "acc_sd": 0.012346173759262143,
+  "auc": 0.6021652610057635,
+  "auc_sd": 0.016949127906538155
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 160,
+  "acc": 0.5701576769179608,
+  "acc_sd": 0.013110999523514006,
+  "auc": 0.6019453268953145,
+  "auc_sd": 0.018365378001615813
+ },
+ {
+  "key": "uranian::ura: solar arc magnitude and dial phase",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 17,
+  "acc": 0.5661049520965649,
+  "acc_sd": 0.021288480644907883,
+  "auc": 0.6019426338983682,
+  "auc_sd": 0.02356531756507158
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "raw",
+  "model": "random forest",
+  "cols": 44,
+  "acc": 0.5739741609917939,
+  "acc_sd": 0.018612579749637252,
+  "auc": 0.6003202435331063,
+  "auc_sd": 0.02196207742305035
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "topk",
+  "model": "random forest",
+  "cols": 44,
+  "acc": 0.5739741609917939,
+  "acc_sd": 0.018612579749637252,
+  "auc": 0.6003202435331063,
+  "auc_sd": 0.02196207742305035
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 216,
+  "acc": 0.5745073833675354,
+  "acc_sd": 0.017496742192455086,
+  "auc": 0.5996771095377307,
+  "auc_sd": 0.020107373649827953
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 438,
+  "acc": 0.5793133277997196,
+  "acc_sd": 0.015608030349868577,
+  "auc": 0.5989589627599017,
+  "auc_sd": 0.011146539388917428
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 160,
+  "acc": 0.5606947945356741,
+  "acc_sd": 0.016922193951280168,
+  "auc": 0.5977049439979913,
+  "auc_sd": 0.016467850874114974
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 438,
+  "acc": 0.5705892121474855,
+  "acc_sd": 0.02877093013961841,
+  "auc": 0.5976039966874525,
+  "auc_sd": 0.02616625250029207
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 160,
+  "acc": 0.5603662973535077,
+  "acc_sd": 0.01225907593202967,
+  "auc": 0.5975336032425066,
+  "auc_sd": 0.018701088344918588
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 91,
+  "acc": 0.5659130764411848,
+  "acc_sd": 0.009601884504140814,
+  "auc": 0.5966456412022687,
+  "auc_sd": 0.012847916159048935
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 438,
+  "acc": 0.5709694765687032,
+  "acc_sd": 0.029294854248618503,
+  "auc": 0.5960861122121658,
+  "auc_sd": 0.0251509148056188
+ },
+ {
+  "key": "muhurta::muh: the vivaha rule tally (own verdict)",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 156,
+  "acc": 0.5730664879565459,
+  "acc_sd": 0.016121332454106258,
+  "auc": 0.5956813950922659,
+  "auc_sd": 0.018396099926804094
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 438,
+  "acc": 0.5707926400973266,
+  "acc_sd": 0.029845123149266697,
+  "auc": 0.5955268300616037,
+  "auc_sd": 0.02508421940782866
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 44,
+  "acc": 0.5646360209468959,
+  "acc_sd": 0.010112276146330635,
+  "auc": 0.5951767304854025,
+  "auc_sd": 0.014565189021454811
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 44,
+  "acc": 0.5638398024855054,
+  "acc_sd": 0.023340387227570192,
+  "auc": 0.5934702064207396,
+  "auc_sd": 0.0235118124274663
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 44,
+  "acc": 0.5638398024855054,
+  "acc_sd": 0.023340387227570192,
+  "auc": 0.5934702064207396,
+  "auc_sd": 0.0235118124274663
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "topk",
+  "model": "extra trees",
+  "cols": 159,
+  "acc": 0.5705088704410727,
+  "acc_sd": 0.019585878685286585,
+  "auc": 0.5924923056611122,
+  "auc_sd": 0.02709605488979442
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 44,
+  "acc": 0.5632733530063285,
+  "acc_sd": 0.019875313474471586,
+  "auc": 0.5922427416149538,
+  "auc_sd": 0.02355419140240703
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 44,
+  "acc": 0.5632733530063285,
+  "acc_sd": 0.019875313474471586,
+  "auc": 0.5922427416149538,
+  "auc_sd": 0.02355419140240703
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 44,
+  "acc": 0.5610997590283447,
+  "acc_sd": 0.019189542037505364,
+  "auc": 0.5888158254531564,
+  "auc_sd": 0.016466954802535152
+ },
+ {
+  "key": "persian_arabic::pa: firdaria day-sect lord+sublord",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 44,
+  "acc": 0.5628229287026902,
+  "acc_sd": 0.01604000177802266,
+  "auc": 0.5879012600912785,
+  "auc_sd": 0.014637373236378813
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 438,
+  "acc": 0.5862620309986168,
+  "acc_sd": 0.011287463629055148,
+  "auc": 0.5870297123273849,
+  "auc_sd": 0.009885699646989795
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year recurrence between charts",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 160,
+  "acc": 0.5516770304716728,
+  "acc_sd": 0.021911764404455625,
+  "auc": 0.5869281021131858,
+  "auc_sd": 0.018911363840392503
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 216,
+  "acc": 0.5612647376038313,
+  "acc_sd": 0.017925549892963657,
+  "auc": 0.5863807776225687,
+  "auc_sd": 0.0242059674458113
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "raw",
+  "model": "hist gradient boosting",
+  "cols": 91,
+  "acc": 0.5595826584764949,
+  "acc_sd": 0.014819376805700626,
+  "auc": 0.5857915241555494,
+  "auc_sd": 0.013555653194167962
+ },
+ {
+  "key": "uranian::ura: 90/45-dial body positions (circular)",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 216,
+  "acc": 0.5574626790533028,
+  "acc_sd": 0.018100070768309807,
+  "auc": 0.584722253978364,
+  "auc_sd": 0.02377800855057256
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 44,
+  "acc": 0.5570599253661439,
+  "acc_sd": 0.014999730731763533,
+  "auc": 0.584563097380713,
+  "auc_sd": 0.020287835731113615
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 546,
+  "acc": 0.5576596644937519,
+  "acc_sd": 0.026755846847095623,
+  "auc": 0.5842823810829434,
+  "auc_sd": 0.02003977064649917
+ },
+ {
+  "key": "persian_arabic::pa: firdaria lords paired",
+  "rep": "topk",
+  "model": "hist gradient boosting",
+  "cols": 91,
+  "acc": 0.553078861929561,
+  "acc_sd": 0.015617072728553647,
+  "auc": 0.5821913724672374,
+  "auc_sd": 0.018920324733947908
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 44,
+  "acc": 0.5523256348647343,
+  "acc_sd": 0.015379146883495553,
+  "auc": 0.5808806984064571,
+  "auc_sd": 0.021545600736929422
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 546,
+  "acc": 0.5604255502966964,
+  "acc_sd": 0.017133332904788308,
+  "auc": 0.5800155264604065,
+  "auc_sd": 0.01071390936620287
+ },
+ {
+  "key": "persian_arabic::pa: firdaria night-sect lord+sublord",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 44,
+  "acc": 0.5516067802706212,
+  "acc_sd": 0.012134652529680054,
+  "auc": 0.5781905148425301,
+  "auc_sd": 0.01631470543545902
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 438,
+  "acc": 0.5793260896543386,
+  "acc_sd": 0.010805173445252057,
+  "auc": 0.576351398778056,
+  "auc_sd": 0.014039314378079766
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 438,
+  "acc": 0.5575595071819284,
+  "acc_sd": 0.0167082744367253,
+  "auc": 0.5755997892489048,
+  "auc_sd": 0.02404306196949567
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 438,
+  "acc": 0.5564599143028925,
+  "acc_sd": 0.017707822232149777,
+  "auc": 0.5751869265669434,
+  "auc_sd": 0.024042912188376193
+ },
+ {
+  "key": "electional::elec: outer planets & chiron on the lights",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 438,
+  "acc": 0.5559174277694743,
+  "acc_sd": 0.017615133400730586,
+  "auc": 0.5751527228824141,
+  "auc_sd": 0.02406485846767513
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 159,
+  "acc": 0.5471106264455331,
+  "acc_sd": 0.0190013388109362,
+  "auc": 0.5670334747693881,
+  "auc_sd": 0.021192661611221266
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 159,
+  "acc": 0.5496276129288478,
+  "acc_sd": 0.018759848927589577,
+  "auc": 0.5668613025367071,
+  "auc_sd": 0.021027396096740154
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 159,
+  "acc": 0.5492813152364358,
+  "acc_sd": 0.018624039368746164,
+  "auc": 0.5668545916453999,
+  "auc_sd": 0.021457997122983404
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 546,
+  "acc": 0.5457142168491467,
+  "acc_sd": 0.013333998147402775,
+  "auc": 0.5622884626727245,
+  "auc_sd": 0.012498876254657525
+ },
+ {
+  "key": "vedic_core::ved: graha states + avastha",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 546,
+  "acc": 0.5462537916560353,
+  "acc_sd": 0.012156713015549258,
+  "auc": 0.5589618728293984,
+  "auc_sd": 0.012769629404277942
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 159,
+  "acc": 0.5416524260836796,
+  "acc_sd": 0.017485122755282304,
+  "auc": 0.5516505587474891,
+  "auc_sd": 0.023634918404655272
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "pca",
+  "model": "random forest",
+  "cols": 159,
+  "acc": 0.5377009553111235,
+  "acc_sd": 0.012205708531840102,
+  "auc": 0.5490309661879698,
+  "auc_sd": 0.01824361352565497
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 159,
+  "acc": 0.5327987880720639,
+  "acc_sd": 0.021522789713410928,
+  "auc": 0.5482981280248188,
+  "auc_sd": 0.025089450846878962
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "pca",
+  "model": "extra trees",
+  "cols": 159,
+  "acc": 0.5317569839818856,
+  "acc_sd": 0.015087400159463235,
+  "auc": 0.5435543850673437,
+  "auc_sd": 0.0192015359874555
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 159,
+  "acc": 0.5253405546676899,
+  "acc_sd": 0.02483347522670452,
+  "auc": 0.5429216206847605,
+  "auc_sd": 0.024577018649366303
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 159,
+  "acc": 0.5251660550438065,
+  "acc_sd": 0.013013188179531218,
+  "auc": 0.542035517847475,
+  "auc_sd": 0.017870171487584616
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 159,
+  "acc": 0.5253482707872468,
+  "acc_sd": 0.013279360632690562,
+  "auc": 0.5420255760486881,
+  "auc_sd": 0.0178367340339483
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 159,
+  "acc": 0.5255294509863817,
+  "acc_sd": 0.012389188740081042,
+  "auc": 0.5420099236558529,
+  "auc_sd": 0.01792513181735018
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "pca",
+  "model": "LDA",
+  "cols": 96,
+  "acc": 0.5347121036662876,
+  "acc_sd": 0.013262118795966466,
+  "auc": 0.5411648587238296,
+  "auc_sd": 0.013236519556887158
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "pca",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 96,
+  "acc": 0.535619052012388,
+  "acc_sd": 0.013502169382463456,
+  "auc": 0.5406005012809441,
+  "auc_sd": 0.012809269314192021
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "pca",
+  "model": "logistic L2 (C=1)",
+  "cols": 96,
+  "acc": 0.5354376296611543,
+  "acc_sd": 0.013762520556062086,
+  "auc": 0.5405334396062804,
+  "auc_sd": 0.012818780528406194
+ },
+ {
+  "key": "lunar_calendrical::lun: synodic/draconic/anomalistic months + beats",
+  "rep": "pca",
+  "model": "hist gradient boosting",
+  "cols": 159,
+  "acc": 0.5271407719996115,
+  "acc_sd": 0.013496791820690584,
+  "auc": 0.5388782281892954,
+  "auc_sd": 0.023617461718881193
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "raw",
+  "model": "LDA",
+  "cols": 96,
+  "acc": 0.5309144658427234,
+  "acc_sd": 0.012903871925474831,
+  "auc": 0.538142245542349,
+  "auc_sd": 0.012325701919219688
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "raw",
+  "model": "logistic L2 (C=1)",
+  "cols": 96,
+  "acc": 0.5302093709852075,
+  "acc_sd": 0.009644714998164492,
+  "auc": 0.5379934847643533,
+  "auc_sd": 0.013438196368491643
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "raw",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 96,
+  "acc": 0.5305646842004274,
+  "acc_sd": 0.01096061611269713,
+  "auc": 0.5378783741200832,
+  "auc_sd": 0.011943367927658127
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "topk",
+  "model": "logistic L2 (C=0.1)",
+  "cols": 96,
+  "acc": 0.5295480439275501,
+  "acc_sd": 0.005735572383405711,
+  "auc": 0.5358323254116251,
+  "auc_sd": 0.010607880581308985
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "topk",
+  "model": "logistic L2 (C=1)",
+  "cols": 96,
+  "acc": 0.5302789133226509,
+  "acc_sd": 0.009765856823142753,
+  "auc": 0.5357356793539962,
+  "auc_sd": 0.011971997874245839
+ },
+ {
+  "key": "babylonian_egyptian::bab: goal-year phase, circular",
+  "rep": "topk",
+  "model": "LDA",
+  "cols": 96,
+  "acc": 0.5277241549197449,
+  "acc_sd": 0.0068869035911653595,
+  "auc": 0.5355156686485982,
+  "auc_sd": 0.01150519615522322
+ }
+]

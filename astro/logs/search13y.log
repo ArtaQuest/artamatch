@@ -1,0 +1,18 @@
+model: P(became parents together) · 3 blocks · cross-validated AUC 0.7403
+  restricted to 40 cities: Singapore, Medan, Batam, Kuala Lumpur, Jakarta, Jabodetabek, Palembang, Honolulu metropolitan area, Metro Vancouver Regional District, Calgary, Edmonton, San Francisco Bay Area, Arequipa, Lima, Guayaquil, Santiago, Rio de Janeiro, Greater Rio de Janeiro, Belo Horizonte, Greater São Paulo, São Paulo, Campinas, Curitiba, Porto Alegre, Salvador, Brasília, Recife metropolitan area, Tehran, Greater Tehran, Isfahan, Istanbul, Dubai, London, Los Angeles, Toronto, Sydney, Tokyo, Seoul, Mumbai, Cairo
+grid: 4,748 dates x 40 cities = 189,920 candidates
+  2 batches of up to 3000 dates x 40 cities
+  batch 1/2 · 120,000 scored · best so far 0.1091
+  batch 2/2 · 189,920 scored · best so far 0.1091
+
+  TOP 5 candidate partners
+
+    #  birth date   city                       country               score
+  ---  ------------ -------------------------- ------------------ --------
+    1  1994-01-20   Singapore                  Singapore            0.1091
+    2  1994-01-21   Singapore                  Singapore            0.1091
+    3  1994-01-22   Singapore                  Singapore            0.1091
+    4  1994-01-23   Singapore                  Singapore            0.1091
+    5  1994-01-24   Singapore                  Singapore            0.1091
+
+  all 189,920 scored candidates written to partner-search.json

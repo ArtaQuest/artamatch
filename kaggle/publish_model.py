@@ -72,18 +72,30 @@ def main():
     for f in ("model.json", "model.npz", "result.json"):
         shutil.copy2(os.path.join(MODEL_DIR, f), os.path.join(STAGE, f))
 
-    LEV = ["full", "month", "year", "absent"]
+    # Which cells are scored is dates.py's decision, not this file's. Hardcoding "absent|absent" here meant that
+    # excluding a second cell crashed the publisher with a KeyError after the page had already deployed.
+    import sys as _sys
+    _sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import dates as _D
+    LEV = _D.LEVELS
     if grid:
         pc = grid["per_cell"]
+        excluded = set(grid.get("excluded") or _D.EXCLUDED_CELLS)
         head = "| man \\ woman | " + " | ".join(LEV) + " |"
         rule = "|---" * (len(LEV) + 1) + "|"
         body = "\n".join("| **" + a + "** | " + " | ".join(
-            "—" if a == "absent" and b == "absent" else f"{pc[f'{a}|{b}']:.4f}" for b in LEV) + " |"
+            "—" if f"{a}|{b}" in excluded else f"{pc[f'{a}|{b}']:.4f}" for b in LEV) + " |"
             for a in LEV)
-        grid_table = (f"| **Mean of the 15 per-cell AUCs** (the headline metric) | **{grid['mean15']:.4f}** |\n"
-                      f"| The same reference over the same 15 cells | {grid['reference_signed_gap_mean15']:.4f} |"
-                      f"\n\n### The 15 cells, on {grid['couples']:,} held-out couples\n\n"
-                      f"{head}\n{rule}\n{body}")
+        nc = len(pc)
+        grid_table = (f"| **Row-count-weighted mean of the {nc} per-cell AUCs** (the headline metric) "
+                      f"| **{grid['mean15']:.4f}** |\n"
+                      f"| The same reference over the same {nc} cells "
+                      f"| {grid['reference_signed_gap_mean15']:.4f} |"
+                      f"\n\n### The {nc} cells, on {grid['couples']:,} held-out couples\n\n"
+                      f"{head}\n{rule}\n{body}\n\n"
+                      f"Blank cells are excluded from the metric: {', '.join('`'+c+'`' for c in sorted(excluded))}. "
+                      f"`absent|absent` has no input at all to rank on; `month|month` is a case the records "
+                      f"essentially never present — 18 real pairs out of 107,738, where an AUC is noise.")
     else:
         grid_table = ""
 
@@ -122,11 +134,11 @@ is measured against.
 The headline score is not a single AUC on clean inputs. Each partner's date is degraded independently over four
 levels — the full date, the month only, the year only, absent — and the model is scored in every cell of the
 resulting grid. The `absent x absent` cell is excluded: with neither date there is no input, so no model can
-rank anything there. The metric is the mean of the remaining **fifteen** per-cell AUCs, which means a model
+rank anything there. The metric is the row-count-weighted mean of the remaining per-cell AUCs, which means a model
 that is strong on clean dates and useless on vague ones scores worse than one that degrades gracefully.
 
 That metric is NOT a pooled AUC over the same rows, and the difference is not small: every cell holds the same
-couples with the same labels, so only one pair in fifteen that a pooled AUC ranks comes from inside a cell. A
+couples with the same labels, so only one pair in fourteen that a pooled AUC ranks comes from inside a cell. A
 submission ranking perfectly within every cell scores 1.000 on this metric and can score near 0.5 pooled.
 
 ## Provenance

@@ -130,6 +130,18 @@ const out = await ev(`(() => {
       r => Array.from(r.querySelectorAll("th,td")).map(c => c.textContent.trim())) : [],
     note: t("grid-note"),
     detail: document.querySelectorAll("#grid-detail tbody tr").length,
+    // The tradition table rendered ZERO rows on a shipped build: it was keyed on a tradition_auc field the
+    // exporter had stopped writing, and an empty object is a perfectly good object. A whole section of the
+    // page was blank and every other check still passed. (No backticks in here: this comment lives inside a
+    // template literal, and the first one closes it.)
+    trads: Array.from(document.querySelectorAll("#trad-tab tbody tr")).map(r => ({
+      title: (r.querySelector("summary b") || {}).textContent || "",
+      body: (r.querySelector("details p") || {}).textContent || "",
+      blocks: r.querySelectorAll(".blocklist li").length,
+      worked: Array.from(r.querySelectorAll(".worked li"))
+        .map(li => li.textContent.trim()).filter(t => t && !/^computing/.test(t)),
+      auc: (r.querySelectorAll("td")[1] || {}).textContent || "",
+    })),
     overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 2,
   };
 })()`) || {};
@@ -146,8 +158,25 @@ console.log(`  stats  : benchmark=${out.stats?.auc}  full|full=${out.stats?.clea
 for (const r of grid) console.log("   " + r.map(c => String(c).padStart(11)).join(" |"));
 console.log(`  note   : ${String(out.note || "").slice(0, 200)}`);
 
+const tr = out.trads || [];
+const described = tr.filter(t => t.title.length > 3 && t.body.length > 40 && t.blocks > 0);
+console.log(`  traditions : ${tr.length} rows, ${described.length} with a title, an explanation and their blocks`);
+for (const t of tr.slice(0, 3)) {
+  console.log(`     ${t.auc.padStart(7)}  ${t.title}  (${t.blocks} blocks)`);
+  for (const w of (t.worked || []).slice(0, 2)) console.log(`              ${w.slice(0, 96)}`);
+}
+
 const checks = [
   ["the grid rendered 4 data rows + a header", grid.length === 5],
+  ["the tradition table is not empty", tr.length > 0],
+  ["every tradition is explained and lists its blocks", tr.length > 0 && described.length === tr.length,
+   `${tr.length - described.length} row(s) missing a title, an explanation or their blocks`],
+  ["every tradition shows a numeric AUC", tr.length > 0 && tr.every(t => /^0\.\d+$/.test(t.auc.trim()))],
+  ["every tradition has a worked example computed for the pair on screen",
+   tr.length > 0 && tr.every(t => (t.worked || []).length > 0),
+   `${tr.filter(t => !(t.worked || []).length).length} of ${tr.length} rows have none`],
+  ["the worked examples contain real numbers, not just prose",
+   tr.length > 0 && tr.every(t => (t.worked || []).some(x => /\d/.test(x)))],
   ["16 body cells: 15 numeric and 1 blank", body.length === 16 && numeric === 15],
   ["the per-cell detail table filled all 15 rows", out.detail === 15],
   ["the headline statistic is a number, not a placeholder", /^0\.\d+$/.test(out.stats?.auc || "")],
@@ -159,8 +188,8 @@ const checks = [
 ];
 console.log("");
 let ok = true;
-for (const [label, pass] of checks) {
-  console.log(`  [${pass ? "OK " : "FAIL"}] ${label}`);
+for (const [label, pass, detail] of checks) {
+  console.log(`  [${pass ? "OK " : "FAIL"}] ${label}${!pass && detail ? "  — " + detail : ""}`);
   ok &&= pass;
 }
 if (errors.length) for (const e of errors.slice(0, 5)) console.log("     " + String(e).split("\n")[0].slice(0, 150));

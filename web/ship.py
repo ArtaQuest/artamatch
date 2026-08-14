@@ -38,8 +38,14 @@ DOCS = os.path.join(ROOT, "docs")
 # What the browser will actually have: numpy and astropy from Pyodide (astropy pulls pyerfa, which provides
 # `erfa`), plus this project's own modules. scipy and scikit-learn are deliberately absent — the exported
 # model is evaluated by predictor.py in pure numpy, so shipping them would add tens of megabytes for nothing.
-ALLOWED_IMPORTS = {"numpy", "astropy", "erfa", "swisseph", "core", "predictor", "sweshim"}
-PAGE_FILES = ["index.html", "sweshim.py", "predictor.py", "runner.py",
+# numpy and astropy come from Pyodide (astropy pulls pyerfa, which provides `erfa`); everything else in this
+# set is a file that SHIPS, so it is importable by definition. Derived from PAGE_FILES rather than restated,
+# because adding a page module and forgetting to list it here fails the build with "packages Pyodide will not
+# have" — which reads as a missing dependency rather than a stale allow-list, and leaves docs/ unwritten while
+# every later check happily re-tests the previous build.
+ALLOWED_IMPORTS = {"numpy", "astropy", "erfa", "swisseph", "core"} | {
+    f[:-3] for f in ["index.html", "sweshim.py", "predictor.py", "runner.py", "worked.py"] if f.endswith(".py")}
+PAGE_FILES = ["index.html", "sweshim.py", "predictor.py", "runner.py", "worked.py",
               "ephem4.bin", "ephem4.json", "tables.json", "model.json", "model.npz"]
 
 

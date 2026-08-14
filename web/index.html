@@ -27,6 +27,16 @@
          background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;
          margin:24px 0 8px}
   .stats>div{background:var(--bg2);padding:16px 18px}
+  .worked{margin:8px 0 10px;padding:10px 12px;border-left:2px solid var(--gold);background:var(--bg2)}
+  .worked b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
+  .worked ul{margin:6px 0 0;padding-left:18px;font-size:14px}
+  .worked li{margin:3px 0}
+  #trad-tab summary{cursor:pointer}
+  #trad-tab summary::marker{color:var(--gold)}
+  #trad-tab details[open] summary{margin-bottom:2px}
+  .blocklist{margin:0 0 4px;padding-left:18px;color:var(--ink2);font-size:14px}
+  .blocklist li{margin:2px 0}
+  .blocklist .n{color:var(--ink);font-variant-numeric:tabular-nums}
   .dpart{display:flex;gap:6px;flex-wrap:wrap}
   .dpart .dy{width:6.5em}
   .dpart select{min-width:5.5em}
@@ -122,7 +132,8 @@
   <h2><span class="n">03</span>What each tradition contributes</h2>
   <p class="lede">Every tradition that can be computed from two dates is in the stack, with up to three
   feature blocks each — a per-tradition guarantee rather than a global cut, so no tradition is starved by a
-  stronger neighbour. The AUC is that tradition's own blocks, scored alone.</p>
+  stronger neighbour. The AUC is that tradition's own blocks, scored alone, on the held-out couples. Each row
+  opens to say what the tradition actually computes and which blocks it contributes.</p>
   <div class="scroll"><table id="trad-tab"><thead><tr><th>Tradition</th><th>AUC alone</th>
     <th>Blocks</th><th style="width:34%"></th></tr></thead><tbody></tbody></table></div>
   <p class="note" id="trad-missing"></p>
@@ -218,7 +229,7 @@ async function boot() {
     const t = await (await fetch("bundle/" + f)).text();
     py.FS.writeFile("/bundle/" + f, t);
   }));
-  for (const f of ["sweshim.py", "predictor.py", "runner.py"]) {
+  for (const f of ["sweshim.py", "predictor.py", "runner.py", "worked.py"]) {
     py.FS.writeFile("/" + f, await (await fetch(f)).text());
   }
 
@@ -247,6 +258,30 @@ json.dumps(info)
   ready = true;
   $("#go-pair").disabled = false;
   $("#go-find").disabled = false;
+  // The table paints first with a placeholder; the worked examples are real astronomy on the two dates in the
+  // controls and arrive a moment later.
+  refreshWorked();
+}
+
+let WORKED = {};          // tradition slug -> lines, computed for the pair currently in the controls
+let redrawTraditions = () => {};
+
+// The worked examples are real astronomy on the two dates in the controls, not stored text: the sexagenary year
+// is arithmetic on the year, the Long Count arithmetic on the Julian day, and everything else comes from the
+// same ephemeris the model runs on. Recomputed whenever the pair changes, because an example that does not
+// follow the inputs is decoration.
+async function refreshWorked() {
+  if (!ready) return;
+  const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
+  try {
+    WORKED = JSON.parse(await py.runPythonAsync(
+      `import json, runner; json.dumps(runner.worked_examples(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
+  } catch (e) {
+    // A failed example must not blank the table it lives in — the table is the measurement, this is the gloss.
+    WORKED = {};
+    console.warn("worked examples unavailable", e);
+  }
+  redrawTraditions();
 }
 
 function render(i) {
@@ -270,19 +305,56 @@ function render(i) {
   window.__rate = i.rate;
   const perTrad = {};
   (i.base || []).forEach(b => { perTrad[b.slug] = (perTrad[b.slug] || 0) + 1; });
+  // WHAT EACH TRADITION IS. Written against the block names the model itself carries, so every claim here can
+  // be checked against the rows below it rather than believed. The worked examples are computed in the browser
+  // from the two dates on screen and land asynchronously, so the table keeps a redraw hook rather than being
+  // built once and frozen.
+  const TRAD = {"harmonics": ["The geometry of the two charts, with no culture attached", "Not a tradition but the raw relationship between the two skies: contacts in ecliptic latitude, parallels of declination and out-of-bounds bodies, and each planet's speed — stationary, applying or separating."], "lunar_calendrical": ["Eclipse and lunation cycles", "The long repeating periods of the Sun–Moon–Earth system: the Saros and Inex eclipse cycles, the Metonic and Callippic calendar cycles, and the computus that fixes Easter. Plus the synodic phase of all 45 body pairs at each birth and the difference between them."], "uranian": ["The Hamburg School and its hypothetical planets", "Eight hypothetical bodies — Cupido, Hades, Zeus, Kronos, Apollon, Admetos, Vulkanus, Poseidon — placed on the 360°, 90°, 45° and 22.5° dials, with the cross-chart distances between them and the specific “planetary pictures” this school reads for marriage and children."], "babylonian_egyptian": ["Babylonian goal-years and the Egyptian civil calendar", "The goal-year periods Babylonian astronomers used to predict a planet's return, taken as circular phases; the schematic 360-day year beside the 365-day Egyptian civil calendar that drifts against it; and the 36 decans that divide the sky into ten-day segments."], "african": ["Heliacal risings of the southern year, and Sirius", "The first dawn appearance of Isilimela (the Pleiades) and Naka, which open the agricultural year across southern Africa; the Sothic rising of Sirius and its elongation from the Sun; and the Dogon sigui, a sixty-year ceremony, alongside the orbital phase of Sirius B."], "mesoamerican": ["The Maya Long Count and the Calendar Round", "Long Count components and the katun wheel, distance numbers — the intervals Maya inscriptions use to step between dates — and the 365-day Haab with the Calendar Round and its year bearer."], "indigenous_americas": ["Northern skywatching: the revolving pair, the morning star", "Diné Náhookǫs, the revolving pair turning about the north star, evaluated at midnight; the Pawnee morning and evening stars; and a Woodland moon count taken from the solstice."], "aboriginal_australian": ["Australian Aboriginal astronomies", "Visibility classes for named stars at each birth; the solar phase of the Emu in the Sky, the dark constellation whose changing orientation marks the season; and Barnumbirr, Venus as the morning star."], "modern_western": ["Twentieth-century relationship charts", "The Davison chart — one chart for the midpoint in time between two births — set against the composite of midpoints, including where the two methods disagree, plus aspect patterns in each chart."], "hellenistic": ["Greek astrology as Ptolemy left it", "Ptolemaic aspects at their classical orbs of 2°, 4°, 6° and 12°; essential dignity — whether a planet sits in its own sign, exile or fall; and the hermetic lots, taken circularly."], "persian_arabic": ["Reception, the lots, and al-Bīrūnī", "Reception and mutual reception, where two planets each occupy a sign the other rules; the Arabic lots with the dignities of their rulers; and al-Bīrūnī's distinction between an aspect applying and one separating."], "vedic_core": ["Jyotiṣa: nakṣatras, vargas, graha states", "The 27 nakṣatras and their 108 padas as circular quantities; the divisional charts D1, D2, D3, D12, D30 and D60; and graha states with avasthā, the conditions a planet is held to be in."], "vedic_ashtakavarga": ["Aṣṭakavarga and ṣaḍbala", "Bhinnāṣṭakavarga scores for seven grahas across twelve signs, and the six strengths: sthāna bala in five components, cheṣṭa bala, and the iṣṭa and kaṣṭa phala derived from them."], "vedic_match": ["The marriage-matching system itself", "Aṣṭakūṭa — the eight-fold kūṭa score used to judge a match — computed under a ±6° smear on the Moon to reflect an unknown birth time, the nakṣatra pair taken as a low-rank vector, and kuja doṣa."], "chinese": ["The sexagenary cycle and the five phases", "Stem-and-branch positions in the sixty-year cycle as circular quantities with the offsets between the two births; the generating and overcoming relations between each partner's elements, with nāyīn and the life-stage sequence; and the 28 xiù, measured as equal divisions from Spica."], "east_asian_deep": ["Korean saju and Mongolian zurkhai", "The ten gods (sipseong) read across the four pillars of saju, with gyeokguk structure and sin-gang strength; and Mongolian zurkhai's sixty-year jaran with the Tsagaan Sar year boundary."], "tibetan_seasia": ["Tibetan, Burmese and Javanese reckoning", "The Tibetan rabjung cycle as animal crossed with element; Burmese mahabote, built from the weekday of birth and a remainder of the birth year; and the Javanese pawukon, several week-cycles of different lengths running at once."]};
+
   const ta = i.tradition_auc || {};
-  const rows = Object.entries(ta).sort((a, b) => b[1] - a[1]);
+  // Fall back to the per-block scores the model always carries. `tradition_auc` was absent from a shipped
+  // model and this table rendered ZERO rows — a whole section of the page silently blank, because an empty
+  // object is a perfectly good object.
+  const derived = {};
+  (i.base || []).forEach(b => {
+    derived[b.slug] = Math.max(derived[b.slug] || 0, b.auc || 0);
+  });
+  const usingDerived = !Object.keys(ta).length;
+  const src = usingDerived ? derived : ta;
+  const rows = Object.entries(src).sort((a, b) => b[1] - a[1]);
   const lo = Math.min(...rows.map(r => r[1]), 0.5), hi = Math.max(...rows.map(r => r[1]), 0.6);
-  $("#trad-tab tbody").innerHTML = rows.map(([k, v]) => {
+  const blocksOf = {};
+  (i.base || []).forEach(b => { (blocksOf[b.slug] = blocksOf[b.slug] || []).push(b); });
+  const drawTraditions = () => { $("#trad-tab tbody").innerHTML = rows.map(([k, v]) => {
     const w = Math.max(2, 100 * (v - lo) / Math.max(1e-9, hi - lo));
     const n = perTrad[k] || "";
-    return `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${fmt(v)}</td>
+    const t = TRAD[k] || ["", ""];
+    const bl = (blocksOf[k] || []).slice().sort((x, y) => y.auc - x.auc)
+      // Never index straight into a field the page did not put there itself. A missing `name` threw inside
+      // this map and blanked every section that renders after it.
+      .map(b => `<li><span class="n">${fmt(b.auc)}</span> ${String(b.name || b.key || b.slug || "")
+        .replace(/^[a-z0-9+]+:\s*/i, "")}</li>`)
+      .join("");
+    const wk = (WORKED[k] || []).map(x => `<li>${x}</li>`).join("");
+    return `<tr><td><details><summary><b>${t[0] || k.replace(/_/g, " ")}</b>
+        <span class="note" style="display:block">${k.replace(/_/g, " ")}</span></summary>
+        <p class="note" style="margin:8px 0 6px">${t[1]}</p>
+        <div class="worked"><b>Worked for this pair</b><ul>${wk
+          || "<li class=\"note\">computing…</li>"}</ul></div>
+        <ul class="blocklist">${bl}</ul></details></td>
+      <td class="n">${fmt(v)}</td>
       <td class="n">${n || ""}</td><td><div class="bar"><i style="width:${w}%"></i></div></td></tr>`;
-  }).join("");
-  $("#trad-missing").textContent =
-    "Absent by necessity, not by choice: electional astrology, Vedic vivaha muhurta and wedding-day "
-    + "transits all need the date of the marriage, which is not an input. Houses and astrocartography need "
-    + "a birthplace, which is not an input either.";
+  }).join(""); };
+  drawTraditions();
+  redrawTraditions = () => drawTraditions();
+  $("#trad-missing").innerHTML =
+    (usingDerived
+      ? "<b>Each figure is that tradition's strongest single block</b>, out-of-fold — this model build did not "
+        + "record a stacked per-tradition score. "
+      : "Each figure is that tradition's own blocks stacked and scored alone. ")
+    + "Absent by necessity, not by choice: electional astrology, Vedic vivaha muhurta and wedding-day transits "
+    + "all need the date of the marriage, which is not an input. Houses and astrocartography need a birthplace, "
+    + "which is not an input either.";
 
   const bm = i.benchmark || {};
   const cells = bm.cells || {};
@@ -368,9 +440,15 @@ function readDate(host) {
 dateControl($("#a-dob"), 1889, "04", "16");
 dateControl($("#b-dob"), 1893, "07", "08");
 
+// Recompute the examples whenever either date changes, so what is shown always follows the inputs.
+for (const host of [$("#a-dob"), $("#b-dob")].filter(Boolean)) {
+  host.addEventListener("change", () => refreshWorked());
+}
+
 $("#go-pair").onclick = async () => {
   if (!ready) return;
   const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
+  refreshWorked();
   $("#pair-out").innerHTML = `<p class="note">computing both charts and every tradition…</p>`;
   const r = JSON.parse(await py.runPythonAsync(
     `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));

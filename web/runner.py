@@ -98,8 +98,12 @@ def init(asset_bytes, tables_json, model_json, model_npz_bytes):
             "yearTo": int(round(2000 + (a.jd0 + a.ndays - 2451545.0) / 365.25)),
             "traditions": _stack.modules,
             "nbase": len(_stack.base),
-            # the base list travels too, so the page can count blocks per tradition without a second fetch
-            "base": [{"slug": b["slug"], "key": b["key"], "kind": b["kind"], "auc": b.get("auc")}
+            # The base list travels too, so the page can count blocks per tradition and NAME them without a
+            # second fetch. `name` was missing from this projection and the page's `b.name.replace(...)` threw,
+            # which took the whole render with it — the precision grid, the statistics and the note all went
+            # blank because one field was absent from a dict three functions away.
+            "base": [{"slug": b["slug"], "key": b["key"], "kind": b["kind"],
+                      "name": b.get("name") or b.get("key") or b["slug"], "auc": b.get("auc")}
                      for b in _stack.h["base"]],
             "rate": _stack.h.get("rate"),
             "auc": _stack.h.get("auc"),
@@ -110,6 +114,18 @@ def init(asset_bytes, tables_json, model_json, model_npz_bytes):
             "tradition_auc": _stack.h.get("tradition_auc"),
             "clean_auc": _stack.h.get("clean_auc"),
             "benchmark": _stack.h.get("benchmark")}
+
+
+def worked_examples(dob_a, dob_b):
+    """One worked example per tradition for this couple, computed live.
+
+    Bound rather than imported at module scope: `worked` needs a Swiss Ephemeris to be registered first, and at
+    import time it may not be. The dates are passed through `_concrete` because a chart needs an instant — the
+    example text says which parts of the date were actually known.
+    """
+    import worked
+    worked.bind(sys.modules["swisseph"])
+    return worked.examples(_concrete(dob_a), _concrete(dob_b))
 
 
 def _write(rows):

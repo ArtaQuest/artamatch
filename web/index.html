@@ -27,6 +27,7 @@
          background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;
          margin:24px 0 8px}
   .stats>div{background:var(--bg2);padding:16px 18px}
+  .note.warn{color:var(--gold)}
   .worked{margin:8px 0 10px;padding:10px 12px;border-left:2px solid var(--gold);background:var(--bg2)}
   .worked b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
   .worked ul{margin:6px 0 0;padding-left:18px;font-size:14px}
@@ -104,7 +105,8 @@
     <div><label>His birth date</label><span class="dpart" id="a-dob"></span></div>
     <div><label>Her birth date</label><span class="dpart" id="b-dob"></span></div>
   </div>
-  <p style="margin:16px 0 0"><button id="go-pair" disabled>Score this pair</button></p>
+  <p style="margin:16px 0 4px"><button id="go-pair" disabled>Score this pair</button></p>
+  <p class="note" id="pair-window"></p>
   <div id="pair-out"></div>
 </div>
 
@@ -256,7 +258,9 @@ json.dumps(info)
 `);
   render(JSON.parse(info));
   ready = true;
-  $("#go-pair").disabled = false;
+  // showPairValidity owns #go-pair from here: enabling it unconditionally is what let an out-of-window pair be
+  // submitted and refused.
+  showPairValidity();
   $("#go-find").disabled = false;
   // The table paints first with a placeholder; the worked examples are real astronomy on the two dates in the
   // controls and arrive a moment later.
@@ -265,6 +269,70 @@ json.dumps(info)
 
 let WORKED = {};          // tradition slug -> lines, computed for the pair currently in the controls
 let redrawTraditions = () => {};
+
+// THE WINDOW IS ONE VARIABLE AND IT COMES FROM THE MODEL. It was written into the HTML as min="1800"
+// max="1950" in four places, which is the same drift that let the page offer 1994 while the model could only
+// answer 1800-1950. `min`/`max` on an input are ADVISORY anyway — a year can be typed straight past them, and
+// a browser restoring form state from a previous visit ignores them entirely — so nothing may rely on them.
+// Every control is clamped in JS instead, on load and on every change.
+let WIN = { from: 1800, to: 1950, maxGap: 60 };
+
+const clampYear = y => Math.min(WIN.to, Math.max(WIN.from, Math.trunc(Number(y) || WIN.from)));
+
+function clampISO(iso, fallback) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+  if (!m) return fallback;
+  const y = clampYear(m[1]);
+  return `${String(y).padStart(4, "0")}-${m[2]}-${m[3]}`;
+}
+
+// Apply the window to every control that has one, and pull anything outside it back inside.
+function applyWindow() {
+  for (const host of [$("#a-dob"), $("#b-dob")].filter(Boolean)) {
+    const y = host.querySelector(".dy");
+    if (!y) continue;
+    y.min = WIN.from; y.max = WIN.to;
+    const before = y.value;
+    y.value = clampYear(y.value);
+    if (String(before) !== String(y.value)) y.dataset.clamped = "1";
+  }
+  for (const [id, fb] of [["#f-self", `${WIN.from + 89}-04-16`],
+                          ["#f-from", `${WIN.from + 93}-01-01`],
+                          ["#f-to", `${WIN.from + 95}-12-31`]]) {
+    const el = $(id);
+    if (!el) continue;
+    el.min = `${WIN.from}-01-01`;
+    el.max = `${WIN.to}-12-31`;
+    el.value = clampISO(el.value, fb);
+  }
+  showPairValidity();
+}
+
+// Say whether the pair can be answered BEFORE the button is pressed. The old page only refused after doing the
+// work, so an out-of-window pair looked accepted right up until it was not.
+function showPairValidity() {
+  const note = $("#pair-window");
+  if (!note) return;
+  const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
+  const ya = Number(a.slice(0, 4)), yb = Number(b.slice(0, 4));
+  const gap = Math.abs(ya - yb);
+  const inWin = ya >= WIN.from && ya <= WIN.to && yb >= WIN.from && yb <= WIN.to;
+  const ok = inWin && gap <= WIN.maxGap;
+  const clamped = [$("#a-dob"), $("#b-dob")].some(h => h && h.querySelector(".dy") &&
+    h.querySelector(".dy").dataset.clamped === "1");
+  note.textContent = ok
+    ? (clamped
+        ? `A year outside ${WIN.from}–${WIN.to} was pulled back into range: this model was trained on those `
+          + `years only, so anything outside them would be extrapolation.`
+        : `Both years are inside ${WIN.from}–${WIN.to}, the range this model was trained on.`)
+    : (!inWin
+        ? `Both births must fall in ${WIN.from}–${WIN.to} — the years this model was trained on.`
+        : `These births are ${gap} years apart; this model was fitted on couples less than `
+          + `${WIN.maxGap} years apart.`);
+  note.className = ok ? "note" : "note warn";
+  const btn = $("#go-pair");
+  if (btn) btn.disabled = !ready || !ok;
+}
 
 // The worked examples are real astronomy on the two dates in the controls, not stored text: the sexagenary year
 // is arithmetic on the year, the Long Count arithmetic on the Julian day, and everything else comes from the
@@ -346,6 +414,11 @@ function render(i) {
       <td class="n">${n || ""}</td><td><div class="bar"><i style="width:${w}%"></i></div></td></tr>`;
   }).join(""); };
   drawTraditions();
+  // The window the model declares wins over the fallback, and every control is re-clamped to it.
+  if (i.train_window && i.train_window.from && i.train_window.to) {
+    WIN = { from: Number(i.train_window.from), to: Number(i.train_window.to), maxGap: WIN.maxGap };
+  }
+  applyWindow();
   redrawTraditions = () => drawTraditions();
   $("#trad-missing").innerHTML =
     (usingDerived
@@ -420,7 +493,8 @@ function dateControl(host, year, month, day) {
         return `<option value="${v}"${v === sel ? " selected" : ""}>${labels ? labels[i] : i + 1}</option>`;
       })).join("");
   host.innerHTML =
-    `<input class="dy" type="number" min="1800" max="1950" step="1" value="${year}" aria-label="year">`
+    `<input class="dy" type="number" min="${WIN.from}" max="${WIN.to}" step="1" value="${year}" `
+    + `aria-label="year">`
     + `<select class="dm" aria-label="month">${opts(12, MONTHS, month)}</select>`
     + `<select class="dd" aria-label="day">${opts(31, null, day)}</select>`;
 }
@@ -437,12 +511,28 @@ function readDate(host) {
   return `${y}-${m}-${d}`;
 }
 
-dateControl($("#a-dob"), 1889, "04", "16");
-dateControl($("#b-dob"), 1893, "07", "08");
+// Derived from the window, so a change to the training years cannot leave the page offering dates it will
+// then refuse — which is exactly what happened when the window moved to 1800-1950 and these stayed at 1994.
+dateControl($("#a-dob"), clampYear(WIN.from + 89), "04", "16");
+dateControl($("#b-dob"), clampYear(WIN.from + 93), "07", "08");
 
-// Recompute the examples whenever either date changes, so what is shown always follows the inputs.
+// Clamp and re-validate on every interaction, then recompute the examples so what is shown follows the inputs.
 for (const host of [$("#a-dob"), $("#b-dob")].filter(Boolean)) {
-  host.addEventListener("change", () => refreshWorked());
+  for (const ev of ["change", "input"]) {
+    host.addEventListener(ev, () => {
+      const y = host.querySelector(".dy");
+      if (y && y.value !== "" && String(clampYear(y.value)) !== String(y.value)) {
+        y.value = clampYear(y.value);
+        y.dataset.clamped = "1";
+      }
+      showPairValidity();
+      if (ev === "change") refreshWorked();
+    });
+  }
+}
+for (const id of ["#f-self", "#f-from", "#f-to"]) {
+  const el = $(id);
+  if (el) el.addEventListener("change", () => { el.value = clampISO(el.value, el.value); });
 }
 
 $("#go-pair").onclick = async () => {
@@ -474,11 +564,22 @@ $("#go-find").onclick = async () => {
   if (!ready) return;
   stopFlag = false;
   $("#go-find").disabled = true; $("#stop").disabled = false;
-  const self = $("#f-self").value, from = $("#f-from").value, to = $("#f-to").value,
-        step = $("#f-step").value;
+  // Clamp before planning. The old path scanned the whole range and then reported that none of its 5,114
+  // dates could be scored — all of the work, none of the answer.
+  const self = clampISO($("#f-self").value, `${WIN.from + 89}-04-16`);
+  const from = clampISO($("#f-from").value, `${WIN.from + 93}-01-01`);
+  const to = clampISO($("#f-to").value, `${WIN.from + 95}-12-31`);
+  // Clamping two out-of-window endpoints can land them on the same day, which is a legal range of one
+  // candidate and a useless one. Keep a span: pull `to` forward to the end of the window rather than handing
+  // back a search with nothing to search.
+  let to2 = to;
+  if (to2 <= from) to2 = `${WIN.to}-12-31`;
+  $("#f-self").value = self; $("#f-from").value = from; $("#f-to").value = to2;
+  const to_ = to2;
+  const step = $("#f-step").value;
   const plan = JSON.parse(await py.runPythonAsync(
     `import json, runner; json.dumps(runner.search_plan(${JSON.stringify(self)}, ${JSON.stringify(from)},
-      ${JSON.stringify(to)}, ${step}))`));
+      ${JSON.stringify(to_)}, ${step}))`));
   let all = [], dropped = 0, warnings = [];
   const t0 = performance.now();
   if (plan.scorable === 0) {
@@ -496,7 +597,7 @@ $("#go-find").onclick = async () => {
       ${plan.candidates.toLocaleString()} dates are out of range` : ""}</p>`;
     const r = JSON.parse(await py.runPythonAsync(
       `import json, runner; json.dumps(runner.search_batch(${JSON.stringify(self)},
-        ${JSON.stringify(from)}, ${JSON.stringify(to)}, ${step}, ${b}, ${plan.batch}))`));
+        ${JSON.stringify(from)}, ${JSON.stringify(to_)}, ${step}, ${b}, ${plan.batch}))`));
     all = all.concat(r.rows); dropped += r.dropped || 0;
     if (r.warning) warnings.push(r.warning);
   }

@@ -166,7 +166,57 @@ for (const t of tr.slice(0, 3)) {
   for (const w of (t.worked || []).slice(0, 2)) console.log(`              ${w.slice(0, 96)}`);
 }
 
+// TYPE AN OUT-OF-WINDOW YEAR AND SEE WHAT THE PAGE DOES. `min`/`max` on a number input are advisory: 1994 can
+// be typed straight past them, and a browser restoring form state from an earlier visit ignores them entirely.
+// The page must pull the value back inside the window and refuse to offer a score it cannot give.
+const clamp = await ev(`(() => {
+  const host = document.querySelector("#a-dob");
+  const y = host && host.querySelector(".dy");
+  if (!y) return { ok: false, why: "no year input" };
+  const min = Number(y.min), max = Number(y.max);
+  y.value = "1994";
+  y.dispatchEvent(new Event("input", { bubbles: true }));
+  const after = y.value;
+  const btn = document.querySelector("#go-pair");
+  const note = (document.querySelector("#pair-window") || {}).textContent || "";
+  return { min, max, after: Number(after), disabled: !!(btn && btn.disabled), note: note.slice(0, 120) };
+})()`) || {};
+console.log(`  clamping  : year input min=${clamp.min} max=${clamp.max}; typed 1994 became ${clamp.after}`);
+console.log(`  notice    : ${clamp.note}`);
+
+// The search inputs are `type="date"`, whose min/max are equally advisory. The old page scanned 5,114 dates and
+// THEN reported that none of them could be scored — all of the work and none of the answer.
+const finder = await ev(`(() => {
+  const set = (id, v) => {
+    const el = document.querySelector(id);
+    if (!el) return null;
+    el.value = v;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return el.value;
+  };
+  return {
+    self: set("#f-self", "1994-02-15"),
+    from: set("#f-from", "1994-01-01"),
+    to: set("#f-to", "2008-01-01"),
+    min: (document.querySelector("#f-from") || {}).min,
+    max: (document.querySelector("#f-to") || {}).max,
+  };
+})()`) || {};
+console.log(`  search    : 1994-02-15/1994-01-01/2008-01-01 became ` +
+            `${finder.self}/${finder.from}/${finder.to}  (min ${finder.min}, max ${finder.max})`);
+
+const inWin = v => /^(\d{4})-/.test(v || "") && Number(String(v).slice(0, 4)) >= 1800
+                   && Number(String(v).slice(0, 4)) <= 1950;
+
 const checks = [
+  ["the search inputs are clamped into the window too",
+   inWin(finder.self) && inWin(finder.from) && inWin(finder.to),
+   `${finder.self} / ${finder.from} / ${finder.to}`],
+  ["the year input carries the model's window, not a hardcoded one",
+   clamp.min === 1800 && clamp.max === 1950, `min=${clamp.min} max=${clamp.max}`],
+  ["typing a year outside the window is pulled back inside it",
+   clamp.after >= clamp.min && clamp.after <= clamp.max, `1994 stayed ${clamp.after}`],
+  ["the page states the window next to the control", /\d{4}/.test(clamp.note || "")],
   ["the grid rendered 4 data rows + a header", grid.length === 5],
   ["the tradition table is not empty", tr.length > 0],
   ["every tradition is explained and lists its blocks", tr.length > 0 && described.length === tr.length,

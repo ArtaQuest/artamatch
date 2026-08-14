@@ -33,7 +33,7 @@ from kagglesdk.competitions.types.competition_enums import CompetitionDatabundle
 # The COMPETITION slug, which is not the dataset slug. They were the same word for long enough to cost a
 # debugging session: uploading against the dataset name answers 403 "competitions.getPrivate was denied",
 # which reads like a credential problem and is really a competition that this account does not host.
-COMP = "artamatch-parents-together"
+COMP = os.environ.get("AQ_COMP", "artamatch-astrology")
 USER = os.environ["KAGGLE_USERNAME"]
 KEY = os.environ["KAGGLE_KEY"]
 

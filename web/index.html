@@ -42,8 +42,14 @@
      single date occupied three rows and the two of them six — the controls pushed the button off a phone screen
      entirely. A three-column grid with a fixed year column and two fluid ones keeps it to one row at 320px, and
      min-width:0 is what actually lets a select shrink below its longest option ("September"). */
-  .dpart{display:grid;grid-template-columns:4.6em 1fr 3.6em;gap:6px;align-items:stretch}
+  /* The day column is sized to its own CONTENT, not to a guessed em value. At 3.6em it had 34px of text room
+     and needed 45 — the widest option is the em-dash placeholder plus the arrow every browser draws inside the
+     box — so the selected value rendered truncated ("1" for "15") and the control looked broken rather than
+     narrow. `max-content` measures the real widest option, and minmax(0,1fr) is what lets the month column give
+     up the space instead of overflowing. */
+  .dpart{display:grid;grid-template-columns:4.4em minmax(0,1fr) max-content;gap:6px;align-items:stretch}
   .dpart>*{min-width:0;width:100%}
+  .dpart select{padding-left:8px;padding-right:8px}
   /* The spinner on a four-digit year is a target nobody wants and it steals horizontal room. */
   .dpart .dy{-moz-appearance:textfield;appearance:textfield}
   .dpart .dy::-webkit-outer-spin-button,.dpart .dy::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}

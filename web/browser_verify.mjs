@@ -101,8 +101,18 @@ const send = (method, params = {}) => {
 };
 async function ev(expression) {
   const r = await send("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true });
+  // SURFACE THE EXCEPTION. This returned undefined on a throw, so a syntax or runtime error inside an evaluated
+  // block came back looking like "the page has no such element" and every assertion downstream failed with
+  // `undefined` instead of naming the actual fault.
+  const exc = r.result?.exceptionDetails;
+  if (exc) {
+    const d = exc.exception?.description || exc.text || JSON.stringify(exc);
+    console.error(`  !! evaluate threw: ${String(d).split("\n")[0].slice(0, 200)}`);
+    evalErrors.push(d);
+  }
   return r.result?.result?.value;
 }
+const evalErrors = [];
 
 await send("Runtime.enable");
 await send("Log.enable");
@@ -206,10 +216,50 @@ const phone = await ev(`(() => {
            // The reason a disabled button is disabled has to be on screen with it.
            whyVisible: !!(why && why.getBoundingClientRect().height > 0),
            whyBelowBtn: !!(btn && why && why.getBoundingClientRect().top >= btn.getBoundingClientRect().top),
-           gapPx: (btn && why) ? Math.round(why.getBoundingClientRect().top - btn.getBoundingClientRect().bottom) : -1 };
+           gapPx: (btn && why) ? Math.round(why.getBoundingClientRect().top - btn.getBoundingClientRect().bottom) : -1,
+           // CLIPPED TEXT IS INVISIBLE TO EVERY OTHER CHECK. A select whose widest option does not fit renders
+           // its value truncated — "15" as "1" plus the arrow — while the DOM value stays correct, the element
+           // does not overflow its parent and the page does not scroll. The day column was 34px of text room
+           // against 45px of need at every width, and it read as a control that would not select.
+           clipped: (() => {
+             const bad = [];
+             const cv = document.createElement("canvas").getContext("2d");
+             for (const el of document.querySelectorAll("input, select, button")) {
+               const cs = getComputedStyle(el);
+               const avail = el.getBoundingClientRect().width
+                 - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+                 - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth);
+               cv.font = cs.font;
+               let need = 0, txt = "";
+               if (el.tagName === "SELECT") {
+                 for (const o of el.options) {
+                   const w = cv.measureText(o.textContent).width;
+                   if (w > need) { need = w; txt = o.textContent; }
+                 }
+                 need += 18;                       // the arrow the browser draws inside the box
+               } else {
+                 txt = el.value || el.textContent || "";
+                 need = cv.measureText(txt).width + (el.type === "number" ? 4 : 0);
+               }
+               if (need > avail + 0.5) {
+                 // No backticks and no escaped quotes. This code is inside a template literal, so a backtick
+                 // closes it AND a backslash escape is consumed by the literal before Chrome sees it — the
+                 // string " \"" arrives as " "" and is a syntax error. Plain concatenation, no quote chars.
+                 bad.push((el.id ? "#" + el.id : el.tagName.toLowerCase()) + " [" +
+                          txt.slice(0, 10) + "] needs " + Math.round(need) + " has " + Math.round(avail));
+               }
+             }
+             return bad.slice(0, 6);
+           })(),
+           // A button that is usable must not LOOK unusable, and one that is unusable must say so.
+           btnDisabled: !!(btn && btn.disabled),
+           btnCursor: btn ? getComputedStyle(btn).cursor : "",
+           btnOpacity: btn ? getComputedStyle(btn).opacity : "" };
 })()`) || {};
 console.log(`  phone     : ${phone.viewport}px viewport, date control ${phone.parts} parts on ` +
-            `${phone.rows} row(s) totalling ${phone.controlW}px; ${phone.spillTotal} element(s) spilling`);
+            `${phone.rows} row(s) totalling ${phone.controlW}px; ${phone.spillTotal} element(s) spilling, ` +
+            `${(phone.clipped || []).length} clipping their text`);
+if ((phone.clipped || []).length) console.log(`              ${phone.clipped.join("; ")}`);
 if (phone.spillTotal) console.log(`              ${(phone.spill || []).join(", ")}`);
 await send("Emulation.clearDeviceMetricsOverride");
 await sleep(400);
@@ -337,6 +387,10 @@ const checks = [
    `scrollWidth ${phone.scrollW} vs ${phone.viewport}`],
   ["the reason a pair cannot be scored sits right under the button",
    phone.whyVisible && phone.whyBelowBtn && phone.gapPx >= 0 && phone.gapPx < 40, `gap ${phone.gapPx}px`],
+  ["no control clips its own text at 390px", (phone.clipped || []).length === 0,
+   (phone.clipped || []).join("; ")],
+  ["an enabled button looks enabled", phone.btnDisabled || (phone.btnCursor === "pointer"
+    && Number(phone.btnOpacity) >= 0.9), `cursor ${phone.btnCursor}, opacity ${phone.btnOpacity}`],
   ["no console or runtime errors", errors.length === 0],
 ];
 console.log("");

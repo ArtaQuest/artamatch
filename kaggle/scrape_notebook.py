@@ -185,10 +185,22 @@ def stamp(iso, precision):
     Precision 11 is a day, 10 a month, 9 a year. Wikidata pads the unknown parts with 01, so a year-precision
     birth arrives as `1850-01-01T00:00:00Z` and is indistinguishable from someone genuinely born on 1 January.
     Writing `1850-00-00` instead keeps the row and states what is not known.
+
+    AND 1 JANUARY IS TREATED AS A YEAR EVEN WHEN WIKIDATA CLAIMS A DAY. The claim is not trustworthy: among
+    167,044 day-precision dates in this window, 1 January occurs 767 times against a median day-of-year count of
+    456 — a 1.7x excess, where 2 January and 31 December both sit at 1.0x. Christmas Day reaches only 1.28x, so
+    the spike is not "notable dates attract real births". The excess is roughly 311 records whose source knew
+    only the year and whose importer wrote a day anyway.
+
+    The cost is stated rather than hidden: about 456 genuine 1 January birthdays lose their day, 0.27% of all
+    day-precision dates. That is the right side to err on. The entire reason unknown parts are written `00` is to
+    stop date precision acting as a proxy for how well documented a person is — and a 1.7x pile-up on one date
+    means Jan-1-ness was still carrying exactly that signal, in the one place the encoding could not see it.
     """
     p = int(precision)
     if p >= 11:
-        return iso[:10]
+        d = iso[:10]
+        return d[:4] + "-00-00" if d[5:10] == "01-01" else d
     if p == 10:
         return iso[:7] + "-00"
     return iso[:4] + "-00-00"

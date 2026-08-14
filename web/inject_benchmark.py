@@ -31,8 +31,11 @@ TRAIN = os.environ.get("AQ_TRAIN", "/tmp/aqscrape3/train.csv")
 
 # Everything the exporter writes. This script may ADD keys and may not touch these, because they are the model.
 EXPORTER_OWNS = {"base", "meta", "blocks", "contract", "rate", "hour", "traditions", "tradition_auc"}
-LEVELS = ["full", "month", "year", "absent"]
-EXPECTED = {f"{a}|{b}" for a in LEVELS for b in LEVELS} - {"absent|absent"}
+sys.path.insert(0, os.path.join(os.path.dirname(HERE), "kaggle"))
+import dates as D          # noqa: E402  — the grid is defined once
+
+LEVELS = D.LEVELS
+EXPECTED = set(D.CELLS)
 
 
 def main():
@@ -47,7 +50,7 @@ def main():
 
     cells = set(g["per_cell"])
     if cells != EXPECTED:
-        raise SystemExit(f"the grid has {len(cells)} cells, not the 15 the metric averages; "
+        raise SystemExit(f"the grid has {len(cells)} cells, not the {len(EXPECTED)} the metric averages; "
                          f"unexpected {sorted(cells - EXPECTED)}, missing {sorted(EXPECTED - cells)}")
 
     years = []
@@ -64,7 +67,10 @@ def main():
         "lift": g["lift"],
         "n_rows": g["couples"],
         "grid": "man x woman",
-        "excluded": "with neither date there is no input, so the cell cannot rank anyone",
+        # The list, not a sentence: the page renders a blank per excluded cell and needs to know which.
+        "excluded": sorted(g.get("excluded") or D.EXCLUDED_CELLS),
+        "cells_scored": len(g["per_cell"]),
+        "weighted": True,
         "cells": {k: {"stack": v,
                       "baseline": g["reference_per_cell"][k],
                       "lift": v - g["reference_per_cell"][k]} for k, v in g["per_cell"].items()},

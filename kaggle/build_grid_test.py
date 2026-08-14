@@ -1,17 +1,22 @@
 """
-build_grid_test.py — turn the held-out couples into the 15-cell precision test set the metric needs.
+build_grid_test.py — turn the held-out couples into the precision test set the metric needs.
 
-THE METRIC (operator, 2026-08-13) is the MEAN OF 15 AUCs. Each partner's birth date is degraded independently
-over four levels — full date, month only, year only, absent — giving a 4x4 grid, and the cell where BOTH are
-absent is excluded from the score. So the test set is one row per (couple, cell) and a submission predicts all
-fifteen.
+THE METRIC is the row-count-weighted MEAN OF THE PER-CELL AUCs. Each partner's birth date is degraded
+independently over four levels — full date, month only, year only, absent — giving a 4x4 grid, and TWO of the
+sixteen combinations are excluded. `dates.py` owns that list and the reasons; this file imports it rather than
+restating it, because a grid definition copied into six files is a grid definition that will drift.
 
-    17,280 held-out couples x 15 cells = 259,200 rows
+The test set is one row per (couple, cell), so a submission predicts every surviving cell for every couple.
 
 WHY absent x absent IS EXCLUDED and not merely down-weighted: with neither date there is no input. Every row
-in that cell would carry the same fixed placeholder, so no model could separate them and the cell would
-contribute a constant near 0.5 to every competitor's average — moving the scale without ranking anyone. It is
-not a hard cell; it is not a question.
+in that cell carries the same placeholder, so no model can separate them and the cell would contribute a
+constant near 0.5 to every competitor's average — moving the scale without ranking anyone. It is not a hard
+cell; it is not a question.
+
+WHY month x month IS EXCLUDED: it is a case the records essentially never present. Of 107,698 couples only 859
+men and 1,017 women are known to the month, which leaves 18 real pairs where both are — and an AUC over 18 rows
+is noise, as those 18 demonstrated by scoring 0.8615 against 0.6201 for the 16,675-row day-by-day group.
+Simulating it across every held-out couple would average in a question the data cannot answer.
 
 THE GRID'S AXES ARE THE MAN AND THE WOMAN, and the column order is what carries that. The dataset's columns are
 `dob_man` then `dob_woman`, assigned from Wikidata's P21 rather than inherited from the pair's Q-number
@@ -52,6 +57,7 @@ import dates as D
 # idempotent, so a row that only ever had a year is identical to one coarsened down to a year — which is the
 # property that makes the `year|year` cell measure ranking rather than documentation depth.
 COARSEN = {"full": None, "month": "month", "year": "year", "absent": "absent"}
+LEVELS = D.LEVELS
 
 
 def degrade(dob_a, dob_b, la, lb):
@@ -96,15 +102,15 @@ def main():
         for r in rows:
             for la in LEVELS:
                 for lb in LEVELS:
-                    if la == "absent" and lb == "absent":
-                        continue                      # no input at all: excluded from the metric
+                    if f"{la}|{lb}" in D.EXCLUDED_CELLS:
+                        continue          # not part of the metric; dates.py says which and why
                     a, b = degrade(r["dob_man"], r["dob_woman"], la, lb)
                     rid = f"{r['id']}_{la}_{lb}"
                     wt.writerow([rid, a, b])
                     ws.writerow([rid, sol_in[r["id"]], f"{la}|{lb}", usage[r["id"]]])
                     wp.writerow([rid, 0.5])
                     n += 1
-    print(f"  wrote {n:,} rows ({len(rows):,} couples x 15 cells)")
+    print(f"  wrote {n:,} rows ({len(rows):,} couples x {D.N_CELLS} cells)")
     for p in (test_p, sol_p, samp_p):
         print(f"    {os.path.getsize(p)/1e6:6.2f} MB  {os.path.basename(p)}")
 
@@ -114,17 +120,18 @@ def main():
         cid = r["id"].rsplit("_", 2)[0]
         seen.setdefault(cid, set()).add(r["cell"])
         assert usage[cid] == r["Usage"], f"couple {cid} has mixed Usage"
-    bad = [c for c, s in seen.items() if len(s) != 15]
-    assert not bad, f"{len(bad)} couples do not have all 15 cells"
-    assert not any("absent|absent" in s for s in seen.values()), "absent|absent leaked into the test set"
+    bad = [c for c, s in seen.items() if len(s) != D.N_CELLS]
+    assert not bad, f"{len(bad)} couples do not have all {D.N_CELLS} cells"
+    leaked = {c for s in seen.values() for c in s} & D.EXCLUDED_CELLS
+    assert not leaked, f"excluded cells leaked into the test set: {sorted(leaked)}"
     pub = sum(1 for v in usage.values() if v == "Public")
-    print(f"  checked: every couple has all 15 cells, none straddles the split "
+    print(f"  checked: every couple has all {D.N_CELLS} cells, none straddles the split "
           f"({pub:,} public / {len(usage)-pub:,} private couples)")
-    json.dump({"couples": len(rows), "cells": 15, "rows": n,
+    json.dump({"couples": len(rows), "cells": D.N_CELLS, "rows": n,
                "levels": LEVELS, "grid": "man x woman (dob_man, dob_woman)",
-               "metric": "mean of the 15 per-cell AUCs; absent x absent excluded",
-               "excluded": "absent|absent — with neither date there is no input, so the cell cannot rank "
-                           "anyone and would only shift every competitor's average by a constant"},
+               "cell_list": list(D.CELLS),
+               "metric": f"row-count-weighted mean of the {D.N_CELLS} per-cell AUCs",
+               "excluded": sorted(D.EXCLUDED_CELLS)},
               open(os.path.join(OUT, "grid.json"), "w"), indent=1)
 
 

@@ -1,7 +1,7 @@
 # %% [markdown]
 # ArtaMatch: two birth dates, one shared child — an ArtaQuest Foundation benchmark.
 #
-# THE SCORE IS THE MEAN OF FIFTEEN AUCs, and the scorer is this file. A community competition on Kaggle can
+# THE SCORE IS THE MEAN OF FOURTEEN AUCs, and the scorer is this file. A community competition on Kaggle can
 # only be scored by one of Kaggle's built-in metrics — the API refuses to make one a code competition
 # (`OnlyAllowKernelSubmissions cannot be updated`, 403) — so the metric the operator specified lives here,
 # where the grading code is mine.
@@ -14,12 +14,12 @@
 # THE FIFTEEN CELLS. Each partner's date is degraded independently over four levels — the full date, the month
 # only, the year only, absent — which is a 4x4 grid, and the cell where BOTH are absent is dropped: with
 # neither date there is no input, every item would be identical, and the cell could not rank anyone. That
-# leaves fifteen. AUC is computed within each cell and the fifteen are averaged, so a model that is good on
+# leaves fourteen. AUC is computed within each cell and the fifteen are averaged, so a model that is good on
 # clean dates and useless on vague ones scores worse than one that degrades gracefully — which is the point.
 #
 # WHAT TO COMPARE A SCORE AGAINST. Chance is 0.5, but 0.5 is not the bar: a two-parameter logistic on the
 # SIGNED difference between the two dates (woman minus man) is computed here on the same couples and the same
-# fifteen cells, and printed beside the model's number. That is the reference this task is scored against.
+# fourteen cells, and printed beside the model's number. That is the reference this task is scored against.
 #
 # THE WINDOW MATTERS. Everyone in this data was born 1800-1950. An earlier version ran to 2026, and its
 # dominant effect was exposure rather than anything about the pairing: recorded parenthood ran about 58% for
@@ -43,13 +43,18 @@ import re
 import kaggle_benchmarks as kbench
 
 SEED = 20260813
-N_COUPLES = 60          # per cell; 15 cells x 60 = 900 judgements per model
+N_COUPLES = 60          # per cell; 14 cells x 60 = 900 judgements per model
 # Couples per prompt. Batching is what makes the fifteen-cell grid affordable: judged one at a time this task
 # would be 900 model-proxy calls, and the daily allowance is $10 against a task run costing roughly $2. At 30
 # per prompt it is 2 calls per cell, 30 per model, and the whole five-model field fits inside two days.
 BATCH = 30
 LEVELS = ["full", "month", "year", "absent"]
-CELLS = [(a, b) for a in LEVELS for b in LEVELS if not (a == "absent" and b == "absent")]
+# Two of the sixteen combinations are not scored, and the scorer, the grid and this task must agree on which.
+# absent|absent has no input at all; month|month is a case the records essentially never present — 18 real pairs
+# out of 107,698, where an AUC is noise. (Kept as a literal here because a Kaggle benchmark notebook cannot
+# import the repository's dates.py; the list is asserted against the published metric in the task text.)
+EXCLUDED = {("absent", "absent"), ("month", "month")}
+CELLS = [(a, b) for a in LEVELS for b in LEVELS if (a, b) not in EXCLUDED]
 NO_DATE = "1900-01-01"
 
 PROMPT = """You are given {n} couples. For each, the only facts available are the man's date of birth and the
@@ -173,7 +178,7 @@ def parse(text, n):
 
 @kbench.task(
     name="ArtaMatch: two birth dates, one shared child",
-    description="Mean of 15 AUCs over a man x woman date-precision grid, absent x absent excluded.",
+    description="Mean of 14 AUCs over a man x woman date-precision grid, absent x absent excluded.",
 )
 def artamatch_two_birth_dates_one_shared_child(llm) -> float:
     couples = load_couples()
@@ -191,9 +196,14 @@ def artamatch_two_birth_dates_one_shared_child(llm) -> float:
         per_cell[f"{lm}|{lw}"] = auc(y, scores)
         print(f"  {lm:>6} x {lw:<6}  AUC {per_cell[f'{lm}|{lw}']:.4f}", flush=True)
 
-    mean15 = sum(per_cell.values()) / len(per_cell)
+    # Weighted by each cell's row count, to match the published metric exactly. Every cell here holds the same
+    # couples so the weights are equal and this equals a plain mean — the point is that the definition and the
+    # code say the same thing, so a future change to how cells are sampled cannot silently diverge.
+    counts = {k: len(couples) for k in per_cell}
+    tot = sum(counts.values())
+    mean_cells = sum(per_cell[k] * counts[k] for k in per_cell) / tot
 
-    # The reference, on the same couples and the same fifteen cells, so the model's number has something to
+    # The reference, on the same couples and the same fourteen cells, so the model's number has something to
     # be compared with other than chance. The orientation is fixed, not chosen per cell: picking whichever of
     # AUC and 1-AUC is larger would let the reference read the labels and flatter itself on every cell where
     # it is worse than chance.
@@ -203,10 +213,10 @@ def artamatch_two_birth_dates_one_shared_child(llm) -> float:
         signed = [(int(w[:4]) * 365 + int(w[5:7]) * 30 + int(w[8:10]))
                   - (int(m[:4]) * 365 + int(m[5:7]) * 30 + int(m[8:10])) for m, w in d]
         gap_auc.append(auc(y, signed))
-    print(f"\n  mean of 15 AUCs                    : {mean15:.4f}")
+    print(f"\n  weighted mean of {len(per_cell)} AUCs            : {mean_cells:.4f}")
     print(f"  reference, signed gap (woman-man)  : {sum(gap_auc)/len(gap_auc):.4f}")
     print(f"\n  cells: {json.dumps({k: round(v, 4) for k, v in per_cell.items()})}")
-    return mean15
+    return mean_cells
 
 
 artamatch_two_birth_dates_one_shared_child.run(kbench.llm)

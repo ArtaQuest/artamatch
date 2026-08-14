@@ -31,12 +31,18 @@ of missing information rather than only on clean dates.
 
 Self-test: ~/.artamatch-venv/bin/python competition_metric.py
 """
+import os
+import sys
+
 import numpy as np
 import pandas as pd
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import dates as D          # noqa: E402  — the grid is defined once, in dates.py
+
 CELL_COLUMN = "cell"
-EXCLUDED = "absent|absent"
-N_CELLS = 15
+EXCLUDED = D.EXCLUDED_CELLS
+N_CELLS = D.N_CELLS
 
 
 class ParticipantVisibleError(Exception):
@@ -109,7 +115,7 @@ def score(solution: pd.DataFrame, submission: pd.DataFrame, row_id_column_name: 
     if not np.isfinite(p.to_numpy()).all():
         raise ParticipantVisibleError("some predictions are infinite or NaN")
 
-    merged = merged[merged[CELL_COLUMN] != EXCLUDED]
+    merged = merged[~merged[CELL_COLUMN].isin(EXCLUDED)]
     # EACH CASE SCORED SEPARATELY, THEN AVERAGED BY HOW MANY ROWS IT HAD. On this grid every cell holds the
     # same held-out couples, so the counts are equal and a weighted mean is arithmetically identical to a plain
     # one — which is exactly why the weighting is worth writing down rather than assumed: the moment a cell
@@ -147,7 +153,7 @@ def per_cell(solution, submission, row_id_column_name):
     m = (sol.rename(columns={target: "_y"})
          .merge(submission.rename(columns={pred: "_p"})[[row_id_column_name, "_p"]],
                 on=row_id_column_name, how="inner", validate="one_to_one"))
-    m = m[m[CELL_COLUMN] != EXCLUDED]
+    m = m[~m[CELL_COLUMN].isin(EXCLUDED)]
     for cell, g in m.groupby(CELL_COLUMN, sort=True):
         a = _auc(g["_y"].to_numpy(), pd.to_numeric(g["_p"]).to_numpy())
         out[cell] = {"auc": None if a is None else float(a), "n": int(len(g)),
@@ -156,8 +162,7 @@ def per_cell(solution, submission, row_id_column_name):
 
 
 def _expected_cells():
-    levels = ["full", "month", "year", "absent"]
-    return [f"{a}|{b}" for a in levels for b in levels if f"{a}|{b}" != EXCLUDED]
+    return list(D.CELLS)
 
 
 def _selftest():
@@ -200,7 +205,7 @@ def _selftest():
 
     # THE WEIGHTING IS APPLIED, not merely described. Build a solution whose cells differ hugely in size, score
     # one perfectly and one backwards, and check the answer follows the larger cell rather than sitting halfway.
-    big, small = "full|full", "year|year"
+    big, small = "full|full", "year|year"          # both survive the exclusion, so the weighting test is valid
     ids2, cell2, y2, p2 = [], [], [], []
     for c in cells:
         n = 2000 if c == big else (40 if c == small else 200)

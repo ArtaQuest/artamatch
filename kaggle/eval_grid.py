@@ -198,21 +198,22 @@ def main():
                 for c, g in merged.groupby("cell", sort=True)}
     ref15 = float(np.mean(list(ref_cell.values())))
 
-    LEV = ["full", "month", "year", "absent"]
-    print(f"\n  MEAN OF 15 AUCs : {mean15:.4f}       reference (signed gap): {ref15:.4f}"
-          f"       lift {mean15-ref15:+.4f}\n")
+    LEV = D.LEVELS
+    print(f"\n  MEAN OF {D.N_CELLS} AUCs (row-count weighted) : {mean15:.4f}       "
+          f"reference (signed gap): {ref15:.4f}       lift {mean15-ref15:+.4f}\n")
     print("  rows = man's date precision, columns = woman's\n")
     print("            " + "".join(f"{c:>10}" for c in LEV))
     for a in LEV:
-        cells = "".join("         —" if a == "absent" and b == "absent"
+        cells = "".join("         —" if f"{a}|{b}" in D.EXCLUDED_CELLS
                         else f"{per_cell[f'{a}|{b}']:>10.4f}" for b in LEV)
         print(f"  {a:<8}" + cells)
 
-    json.dump({"metric": "mean of the 15 per-cell AUCs; absent x absent excluded",
+    json.dump({"metric": f"row-count-weighted mean of the {D.N_CELLS} per-cell AUCs",
+               "cells_scored": D.N_CELLS, "excluded": sorted(D.EXCLUDED_CELLS),
                "mean15": mean15, "reference_signed_gap_mean15": ref15, "lift": mean15 - ref15,
                "per_cell": {k: float(v) for k, v in per_cell.items()},
                "reference_per_cell": {k: float(v) for k, v in ref_cell.items()},
-               "couples": len(rows) // 15, "rows": len(rows)},
+               "couples": len(rows) // D.N_CELLS, "rows": len(rows)},
               open(os.path.join(MODEL, "grid_result.json"), "w"), indent=1)
     log(f"done in {(time.time()-T0)/60:.1f} min")
 

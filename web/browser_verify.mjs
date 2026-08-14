@@ -268,8 +268,11 @@ const checks = [
    `${tr.filter(t => !(t.worked || []).length).length} of ${tr.length} rows have none`],
   ["the worked examples contain real numbers, not just prose",
    tr.length > 0 && tr.every(t => (t.worked || []).some(x => /\d/.test(x)))],
-  ["16 body cells: 15 numeric and 1 blank", body.length === 16 && numeric === 15],
-  ["the per-cell detail table filled all 15 rows", out.detail === 15],
+  // Two of the sixteen combinations are not scored — absent|absent has no input at all, month|month is a case
+  // the records essentially never present — so the matrix must show fourteen numbers and two blanks.
+  ["16 body cells: 14 numeric and 2 blank", body.length === 16 && numeric === 14,
+   `${numeric} numeric, ${body.length - numeric} blank`],
+  ["the per-cell detail table filled all 14 rows", out.detail === 14, `${out.detail} rows`],
   ["the headline statistic is a number, not a placeholder", /^0\.\d+$/.test(out.stats?.auc || "")],
   ["the axis header names the man first", (grid[0] || []).join(" ").includes("man")],
   ["every precision level is labelled", LEVELS.every(() =>

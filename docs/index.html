@@ -88,7 +88,7 @@
 </header>
 
 <div class="stats">
-  <div><b id="s-auc">—</b><span>benchmark: mean AUC over the 15-cell precision grid</span></div>
+  <div><b id="s-auc">—</b><span>benchmark: row-count-weighted mean AUC over the precision grid</span></div>
   <div><b id="s-clean">—</b><span>AUC when both dates are full</span></div>
   <div><b id="s-base">—</b><span>baseline over the same grid: signed age gap</span></div>
   <div><b id="s-lift">—</b><span>lift over the baseline</span></div>
@@ -466,7 +466,9 @@ function render(i) {
     $("#grid-tab tbody").innerHTML = LV.map(m =>
       `<tr><th style="text-align:right;color:var(--ink2)">${LABEL[m]}</th>` + LV.map(w => {
         const c = cells[`${m}|${w}`];
-        if (!c) return `<td class="n" title="no input at all — this cell cannot rank anyone">—</td>`;
+        // A blank means the cell is not part of the metric, and the model says which ones those are.
+        if (!c) return `<td class="n" title="${(bm.excluded || []).includes(`${m}|${w}`)
+          ? "excluded from the metric — see the note below the table" : "not scored"}">—</td>`;
         return `<td class="n" style="${shade(c.stack)}"><b>${fmt(c.stack)}</b></td>`;
       }).join("") + `</tr>`).join("");
     const rows = LV.flatMap(m => LV.map(w => [m, w, cells[`${m}|${w}`]])).filter(r => r[2]);
@@ -478,10 +480,13 @@ function render(i) {
        <td><div class="bar"><i style="width:${Math.max(2, 100 * c.lift / mxl)}%"></i></div></td></tr>`
     ).join("");
     $("#grid-note").textContent =
-      `${bm.n_rows ? bm.n_rows.toLocaleString() : "—"} held-out couples, each scored in all 15 cells. `
-      + `The benchmark is the mean of those 15 AUCs: ${fmt(bm.benchmark15)}, against ${fmt(bm.reference15)} `
-      + `for the signed-gap reference over the same cells. `
-      + `The sixteenth cell is excluded: ${bm.excluded || "with neither date there is no input"}.`;
+      `${bm.n_rows ? bm.n_rows.toLocaleString() : "—"} held-out couples, each scored in every cell. `
+      + `The benchmark is the row-count-weighted mean of those ${Object.keys(cells).length} AUCs: `
+      + `${fmt(bm.benchmark15)}, against ${fmt(bm.reference15)} for the signed-gap reference over the same `
+      + `cells. Two of the sixteen combinations are excluded — `
+      + `${(bm.excluded || []).join(" and ")}: with neither date there is no input at all to rank on, and `
+      + `both dates known only to the month is a case the records essentially never present (18 real pairs `
+      + `out of 107,698, where an AUC is noise).`;
   } else {
     $("#grid-note").textContent = "this model build did not record the precision grid";
   }

@@ -18,6 +18,27 @@ failing.
 
 PRECISION_DAY, PRECISION_MONTH, PRECISION_YEAR = 11, 10, 9
 
+# ── THE GRID, DEFINED ONCE ───────────────────────────────────────────────────────────────────────────────────
+# Each partner's date is degraded independently over four levels, and two of the sixteen combinations are
+# excluded from the score. This lives here because six different files need to agree on it — the scorer, the
+# grid builder, the evaluator, the benchmark task, the publish gate and the page — and every time a constant
+# like this has been restated in this project the copies have drifted.
+LEVELS = ["full", "month", "year", "absent"]
+
+EXCLUDED_CELLS = {
+    # No input at all: both dates are the same placeholder, so nothing can be ranked and the cell would only
+    # shift every competitor's average by a constant.
+    "absent|absent",
+    # Month precision on BOTH sides is a case that essentially does not occur. Of 107,698 couples only 859 men
+    # and 1,017 women are known to the month, so the real data contains 18 such pairs — and on 18 rows an AUC
+    # is noise: that group scored 0.8615 against 0.6201 for the 16,675-row day-by-day group. Simulating it
+    # across every held-out couple asks the model about a situation the records almost never present.
+    "month|month",
+}
+
+CELLS = [f"{a}|{b}" for a in LEVELS for b in LEVELS if f"{a}|{b}" not in EXCLUDED_CELLS]
+N_CELLS = len(CELLS)          # 14
+
 # How wide the uncertainty is, in days, for each precision. core.py takes this as `aWin`/`bWin` and it is the
 # difference between "this chart is for 1 January" and "this chart is for a year we cannot place".
 WINDOW = {PRECISION_DAY: 1.0, PRECISION_MONTH: 30.0, PRECISION_YEAR: 365.0}

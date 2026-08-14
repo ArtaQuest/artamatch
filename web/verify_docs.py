@@ -16,8 +16,8 @@ WHAT IT CHECKS, each one a failure that has actually happened here or is one edi
      correct AQEPH00A asset and blamed the asset
   3. model.json is STRUCTURALLY a model: `base` is the list of base models, not a number. Overwriting it with
      a float while injecting the benchmark produced a file that looked fine and could not be loaded
-  4. the benchmark block has exactly 15 cells, the man x woman keys are the ones the page reads, and
-     absent|absent is absent — the metric is the mean of 15 and a 16th cell would silently change it
+  4. the benchmark block has exactly 14 cells, the man x woman keys are the ones the page reads, and
+     absent|absent is absent — the metric is the weighted mean of 14 and a 16th cell would silently change it
   5. every module named in model.json is in docs/bundle/, and nothing in the bundle imports a package Pyodide
      will not have
   6. END TO END: the bundled tradition modules are imported and run on probe couples through the SHIPPED shim
@@ -41,7 +41,10 @@ REQUIRED = ["index.html", "ephem4.bin", "tables.json", "model.json", "model.npz"
             "sweshim.py", "predictor.py", "runner.py", ".nojekyll"]
 ALLOWED_IMPORTS = {"numpy", "astropy", "erfa"}
 LEVELS = ["full", "month", "year", "absent"]
-EXPECTED_CELLS = {f"{a}|{b}" for a in LEVELS for b in LEVELS} - {"absent|absent"}
+# Mirrors kaggle/dates.py. It is a literal here because docs/ must verify from its own contents with nothing but
+# numpy and astropy — but a mismatch is caught, not shrugged at: the model's cell list must equal this exactly.
+EXCLUDED_CELLS = {"absent|absent", "month|month"}
+EXPECTED_CELLS = {f"{a}|{b}" for a in LEVELS for b in LEVELS} - EXCLUDED_CELLS
 
 fails = []
 
@@ -102,10 +105,11 @@ def main():
 
     bm = m.get("benchmark") or {}
     cells = set((bm.get("cells") or {}))
-    check("the benchmark carries exactly the 15 man x woman cells", cells == EXPECTED_CELLS,
+    check("the benchmark carries exactly the 14 man x woman cells", cells == EXPECTED_CELLS,
           f"{len(cells)} cells; unexpected {sorted(cells - EXPECTED_CELLS)}, "
           f"missing {sorted(EXPECTED_CELLS - cells)}")
-    check("absent|absent is excluded from the metric", "absent|absent" not in cells)
+    check("both non-questions are excluded from the metric", not (cells & EXCLUDED_CELLS),
+          f"present: {sorted(cells & EXCLUDED_CELLS)}")
     check("the headline metric is present and in range",
           isinstance(bm.get("benchmark15"), (int, float)) and 0.0 < bm["benchmark15"] < 1.0,
           f"mean of 15 = {bm.get('benchmark15')}")
@@ -181,7 +185,7 @@ def main():
     if fails:
         print(f"\n{len(fails)} check(s) failed — refusing to publish")
         raise SystemExit(1)
-    print(f"\ndocs/ is publishable — mean of 15 AUCs {bm['benchmark15']:.4f} over "
+    print(f"\ndocs/ is publishable — mean of 14 AUCs {bm['benchmark15']:.4f} over "
           f"{bm.get('n_rows', 0):,} held-out couples")
 
 

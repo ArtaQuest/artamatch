@@ -524,6 +524,23 @@ samp = test[["id"]].copy()
 samp["parents_together"] = 0.5
 samp.to_csv(os.path.join(OUT, "sample_submission.csv"), index=False)
 
+# THE WINDOW, ASSERTED ON WHAT WAS ACTUALLY WRITTEN. The year bound is already in the SPARQL, so this cannot
+# fail — which is exactly why it is worth having: the bound is expressed in one place and enforced in another,
+# and a filter that silently stops matching is the failure this project has already had once (a 60-year gap
+# filter that removed nothing because of a unit error). Checking the files rather than the queries is the only
+# version of this check that cannot be fooled by a query that changed meaning.
+for name, frame in (("train", train), ("test", test)):
+    for col in ("dob_man", "dob_woman"):
+        yrs = frame[col].str[:4].astype(int)
+        bad = frame[(yrs < FLOOR) | (yrs > CEIL)]
+        assert bad.empty, (f"{len(bad)} rows in {name}.{col} fall outside {FLOOR}-{CEIL}, "
+                           f"e.g. {bad[col].head(3).tolist()}")
+        assert frame[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"{name}.{col} is not all YYYY-MM-DD"
+        # Precision is monotone: a known day with an unknown month is not a date, it is a bug.
+        assert not ((frame[col].str[5:7] == "00") & (frame[col].str[8:10] != "00")).any(), \
+            f"{name}.{col} has a known day under an unknown month"
+print(f"  checked: every written row has both births in {FLOOR}-{CEIL}, well-formed, precision monotone")
+
 print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
 print(train[COLS].head(3).to_string(index=False))
 print(f"\n  total build time {(time.time()-T0)/60:.1f} min")

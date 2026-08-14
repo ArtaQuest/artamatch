@@ -24,6 +24,15 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "scrape_notebook.py")
 STAGE = "/tmp/aqnbpush"
+# READ THE ACCOUNT FILE, DO NOT INHERIT THE AMBIENT ONE. ~/.kaggle/kaggle.json is rewritten on a timer by
+# ArtaSwitch to spread GPU hours across several accounts, and this script inherited whatever it found there: a
+# push that had just worked came back 403 because the file had rotated to a different account mid-session, and a
+# 403 on SaveKernel reads as a permissions problem rather than as the wrong identity. The other publishers in
+# this directory already read the named file; this one was the exception.
+_CRED = os.path.expanduser("~/.kaggle/kaggle.artafather.json")
+if os.path.exists(_CRED) and not os.environ.get("KAGGLE_KEY"):
+    _c = json.load(open(_CRED))
+    os.environ["KAGGLE_USERNAME"], os.environ["KAGGLE_KEY"] = _c["username"], _c["key"]
 OWNER = os.environ.get("KAGGLE_USERNAME") or "artafather"
 SLUG = "artamatch-build-the-dataset"
 TITLE = "ArtaMatch: build the dataset"
@@ -36,6 +45,10 @@ def main():
 
     api = KaggleApi()
     api.authenticate()
+    # The notebook lives under a specific account and a version pushed by another one is a 403, not a merge.
+    if OWNER != "artafather":
+        raise SystemExit(f"refusing to push as {OWNER!r}: this notebook is owned by artafather, and pushing as "
+                         f"anyone else answers 403 SaveKernel — set KAGGLE_USERNAME/KAGGLE_KEY explicitly")
 
     src = open(SRC).read()
     nb = KaggleApi._convert_py_to_notebook(src)      # py:percent cells -> .ipynb JSON

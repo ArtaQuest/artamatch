@@ -39,6 +39,7 @@ BUNDLE = "/bundle"
 CANDIDATES = "/candidates.json"
 
 _stack = None
+_asset = None
 _core = None
 _mods = {}
 _span = (None, None)
@@ -80,6 +81,8 @@ def init(asset_bytes, tables_json, model_json, model_npz_bytes):
     import sweshim
     tables = json.loads(tables_json) if isinstance(tables_json, str) else tables_json
     a = sweshim.load(None, None, blob=bytes(asset_bytes), tables=tables)
+    global _asset
+    _asset = a                    # kept, so the computable year range comes from the asset rather than a constant
     sys.modules["swisseph"] = sweshim
     _span = (a.jd0, a.jd0 + a.ndays)
 
@@ -180,19 +183,30 @@ def _build(rows):
 
 
 def score_pair(dob_a, dob_b):
-    """One couple. Returns the probability and the per-tradition description."""
+    """One couple. Returns the probability, the per-tradition description, and whether this is extrapolation.
+
+    A pair outside the fitted years is ANSWERED, with `extrapolating` set and the fitted window alongside it.
+    Refusing was the wrong call: the charts are computable and the stack scores them; what is not warranted is
+    presenting such a number as though it came from inside the training range.
+    """
     if not _acceptable(dob_a, dob_b):
         return {"ok": False,
-                "why": f"outside what this model can answer: both births must fall in "
-                       f"{_year_range()[0]}-{_year_range()[1]} — the years it was trained on, chosen so that "
-                       f"every couple has had a full reproductive life — and be no more than "
-                       f"{int(MAX_GAP_YEARS)} years apart"}
+                "why": f"outside what can be computed: both births must fall in "
+                       f"{_year_range()[0]}-{_year_range()[1]}, the span of the shipped ephemeris, and be no "
+                       f"more than {int(MAX_GAP_YEARS)} years apart"}
     p, P, _ = _build([_row("self", "partner", dob_a, dob_b)])
     if len(p) == 0:
         return {"ok": False, "why": "core.py refused this pair"}
     bt = _stack.by_tradition(P)
+    tlo, thi = train_window()
     return {"ok": True, "p": float(p[0]),
-            "by_tradition": {k: float(v[0]) for k, v in bt.items()}}
+            "by_tradition": {k: float(v[0]) for k, v in bt.items()},
+            # Answered, and labelled. A pair outside the fitted years gets a number and a warning rather than a
+            # refusal: the charts are computable, but nothing justifies presenting the score as if it came from
+            # inside the range the model was measured on.
+            "extrapolating": _extrapolating(dob_a, dob_b),
+            "train_window": [tlo, thi],
+            "computable": list(_year_range())}
 
 
 # THE THREE RULES A PAIR HAS TO SATISFY, kept in one place so the runner and core.py cannot disagree.
@@ -201,20 +215,24 @@ def score_pair(dob_a, dob_b):
 # The binding range is the intersection. Getting this wrong does not produce an error message — core.load
 # silently returns fewer rows than were asked for, and since it drops them from the MIDDLE of a batch, the
 # surviving scores can no longer be matched to the dates that produced them.
-# The range this model may be ASKED about is the range it was TRAINED on, not the range the ephemeris covers.
-# The training window is 1800-1950 — deliberately, to keep the exposure effect out of the measurement — so a
-# 1994 birth is extrapolation, and the honest answer to it is a refusal rather than a confident number. The
-# shipped model.json carries the window it was fitted on and that is what is used; the constants here are only
-# the fallback for a build that predates the field.
-YEAR_LO, YEAR_HI = 1800, 1950
+# TWO DIFFERENT RANGES, and conflating them is a bug in both directions.
+#
+# The TRAINING window is 1800-1950, chosen so that every couple in the fit has had a full reproductive life and
+# the exposure cliff cannot do the work. That is a fact about the measurement.
+#
+# What the model may be ASKED about is wider: anything the shipped ephemeris can compute, up to the present.
+# Refusing a 1994 birth outright was wrong — the charts are perfectly computable and the stack will score them.
+# What is true is that such a score is EXTRAPOLATION beyond the fitted years, and the honest response is to
+# answer and say so, not to decline. Both facts travel with the answer.
+YEAR_LO, YEAR_HI = 1800, 2032          # fallback; the shipped asset's own span wins
 MAX_GAP_YEARS = 60.0
 
 
 def _acceptable(dob_a, dob_b):
-    """Can this model answer about these two dates at all?
+    """Can the ephemeris and the stack produce a number for these two dates?
 
-    `date.fromisoformat` cannot read `1850-00-00`, so this parses the concrete form. Without that, every
-    coarse date — a third of the training data's own encoding — was refused by the page as malformed.
+    `date.fromisoformat` cannot read `1850-00-00`, so this parses the concrete form. Without that, every coarse
+    date — a third of the training data's own encoding — was refused by the page as malformed.
     """
     from datetime import date
     try:
@@ -228,13 +246,41 @@ def _acceptable(dob_a, dob_b):
 
 
 def _year_range():
-    """The window the shipped model was fitted on, falling back to the module constants."""
+    """What can be COMPUTED — the INTERSECTION of two limits, because either one alone is wrong.
+
+    The shipped ephemeris bounds it from outside: `_new_moon_before` searches backwards and needs about 65 days
+    of margin before the first requested date, which is why the asset starts in 1798 rather than 1800. Two years
+    at each end covers that.
+
+    `core.load` bounds it from inside, and does so SILENTLY: it drops a couple whose birth year falls outside its
+    own floor and ceiling, and it drops it from the middle of a batch, so the surviving scores can no longer be
+    matched to the dates that produced them. Reading its constants rather than restating them is the only way
+    these two cannot drift apart.
+    """
+    lo, hi = YEAR_LO, YEAR_HI
+    a = _asset
+    if a is not None:
+        lo = int(round(2000 + (a.jd0 - 2451545.0) / 365.25)) + 2
+        hi = int(round(2000 + (a.jd0 + a.ndays - 2451545.0) / 365.25)) - 2
+    if _core is not None:
+        lo = max(lo, int(getattr(_core, "YEAR_FLOOR", lo)))
+        hi = min(hi, int(getattr(_core, "YEAR_CEIL", hi)))
+    return max(1800, lo), hi
+
+
+def train_window():
+    """The years the model was FITTED on. A score outside these is extrapolation, not a refusal."""
     h = getattr(_stack, "h", None) or {}
     tw = h.get("train_window") or {}
     try:
         return int(tw["from"]), int(tw["to"])
     except (KeyError, TypeError, ValueError):
-        return YEAR_LO, YEAR_HI
+        return 1800, 1950
+
+
+def _extrapolating(dob_a, dob_b):
+    lo, hi = train_window()
+    return not all(lo <= int(d[:4]) <= hi for d in (dob_a, dob_b))
 
 
 def _dates(frm, to, step):

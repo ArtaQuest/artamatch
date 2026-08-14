@@ -146,6 +146,26 @@ const out = await ev(`(() => {
   };
 })()`) || {};
 
+// THE POINT OF THE WIDER RANGE: a modern pair must come back with a real probability, and the answer must say
+// it is an extrapolation. Refusing it was the bug; answering it silently would be the next one.
+const modernScore = await ev(`(async () => {
+  const setY = (sel, v) => { const y = document.querySelector(sel).querySelector(".dy");
+    y.value = String(v); y.dispatchEvent(new Event("input", { bubbles: true })); };
+  setY("#a-dob", 1994); setY("#b-dob", 1998);
+  document.querySelector("#go-pair").click();
+  for (let i = 0; i < 90; i++) {
+    const big = document.querySelector("#pair-out .big");
+    if (big && /%/.test(big.textContent)) {
+      return { pct: big.textContent.trim(),
+               warned: /extrapolat/i.test(document.querySelector("#pair-out").textContent || "") };
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return { pct: null, warned: false, text: (document.querySelector("#pair-out") || {}).textContent || "" };
+})()`) || {};
+console.log(`  1994x1998 : scored ${modernScore.pct || "(nothing)"}, ` +
+            `extrapolation warning ${modernScore.warned ? "shown" : "MISSING"}`);
+
 const grid = out.grid || [];
 const body = grid.slice(1).flatMap(r => r.slice(1));
 // Count what a cell IS rather than which glyph it uses for "empty": comparing against a literal em dash once
@@ -174,15 +194,24 @@ const clamp = await ev(`(() => {
   const y = host && host.querySelector(".dy");
   if (!y) return { ok: false, why: "no year input" };
   const min = Number(y.min), max = Number(y.max);
-  y.value = "1994";
-  y.dispatchEvent(new Event("input", { bubbles: true }));
-  const after = y.value;
-  const btn = document.querySelector("#go-pair");
-  const note = (document.querySelector("#pair-window") || {}).textContent || "";
-  return { min, max, after: Number(after), disabled: !!(btn && btn.disabled), note: note.slice(0, 120) };
+  // Move BOTH years together. Setting one alone leaves the pair decades apart and trips the 60-year rule, so
+  // the page's correct refusal reads as a failure of the thing actually being tested.
+  const y2 = document.querySelector("#b-dob").querySelector(".dy");
+  const type = v => {
+    y.value = String(v); y.dispatchEvent(new Event("input", { bubbles: true }));
+    y2.value = String(Number(v) + 4); y2.dispatchEvent(new Event("input", { bubbles: true }));
+    return { year: Number(y.value), other: Number(y2.value),
+             note: (document.querySelector("#pair-window") || {}).textContent || "",
+             disabled: !!(document.querySelector("#go-pair") || {}).disabled }; };
+  const modern = type("1994");        // answerable, and extrapolation
+  const future = type("2200");        // not a birth date
+  const fitted = type(String(min + 89));
+  return { min, max, modern, future, fitted };
 })()`) || {};
-console.log(`  clamping  : year input min=${clamp.min} max=${clamp.max}; typed 1994 became ${clamp.after}`);
-console.log(`  notice    : ${clamp.note}`);
+console.log(`  range     : year input min=${clamp.min} max=${clamp.max}`);
+console.log(`  1994      : kept as ${clamp.modern?.year}, button ${clamp.modern?.disabled ? "disabled" : "enabled"}`);
+console.log(`              ${String(clamp.modern?.note || "").slice(0, 108)}`);
+console.log(`  2200      : became ${clamp.future?.year}`);
 
 // The search inputs are `type="date"`, whose min/max are equally advisory. The old page scanned 5,114 dates and
 // THEN reported that none of them could be scored — all of the work and none of the answer.
@@ -205,18 +234,30 @@ const finder = await ev(`(() => {
 console.log(`  search    : 1994-02-15/1994-01-01/2008-01-01 became ` +
             `${finder.self}/${finder.from}/${finder.to}  (min ${finder.min}, max ${finder.max})`);
 
-const inWin = v => /^(\d{4})-/.test(v || "") && Number(String(v).slice(0, 4)) >= 1800
-                   && Number(String(v).slice(0, 4)) <= 1950;
+// Read the bounds off the inputs instead of restating them. Hardcoding 1800-1950 here failed the moment the
+// computable range widened to the present, reporting a stale expectation as a page defect.
+const fLo = Number(String(finder.min || "1800-01-01").slice(0, 4));
+const fHi = Number(String(finder.max || "2026-12-31").slice(0, 4));
+const inWin = v => /^(\d{4})-/.test(v || "")
+                   && Number(String(v).slice(0, 4)) >= fLo && Number(String(v).slice(0, 4)) <= fHi;
 
 const checks = [
-  ["the search inputs are clamped into the window too",
+  ["the search inputs stay inside the computable range",
    inWin(finder.self) && inWin(finder.from) && inWin(finder.to),
-   `${finder.self} / ${finder.from} / ${finder.to}`],
-  ["the year input carries the model's window, not a hardcoded one",
-   clamp.min === 1800 && clamp.max === 1950, `min=${clamp.min} max=${clamp.max}`],
-  ["typing a year outside the window is pulled back inside it",
-   clamp.after >= clamp.min && clamp.after <= clamp.max, `1994 stayed ${clamp.after}`],
-  ["the page states the window next to the control", /\d{4}/.test(clamp.note || "")],
+   `${finder.self} / ${finder.from} / ${finder.to} against ${fLo}-${fHi}`],
+  ["the computable range reaches the present, not only the fitted years",
+   clamp.min === 1800 && clamp.max >= 2026, `min=${clamp.min} max=${clamp.max}`],
+  ["a modern year is accepted rather than refused",
+   clamp.modern?.year === 1994 && clamp.modern?.disabled === false, `1994 -> ${clamp.modern?.year}`],
+  ["and it is labelled as an extrapolation",
+   /extrapolat/i.test(clamp.modern?.note || ""), clamp.modern?.note?.slice(0, 70)],
+  ["a year in the future is still pulled back",
+   (clamp.future?.year || 9999) <= clamp.max, `2200 -> ${clamp.future?.year}`],
+  ["a year inside the fitted range is not warned about",
+   !/extrapolat/i.test(clamp.fitted?.note || ""), clamp.fitted?.note?.slice(0, 70)],
+  ["a modern pair actually returns a probability", /%$/.test(modernScore.pct || ""),
+   modernScore.pct || String(modernScore.text || "").slice(0, 90)],
+  ["and the answer itself says it is an extrapolation", modernScore.warned === true],
   ["the grid rendered 4 data rows + a header", grid.length === 5],
   ["the tradition table is not empty", tr.length > 0],
   ["every tradition is explained and lists its blocks", tr.length > 0 && described.length === tr.length,

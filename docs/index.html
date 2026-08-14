@@ -275,7 +275,12 @@ let redrawTraditions = () => {};
 // answer 1800-1950. `min`/`max` on an input are ADVISORY anyway — a year can be typed straight past them, and
 // a browser restoring form state from a previous visit ignores them entirely — so nothing may rely on them.
 // Every control is clamped in JS instead, on load and on every change.
-let WIN = { from: 1800, to: 1950, maxGap: 60 };
+// WIN is what can be COMPUTED — the shipped ephemeris and core.py's own bounds, capped at the present, because
+// a birth date in the future is not a birth date. TRAIN is what the model was FITTED on. They are different
+// questions and the page needs both: a 1994 pair is answerable and is also extrapolation, and the useful thing
+// to do is give the number and say which side of the fitted range it came from. Refusing it was wrong.
+let WIN = { from: 1800, to: new Date().getFullYear(), maxGap: 60 };
+let TRAIN = { from: 1800, to: 1950 };
 
 const clampYear = y => Math.min(WIN.to, Math.max(WIN.from, Math.trunc(Number(y) || WIN.from)));
 
@@ -296,9 +301,11 @@ function applyWindow() {
     y.value = clampYear(y.value);
     if (String(before) !== String(y.value)) y.dataset.clamped = "1";
   }
-  for (const [id, fb] of [["#f-self", `${WIN.from + 89}-04-16`],
-                          ["#f-from", `${WIN.from + 93}-01-01`],
-                          ["#f-to", `${WIN.from + 95}-12-31`]]) {
+  // The two pair defaults sit inside the FITTED range, because that is where the model's own numbers came from.
+  // Nothing stops a visitor moving them out; the notice says what changes when they do.
+  for (const [id, fb] of [["#f-self", `${TRAIN.from + 89}-04-16`],
+                          ["#f-from", `${TRAIN.from + 93}-01-01`],
+                          ["#f-to", `${TRAIN.from + 95}-12-31`]]) {
     const el = $(id);
     if (!el) continue;
     el.min = `${WIN.from}-01-01`;
@@ -318,18 +325,21 @@ function showPairValidity() {
   const gap = Math.abs(ya - yb);
   const inWin = ya >= WIN.from && ya <= WIN.to && yb >= WIN.from && yb <= WIN.to;
   const ok = inWin && gap <= WIN.maxGap;
-  const clamped = [$("#a-dob"), $("#b-dob")].some(h => h && h.querySelector(".dy") &&
-    h.querySelector(".dy").dataset.clamped === "1");
-  note.textContent = ok
-    ? (clamped
-        ? `A year outside ${WIN.from}–${WIN.to} was pulled back into range: this model was trained on those `
-          + `years only, so anything outside them would be extrapolation.`
-        : `Both years are inside ${WIN.from}–${WIN.to}, the range this model was trained on.`)
-    : (!inWin
-        ? `Both births must fall in ${WIN.from}–${WIN.to} — the years this model was trained on.`
-        : `These births are ${gap} years apart; this model was fitted on couples less than `
-          + `${WIN.maxGap} years apart.`);
-  note.className = ok ? "note" : "note warn";
+  const outside = [ya, yb].filter(y => y < TRAIN.from || y > TRAIN.to);
+  note.textContent = !ok
+    ? (!inWin
+        ? `Both births must fall in ${WIN.from}–${WIN.to}: before that the shipped ephemeris runs out, and `
+          + `after it is the future.`
+        : `These births are ${gap} years apart, and the model was fitted on couples less than `
+          + `${WIN.maxGap} years apart.`)
+    : outside.length
+        ? `${outside.length === 2 ? "Both years are" : "One year is"} outside ${TRAIN.from}–${TRAIN.to}, the `
+          + `range this model was fitted on — it will still be scored, but that score is an extrapolation. `
+          + `The fitted years were chosen so every couple had a full reproductive life; a couple born in `
+          + `${Math.max(...outside)} may not have finished having children, and any child they have has not `
+          + `had time to be recorded.`
+        : `Both years are inside ${TRAIN.from}–${TRAIN.to}, the range this model was fitted on.`;
+  note.className = ok && !outside.length ? "note" : "note warn";
   const btn = $("#go-pair");
   if (btn) btn.disabled = !ready || !ok;
 }
@@ -416,7 +426,13 @@ function render(i) {
   drawTraditions();
   // The window the model declares wins over the fallback, and every control is re-clamped to it.
   if (i.train_window && i.train_window.from && i.train_window.to) {
-    WIN = { from: Number(i.train_window.from), to: Number(i.train_window.to), maxGap: WIN.maxGap };
+    TRAIN = { from: Number(i.train_window.from), to: Number(i.train_window.to) };
+  }
+  // What can be computed comes from the asset the page actually loaded, capped at the present year.
+  if (i.yearFrom && i.yearTo) {
+    WIN = { from: Math.max(1800, Number(i.yearFrom) + 2),
+            to: Math.min(Number(i.yearTo) - 2, new Date().getFullYear()),
+            maxGap: WIN.maxGap };
   }
   applyWindow();
   redrawTraditions = () => drawTraditions();
@@ -513,8 +529,8 @@ function readDate(host) {
 
 // Derived from the window, so a change to the training years cannot leave the page offering dates it will
 // then refuse — which is exactly what happened when the window moved to 1800-1950 and these stayed at 1994.
-dateControl($("#a-dob"), clampYear(WIN.from + 89), "04", "16");
-dateControl($("#b-dob"), clampYear(WIN.from + 93), "07", "08");
+dateControl($("#a-dob"), TRAIN.from + 89, "04", "16");
+dateControl($("#b-dob"), TRAIN.from + 93, "07", "08");
 
 // Clamp and re-validate on every interaction, then recompute the examples so what is shown follows the inputs.
 for (const host of [$("#a-dob"), $("#b-dob")].filter(Boolean)) {
@@ -549,6 +565,11 @@ $("#go-pair").onclick = async () => {
     <p style="margin:18px 0 4px"><span class="big">${pct(r.p)}</span></p>
     <p class="note" style="margin:0 0 14px">the model's probability that these two become parents
       together — against a training-set rate of ${pct(window.__rate)}</p>
+    ${r.extrapolating ? `<p class="note warn" style="margin:-8px 0 14px">This pair falls outside
+      ${r.train_window[0]}–${r.train_window[1]}, the years the model was fitted on, so the number above is an
+      extrapolation. Recorded parenthood among people born after the fitted range is depressed for a reason
+      that has nothing to do with the couple: their children may not exist yet, and any that do have not had
+      time to be written down.</p>` : ""}
     <div class="scroll"><table><thead><tr><th>Tradition says</th><th>Relative</th><th style="width:44%"></th>
       </tr></thead><tbody>${bt.map(([k, v]) =>
         `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${pct(v)}</td>
@@ -566,9 +587,9 @@ $("#go-find").onclick = async () => {
   $("#go-find").disabled = true; $("#stop").disabled = false;
   // Clamp before planning. The old path scanned the whole range and then reported that none of its 5,114
   // dates could be scored — all of the work, none of the answer.
-  const self = clampISO($("#f-self").value, `${WIN.from + 89}-04-16`);
-  const from = clampISO($("#f-from").value, `${WIN.from + 93}-01-01`);
-  const to = clampISO($("#f-to").value, `${WIN.from + 95}-12-31`);
+  const self = clampISO($("#f-self").value, `${TRAIN.from + 89}-04-16`);
+  const from = clampISO($("#f-from").value, `${TRAIN.from + 93}-01-01`);
+  const to = clampISO($("#f-to").value, `${TRAIN.from + 95}-12-31`);
   // Clamping two out-of-window endpoints can land them on the same day, which is a legal range of one
   // candidate and a useless one. Keep a span: pull `to` forward to the end of the window rather than handing
   // back a search with nothing to search.

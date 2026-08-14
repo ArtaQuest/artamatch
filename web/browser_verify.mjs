@@ -166,6 +166,54 @@ const modernScore = await ev(`(async () => {
 console.log(`  1994x1998 : scored ${modernScore.pct || "(nothing)"}, ` +
             `extrapolation warning ${modernScore.warned ? "shown" : "MISSING"}`);
 
+// A PHONE-WIDTH PASS. Every check above ran at the default headless size, so a control that took three
+// full-width rows per date — pushing the button off the screen — passed all of them. Layout is measured here,
+// not eyeballed: the date control must occupy ONE row, nothing may spill its parent except the tables that are
+// deliberately inside an overflow-x container, and the body must not scroll sideways.
+await send("Emulation.setDeviceMetricsOverride",
+  { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+await sleep(900);
+const phone = await ev(`(() => {
+  const host = document.querySelector("#a-dob");
+  const parts = host ? Array.from(host.children).map(el => el.getBoundingClientRect()) : [];
+  // Cluster tops with a tolerance. An <input> and a <select> can differ by a pixel inside the SAME grid row,
+  // and counting exact tops reported a correct one-row layout as two rows.
+  const sorted = parts.map(b => b.top).sort((x, y) => x - y);
+  const tops = new Set();
+  for (const t of sorted) {
+    if (![...tops].some(u => Math.abs(u - t) <= 6)) tops.add(t);
+  }
+  const spill = [];
+  for (const el of document.querySelectorAll("body *")) {
+    const b = el.getBoundingClientRect();
+    if (!b.width && !b.height) continue;
+    // Anything inside a deliberate horizontal-scroll container is allowed to be wider than the viewport.
+    if (el.closest(".scroll")) continue;
+    const p = el.parentElement && el.parentElement.getBoundingClientRect();
+    if (p && b.right - p.right > 1) spill.push((el.id ? "#" + el.id : el.tagName.toLowerCase())
+      + " by " + Math.round(b.right - p.right) + "px");
+  }
+  const btn = document.querySelector("#go-pair");
+  const why = document.querySelector("#pair-window");
+  return { viewport: document.documentElement.clientWidth,
+           scrollW: document.documentElement.scrollWidth,
+           parts: parts.length, rows: tops.size,
+           // The decisive measure: one row means the control is no taller than its tallest part.
+           hostH: host ? Math.round(host.getBoundingClientRect().height) : 0,
+           partH: parts.length ? Math.round(Math.max(...parts.map(b => b.height))) : 0,
+           controlW: parts.length ? Math.round(parts.reduce((a, b) => a + b.width, 0)) : 0,
+           spill: spill.slice(0, 8), spillTotal: spill.length,
+           // The reason a disabled button is disabled has to be on screen with it.
+           whyVisible: !!(why && why.getBoundingClientRect().height > 0),
+           whyBelowBtn: !!(btn && why && why.getBoundingClientRect().top >= btn.getBoundingClientRect().top),
+           gapPx: (btn && why) ? Math.round(why.getBoundingClientRect().top - btn.getBoundingClientRect().bottom) : -1 };
+})()`) || {};
+console.log(`  phone     : ${phone.viewport}px viewport, date control ${phone.parts} parts on ` +
+            `${phone.rows} row(s) totalling ${phone.controlW}px; ${phone.spillTotal} element(s) spilling`);
+if (phone.spillTotal) console.log(`              ${(phone.spill || []).join(", ")}`);
+await send("Emulation.clearDeviceMetricsOverride");
+await sleep(400);
+
 const grid = out.grid || [];
 const body = grid.slice(1).flatMap(r => r.slice(1));
 // Count what a cell IS rather than which glyph it uses for "empty": comparing against a literal em dash once
@@ -278,6 +326,17 @@ const checks = [
   ["every precision level is labelled", LEVELS.every(() =>
     (grid[0] || []).join(" ").match(/full|month|year|no date/))],
   ["the page does not scroll sideways", out.overflow === false],
+  ["at 390px the date control is a single row",
+   phone.rows === 1 && phone.hostH > 0 && phone.hostH <= phone.partH + 8,
+   `${phone.rows} row(s), control ${phone.hostH}px vs tallest part ${phone.partH}px`],
+  ["at 390px it fits the viewport", phone.controlW > 0 && phone.controlW <= phone.viewport,
+   `${phone.controlW}px in ${phone.viewport}px`],
+  ["at 390px nothing spills its container outside a scroll region", phone.spillTotal === 0,
+   (phone.spill || []).join(", ")],
+  ["at 390px the body still does not scroll sideways", phone.scrollW <= phone.viewport + 1,
+   `scrollWidth ${phone.scrollW} vs ${phone.viewport}`],
+  ["the reason a pair cannot be scored sits right under the button",
+   phone.whyVisible && phone.whyBelowBtn && phone.gapPx >= 0 && phone.gapPx < 40, `gap ${phone.gapPx}px`],
   ["no console or runtime errors", errors.length === 0],
 ];
 console.log("");

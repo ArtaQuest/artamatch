@@ -1,22 +1,22 @@
 {
  "files": [
   "core.py",
-  "trad_mesoamerican.py",
-  "trad_aboriginal_australian.py",
-  "trad_indigenous_americas.py",
   "trad_lunar_calendrical.py",
+  "trad_aboriginal_australian.py",
+  "trad_mesoamerican.py",
   "trad_african.py",
+  "trad_indigenous_americas.py",
   "trad_harmonics.py",
   "trad_babylonian_egyptian.py",
   "trad_uranian.py",
   "trad_modern_western.py",
-  "trad_vedic_core.py",
   "trad_tibetan_seasia.py",
   "trad_vedic_ashtakavarga.py",
+  "trad_vedic_core.py",
   "trad_hellenistic.py",
+  "trad_persian_arabic.py",
   "trad_chinese.py",
   "trad_east_asian_deep.py",
-  "trad_persian_arabic.py",
   "trad_vedic_match.py"
  ],
  "note": "core.py and the tradition modules, copied verbatim from astro/ \u2014 the browser runs the training code, not a port of it"

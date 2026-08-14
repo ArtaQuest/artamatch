@@ -38,9 +38,20 @@
   .blocklist{margin:0 0 4px;padding-left:18px;color:var(--ink2);font-size:14px}
   .blocklist li{margin:2px 0}
   .blocklist .n{color:var(--ink);font-variant-numeric:tabular-nums}
-  .dpart{display:flex;gap:6px;flex-wrap:wrap}
-  .dpart .dy{width:6.5em}
-  .dpart select{min-width:5.5em}
+  /* One date on ONE row, at every width. A flex row that wrapped gave each part its own full-width line, so a
+     single date occupied three rows and the two of them six — the controls pushed the button off a phone screen
+     entirely. A three-column grid with a fixed year column and two fluid ones keeps it to one row at 320px, and
+     min-width:0 is what actually lets a select shrink below its longest option ("September"). */
+  .dpart{display:grid;grid-template-columns:4.6em 1fr 3.6em;gap:6px;align-items:stretch}
+  .dpart>*{min-width:0;width:100%}
+  /* The spinner on a four-digit year is a target nobody wants and it steals horizontal room. */
+  .dpart .dy{-moz-appearance:textfield;appearance:textfield}
+  .dpart .dy::-webkit-outer-spin-button,.dpart .dy::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  /* A reason for a dead button has to sit beside the button, not below the fold. */
+  .why{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:9px 11px;border-radius:8px;
+       background:var(--bg2);border-left:2px solid var(--ink2);font-size:14px;line-height:1.5}
+  .why.bad{border-left-color:var(--gold);color:var(--ink)}
+  .why b{white-space:nowrap}
   .stats b{display:block;font:600 26px/1.15 var(--mono);color:var(--gold);
            font-variant-numeric:tabular-nums}
   .stats span{display:block;color:var(--ink3);font-size:12px;margin-top:4px;line-height:1.35}
@@ -104,9 +115,12 @@
   <div class="grid">
     <div><label>His birth date</label><span class="dpart" id="a-dob"></span></div>
     <div><label>Her birth date</label><span class="dpart" id="b-dob"></span></div>
+    <p class="note" style="grid-column:1/-1;margin:2px 0 0">Leave the month or day on
+      <b>&mdash;</b> when it is not known: a third of the training data is incomplete the same way, and the
+      model is told the precision rather than left to guess it.</p>
   </div>
-  <p style="margin:16px 0 4px"><button id="go-pair" disabled>Score this pair</button></p>
-  <p class="note" id="pair-window"></p>
+  <p style="margin:16px 0 0"><button id="go-pair" disabled>Score this pair</button></p>
+  <p class="why" id="pair-window"></p>
   <div id="pair-out"></div>
 </div>
 
@@ -326,20 +340,22 @@ function showPairValidity() {
   const inWin = ya >= WIN.from && ya <= WIN.to && yb >= WIN.from && yb <= WIN.to;
   const ok = inWin && gap <= WIN.maxGap;
   const outside = [ya, yb].filter(y => y < TRAIN.from || y > TRAIN.to);
-  note.textContent = !ok
+  const msg = !ok
     ? (!inWin
-        ? `Both births must fall in ${WIN.from}–${WIN.to}: before that the shipped ephemeris runs out, and `
-          + `after it is the future.`
-        : `These births are ${gap} years apart, and the model was fitted on couples less than `
-          + `${WIN.maxGap} years apart.`)
+        ? [`Out of range.`, `Both births must fall in ${WIN.from}–${WIN.to}: before that the shipped `
+           + `ephemeris runs out, and after it is the future.`]
+        : [`${gap} years apart.`, `This model was fitted on couples less than ${WIN.maxGap} years apart, so `
+           + `move either year closer to score the pair.`])
     : outside.length
-        ? `${outside.length === 2 ? "Both years are" : "One year is"} outside ${TRAIN.from}–${TRAIN.to}, the `
-          + `range this model was fitted on — it will still be scored, but that score is an extrapolation. `
-          + `The fitted years were chosen so every couple had a full reproductive life; a couple born in `
-          + `${Math.max(...outside)} may not have finished having children, and any child they have has not `
-          + `had time to be recorded.`
-        : `Both years are inside ${TRAIN.from}–${TRAIN.to}, the range this model was fitted on.`;
-  note.className = ok && !outside.length ? "note" : "note warn";
+        ? [`Extrapolation.`, `${outside.length === 2 ? "Both years are" : "One year is"} outside `
+           + `${TRAIN.from}–${TRAIN.to}, the range this model was fitted on. It will still be scored. The `
+           + `fitted years were chosen so every couple had a full reproductive life; a couple born in `
+           + `${Math.max(...outside)} may not have finished having children, and any child they have has not `
+           + `had time to be recorded.`]
+        : [`Inside the fitted range.`, `Both years fall in ${TRAIN.from}–${TRAIN.to}, the years this model was `
+           + `measured on.`];
+  note.innerHTML = `<b>${msg[0]}</b><span>${msg[1]}</span>`;
+  note.className = ok && !outside.length ? "why" : "why bad";
   const btn = $("#go-pair");
   if (btn) btn.disabled = !ready || !ok;
 }
@@ -503,8 +519,9 @@ function render(i) {
 // training data is partial: an unknown component is written `00`, so `1889-00-00` is a year and `1889-04-00` a
 // month. The control therefore holds its three parts as the state, and the string is composed FROM them — never
 // parsed back out of a combined value, which is how a multi-part control silently discards what was picked.
-const MONTHS = ["January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"];
+// Abbreviated because the widest full name ("September") sets the column width on every screen, and a date
+// control that needs 9em for a month cannot sit on one row on a phone.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function dateControl(host, year, month, day) {
   const opts = (n, labels, sel) =>

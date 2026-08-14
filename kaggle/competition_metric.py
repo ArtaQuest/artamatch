@@ -110,11 +110,17 @@ def score(solution: pd.DataFrame, submission: pd.DataFrame, row_id_column_name: 
         raise ParticipantVisibleError("some predictions are infinite or NaN")
 
     merged = merged[merged[CELL_COLUMN] != EXCLUDED]
-    aucs = {}
+    # EACH CASE SCORED SEPARATELY, THEN AVERAGED BY HOW MANY ROWS IT HAD. On this grid every cell holds the
+    # same held-out couples, so the counts are equal and a weighted mean is arithmetically identical to a plain
+    # one — which is exactly why the weighting is worth writing down rather than assumed: the moment a cell
+    # loses rows (one class absent, a row unscored, a future grid that samples cells differently) an unweighted
+    # mean starts giving a 40-row cell the same voice as a 25,000-row one.
+    aucs, counts = {}, {}
     for cell, g in merged.groupby(CELL_COLUMN, sort=True):
         a = _auc(g[target].to_numpy(), pd.to_numeric(g[pred_col]).to_numpy())
         if a is not None:
             aucs[cell] = a
+            counts[cell] = int(len(g))
     if not aucs:
         raise ParticipantVisibleError("no cell had both classes present, so no AUC could be computed")
     # Abstain loudly rather than quietly averaging a short list: a scorer that silently drops cells reports a
@@ -123,7 +129,30 @@ def score(solution: pd.DataFrame, submission: pd.DataFrame, row_id_column_name: 
         raise ParticipantVisibleError(
             f"scored {len(aucs)} cells but this metric is the mean of {N_CELLS}; "
             f"missing {sorted(set(_expected_cells()) - set(aucs))}")
-    return float(np.mean(list(aucs.values())))
+    w = np.array([counts[c] for c in aucs], dtype=np.float64)
+    v = np.array([aucs[c] for c in aucs], dtype=np.float64)
+    return float(np.sum(w * v) / np.sum(w))
+
+
+def per_cell(solution, submission, row_id_column_name):
+    """The same computation, but returning each case's AUC and its row count instead of one number.
+
+    The leaderboard needs a scalar; a reader needs to see which case was hard and how much of the average it
+    is entitled to. Both come from one code path so they cannot disagree.
+    """
+    out = {}
+    sol = solution
+    target = [c for c in sol.columns if c not in (row_id_column_name, CELL_COLUMN, "Usage")][0]
+    pred = [c for c in submission.columns if c != row_id_column_name][0]
+    m = (sol.rename(columns={target: "_y"})
+         .merge(submission.rename(columns={pred: "_p"})[[row_id_column_name, "_p"]],
+                on=row_id_column_name, how="inner", validate="one_to_one"))
+    m = m[m[CELL_COLUMN] != EXCLUDED]
+    for cell, g in m.groupby(CELL_COLUMN, sort=True):
+        a = _auc(g["_y"].to_numpy(), pd.to_numeric(g["_p"]).to_numpy())
+        out[cell] = {"auc": None if a is None else float(a), "n": int(len(g)),
+                     "positives": int(g["_y"].sum())}
+    return out
 
 
 def _expected_cells():
@@ -136,7 +165,9 @@ def _selftest():
 
     1. A perfect submission scores 1 and a reversed one scores 0 — orientation is not accidentally flipped.
     2. A constant submission scores exactly 0.5 — ties are averaged, not sorted arbitrarily.
-    3. POOLED AUC AND THIS METRIC DISAGREE, which is the whole reason the scorer exists. The submission is
+    3. The average is WEIGHTED BY EACH CASE'S ROW COUNT, and a constructed case proves the weighting is
+       actually applied: two cells with wildly different sizes and opposite scores must land near the big one.
+    4. POOLED AUC AND THIS METRIC DISAGREE, which is the whole reason the scorer exists. The submission is
        built to rank PERFECTLY inside every cell — so this metric must return exactly 1.0 — while carrying a
        different additive offset per cell. Pooled AUC then collapses towards chance, because fourteen
        fifteenths of the pairs it ranks are cross-cell and those are decided by the offsets. No amount of
@@ -166,6 +197,29 @@ def _selftest():
     shuf = pd.DataFrame({"id": [ids[i] for i in perm], "parents_together": (y * 1.0)[perm]})
     assert abs(score(sol, shuf, "id") - 1.0) < 1e-12, "alignment is following row order, not the id"
     print("  a shuffled submission scores the same as an ordered one")
+
+    # THE WEIGHTING IS APPLIED, not merely described. Build a solution whose cells differ hugely in size, score
+    # one perfectly and one backwards, and check the answer follows the larger cell rather than sitting halfway.
+    big, small = "full|full", "year|year"
+    ids2, cell2, y2, p2 = [], [], [], []
+    for c in cells:
+        n = 2000 if c == big else (40 if c == small else 200)
+        for i in range(n):
+            yy = i % 2
+            ids2.append(f"{c}#{i}")
+            cell2.append(c)
+            y2.append(yy)
+            p2.append(yy if c != small else 1 - yy)      # perfect everywhere, reversed in the small cell
+    sol2 = pd.DataFrame({"id": ids2, "parents_together": y2, "cell": cell2, "Usage": "Public"})
+    sub2 = pd.DataFrame({"id": ids2, "parents_together": [float(x) for x in p2]})
+    got = score(sol2, sub2, "id")
+    unweighted = float(np.mean([1.0 if c != small else 0.0 for c in cells]))
+    pc = per_cell(sol2, sub2, "id")
+    print(f"  weighting : one 40-row cell scored 0 against fourteen larger cells scored 1 -> {got:.4f} "
+          f"(unweighted would be {unweighted:.4f})")
+    assert pc[small]["n"] == 40 and pc[big]["n"] == 2000, pc
+    assert got > unweighted + 0.01, (got, unweighted)
+    assert abs(got - 1.0) < 0.02, got
 
     # The disagreement with pooled AUC: perfect inside every cell, offset between cells.
     off = {c: i for i, c in enumerate(cells)}                  # a different additive offset per cell

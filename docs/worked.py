@@ -286,6 +286,47 @@ def examples(dob_man, dob_woman):
         f"or February birth can fall in the previous animal year.",
     ]
 
+    # The lunar night both Polynesian calendars count, named in each, plus the star the year is anchored on.
+    NIGHTS_M = ["Whiro", "Tirea", "Hoata", "Ōuenuku", "Okoro", "Tamatea-āio", "Tamatea-kai-ariki", "Huna",
+                "Ari-roa", "Maure", "Māwharu", "Ōhua", "Atua-whakahaehae", "Turu", "Rākaunui",
+                "Rākau-matohi", "Takirau", "Oike", "Korekore-te-whiwhia", "Korekore-te-rawea",
+                "Korekore-piri-ki-Tangaroa", "Tangaroa-ā-mua", "Tangaroa-ā-roto", "Tangaroa-kiokio",
+                "Ōtāne", "Ōrongonui", "Ōmutu", "Mutuwhenua", "Whiro-whanaunga", "Ōhoata"]
+    NIGHTS_H = ["Hilo", "Hoaka", "Kūkahi", "Kūlua", "Kūkolu", "Kūpau", "ʻOlekūkahi", "ʻOlekūlua",
+                "ʻOlekūkolu", "ʻOlepau", "Huna", "Mōhalu", "Hua", "Akua", "Hoku", "Māhealani", "Kulu",
+                "Lāʻaukūkahi", "Lāʻaukūlua", "Lāʻaupau", "ʻOlekūkahi", "ʻOlekūlua", "ʻOlepau",
+                "Kāloakūkahi", "Kāloakūlua", "Kāloapau", "Kāne", "Lono", "Mauli", "Muku"]
+    ANAHULU = ["hoʻonui (waxing)", "poepoe (full)", "emi (waning)"]
+
+    def _cls(n):
+        if n in (0, 27, 28):
+            return "a dark night, the least productive of the month"
+        if n in (18, 19, 20):
+            return "a Korekore night, low energy"
+        if n in (21, 22, 23):
+            return "a Tangaroa night, the most productive"
+        if n in (13, 14, 15):
+            return "a full-moon night, strong for fishing"
+        return "an ordinary night"
+
+    nm = int(pm // 12) % 30
+    nw = int(pw // 12) % 30
+    # Alcyone near 59.73 deg at J2000, carried forward by general precession at 1.3968 deg per century.
+    def _pleiades(jd):
+        return (59.73 + (1.3968 / 36524.22) * (jd - 2451545.0)) % 360.0
+    sepm = (_lon(jm, swe.SUN) - _pleiades(jm)) % 360.0
+    sepw = (_lon(jw, swe.SUN) - _pleiades(jw)) % 360.0
+    out["polynesian"] = [
+        f"His birth falls on night {nm + 1} of the lunar month — {NIGHTS_M[nm]} in the maramataka, "
+        f"{NIGHTS_H[nm]} in the mahina — {_cls(nm)}.",
+        f"Hers on night {nw + 1}: {NIGHTS_M[nw]} / {NIGHTS_H[nw]}, {_cls(nw)}. "
+        f"That puts him in the {ANAHULU[(nm // 10) % 3]} anahulu and her in the "
+        f"{ANAHULU[(nw // 10) % 3]}.",
+        f"Matariki sits at {_pleiades(jm):.2f}° of ecliptic longitude at his birth, with the Sun "
+        f"{min(sepm, 360 - sepm):.1f}° away — a heliacal rising needs roughly 12° or more — and "
+        f"{min(sepw, 360 - sepw):.1f}° away at hers.",
+    ]
+
     out["uranian"] = [
         f"The Hamburg School works on a 90° dial, so every position is taken modulo 90: his Sun at "
         f"{_lon(jm, swe.SUN) % 90:.2f}° and hers at {_lon(jw, swe.SUN) % 90:.2f}°, "

@@ -46,7 +46,11 @@ TEST = os.environ.get("AQ_TEST", "/tmp/aqscrape/test.csv")
 OUT = os.environ.get("AQ_OUT", "/tmp/aqmodel")
 LIMIT = int(os.environ.get("AQ_LIMIT") or 0)
 FOLDS = 5
-MAX_PER_TRADITION = 3
+# How many blocks each tradition may contribute. The per-tradition cap is a guarantee, not a budget: it stops a
+# strong tradition crowding out every other one. Raising it gives the meta model more to combine — 18 traditions
+# at 6 is up to 108 base models instead of 54 — at the cost of a longer refit. The meta model stays a LOGISTIC
+# whatever this is set to, because predictor.py evaluates a linear meta and a boosted one could not ship.
+MAX_PER_TRADITION = int(os.environ.get("AQ_PER_TRADITION") or 3)
 T0 = time.time()
 os.makedirs(OUT, exist_ok=True)
 CAND = os.path.join(OUT, "couples.json")

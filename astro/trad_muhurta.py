@@ -256,12 +256,32 @@ DRISHTI = {SU: [7], MO: [7], ME: [7], VE: [7], MA: [4, 7, 8], JU: [5, 7, 9], SA:
 _N = [0]
 
 
+class _NK(np.ndarray):
+    """A marker view meaning "this array is already (n, k)"."""
+
+
+def _nk(a):
+    return np.ascontiguousarray(np.asarray(a, dtype=np.float64)).view(_NK)
+
+
 def T(a):
-    """Anything shaped (n,), (k, n), (..., n) or already (n, k) -> (n, k) float64."""
+    """Anything shaped (n,), (k, n), (..., n) or already (n, k) -> (n, k) float64.
+
+    The same orientation guess as trad_vedic_core carried, and the same defect: when a batch of n couples meets
+    an array whose width is also n, the two axes are indistinguishable and the old code silently transposed. In
+    vedic_core that corrupted a one-hot block for any batch of exactly 405 couples. This module is currently
+    excluded from the stack because it needs a marriage date, but an excluded module is still code somebody will
+    re-enable, and this failure mode leaves no trace — so it raises rather than guesses.
+    """
+    if isinstance(a, _NK):
+        return np.ascontiguousarray(np.asarray(a, dtype=np.float64))
     a = np.asarray(a, dtype=np.float64)
     n = _N[0]
     if a.ndim == 1:
         return a[:, None] if a.shape[0] == n else a[None, :]
+    if a.ndim == 2 and a.shape[0] == n and a.shape[1] == n:
+        raise ValueError(f"cannot orient a square {a.shape} array with {n} couples — mark the producer with "
+                         f"_nk() if it is already (n, k); guessing silently transposes a block")
     if a.ndim == 2 and a.shape[0] == n and a.shape[1] != n:
         return np.ascontiguousarray(a)
     return np.ascontiguousarray(a.reshape(-1, a.shape[-1]).T)
@@ -280,7 +300,7 @@ def oh(idx, levels):
     rows = np.arange(n)
     for i in range(flat.shape[0]):
         out[rows, i * levels + np.clip(flat[i], 0, levels - 1)] = 1.0
-    return out
+    return _nk(out)
 
 
 def circ_idx(idx, levels):

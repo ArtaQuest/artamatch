@@ -42,24 +42,45 @@ def client():
     return KaggleClient(username=USER, password=KEY)
 
 
-def upload(kc, path, blob_type):
-    """Three steps: ask for a slot, PUT the bytes, keep the token."""
+def upload(kc, path, blob_type, tries=6):
+    """Three steps: ask for a slot, PUT the bytes, keep the token.
+
+    RETRIED, because the link to api.kaggle.com drops roughly one request in three from here and the failure is
+    an SSLEOFError rather than an HTTP status. Unretried, that took down a whole setup run mid-way and left the
+    sample submission unattached — the competition looked complete while entrants had no format to copy. Only a
+    repeated failure is an answer; a single one is the network.
+    """
     data = open(path, "rb").read()
-    req = ApiStartBlobUploadRequest()
-    req.type = blob_type
-    req.name = os.path.basename(path)
-    req.content_length = len(data)
-    req.content_type = "text/csv"
-    req.last_modified_epoch_seconds = int(os.path.getmtime(path))
-    r = kc.blobs.blob_api_client.start_blob_upload(req)
-    put = urllib.request.Request(r.create_url, data=data, method="PUT",
-                                 headers={"Content-Type": "text/csv",
-                                          "Content-Length": str(len(data))})
-    with urllib.request.urlopen(put, timeout=900) as resp:
-        if resp.status not in (200, 201):
-            raise RuntimeError(f"{path}: PUT returned {resp.status}")
-    print(f"    uploaded {os.path.basename(path)} ({len(data)/1e6:.2f} MB)", flush=True)
-    return r.token
+    last = None
+    for attempt in range(tries):
+        try:
+            req = ApiStartBlobUploadRequest()
+            req.type = blob_type
+            req.name = os.path.basename(path)
+            req.content_length = len(data)
+            req.content_type = "text/csv"
+            req.last_modified_epoch_seconds = int(os.path.getmtime(path))
+            r = kc.blobs.blob_api_client.start_blob_upload(req)
+            put = urllib.request.Request(r.create_url, data=data, method="PUT",
+                                         headers={"Content-Type": "text/csv",
+                                                  "Content-Length": str(len(data))})
+            # 180s, not 900. A hung PUT on a flaky link is indistinguishable from a slow one, and a fifteen
+            # minute hang burns the whole retry budget on a single attempt — failing fast and retrying moves
+            # more bytes than waiting patiently does.
+            with urllib.request.urlopen(put, timeout=180) as resp:
+                if resp.status not in (200, 201):
+                    raise RuntimeError(f"{path}: PUT returned {resp.status}")
+            print(f"    uploaded {os.path.basename(path)} ({len(data)/1e6:.2f} MB)", flush=True)
+            return r.token
+        except Exception as e:
+            last = e
+            if attempt == tries - 1:
+                break
+            wait = 3 * (attempt + 1)
+            print(f"    {os.path.basename(path)}: {type(e).__name__}, retrying in {wait}s "
+                  f"({attempt+1}/{tries})", flush=True)
+            time.sleep(wait)
+    raise RuntimeError(f"{path}: gave up after {tries} attempts — {type(last).__name__} {str(last)[:120]}")
 
 
 def main():
@@ -75,7 +96,12 @@ def main():
 
         print("  1. public data (what participants download)")
         files = []
-        for f in ("train.csv", "test.csv"):
+        # sample_submission.csv goes in the DATA BUNDLE, not through CreateCompetitionSampleSubmission.
+        # That RPC answers 400 here and the blob enum has no sample-submission type at all — only
+        # UNSPECIFIED, COMPETITION_SOLUTION, DATASET, INBOX and MODEL — so the dedicated path appears to need a
+        # solution that cannot exist until the metric is set. As a data file it downloads with everything else,
+        # which is where entrants look for it anyway, and it does not depend on the metric at all.
+        for f in ("train.csv", "test.csv", "sample_submission.csv"):
             t = upload(kc, os.path.join(d, f), ApiBlobType.DATASET)
             cf = ApiCompetitionDataFile()
             cf.name = f
@@ -83,7 +109,8 @@ def main():
             files.append(cf)
         req = ApiCreateCompetitionDataRequest()
         req.competition_name = COMP
-        req.version_notes = "train (80%) and test (20%), split by person group"
+        req.version_notes = ("train, test and sample_submission: day-precision couples, one row each, "
+                             "split by person group")
         req.files = files
         req.competition_databundle_type = CompetitionDatabundleType.COMPETITION_DATABUNDLE_TYPE_PUBLIC
         print("    ->", api.create_competition_data(req))
@@ -92,13 +119,27 @@ def main():
         st = ApiCreateCompetitionSolutionRequest()
         st.competition_name = COMP
         st.blob_token = upload(kc, os.path.join(d, "solution.csv"), ApiBlobType.COMPETITION_SOLUTION)
-        print("    ->", api.create_competition_solution(st))
+        # THE SOLUTION 500s UNTIL A METRIC EXISTS, and CompetitionSettings has no metric field — the server
+        # itself says so: `Cannot find field "evaluation_metric" in message "kaggle.competitions.
+        # CompetitionSettings"`. Letting that abort the run left the SAMPLE SUBMISSION unattached, so the
+        # competition looked set up while entrants had no format to copy. Everything after this must still run.
+        try:
+            print("    ->", api.create_competition_solution(st))
+        except Exception as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            print(f"    -> solution refused (HTTP {code}): set the metric to Area Under ROC Curve in the UI, "
+                  f"then re-run. Continuing so the rest of the setup completes.")
 
-        print("  3. sample submission")
-        ss = ApiCreateCompetitionSampleSubmissionRequest()
-        ss.competition_name = COMP
-        ss.blob_token = upload(kc, os.path.join(d, "sample_submission.csv"), ApiBlobType.DATASET)
-        print("    ->", api.create_competition_sample_submission(ss))
+        print("  3. sample submission — already in the data bundle above")
+        try:
+            ss = ApiCreateCompetitionSampleSubmissionRequest()
+            ss.competition_name = COMP
+            ss.blob_token = upload(kc, os.path.join(d, "sample_submission.csv"), ApiBlobType.DATASET)
+            print("    ->", api.create_competition_sample_submission(ss))
+        except Exception as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            print(f"    -> the dedicated RPC refused it (HTTP {code}); it ships as a data file instead, "
+                  f"which is what participants download anyway")
 
         if launch:
             lr = ApiLaunchCompetitionRequest()

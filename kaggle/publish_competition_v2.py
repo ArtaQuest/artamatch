@@ -132,6 +132,12 @@ repeated and can disagree with this copy as Wikidata changes:
 - the dataset: `artaquest-foundation/artamatch-astrology`
 - how it was built: `artafather/artamatch-build-the-dataset`
 - the Foundation's model, explained: `artafather/artamatch-the-best-astrology-so-far-explained`
+- **the same question put to frontier LLMs**, as a Kaggle benchmark task:
+  `artafather/artamatch-two-birth-dates-one-shared-child`. It asks a language model for a probability per couple
+  rather than a fitted model, so it measures a different thing and is worth reading beside the leaderboard.
+  Gemini 3 Flash Preview scored 0.684 there on a balanced 60-couple draw — but from the PUBLIC training half, so
+  a model that has memorised Wikidata could be recognising people rather than predicting, and 60 couples carry a
+  standard error near 0.07. It is a companion to this competition, not a rival to it.
 
 ## The prizes
 

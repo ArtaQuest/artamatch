@@ -31,7 +31,7 @@ from slugify import slugify
 
 TITLE = "ArtaMatch: two birth dates, one shared child"
 SLUG = slugify(TITLE)                                          # 'artamatch-two-birth-dates-one-shared-child'
-DATASET = "artaquest-foundation/artamatch-two-birth-dates"     # public, CC0, 1 file: train.csv
+DATASET = "artaquest-foundation/artamatch-astrology"     # public, CC0, 1 file: train.csv
 TASK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "artamatch_task.py")
 
 # ------------------------------------------------------------------------ build + validate the payload

@@ -29,7 +29,7 @@
 # not zero.
 #
 # The couples are drawn from the PUBLIC training half of
-# artaquest-foundation/artamatch-two-birth-dates (CC0), so nothing here is a held-out answer key — a
+# artaquest-foundation/artamatch-astrology (CC0), so nothing here is a held-out answer key — a
 # benchmark whose answers sit in a public file would be measuring recall, and this one is meant to measure
 # whether two dates carry anything at all.
 
@@ -113,7 +113,7 @@ def find_train():
         hits = sorted(glob.glob(pattern, recursive=True))
         if hits:
             return hits[0]
-    raise RuntimeError("train.csv not found; attach artaquest-foundation/artamatch-two-birth-dates. "
+    raise RuntimeError("train.csv not found; attach artaquest-foundation/artamatch-astrology. "
                        f"/kaggle/input holds {sorted(glob.glob('/kaggle/input/*'))}")
 
 

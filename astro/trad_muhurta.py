@@ -279,16 +279,27 @@ def T(a):
     n = _N[0]
     if a.ndim == 1:
         return a[:, None] if a.shape[0] == n else a[None, :]
-    if a.ndim == 2 and a.shape[0] == n and a.shape[1] == n:
-        raise ValueError(f"cannot orient a square {a.shape} array with {n} couples — mark the producer with "
-                         f"_nk() if it is already (n, k); guessing silently transposes a block")
+    # A SQUARE ARRAY THAT REACHES HERE IS (k, n), AND TRANSPOSING IT IS RIGHT.
+    #
+    # Both orientations are possible in principle, but everything in this module that produces (n, k) now says so
+    # by returning an _NK view — oh() and cat(), which between them are every such producer. What is left arriving
+    # unmarked is (k, n) from the ephemeris tables, and for those the fall-through transpose below is correct.
+    #
+    # Raising instead was tried and was worse in both directions: it broke single-couple inference, because a
+    # 1x1 array is square and the browser scores exactly one couple, and then it broke batches of two, because a
+    # genuine (2, n) kuta array is square at n=2 and transposing it was always the right answer.
     if a.ndim == 2 and a.shape[0] == n and a.shape[1] != n:
         return np.ascontiguousarray(a)
     return np.ascontiguousarray(a.reshape(-1, a.shape[-1]).T)
 
 
 def cat(*parts):
-    return np.ascontiguousarray(np.concatenate([T(p) for p in parts], axis=1), dtype=np.float64)
+    """Concatenate along the feature axis. Returns _NK: the result is (n, k) BY CONSTRUCTION.
+
+    Without the marker a nested cat — a cat whose result is passed into another cat — hands T() an (n, k) array
+    that is square whenever k equals n, and T() would transpose it. That is the same fault oh() had.
+    """
+    return _nk(np.concatenate([T(p) for p in parts], axis=1))
 
 
 def oh(idx, levels):

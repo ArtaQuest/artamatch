@@ -127,20 +127,47 @@ def frac_in_pada(lon):
 
 
 # ── array plumbing ──────────────────────────────────────────────────────────────────────────────
-# The couple count, set once by build(). Every helper returns (n, k); anything that arrives as
-# (..., n) — the natural shape of the ephemeris tables — is transposed into it. n is 2296 and no
-# feature count comes anywhere near that, so the two orientations are never ambiguous.
+# The couple count, set once by build(). Every helper returns (n, k); anything that arrives as (..., n) — the
+# natural shape of the ephemeris tables — is transposed into it.
+#
+# THE OLD COMMENT HERE SAID: "n is 2296 and no feature count comes anywhere near that, so the two orientations
+# are never ambiguous." That is an assumption about the BATCH SIZE, and it is false for any batch whose size
+# equals a block's width. `oh(idx, 27)` over fifteen stacked grahas returns (n, 405), so a batch of exactly 405
+# couples produced a SQUARE array, T() could not tell which axis was which, and it silently transposed a
+# one-hot — corrupting the whole block while every shape check still passed. It was found because the same
+# couple scored 0.4550 in one batch and 0.4537 in another.
+#
+# Orientation is no longer guessed. Helpers that already produce (n, k) say so by returning an _NK view, and T()
+# hands those back untouched. Anything still ambiguous RAISES rather than picking, because a wrong guess here is
+# not an error message, it is a quietly different model.
 _N = [0]
+
+
+class _NK(np.ndarray):
+    """A marker view meaning "this array is already (n, k)". Carries no data of its own."""
+
+
+def _nk(a):
+    return np.ascontiguousarray(np.asarray(a, dtype=np.float64)).view(_NK)
 
 
 def T(a):
     """Anything shaped (n,), (k, n), (..., n) or already (n, k) -> (n, k) float64."""
+    if isinstance(a, _NK):
+        return np.ascontiguousarray(np.asarray(a, dtype=np.float64))
     a = np.asarray(a, dtype=np.float64)
     n = _N[0]
     if a.ndim == 1:
-        return a[:, None] if a.shape[0] == n else a[None, :]
+        if a.shape[0] == n:
+            return a[:, None]
+        return a[None, :]
     if a.ndim == 2 and a.shape[0] == n and a.shape[1] != n:
         return np.ascontiguousarray(a)
+    if a.ndim == 2 and a.shape[0] == n and a.shape[1] == n:
+        raise ValueError(
+            f"cannot orient a square {a.shape} array with a batch of {n} couples: the row axis and the feature "
+            f"axis are indistinguishable. Mark the producer's output with _nk() if it is already (n, k). "
+            f"Guessing here silently transposes a block.")
     return np.ascontiguousarray(a.reshape(-1, a.shape[-1]).T)
 
 
@@ -149,7 +176,11 @@ def cat(*parts):
 
 
 def oh(idx, levels):
-    """One-hot. idx is (..., n) of ints -> (n, m*levels) with m = prod(leading dims)."""
+    """One-hot. idx is (..., n) of ints -> (n, m*levels) with m = prod(leading dims).
+
+    Returned as an _NK view: this is already (n, k), and a batch of n couples where n happens to equal
+    m*levels would otherwise be a square array that T() has to guess at.
+    """
     idx = np.asarray(idx, dtype=int)
     n = idx.shape[-1]
     flat = idx.reshape(-1, n)
@@ -157,7 +188,7 @@ def oh(idx, levels):
     rows = np.arange(n)
     for i in range(flat.shape[0]):
         out[rows, i * levels + np.clip(flat[i], 0, levels - 1)] = 1.0
-    return out
+    return _nk(out)
 
 
 def circ_idx(idx, levels):

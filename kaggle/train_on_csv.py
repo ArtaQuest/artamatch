@@ -237,6 +237,10 @@ def main():
                               "baseline": {"logistic on the signed gap (woman - man)": float(roc_auc_score(y, bp))}},
                       os.path.join(OUT, "model.json"), os.path.join(OUT, "model.npz"))
     log(f"  exported model.json + model.npz")
+    # The per-base out-of-fold matrix and the labels, so every tradition can be scored ALONE afterwards without
+    # retraining anything: rank_traditions.py fits a mini-stack over each tradition's own base predictions.
+    np.save(os.path.join(OUT, "oof_base.npy"), P.astype(np.float32))
+    np.save(os.path.join(OUT, "y_train.npy"), y.astype(np.int8))
 
     del Btr
     gc.collect()
@@ -245,7 +249,8 @@ def main():
     import predictor
     st = predictor.load(open(os.path.join(OUT, "model.json")).read(),
                         open(os.path.join(OUT, "model.npz"), "rb").read())
-    p, _ = st.proba(Bte)
+    p, P_te = st.proba(Bte)
+    np.save(os.path.join(OUT, "test_base.npy"), np.asarray(P_te, dtype=np.float32))   # (n_test, n_base)
     with open(os.path.join(OUT, "submission.csv"), "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["id", "parents_together"])

@@ -224,7 +224,7 @@ def score_pair(dob_a, dob_b):
 # Refusing a 1994 birth outright was wrong — the charts are perfectly computable and the stack will score them.
 # What is true is that such a score is EXTRAPOLATION beyond the fitted years, and the honest response is to
 # answer and say so, not to decline. Both facts travel with the answer.
-YEAR_LO, YEAR_HI = 1800, 2032          # fallback; the shipped asset's own span wins
+YEAR_LO, YEAR_HI = 1700, 2032          # fallback; the shipped asset's own span wins
 MAX_GAP_YEARS = 60.0
 
 
@@ -249,7 +249,7 @@ def _year_range():
     """What can be COMPUTED — the INTERSECTION of two limits, because either one alone is wrong.
 
     The shipped ephemeris bounds it from outside: `_new_moon_before` searches backwards and needs about 65 days
-    of margin before the first requested date, which is why the asset starts in 1798 rather than 1800. Two years
+    of margin before the first requested date, which is why the asset starts in 1698 rather than 1700. Two years
     at each end covers that.
 
     `core.load` bounds it from inside, and does so SILENTLY: it drops a couple whose birth year falls outside its
@@ -265,7 +265,7 @@ def _year_range():
     if _core is not None:
         lo = max(lo, int(getattr(_core, "YEAR_FLOOR", lo)))
         hi = min(hi, int(getattr(_core, "YEAR_CEIL", hi)))
-    return max(1800, lo), hi
+    return max(1700, lo), hi
 
 
 def train_window():
@@ -275,7 +275,7 @@ def train_window():
     try:
         return int(tw["from"]), int(tw["to"])
     except (KeyError, TypeError, ValueError):
-        return 1800, 1950
+        return 1700, 1950
 
 
 def _extrapolating(dob_a, dob_b):

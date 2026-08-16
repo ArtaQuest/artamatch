@@ -12,7 +12,7 @@ So this asset is built for a different plan: carry enough that a pure-numpy `swi
 BROWSER RUN THOSE FILES UNCHANGED. Parity then stops being something to test and starts being structural —
 there is only one implementation of every feature.
 
-WHAT IS STORED. 1800-01-01 to 2030-12-31 for twenty-six bodies — core.py's eighteen in its exact order, then
+WHAT IS STORED. 1698-01-01 to 2032-12-31 for twenty-six bodies — core.py's eighteen in its exact order, then
 the eight Uranian hypotheticals that trad_uranian resolves by name — FIVE quantities each: ecliptic
 longitude, ecliptic latitude, distance, longitude speed, heliocentric longitude. Plus all twenty-one
 ayanamsas core.py knows.
@@ -78,8 +78,8 @@ FLG_HC = swe.FLG_SWIEPH | swe.FLG_HELCTR
 # because training uses real Swiss Ephemeris, which has no such edge; it appeared the moment the same code
 # ran on the shipped asset, which is what a browser runs. Two years either side covers a synodic lookback
 # with room to spare, and costs under 2% of the file.
-Y0, Y1 = 1798, 2032
-YEAR_ACCEPTED = (1800, 2026)     # what core.py will actually accept; the span above brackets it
+Y0, Y1 = 1698, 2032
+YEAR_ACCEPTED = (1700, 2026)     # what core.py will actually accept; the span above brackets it
 QUANT = 360.0 / 65535.0          # 0.005493 deg — the storage step for an angle, and so the error budget
 
 # SPEED IS SCALED PER BODY, and that is not a micro-optimisation. The first version quantised every body's
@@ -268,6 +268,43 @@ def main():
                 except Exception:
                     h = p[0]
             lon[i], lat[i], dist[i], spd[i], hel[i] = p[0], p[1], p[2], p[3], h
+
+        # THE STORED SPEED IS THE HERMITE TANGENT, AND SWISSEPH'S SPEED FIELD IS NOT ALWAYS TRUSTWORTHY for the
+        # Uranian hypotheticals. Extending the span to 1698 put a sample on 1749-03-03, where swisseph reports
+        # Zeus at -0.007595 deg/day while its own longitude climbs through that instant at +0.018506 — an
+        # isolated glitch of the same kind already documented for Vulkanus and Poseidon. Stored as a tangent, one
+        # bad speed bends the reconstructed curve for a whole stride: the shim was 0.0189 deg out at 1749-02-26,
+        # against a 0.0110 budget, and the gate refused the asset. The verifier already OUTVOTES such a glitch
+        # when it checks; the builder must do the same when it stores. Where swisseph's speed disagrees with the
+        # central difference of swisseph's own longitude by more than a tenth of a degree per day, the central
+        # difference is what gets written — the longitude is the quantity we trust, so its slope is the tangent.
+        if ns >= 3:
+            dl = np.zeros(ns, np.float64)
+            for i in range(ns):
+                jm = bjd0 + i * st - 1.0
+                jp = bjd0 + i * st + 1.0
+                lm = swe.calc_ut(jm, code, FLG)[0][0]
+                lp = swe.calc_ut(jp, code, FLG)[0][0]
+                dl[i] = ((lp - lm + 180.0) % 360.0 - 180.0) / 2.0
+            # THE THRESHOLD MUST SCALE WITH THE BODY, and a fixed 0.001 deg/day did not. It flagged 115,826 of
+            # the Moon's 122,358 samples, 35,230 of the node's and 15,454 of Mercury's — none of them glitches.
+            # A fast body's true speed differs from a +-1-day central difference by its curvature, which for the
+            # Moon is far above 0.001 deg/day, so the fixed threshold quietly replaced exact tangents with 2-day
+            # secants and made the Moon WORSE. A glitch is not a small disagreement; it is a speed of the wrong
+            # sign or the wrong magnitude entirely — Zeus reported -0.0076 against a true +0.0185. So the test is
+            # relative: the two must differ by more than half the body's typical speed AND by more than the
+            # curvature a 2-day secant can produce, which the median absolute disagreement estimates from the
+            # data itself. That keeps the ~30 Uranian glitches per body and drops every false positive.
+            gap = np.abs(spd - dl)
+            typical = np.median(np.abs(dl)) + 1e-9
+            curvature = np.median(gap)                       # what an honest secant disagrees by, for THIS body
+            glitch = (gap > 0.5 * typical) & (gap > 8.0 * curvature + 1e-6)
+            if glitch.any():
+                idx = np.flatnonzero(glitch)
+                print(f"      {nm}: swisseph's speed contradicts its own longitude at {len(idx)} sample(s) "
+                      f"(first at jd {bjd0 + idx[0] * st:.1f}); storing the central difference there", flush=True)
+                spd = np.where(glitch, dl, spd)
+
         dlo, dhi = float(dist.min()), float(dist.max())
         if dhi - dlo < 1e-12:
             dhi = dlo + 1e-9

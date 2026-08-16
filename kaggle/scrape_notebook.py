@@ -110,7 +110,7 @@ for _ep in os.environ.get("AQ_SKIP_ENDPOINTS", "").split(","):
 T0 = time.time()
 
 # The parents' window. Both partners must be born inside it. The children are not bounded.
-FLOOR, CEIL = 1800, 1950
+FLOOR, CEIL = 1700, 1950
 MAX_GAP_YEARS = 60          # a sanity bound on data errors, not a claim about human pairing
 MALE, FEMALE = "Q6581097", "Q6581072"
 

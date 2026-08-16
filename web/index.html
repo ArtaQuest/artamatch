@@ -136,11 +136,11 @@
   There is no city dimension: the model's only inputs are two dates.</p>
   <div class="grid">
     <div><label>One birth date</label><input id="f-self" type="date" value="1889-04-16"
-         min="1800-01-01" max="1950-12-31"></div>
+         min="1700-01-01" max="1950-12-31"></div>
     <div><label>Candidates from</label><input id="f-from" type="date" value="1893-01-01"
-         min="1800-01-01" max="1950-12-31"></div>
+         min="1700-01-01" max="1950-12-31"></div>
     <div><label>to</label><input id="f-to" type="date" value="1895-12-31"
-         min="1800-01-01" max="1950-12-31"></div>
+         min="1700-01-01" max="1950-12-31"></div>
     <div><label>Step (days)</label><select id="f-step">
       <option value="1">every day</option><option value="7" selected>every 7 days</option>
       <option value="14">every 14 days</option><option value="30">every 30 days</option></select></div>
@@ -299,8 +299,8 @@ let redrawTraditions = () => {};
 // a birth date in the future is not a birth date. TRAIN is what the model was FITTED on. They are different
 // questions and the page needs both: a 1994 pair is answerable and is also extrapolation, and the useful thing
 // to do is give the number and say which side of the fitted range it came from. Refusing it was wrong.
-let WIN = { from: 1800, to: new Date().getFullYear(), maxGap: 60 };
-let TRAIN = { from: 1800, to: 1950 };
+let WIN = { from: 1700, to: new Date().getFullYear(), maxGap: 60 };
+let TRAIN = { from: 1700, to: 1950 };
 
 const clampYear = y => Math.min(WIN.to, Math.max(WIN.from, Math.trunc(Number(y) || WIN.from)));
 
@@ -452,7 +452,7 @@ function render(i) {
   }
   // What can be computed comes from the asset the page actually loaded, capped at the present year.
   if (i.yearFrom && i.yearTo) {
-    WIN = { from: Math.max(1800, Number(i.yearFrom) + 2),
+    WIN = { from: Math.max(1700, Number(i.yearFrom) + 2),
             to: Math.min(Number(i.yearTo) - 2, new Date().getFullYear()),
             maxGap: WIN.maxGap };
   }

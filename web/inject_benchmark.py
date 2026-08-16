@@ -40,18 +40,29 @@ EXPECTED = set(D.CELLS)
 
 def main():
     m = json.load(open(os.path.join(MODEL, "model.json")))
-    g = json.load(open(os.path.join(MODEL, "grid_result.json")))
     res = json.load(open(os.path.join(MODEL, "result.json")))
+    # TWO MEASUREMENTS CAN LIVE HERE, and the page shows whichever the build produced. The precision GRID is the
+    # robustness measurement (fourteen cells of degraded dates). The TEMPORAL RANKING is the newer and harder one:
+    # every tradition alone, plus the ensemble, on held-out couples that all postdate the training half. A build
+    # that produced only the ranking must not be refused for lacking the grid — that would block the more
+    # important result behind the less important one.
+    gp = os.path.join(MODEL, "grid_result.json")
+    rp = os.path.join(MODEL, "tradition_ranking.json")
+    g = json.load(open(gp)) if os.path.exists(gp) else None
+    rk = json.load(open(rp)) if os.path.exists(rp) else None
+    if g is None and rk is None:
+        raise SystemExit("neither grid_result.json nor tradition_ranking.json exists — nothing measured to inject")
 
     before = {k: m[k] for k in EXPORTER_OWNS if k in m}
     if not isinstance(m.get("base"), list) or not m["base"]:
         raise SystemExit(f"model.json's `base` is a {type(m.get('base')).__name__}, not the list of base "
                         f"models — this file is not loadable and must not be shipped")
 
-    cells = set(g["per_cell"])
-    if cells != EXPECTED:
-        raise SystemExit(f"the grid has {len(cells)} cells, not the {len(EXPECTED)} the metric averages; "
-                         f"unexpected {sorted(cells - EXPECTED)}, missing {sorted(EXPECTED - cells)}")
+    if g is not None:
+        cells = set(g["per_cell"])
+        if cells != EXPECTED:
+            raise SystemExit(f"the grid has {len(cells)} cells, not the {len(EXPECTED)} the metric averages; "
+                             f"unexpected {sorted(cells - EXPECTED)}, missing {sorted(EXPECTED - cells)}")
 
     years = []
     with open(TRAIN) as f:
@@ -60,7 +71,16 @@ def main():
             years.append(int(r["dob_woman"][:4]))
     lo, hi = min(years), max(years)
 
-    m["benchmark"] = {
+    if rk is not None:
+        # The temporal ranking: what the page leads with when it exists.
+        m["temporal"] = {
+            "metric": "AUC on held-out couples that all postdate the training half; day-precision dates only",
+            "ensemble": rk["ensemble"], "era_rule": rk["era_rule"], "n_test": rk["n_test"],
+            "traditions": [{"slug": t["tradition"], "name": t["name"], "auc": t["auc"],
+                            "public": t["public"], "private": t["private"], "n_base": t["n_base"],
+                            "beats_era": t["beats_era"]} for t in rk["traditions"]],
+        }
+    m["benchmark"] = None if g is None else {
         "metric": g["metric"],
         "benchmark15": g["mean15"],
         "reference15": g["reference_signed_gap_mean15"],
@@ -89,9 +109,14 @@ def main():
     json.dump(m, open(os.path.join(HERE, "model.json"), "w"))
     shutil.copy2(os.path.join(MODEL, "model.npz"), os.path.join(HERE, "model.npz"))
 
-    print(f"  web/model.json: {len(m['base'])} base models untouched, {len(m['benchmark']['cells'])} cells added")
-    print(f"  mean of 15 AUCs {g['mean15']:.4f}   reference {g['reference_signed_gap_mean15']:.4f}   "
-          f"lift {g['lift']:+.4f}")
+    print(f"  web/model.json: {len(m['base'])} base models untouched")
+    if g is not None:
+        print(f"  grid: weighted mean of {len(g['per_cell'])} AUCs {g['mean15']:.4f}   "
+              f"reference {g['reference_signed_gap_mean15']:.4f}   lift {g['lift']:+.4f}")
+    if rk is not None:
+        print(f"  temporal: ensemble {rk['ensemble']:.4f} vs era rule {rk['era_rule']:.4f} on {rk['n_test']:,} "
+              f"held-out couples; {len(rk['traditions'])} traditions ranked, "
+              f"{sum(t['beats_era'] for t in rk['traditions'])} beat the era rule")
     print(f"  train_window {lo}-{hi} over {len(years)//2:,} couples — the page will refuse anything outside it")
     print(f"  out-of-fold AUC {res['cv_auc']:.4f}   baseline {res['baseline_auc']:.4f}")
 

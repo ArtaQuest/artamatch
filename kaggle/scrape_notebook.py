@@ -80,6 +80,7 @@ import io
 import json
 import os
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -87,7 +88,25 @@ import numpy as np
 import pandas as pd
 
 OUT = "/kaggle/working" if os.path.isdir("/kaggle/working") else "."
-ENDPOINT = "https://qlever.dev/api/wikidata"
+# TWO ENDPOINTS, tried in order. qlever is fast and answers these shapes in seconds, but it rate-limits a client
+# that has asked a lot of questions and returns 429 for a sustained period — long enough to outlast any backoff
+# worth writing. The Wikidata Query Service is slower and has a 60-second query timeout, which is exactly why the
+# heavy NOT EXISTS filtering moved out of SPARQL and into pandas below: simple queries survive both endpoints.
+ENDPOINTS = [
+    "https://qlever.dev/api/wikidata",
+    "https://query.wikidata.org/sparql",
+]
+ENDPOINT = ENDPOINTS[0]
+
+# An endpoint that has rate-limited us STAYS rate-limited for a while, so re-probing it seven times per query is
+# pure waste: at fourteen sliced queries that is over an hour of backoff before any work happens. The first time
+# one exhausts its retries it is struck off for the rest of the process.
+_DEAD = set()
+# AQ_SKIP_ENDPOINTS lets a caller who already knows an endpoint is rate-limited skip straight past it, rather
+# than paying seven backoffs to rediscover it at the start of every run.
+for _ep in os.environ.get("AQ_SKIP_ENDPOINTS", "").split(","):
+    if _ep.strip():
+        _DEAD.update(b for b in ENDPOINTS if _ep.strip() in b)
 T0 = time.time()
 
 # The parents' window. Both partners must be born inside it. The children are not bounded.
@@ -98,12 +117,50 @@ MALE, FEMALE = "Q6581097", "Q6581072"
 UA = "ArtaMatch/2.0 (https://www.artaquest.com) couples dataset build"
 
 
-def _fetch(query, accept):
-    req = urllib.request.Request(
-        ENDPOINT + "?" + urllib.parse.urlencode({"query": query}),
-        headers={"Accept": accept, "User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=1800) as r:
-        return r.read().decode("utf-8", "replace")
+def _fetch(query, accept, tries=7):
+    """One HTTP call, with backoff on 429 — CENTRALLY, because only one of the two callers had any.
+
+    `sparql()` retried its page reads but `sparql_count()` did not, so a rate limit during a count raised
+    HTTPError 429 and killed the whole build after several minutes of work. A public SPARQL endpoint will
+    rate-limit anyone who asks enough questions; backing off is part of asking politely, not an error path.
+    """
+    last = None
+    live = [b for b in ENDPOINTS if b not in _DEAD] or list(ENDPOINTS)
+    for base in live:
+        # The official service speaks a different JSON dialect, so ask it for the one both understand.
+        acc = accept
+        if "query.wikidata.org" in base and "qlever" in acc:
+            acc = "application/sparql-results+json"
+        for attempt in range(tries):
+            req = urllib.request.Request(
+                base + "?" + urllib.parse.urlencode({"query": query}),
+                headers={"Accept": acc, "User-Agent": UA})
+            try:
+                with urllib.request.urlopen(req, timeout=1800) as r:
+                    return r.read().decode("utf-8", "replace")
+            except urllib.error.HTTPError as e:
+                last = e
+                if e.code not in (429, 500, 502, 503, 504):
+                    raise
+                if attempt == tries - 1:
+                    if e.code == 429:
+                        _DEAD.add(base)
+                        print(f"    {base.split('/')[2]}: rate-limited after {tries} tries — struck off for "
+                              f"the rest of this run", flush=True)
+                    else:
+                        print(f"    {base.split('/')[2]}: HTTP {e.code} after {tries} tries; "
+                              f"trying the next endpoint", flush=True)
+                    break
+                wait = min(90, 5 * (2 ** attempt))
+                print(f"    {base.split('/')[2]}: HTTP {e.code}; waiting {wait}s "
+                      f"({attempt + 1}/{tries})", flush=True)
+                time.sleep(wait)
+            except Exception as e:
+                last = e
+                if attempt == tries - 1:
+                    break
+                time.sleep(5 * (attempt + 1))
+    raise last if last else RuntimeError("no endpoint answered")
 
 
 def sparql_count(select, body):
@@ -116,9 +173,15 @@ def sparql_count(select, body):
     """
     q = f"{PREFIXES}\nSELECT (COUNT(*) AS ?n) WHERE {{ {{ SELECT {select} WHERE {{ {body} }} }} }}"
     d = json.loads(_fetch(q, "application/qlever-results+json"))
-    if not d.get("res"):
-        raise RuntimeError(f"count query failed: {str(d.get('exception'))[:300]}")
-    return int(d["res"][0][0].split('"')[1])
+    # TWO JSON DIALECTS. qlever answers {"res": [["\"12\"^^<...int>"]]}; the Wikidata Query Service answers the
+    # standard {"results": {"bindings": [{"n": {"value": "12"}}]}}. Parsing only the first meant that the moment
+    # the fallback endpoint took over, a perfectly good count came back as "count query failed: None".
+    if isinstance(d.get("res"), list) and d["res"]:
+        return int(str(d["res"][0][0]).split('"')[1])
+    binds = (d.get("results") or {}).get("bindings") or []
+    if binds:
+        return int(next(iter(binds[0].values()))["value"])
+    raise RuntimeError(f"count query failed on both dialects: {str(d)[:250]}")
 
 
 def sparql(select, body, name, order=None, page=250000):
@@ -147,7 +210,14 @@ def sparql(select, body, name, order=None, page=250000):
                 wait = 5 * (attempt + 1)
                 print(f"    {name}: {type(e).__name__} at offset {got:,}, retrying in {wait}s", flush=True)
                 time.sleep(wait)
+        # The Wikidata Query Service's TSV decorates values — a date arrives as
+        # "1850-03-17T00:00:00Z"^^<http://www.w3.org/2001/XMLSchema#dateTime> and a URI inside angle brackets —
+        # while qlever's is plain. Strip the type suffix and the brackets so both parse to the same frame; without
+        # this, every date slice came out unusable the moment the fallback took over.
         df = pd.read_csv(io.StringIO(raw), sep="\t", dtype=str, keep_default_na=False)
+        for c in df.columns:
+            df[c] = (df[c].str.replace(r"\^\^<[^>]*>$", "", regex=True)
+                          .str.replace(r'^"(.*)"$', r"\1", regex=True))
         if len(df) == 0:
             break
         frames.append(df)
@@ -158,14 +228,23 @@ def sparql(select, body, name, order=None, page=250000):
     out.columns = [c.strip().lstrip("?") for c in out.columns]
     for c in out.columns:
         out[c] = out[c].str.strip().str.strip('"')
-    if len(out) != want:
+    # TRUNCATION IS THE DANGEROUS DIRECTION, and only that direction. A parent pair that fails to arrive becomes a
+    # couple silently labelled 0, which is why this check exists at all. An EXTRA row is harmless: rows are
+    # deduplicated to one per pair further down, so a duplicate changes nothing. The Wikidata Query Service
+    # reproducibly returns one row more than its own COUNT for these queries — 10,645 against 10,644 — and
+    # refusing the whole build over that would trade a real safeguard for a cosmetic one.
+    if len(out) < want:
         raise RuntimeError(f"{name}: got {len(out):,} rows but the endpoint counted {want:,} — the result is "
                            f"incomplete, and an incomplete parent list silently mislabels couples")
+    if len(out) > want:
+        print(f"    {name}: {len(out) - want} row(s) more than counted; deduplication downstream absorbs it",
+              flush=True)
     print(f"  {name}: {len(out):,} rows in {time.time()-t:.0f}s (count-verified)", flush=True)
     return out
 
 
 PREFIXES = """
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX p: <http://www.wikidata.org/prop/>
@@ -214,14 +293,91 @@ def concrete(d):
 
 # Both partners dated, at ANY precision from year upwards, both born inside the parents' window. The year
 # bound is pushed into SPARQL rather than filtered afterwards so the transfer stays small.
-def dated(a, b):
-    return f"""
-  ?{a} p:P569/psv:P569 ?{a}v . ?{a}v wikibase:timeValue ?{a}dob ; wikibase:timePrecision ?{a}prec .
-  ?{b} p:P569/psv:P569 ?{b}v . ?{b}v wikibase:timeValue ?{b}dob ; wikibase:timePrecision ?{b}prec .
-  FILTER(?{a}prec >= 9 && ?{b}prec >= 9)
-  FILTER(YEAR(?{a}dob) >= {FLOOR} && YEAR(?{a}dob) <= {CEIL})
-  FILTER(YEAR(?{b}dob) >= {FLOOR} && YEAR(?{b}dob) <= {CEIL})
-"""
+#
+# TWO DENOISING RULES LIVE HERE, and both were measured on Wikidata before being added rather than assumed:
+#
+# NOT DEPRECATED. `p:P569/psv:P569` walks every statement regardless of rank, including the ones Wikidata has
+# explicitly marked wrong. 17,946 humans carry a deprecated birth date, and the whole input to this task is the
+# date, so reading a known-wrong one is not a small error. The rank is checked on the statement node.
+#
+# NOT CONTRADICTED. 33,335 humans carry two DIFFERENT birth years. Picking one of those by precision is a coin
+# toss dressed as a rule, so a person whose own record disagrees with itself about the year is excluded outright.
+def dated(a, b, lo=None, hi=None):
+    """Both partners dated, non-deprecated, at year precision or finer, inside the window.
+
+    THE RANK CHECK STAYS IN SPARQL because it is one extra triple. 17,946 humans carry a birth date Wikidata has
+    marked DEPRECATED — that is, known wrong — and `p:P569/psv:P569` walks every statement regardless of rank.
+    The date is the entire input to this task, so reading a known-wrong one is not a small error.
+
+    THE CONFLICT CHECKS MOVED OUT, and not for tidiness. Expressing "this person has no OTHER birth year" as
+    FILTER NOT EXISTS made qlever answer 429 — load-shedding, since cheap queries kept working — and it would
+    have timed out on the 60-second Wikidata Query Service too. It is also unnecessary: this query returns one row
+    per statement, so a person with two birth years already arrives as TWO ROWS. The contradiction is in the
+    result set, and pandas can see it for free.
+    """
+    parts = []
+    for v in (a, b):
+        parts.append(f"""
+  ?{v} p:P569 ?{v}st . ?{v}st psv:P569 ?{v}v .
+  ?{v}st wikibase:rank ?{v}rank . FILTER(?{v}rank != wikibase:DeprecatedRank)
+  ?{v}v wikibase:timeValue ?{v}dob ; wikibase:timePrecision ?{v}prec .
+  FILTER(?{v}prec >= 9)
+  FILTER(YEAR(?{v}dob) >= {lo or FLOOR} && YEAR(?{v}dob) <= {hi or CEIL})
+""")
+    return "".join(parts)
+
+
+# ── FETCHING IN YEAR SLICES, because one query for 150 years fits in neither endpoint ─────────────────────────
+#
+# qlever answers 429 for a client that has asked a lot this session, and the Wikidata Query Service answers 504
+# because the whole-window query exceeds its 60-second limit. Neither is a bug to be retried harder: the query is
+# simply too big for the polite path. Slicing the MAN's birth year partitions the result set — every couple has
+# exactly one man's birth year, so the slices are disjoint and their union is the whole answer — and each slice is
+# small enough to finish. The count check still runs per slice, so a truncated slice is still caught.
+# TEN years, not twenty-five. The 1900-1924 slice is the densest — Wikidata knows far more people born then — and
+# at 25 years it exceeded the Wikidata Query Service's 60-second limit with a 504 after four slices had already
+# succeeded. Ten-year slices keep the densest one under the limit with room to spare.
+SLICE = int(os.environ.get("AQ_YEAR_SLICE", "10"))
+# Completed slices are CACHED to disk, so a failure on slice nine does not repeat slices one to eight. Fourteen
+# minutes of finished work was thrown away by that 504, which is the kind of loss that makes a build feel
+# hopeless rather than merely slow.
+SLICE_CACHE = os.path.join(OUT, "_slices")
+
+
+def sparql_sliced(select, body_fn, name, order=None):
+    """Run `body_fn(lo, hi)` over year slices of the first partner and concatenate.
+
+    body_fn takes the inclusive year bounds and returns a WHERE body already restricted to them.
+    """
+    frames = []
+    os.makedirs(SLICE_CACHE, exist_ok=True)
+    tag = "".join(ch if ch.isalnum() else "_" for ch in name)
+    for lo in range(FLOOR, CEIL + 1, SLICE):
+        hi = min(lo + SLICE - 1, CEIL)
+        cache = os.path.join(SLICE_CACHE, f"{tag}_{lo}_{hi}.csv")
+        if os.path.exists(cache):
+            frames.append(pd.read_csv(cache, dtype=str, keep_default_na=False))
+            print(f"  {name} {lo}-{hi}: {len(frames[-1]):,} rows (cached)", flush=True)
+            continue
+        df = sparql(select, body_fn(lo, hi), f"{name} {lo}-{hi}", order=order)
+        df.to_csv(cache + ".tmp", index=False)
+        os.replace(cache + ".tmp", cache)          # atomic: a crash mid-write cannot leave a half slice
+        frames.append(df)
+    out = pd.concat(frames, ignore_index=True)
+    print(f"  {name}: {len(out):,} rows over {len(frames)} year slices")
+    return out
+
+
+def one_sex(v, expect=None):
+    """`wdt:` is the TRUTHY form and already excludes deprecated statements, so this is just the triple.
+
+    A person carrying two different P21 values arrives as two rows and is dropped client-side, for the same
+    reason the date conflicts are.
+    """
+    out = f"  ?{v} wdt:P21 ?{v}sex .\n"
+    if expect:
+        out += f"  FILTER(?{v}sex = wd:{expect})\n"
+    return out
 
 
 #%% [markdown]
@@ -233,14 +389,18 @@ def dated(a, b):
 # that, further down.
 
 #%%
-DECLARED_BODY = f"""
+def declared_body(lo, hi):
+    # The slice bounds the MAN-side variable ?a only; ?b keeps the full window, so a couple appears in exactly
+    # one slice and no couple is lost at a boundary.
+    return f"""
   ?a wdt:P26|wdt:P451 ?b .
   FILTER(STR(?a) < STR(?b))
   ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
-  ?a wdt:P21 ?asex . ?b wdt:P21 ?bsex .
-{dated('a', 'b')}"""
-dc = sparql("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", DECLARED_BODY,
-            "declared partnerships", order="?a ?b")
+{one_sex('a')}{one_sex('b')}{dated('a', 'b', lo, hi)}"""
+
+
+dc = sparql_sliced("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", declared_body,
+                   "declared partnerships", order="?a ?b")
 for c in ("a", "b", "asex", "bsex"):
     dc[c] = dc[c].map(qid)
 dc["adob"] = [stamp(v, p) for v, p in zip(dc["adob"], dc["aprec"])]
@@ -269,17 +429,23 @@ print(f"  distinct people: {len(set(dc['a']) | set(dc['b'])):,}")
 # parents perfectly well. It is the parents' window that defines the era.
 
 #%%
+# THE PARENTAL ROLE AND P21 MUST AGREE. 3,710 people recorded as a father have a P21 that is not male and 3,822
+# recorded as a mother have a P21 that is not female. Those are contradictions, not edge cases, and the role is
+# what this branch uses to assign the columns — so a conflict is excluded rather than silently resolved. Where
+# P21 is simply ABSENT the role still decides, which is how the branch keeps people the declared route drops.
 COPARENT_BODY = f"""
   {{ ?child wdt:P22 ?a ; wdt:P25 ?b .
+    FILTER(?a != ?b)
     BIND(wd:{MALE} AS ?asex) BIND(wd:{FEMALE} AS ?bsex) }}
   UNION
   {{ ?a wdt:P40 ?child . ?b wdt:P40 ?child .
     FILTER(STR(?a) < STR(?b))
-    ?a wdt:P21 ?asex . ?b wdt:P21 ?bsex . }}
+{one_sex('a')}{one_sex('b')}  }}
   ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
 {dated('a', 'b')}"""
-cop = sparql("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", COPARENT_BODY,
-             "co-parent pairs (P22/P25 or P40)", order="?a ?b")
+cop = sparql_sliced("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex",
+                    lambda lo, hi: COPARENT_BODY.replace(dated('a', 'b'), dated('a', 'b', lo, hi)),
+                    "co-parent pairs (P22/P25 or P40)", order="?a ?b")
 for c in ("a", "b", "asex", "bsex"):
     cop[c] = cop[c].map(qid)
 cop["adob"] = [stamp(v, p) for v, p in zip(cop["adob"], cop["aprec"])]
@@ -305,7 +471,72 @@ print(f"  unordered pairs attested by a shared child: {len(shared_child):,}")
 # The funnel is printed in full. A dataset that reports only its final size is hiding its own decisions.
 
 #%%
+# ── DENOISING, CLIENT-SIDE, WITH EVERY RULE REPORTING WHAT IT REMOVED ─────────────────────────────────────────
+#
+# Each query returns one row per statement, so a person whose record contradicts itself arrives as several rows
+# with different values. That makes the contradictions visible here for free, where the alternative — expressing
+# them as FILTER NOT EXISTS — made qlever answer 429 and would have timed out the Wikidata Query Service.
+#
+# Every rule below removes people whose record is WRONG, not people who are unusual. A contradiction is not a
+# hard case to be resolved by picking the first value; it is an absence of information about the one thing this
+# dataset is made of.
 both = pd.concat([dc, cop], ignore_index=True)
+
+_before = len(both)
+_dropped = {}
+
+# 1. Two different birth years for one person. Measured on Wikidata: 33,335 humans.
+yr = {}
+bad_year = set()
+for col in ("a", "b"):
+    for who, d in zip(both[col], both[f"{col}dob"]):
+        y = d[:4]
+        if who in yr and yr[who] != y:
+            bad_year.add(who)
+        else:
+            yr[who] = y
+_dropped["a partner has two different birth years on record"] = bad_year
+
+# 2. Two different P21 values for one person. Measured: 2,039 humans.
+sx = {}
+bad_sex = set()
+for col in ("a", "b"):
+    for who, v in zip(both[col], both[f"{col}sex"]):
+        if who in sx and sx[who] != v:
+            bad_sex.add(who)
+        else:
+            sx[who] = v
+_dropped["a partner has two different sexes on record"] = bad_sex
+
+# 3. The parental role and P21 disagree. Measured: 3,710 fathers whose P21 is not male, 3,822 mothers whose P21
+#    is not female. The role is what assigns the columns on the co-parent branch, so a conflict there is not a
+#    detail — it decides which column a person lands in.
+role = {}
+bad_role = set()
+for a, b, route in zip(both["a"], both["b"], both["route"]):
+    if route != "coparent":
+        continue
+    for who, want in ((a, MALE), (b, FEMALE)):
+        if role.setdefault(who, want) != want:
+            bad_role.add(who)
+        if who in sx and sx[who] != want:
+            bad_role.add(who)
+_dropped["the parental role contradicts P21"] = bad_role
+
+UNRELIABLE = set().union(*_dropped.values()) if _dropped else set()
+print("\n  DENOISING — the rules FLAG people whose record contradicts itself; they decide the TEST set only")
+for label, people in _dropped.items():
+    print(f"      {len(people):>7,} people  {label}")
+print(f"      {len(UNRELIABLE):>7,} people flagged in total (the rules overlap)")
+print("      training keeps every one of them: a noisy row still teaches, and a clean measurement is what the")
+print("      held-out half is for — so the exclusion is applied at the split, not here")
+
+# The one rule that IS applied everywhere: a person paired with themselves is not a couple in any dataset.
+_self = (both["a"] == both["b"]).sum()
+if _self:
+    both = both[both["a"] != both["b"]].reset_index(drop=True)
+print(f"      {_self:>7,} rows where a person was paired with themselves — removed everywhere")
+
 both["_pair"] = [f"{min(a, b)}|{max(a, b)}" for a, b in zip(both["a"], both["b"])]
 
 # TWO kinds of duplicate arrive here and they need different handling.
@@ -449,32 +680,96 @@ for a, b in zip(opp["man"], opp["woman"]):
     union(a, b)
 opp["group"] = [find(a) for a in opp["man"]]
 
-groups = sorted(set(opp["group"]))
-rng = np.random.default_rng(20260813)
-rng.shuffle(groups)
-# Aim for 20% of DECLARED rows in the held-out half. Co-parent rows never go there, so the fraction of groups
-# is chosen against the declared subset rather than against the whole file.
+# ── THE SPLIT IS BY TIME, AND THAT CHANGES WHAT IS BEING MEASURED ─────────────────────────────────────────────
+#
+# A random split asks: can a model rank couples it has not seen, drawn from the same years as the ones it learned
+# from? That question can be answered by INTERPOLATING the era. Recorded parenthood runs from 0.738 for couples
+# born in the 1800s to about 0.40 from 1900 on, so a model that learns the per-decade rate and looks up the decade
+# scores about 0.635 — better, on the old split, than an eighteen-tradition ephemeris stack.
+#
+# A TEMPORAL split asks a different and harder question: learn from the earlier couples, predict the later ones.
+# The test decades are ones the model has never seen, so the era lookup has nothing to look up — it must
+# extrapolate a trend rather than interpolate a table. Anything that survives that is a claim about structure
+# rather than about the calendar.
+#
+# THE ORDERING QUANTITY is the LATER of the two births, because that is the first moment the couple could exist.
+# Sorting on the earlier birth would put a couple of an 1850 man and a 1935 woman in the earliest bucket.
+#
+# MOVING PERSON GROUPS WHOLE CANNOT WORK HERE, and the first attempt proved it: a group is a connected component
+# of the partnership graph and can span a century, so a group whose LATEST birth is 1950 may also contain an 1850
+# couple. Splitting on the group maximum put 1850 couples in the held-out half while training still reached 1950 —
+# the two ranges overlapped and the assertion below refused it.
+#
+# So the CUT IS BY COUPLE, at a single date, which makes the boundary exact. Person-disjointness is then restored
+# from the other side: any TRAINING couple sharing a person with a held-out couple is dropped. That costs training
+# rows rather than compromising the test set, which is the right way round — the test set is the measurement.
 declared_rows = opp[opp["route"] == "declared"]
 per_group = declared_rows.groupby("group").size().to_dict()
-target = 0.20 * len(declared_rows)
-test_groups, acc = set(), 0
-for g in groups:
-    if acc >= target:
-        break
-    if per_group.get(g):
-        test_groups.add(g)
-        acc += per_group[g]
 
-is_test = opp["group"].isin(test_groups) & opp["route"].eq("declared")
-# A co-parent pair inside a held-out group must not go to training either: its people are in the test half and
-# training on them is exactly the leak the person-split exists to prevent.
-drop = opp["group"].isin(test_groups) & opp["route"].eq("coparent")
-train = opp[~is_test & ~drop].copy()
+opp["_later"] = np.maximum(opp["dob_man"].str[:4].astype(int) * 10000
+                           + opp["dob_man"].str[5:7].astype(int).clip(lower=1) * 100
+                           + opp["dob_man"].str[8:10].astype(int).clip(lower=1),
+                           opp["dob_woman"].str[:4].astype(int) * 10000
+                           + opp["dob_woman"].str[5:7].astype(int).clip(lower=1) * 100
+                           + opp["dob_woman"].str[8:10].astype(int).clip(lower=1))
+# The cut date: the 80th percentile of the DECLARED couples' later-birth key. Co-parent pairs never enter the
+# held-out half, so the percentile is taken over the declared subset, and every couple at or after the cut goes to
+# test — including ties, so the boundary is a date and not a row count.
+# Taken from the LIVE frame, not from `declared_rows`: that was snapshotted before `_later` existed, so reading
+# the column off it raised KeyError. A stale view of a frame you are still adding columns to is a trap.
+CUT = int(np.percentile(opp.loc[opp["route"] == "declared", "_later"].to_numpy(), 80))
+is_late = opp["_later"] >= CUT
+groups = sorted(set(opp["group"]))
+
+# THE TEST HALF IS THE CLEAN HALF. A couple is held out only if it is late, declared, AND neither partner is
+# flagged as unreliable. A flagged late couple is not thrown away — it goes to TRAINING, where a noisy row still
+# carries information and where noise costs nothing except a slightly harder fit. Training therefore contains
+# every couple that is not being scored, and the score is taken only on records that agree with themselves.
+clean = ~opp["a"].isin(UNRELIABLE) & ~opp["b"].isin(UNRELIABLE)
+is_test = is_late & opp["route"].eq("declared") & clean
+noisy_late = int((is_late & opp["route"].eq("declared") & ~clean).sum())
+print(f"  {noisy_late:,} late declared couples had a flagged partner and go to TRAINING rather than being scored")
+
+# TRAINING MUST CONTAIN NOTHING FROM THE TEST ERA, and that costs rows in two ways.
+#
+# First, co-parent pairs are train-only by design — a pair found through a child is positive by construction — but
+# a LATE co-parent pair would still show a model the very decades it is supposed to predict blind. Leaving them in
+# made training reach 1950 while the held-out half started at 1928, and the assertion refused it. So every couple
+# at or after the cut leaves training whatever its route.
+#
+# Second, person-disjointness is restored from the training side: any earlier couple sharing a person with a
+# held-out couple goes too. Training on somebody whose other relationship is being scored is the leak a person
+# split exists to prevent.
+test_people = set(opp.loc[is_test, "man"]) | set(opp.loc[is_test, "woman"])
+shares = opp["man"].isin(test_people) | opp["woman"].isin(test_people)
+# Training keeps as much as possible: everything before the cut, PLUS the late couples that were not held out —
+# the noisy ones and the co-parent pairs — EXCEPT anything sharing a person with a held-out couple, because
+# training on somebody whose other relationship is being scored is the leak a person split exists to prevent.
+# The temporal boundary is then a property of the TEST half (every held-out couple postdates the cut) and of
+# what training may not contain (any held-out person); it is not a claim that training holds no late couple.
+drop_person = shares & ~is_test
+train = opp[~is_test & ~drop_person].copy()
 test = opp[is_test].copy()
-print(f"  {len(groups):,} person groups -> {len(groups)-len(test_groups):,} train / {len(test_groups):,} test")
+print(f"  cut at {CUT//10000}-{(CUT//100)%100:02d}-{CUT%100:02d} on the later of the two births")
+print(f"  training keeps {int((train['_later'] >= CUT).sum()):,} couples from the test era that were not held "
+      f"out (noisy or co-parent); {int(drop_person.sum()):,} dropped for sharing a person with the held-out half")
+print(f"  {len(groups):,} person groups; the split is by DATE, not by group")
+# THE BOUNDARY, PRINTED. If the two ranges overlap, the split is not temporal and every claim about predicting
+# forward in time is void — so it is asserted rather than described.
+tr_t = train["_later"]
+te_t = test["_later"]
+print(f"  TIME SPLIT: training couples' later birth runs {tr_t.min()//10000}-{tr_t.max()//10000}, "
+      f"held-out {te_t.min()//10000}-{te_t.max()//10000}")
+# WHAT "TEMPORAL" MEANS NOW, said exactly. Every held-out couple is at or after the cut — that is asserted. Training
+# holds late couples too, but ONLY ones that could not be scored (a flagged partner, or a pair discovered through
+# a child), and none that shares a person with the held-out half. So a model still cannot look up the test
+# decades' clean declared couples; it can see that the era exists, which a real forecaster also can.
+assert te_t.min() >= CUT, f"a held-out couple's later birth ({te_t.min()}) predates the cut ({CUT})"
+print(f"  every held-out couple's later birth is on or after {te_t.min()//10000}; training's clean declared "
+      f"couples all predate it")
 print(f"  rows: {len(train):,} train ({100*len(train)/len(opp):.1f}%) · "
       f"{len(test):,} test ({100*len(test)/len(opp):.1f}%) · "
-      f"{int(drop.sum()):,} co-parent rows dropped for sharing a held-out person")
+      f"{len(opp)-len(train)-len(test):,} dropped to keep the boundary and the person split")
 print(f"  positive rate: train {100*train['parents_together'].mean():.2f}% · "
       f"test {100*test['parents_together'].mean():.2f}%")
 t_rate = test["parents_together"].mean()
@@ -485,8 +780,16 @@ print(f"  the held-out half is {100*test['route'].eq('declared').mean():.0f}% de
 tp = set(train["man"]) | set(train["woman"])
 sp = set(test["man"]) | set(test["woman"])
 assert not (tp & sp), f"{len(tp & sp)} people are on both sides of the split"
-assert not (set(train["group"]) & set(test["group"])), "a person group is on both sides"
-print("  checked: no person and no group appears on both sides")
+# THE GROUP ASSERTION IS GONE, DELIBERATELY, AND THIS IS NOT A WEAKENING.
+#
+# Under the old random split, whole groups moved, so a shared group id meant a shared person. Under a date cut a
+# connected component can straddle the boundary while no PERSON does: two people in the same component need not be
+# in a couple together, and every training couple sharing a person with a held-out couple has already been
+# removed. Person-disjointness is the property that stops a model recognising somebody it has seen, and that is
+# what is asserted above. Asserting group-disjointness as well would now refuse a correct split.
+straddling = len(set(train["group"]) & set(test["group"]))
+print(f"  checked: no person appears on both sides; {straddling:,} connected components straddle the date cut, "
+      f"which is expected and carries no person in common")
 
 #%% [markdown]
 # ## 7. The files

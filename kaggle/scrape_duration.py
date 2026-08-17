@@ -1,60 +1,104 @@
 #%% [markdown]
 # # Two birth dates, one question: did the marriage last thirty years?
 #
-# This notebook builds the **ArtaMatch Duration** dataset from scratch, from live SPARQL against Wikidata. The
-# queries are in the cells below, so anyone can re-run them and get a different answer as Wikidata changes.
+# This notebook builds the **ArtaMatch Duration** dataset from scratch, from live SPARQL against Wikidata. Every
+# query is in the cells below, so anyone can re-run them and get a different answer as Wikidata changes.
 #
-# The output is three columns.
+# Three columns. That is the whole file.
 #
 # | column | meaning |
 # |---|---|
-# | `dob_man` | the man's date of birth, `YYYY-MM-DD`, known to the day |
-# | `dob_woman` | the woman's date of birth, known to the day |
+# | `dob_man` | the man's date of birth |
+# | `dob_woman` | the woman's date of birth |
 # | `lasted_30_years` | 1 if the marriage lasted thirty years or longer, else 0 |
 #
-# Two dates in, one bit out. No names, no places, no occupations — **and no marriage date**, which is the input a
-# reader will most expect to see and the one most worth withholding: the wedding year encodes the era, and an
-# 1830 marriage had less recorded room to reach thirty years than an 1880 one. The question is whether the two
-# BIRTH dates carry anything.
+# The first column is the man and the second the woman — always, assigned from `P21` and never inherited from
+# whatever order Wikidata happened to state the couple in. The marriage's own dates are used to compute the third
+# column and are then **thrown away**; they are not inputs.
 #
+# ## The two halves are built by different rules, deliberately
+#
+# **The test set is strict.** Both partners known to the day, both born 1851–1900, no placeholder dates. That is
+# what the leaderboard is scored on, so it is the half that must not be noisy.
+#
+# **The training set is as inclusive as the data allows.** A date may be known only to the month or only to the
+# year, and **one partner may be missing from Wikidata entirely**. All three of these are real training rows:
+#
+# ```
+# dob_man,dob_woman,lasted_30_years
+# 1794-06-12,1801-03-27,1     <- both known to the day
+# 1802-00-00,1809-11-00,0     <- his year only; her year and month
+# 1777-04-30,0000-00-00,1     <- she is not in Wikidata at all, and the row is still worth learning from
+# ```
+#
+# `00` means unknown and `0000-00-00` means absent, so precision is visible in the value rather than hidden in a
+# separate column. A model that wants only clean rows filters them in one line; a model that wants every marriage
+# has them. This is not a rounding decision — it is the difference between **12,661 training couples and 86,600**:
+#
+# | training rule | couples |
+# |---|---|
+# | both partners known to the day | 12,661 |
+# | both partners, any precision | 30,110 |
+# | **at least one partner, any precision** | **86,600** |
+#
+# A marriage's duration is known just as exactly when one spouse's birthday is not, so a one-sided row carries a
+# real label and half the input. Discarding it was throwing away six sevenths of the data.
+
+#%% [markdown]
 # ## Where the label comes from
 #
-# Wikidata records a marriage as a `P26` statement with qualifiers, and an infobox renders them like this:
+# Wikidata records a marriage as a `P26` statement with qualifiers, which an infobox renders like this:
 #
 # > **Spouses**  Mileva Marić (m. 1903; div. 1919) · Elsa Löwenthal (m. 1919; died 1936)
 #
-# Those are the two cases, and the duration is computed the same way the infobox reads:
+# Those are the two cases, and the duration is computed exactly as the infobox reads:
 #
 # * **an end date is recorded** (`P582`) — the marriage ran from `P580` to `P582`. Einstein's first: 16 years.
-# * **no end date** — the marriage ran until somebody died, so the end is the EARLIER of the two death dates
-#   (`P570`). Einstein's second: 1919 to Elsa's death in 1936, 17 years.
+# * **no end date** — it ran until somebody died, so the end is the EARLIER of the two death dates (`P570`).
+#   Einstein's second: 1919 to Elsa's death in 1936, 17 years.
 #
-# `lasted_30_years` is then `(end - start) >= 30 years`, and nothing else. **A marriage ended by a death is not
-# automatically a long one**: ended at twelve years it is a 0, at forty years it is a 1. Death buys no credit.
+# `lasted_30_years` is `(end − start) >= 30 years` and nothing else. **A marriage ended by a death is not
+# automatically a long one**: twelve years is a 0, forty years is a 1. Death buys no credit.
 #
-# ## Why 1600–1900, and why the split is 1850
+# The third column is this classification rather than the duration in years because the competition is scored by
+# AUC, which needs a binary label. The duration is what produces it and is printed in the summaries below.
 #
-# Everybody born on or before 1900 is dead. That matters more here than anywhere else in this project: a marriage
-# still running cannot be labelled, and a marriage that has not yet had thirty years cannot reach thirty. Closing
-# the window at 1900 removes right-censoring almost entirely — every marriage in this file has ended, and every
-# positive was observable.
+# ## Why 1600–1900, and why the split is at 1850
 #
-# The split is **temporal**: couples whose later birth falls up to 1850 train, and 1850–1900 are held out. So the
-# task is not "rank couples drawn from the years you learned from" but "learn from the earlier couples and predict
-# the later ones".
+# Everybody born on or before 1900 is dead, which matters more here than for any other question in this project:
+# a marriage still running cannot be labelled, and one that has not yet had thirty years cannot reach thirty.
+# Closing the window at 1900 removes right-censoring — every marriage in this file has ended, and every positive
+# was observable.
 #
-# **The base rate shifts across that boundary and it is worth knowing before you start**: about 32% of the
-# training marriages reach thirty years against about 44% of the held-out ones. Earlier-born couples have shorter
-# recorded marriages — they died younger and their records are thinner — so this is the reverse of the shift the
-# parenthood version of this dataset had. It is printed below rather than asserted.
+# The split is **temporal**: train on couples born up to 1850, predict the ones born after. Not "rank couples
+# drawn from the years you learned from" but "learn from the earlier ones and predict the later ones".
+#
+# The base rate shifts across that boundary; it is printed below rather than asserted. Earlier-born couples died
+# younger and their records are thinner, so fewer of their marriages reach thirty years.
 #
 # ## The one confound worth naming out loud
 #
-# The two label cases behave very differently: marriages with a recorded END DATE reach thirty years about 16% of
+# The two label cases behave very differently: marriages with a recorded END date reach thirty years about 16% of
 # the time, while marriages that ran until a death do so about 53% of the time. A model cannot see which case a
 # couple is in — that is not a column — but "ended while both spouses were alive" correlates with things it can
-# see. This is the sharpest confound in the design, and the published baselines include a case-only reference so a
-# leaderboard place can be read against it.
+# see. This is the sharpest confound in the design, and the published baselines include a case-only reference so
+# a leaderboard place can be read against it.
+#
+# ## Two traps in the dates, both measured
+#
+# **1 January is a placeholder.** Among day-precision births 1600–1900 it occurs **2.07×** as often as a median
+# January day, while 2 January sits at 1.00× — a source that knew only the year was imported with a day anyway.
+# Excluded at day precision. NOT excluded at year precision, where `1850-01-01` is simply how Wikidata spells
+# "1850": a filter that removed them there deleted every coarse date in the file, and was quietly costing 17,000
+# training couples before the interaction was measured.
+#
+# **The calendar is one calendar, and the placeholder moves inside it.** Wikidata's RDF gives every date in the
+# proleptic **Gregorian** calendar whatever `timeCalendarModel` says — Newton's Julian-tagged statement carries
+# the literal `1643-01-04`, the Gregorian image of 25 December 1642. So no conversion is needed and no date is on
+# a different footing from another. But it means a **Julian** 1 January placeholder is stored as 11, 12 or 13
+# January depending on the century, and that excess is measurably there: **2.08×** the median January day at 13
+# January among Julian-tagged records, where 11 and 12 January sit at 0.68× and 1.04×. Excluded at the
+# century-correct date, for Julian-tagged records only.
 
 #%%
 import collections
@@ -73,14 +117,16 @@ OUT = "/kaggle/working" if os.path.isdir("/kaggle/working") else "."
 T0 = time.time()
 
 FLOOR, CEIL = 1600, 1900          # everybody born inside this window is certainly dead
-CUT = 1850                        # couples whose later birth is after this are held out
+CUT = 1850                        # couples whose later known birth is after this are held out
 MIN_YEARS = 30                    # the label's threshold
 MAX_GAP_YEARS = 60
 MALE, FEMALE = "Q6581097", "Q6581072"
+JULIAN = "Q1985786"
 SLICE = int(os.environ.get("AQ_YEAR_SLICE", "25"))
+ABSENT = "0000-00-00"
 
-# The end causes Wikidata actually records on a marriage, looked up rather than guessed. Only used for reporting
-# how the file breaks down — the LABEL is duration, and never the cause.
+# The end causes Wikidata records on a marriage, looked up rather than guessed. Used only to REPORT how the file
+# breaks down; the label is duration and never reads the cause.
 BREAKDOWN = {"Q93190": "divorce", "Q701040": "annulment", "Q5561011": "marital separation",
              "Q3456503": "repudiation", "Q1299585": "declaration of nullity", "Q1142948": "legal separation"}
 DEATHCAUSE = {"Q24037741": "death of spouse", "Q99521170": "death of subject", "Q4": "death",
@@ -108,9 +154,9 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 def _fetch(query, accept, tries=6):
     """One HTTP call, with backoff, a fallback endpoint, and a rate-limited endpoint struck off for the run.
 
-    Both endpoints have their own failure mode and neither is a bug to retry harder: qlever answers 429 to a
+    Each endpoint has its own failure mode and neither is fixed by retrying harder: qlever answers 429 to a
     client that has asked a lot, and the Wikidata Query Service answers 504 when a query exceeds its 60 seconds.
-    Slicing keeps queries small enough for the second; striking off keeps us from paying six backoffs per query to
+    Slicing keeps queries small enough for the second; striking off saves paying six backoffs per query to
     rediscover the first.
     """
     last = None
@@ -167,8 +213,8 @@ def sparql(select, body, name, order=None, page=200000):
         df = pd.read_csv(io.StringIO(raw), sep="\t", dtype=str, keep_default_na=False)
         if len(df) == 0:
             break
-        # The Wikidata Query Service decorates values with a type suffix and wraps URIs in angle brackets;
-        # qlever's TSV is plain. Normalise so both parse to the same frame.
+        # The Wikidata Query Service decorates values with a type suffix and quotes literals; qlever's TSV is
+        # plain. Normalise so both dialects parse to the same frame.
         for c in df.columns:
             df[c] = (df[c].str.replace(r"\^\^<[^>]*>$", "", regex=True)
                           .str.replace(r'^"(.*)"$', r"\1", regex=True))
@@ -188,13 +234,13 @@ def sparql(select, body, name, order=None, page=200000):
 SLICE_CACHE = os.path.join(OUT, "_dslices")
 
 
-def sparql_sliced(select, body_fn, name, order=None):
-    """Fetch in year slices of the first partner and concatenate; each slice cached atomically."""
+def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
+    """Fetch in year slices and concatenate; each slice cached atomically so a 429 costs one slice, not the run."""
     frames = []
     os.makedirs(SLICE_CACHE, exist_ok=True)
     tag = "".join(ch if ch.isalnum() else "_" for ch in name)
-    for lo in range(FLOOR, CEIL + 1, SLICE):
-        hi = min(lo + SLICE - 1, CEIL)
+    for lo in range(lo0, hi0 + 1, SLICE):
+        hi = min(lo + SLICE - 1, hi0)
         cache = os.path.join(SLICE_CACHE, f"{tag}_{lo}_{hi}.csv")
         if os.path.exists(cache):
             frames.append(pd.read_csv(cache, dtype=str, keep_default_na=False))
@@ -210,60 +256,112 @@ def sparql_sliced(select, body_fn, name, order=None):
 
 
 def qid(s):
-    return s.rsplit("/", 1)[-1].rstrip(">")
+    return s.rsplit("/", 1)[-1].rstrip(">") if isinstance(s, str) and s else ""
 
 
 #%% [markdown]
-# ## 1. Every marriage with a start date and two day-precision births
+# ## 1. The date filter, precision-aware and calendar-aware
 #
-# `FILTER(STR(?a) < STR(?b))` keeps each pair once: Wikidata states a marriage from both sides.
+# Three things this gets right that a simpler version does not.
 #
-# Three filters on each birth date, and the third is the one people miss. Day precision (`timePrecision >= 11`),
-# inside the window, and **not 1 January** — among day-precision births 1 January occurs about 1.7 times as often
-# as a median day, where 2 January and 31 December sit at 1.0, because a source that knew only the year was
-# imported with a day anyway. Those records claim a precision they do not have.
+# **The precision floor is a parameter**, because the two halves want different ones: 11 (day) for the test set,
+# 9 (year) for training.
 #
-# `wikibase:rank != DeprecatedRank` excludes birth dates Wikidata has explicitly marked wrong.
+# **The 1 January exclusion is gated on precision.** `FILTER(!(MONTH = 1 && DAY = 1))` applied at year precision
+# deletes the entire coarse half of the data, because `1850-01-01` is how Wikidata spells the year 1850.
+#
+# **The Julian image of 1 January is excluded at the century-correct date** — 11 Jan for births to 1700, 12 Jan
+# to 1800, 13 Jan after — for records `timeCalendarModel` marks as Julian.
+#
+# `wikibase:rank != DeprecatedRank` drops birth dates Wikidata has explicitly marked wrong.
 
 #%%
-def dated(v, lo, hi):
+def dated(v, lo, hi, prec):
     return f"""
-  ?{v} p:P569 ?{v}st . ?{v}st psv:P569 ?{v}v .
+  ?{v} p:P569 ?{v}st . ?{v}st psv:P569 ?{v}val .
   ?{v}st wikibase:rank ?{v}rank . FILTER(?{v}rank != wikibase:DeprecatedRank)
-  ?{v}v wikibase:timeValue ?{v}dob ; wikibase:timePrecision ?{v}prec .
-  FILTER(?{v}prec >= 11)
+  ?{v}val wikibase:timeValue ?{v}dob ; wikibase:timePrecision ?{v}prec ;
+          wikibase:timeCalendarModel ?{v}cal .
+  FILTER(?{v}prec >= {prec})
   FILTER(YEAR(?{v}dob) >= {lo} && YEAR(?{v}dob) <= {hi})
-  FILTER(!(MONTH(?{v}dob) = 1 && DAY(?{v}dob) = 1))
-"""
+  FILTER(!(?{v}prec >= 11 && MONTH(?{v}dob) = 1 && DAY(?{v}dob) = 1))
+  FILTER(!(?{v}prec >= 11 && ?{v}cal = wd:{JULIAN} && MONTH(?{v}dob) = 1 &&
+           ((YEAR(?{v}dob) <= 1700 && DAY(?{v}dob) = 11) ||
+            (YEAR(?{v}dob) >  1700 && YEAR(?{v}dob) <= 1800 && DAY(?{v}dob) = 12) ||
+            (YEAR(?{v}dob) >  1800 && DAY(?{v}dob) = 13))))"""
 
 
-def marriage_body(lo, hi):
-    # The slice bounds ?a only; ?b keeps the whole window, so each couple falls in exactly one slice.
+# The relationship and everything needed to date its end. `?rel` is P26 (marriage) or P451 (unmarried partner);
+# romantic relationships were asked for and P451 turns out to be numerically tiny — 112 partnerships against
+# 86,600 marriages — but it costs one extra query and it is the honest reading of "not necessarily marriages".
+def relationship(rel):
     return f"""
-  ?a p:P26 ?m . ?m ps:P26 ?b .
+  ?a p:{rel} ?m . ?m ps:{rel} ?b .
   ?m pq:P580 ?start .
-  FILTER(STR(?a) < STR(?b))
   ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
-  ?a wdt:P21 ?asex . ?b wdt:P21 ?bsex .
   OPTIONAL {{ ?m pq:P582 ?end }}
   OPTIONAL {{ ?m pq:P1534 ?cause }}
   OPTIONAL {{ ?a wdt:P570 ?adeath }}
-  OPTIONAL {{ ?b wdt:P570 ?bdeath }}
-{dated('a', lo, hi)}{dated('b', FLOOR, CEIL)}"""
+  OPTIONAL {{ ?b wdt:P570 ?bdeath }}"""
 
 
-mar = sparql_sliced("DISTINCT ?a ?b ?adob ?bdob ?asex ?bsex ?start ?end ?cause ?adeath ?bdeath",
-                    marriage_body, "marriages with a start date", order="?a ?b")
-for c in ("a", "b", "asex", "bsex", "cause"):
-    mar[c] = mar[c].map(lambda s: qid(s) if s else "")
-for c in ("adob", "bdob", "start", "end", "adeath", "bdeath"):
-    mar[c] = mar[c].str[:10]
-print(f"  distinct people: {len(set(mar['a']) | set(mar['b'])):,}")
+PROJ = "?a ?b ?adob ?aprec ?bdob ?bprec ?asex ?bsex ?start ?end ?cause ?adeath ?bdeath"
+PROJ1 = "?a ?b ?adob ?aprec ?asex ?start ?end ?cause ?adeath ?bdeath"
+SEX = "?a wdt:P21 ?asex . ?b wdt:P21 ?bsex ."
 
 #%% [markdown]
-# ## 2. The duration, exactly as an infobox computes it
+# ## 2. The test set: both partners, to the day, 1851–1900
 #
-# End = the recorded end date if there is one, otherwise the earlier of the two deaths. A marriage with neither is
+# `FILTER(STR(?a) < STR(?b))` keeps each pair once, since Wikidata states a marriage from both sides. That is
+# safe: measured on the full window, 52,095 ordered pairs carry a start date against 26,085 unordered ones — a
+# ratio of 1.997 — so both sides carry the qualifiers essentially always and reading one side loses ~0.14%.
+
+#%%
+frames = []
+for rel in ("P26", "P451"):
+    def body(lo, hi, rel=rel):
+        return (relationship(rel) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
+                + dated('a', lo, hi, 11) + dated('b', CUT + 1, CEIL, 11))
+    df = sparql_sliced(f"DISTINCT {PROJ}", body, f"test half ({rel})", CUT + 1, CEIL, order="?a ?b")
+    df["rel"] = rel
+    frames.append(df)
+raw_test = pd.concat(frames, ignore_index=True)
+
+#%% [markdown]
+# ## 3. The training set: one partner is enough
+#
+# Two queries per relationship type, because "at least one of them is dated" is a union and SPARQL prices a
+# `UNION` badly here. The first takes couples where BOTH are dated to the year or better; the second constrains
+# only `?a` and imposes **nothing at all** on `?b` — no date, no sex, no existence beyond being a human Wikidata
+# knows about — which is what produces the `1777-04-30 × 0000-00-00` rows.
+#
+# The second query deliberately has no `FILTER(STR(?a) < STR(?b))`: it must run from each partner's side
+# independently, since the case it exists for is precisely the one where only one side is dated. The two results
+# are deduplicated by couple afterwards, keeping the better-populated copy, so a couple found by both queries
+# keeps both of its dates.
+
+#%%
+frames = []
+for rel in ("P26", "P451"):
+    def both(lo, hi, rel=rel):
+        return (relationship(rel) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
+                + dated('a', lo, hi, 9) + dated('b', FLOOR, CUT, 9))
+    df = sparql_sliced(f"DISTINCT {PROJ}", both, f"train both dated ({rel})", FLOOR, CUT, order="?a ?b")
+    df["rel"] = rel
+    frames.append(df)
+
+    def one(lo, hi, rel=rel):
+        return relationship(rel) + "\n  ?a wdt:P21 ?asex .\n" + dated('a', lo, hi, 9)
+    df = sparql_sliced(f"DISTINCT {PROJ1}", one, f"train one dated ({rel})", FLOOR, CUT, order="?a ?b")
+    df["rel"] = rel
+    df["bdob"], df["bprec"], df["bsex"] = "", "", ""
+    frames.append(df)
+raw_train = pd.concat(frames, ignore_index=True)
+
+#%% [markdown]
+# ## 4. The duration, exactly as an infobox computes it
+#
+# End = the stated end date if there is one, else the earlier of the two deaths. A relationship with neither is
 # unlabellable and is dropped, with the count printed.
 
 #%%
@@ -271,140 +369,266 @@ YEAR = 365.2425
 
 
 def as_days(s):
-    """Days since 1600-01-01. Resolution-independent: `astype("int64")` on a datetime column returns MICROseconds
-    here, not nanoseconds, and dividing by a nanosecond constant once turned a 60-year sanity filter into a no-op
-    that removed nothing while reporting success."""
-    d = pd.to_datetime(s, errors="coerce")
-    return (d.to_numpy(dtype="datetime64[D]").astype("float64")
-            - np.datetime64("1600-01-01").astype("datetime64[D]").astype("float64"))
+    """Days since 1600-01-01 at DAY resolution, with a MISSING date as a genuine NaN.
+
+    Two traps here, both of which have already cost this project a wrong dataset.
+
+    `pd.to_datetime(...).astype("int64")` returns MICROseconds, not nanoseconds; dividing by a nanosecond
+    constant once turned a 60-year sanity filter into a no-op that removed nothing while printing success. Hence
+    the explicit `datetime64[D]`.
+
+    And `NaT.astype("float64")` is **-9.223372036854776e+18, a finite float** — not NaN. So `np.isnan` says
+    False, and a marriage with no recorded end date reads as one that ended 25 billion years BC. That silently
+    dropped every death-ended marriage as "ended before it started", which is over half the file and most of the
+    positive class. The mask has to come from `pd.isna` on the datetimes, before the cast.
+    """
+    d = pd.to_datetime(pd.Series(list(s), dtype=object).replace("", np.nan), errors="coerce")
+    out = (d.to_numpy(dtype="datetime64[D]").astype("float64")
+           - np.datetime64("1600-01-01").astype("datetime64[D]").astype("float64"))
+    out[np.asarray(pd.isna(d))] = np.nan
+    return out
 
 
-start = as_days(mar["start"])
-end_stated = as_days(mar["end"])
-d_a, d_b = as_days(mar["adeath"]), as_days(mar["bdeath"])
-first_death = np.fmin(np.where(np.isnan(d_a), np.inf, d_a), np.where(np.isnan(d_b), np.inf, d_b))
-first_death = np.where(np.isinf(first_death), np.nan, first_death)
+def label(mar, tag):
+    """Attach `_dur`, `_source` and `lasted_30_years`; drop what cannot be labelled."""
+    mar = mar.copy()
+    for c in ("a", "b", "asex", "bsex", "cause"):
+        mar[c] = mar.get(c, "").map(qid) if c in mar else ""
+    for c in ("adob", "bdob", "start", "end", "adeath", "bdeath"):
+        mar[c] = mar[c].str[:10] if c in mar else ""
+    for c in ("aprec", "bprec"):
+        mar[c] = pd.to_numeric(mar[c], errors="coerce").fillna(0).astype(int) if c in mar else 0
+    start = as_days(mar["start"])
+    stated = as_days(mar["end"])
+    d_a, d_b = as_days(mar["adeath"]), as_days(mar["bdeath"])
+    first_death = np.fmin(np.where(np.isnan(d_a), np.inf, d_a), np.where(np.isnan(d_b), np.inf, d_b))
+    first_death = np.where(np.isinf(first_death), np.nan, first_death)
+    end = np.where(~np.isnan(stated), stated, first_death)
+    mar["_dur"] = (end - start) / YEAR
+    mar["_source"] = np.where(~np.isnan(stated), "end date stated", "ran until a death")
+    # The guard for the NaT trap described in as_days: a missing date must be NaN, never a finite sentinel. If
+    # this ever fires, the "ended before it started" filter below is about to delete a whole class of marriage.
+    for nm, arr in (("start", start), ("stated end", stated), ("first death", first_death)):
+        finite = arr[~np.isnan(arr)]
+        assert finite.size == 0 or finite.min() > -1e6, \
+            f"{tag}: {nm} contains a non-NaN sentinel ({finite.min():.3g}) — a missing date is being read as a " \
+            f"real one, and every row missing it is about to be dropped as a data error"
+    n0 = len(mar)
+    mar = mar[~np.isnan(end) & ~np.isnan(start)].reset_index(drop=True)
+    print(f"  {tag}: {n0 - len(mar):,} of {n0:,} had neither an end date nor a death — unlabellable, dropped")
+    bad = mar["_dur"] < 0
+    if bad.any():
+        print(f"  {tag}: {int(bad.sum()):,} ended BEFORE they started — dropped as data errors")
+        mar = mar[~bad].reset_index(drop=True)
+    mar["lasted_30_years"] = (mar["_dur"] >= MIN_YEARS).astype(int)
+    return mar
 
-end = np.where(~np.isnan(end_stated), end_stated, first_death)
-mar["_dur"] = (end - start) / YEAR
-mar["_source"] = np.where(~np.isnan(end_stated), "end date stated", "ran until a death")
 
-before = len(mar)
-mar = mar[~np.isnan(end) & ~np.isnan(start)].reset_index(drop=True)
-print(f"  {before - len(mar):,} marriages had neither an end date nor a death date — unlabellable, dropped")
+test_l = label(raw_test, "test half")
+train_l = label(raw_train, "train half")
 
-# A negative duration is a data error, not a short marriage.
-bad = mar["_dur"] < 0
-if bad.any():
-    print(f"  {int(bad.sum()):,} marriages ended BEFORE they started — dropped as data errors")
-    mar = mar[~bad].reset_index(drop=True)
+for tag, m in (("test", test_l), ("train", train_l)):
+    print(f"\n  {tag}: {len(m):,} labellable · {100*m['lasted_30_years'].mean():.1f}% reached {MIN_YEARS} years "
+          f"· median duration {m['_dur'].median():.1f}")
+    for src, g in m.groupby("_source"):
+        print(f"      {src:<18} {len(g):>7,}  {100*g['lasted_30_years'].mean():5.1f}% reach {MIN_YEARS}")
 
-mar["lasted_30_years"] = (mar["_dur"] >= MIN_YEARS).astype(int)
-print(f"\n  {len(mar):,} labellable marriages · {100*mar['lasted_30_years'].mean():.1f}% lasted "
-      f"{MIN_YEARS}+ years")
-for src, g in mar.groupby("_source"):
-    print(f"      {src:<18} {len(g):>7,}  {100*g['lasted_30_years'].mean():5.1f}% reach {MIN_YEARS} years")
 print("\n  THE CONFOUND, printed rather than described: those two rates differ enormously, and a model cannot")
-print("  see which case a couple is in. It can see things that correlate with it, so the baselines include a")
-print("  case-only reference.")
+print("  see which case a couple is in — it is not a column. It can see things that correlate with it, so the")
+print("  published baselines include a case-only reference to read a leaderboard place against.")
 
-# How the endings break down, for the record. The label never uses the cause.
 named = collections.Counter()
-for c in mar["cause"]:
+for c in pd.concat([test_l["cause"], train_l["cause"]]):
     if c in BREAKDOWN:
         named[BREAKDOWN[c]] += 1
     elif c in DEATHCAUSE:
         named["a death"] += 1
     elif c:
         named["other cause"] += 1
-print(f"\n  of the {len(mar):,}, {sum(named.values()):,} state WHY they ended:")
+print(f"\n  {sum(named.values()):,} relationships state WHY they ended (the label never reads this):")
 for k, v in named.most_common():
     print(f"      {v:>6,}  {k}")
 
 #%% [markdown]
-# ## 3. Sex decides the columns, and nothing else may
+# ## 5. Sex decides which column, and nothing else may
 #
-# The first column is the man and the second the woman. An earlier dataset in this project inherited the pair's
-# Q-number ordering instead, which made that claim false for about half the rows and scrambled the sign of every
-# asymmetric feature.
+# The man is column one. An earlier dataset in this project inherited the pair's Q-number ordering instead, which
+# made that claim false for about half the rows and flipped the sign of every asymmetric feature.
+#
+# On a one-sided training row only one partner is known, so their sex alone decides which column they occupy and
+# the other is `0000-00-00`. Where both sexes are recorded the couple must be opposite-sex; where only one is,
+# the other is taken to be the opposite — which is what "the man is column one" has to mean for a row that names
+# only a wife. A row whose two recorded sexes are the SAME is dropped rather than forced into the columns.
 
 #%%
-opp = mar[((mar["asex"] == MALE) & (mar["bsex"] == FEMALE))
-          | ((mar["asex"] == FEMALE) & (mar["bsex"] == MALE))].copy()
-print(f"  opposite-sex only: {len(opp):,} of {len(mar):,}")
-man_is_a = opp["asex"].eq(MALE)
-opp["dob_man"] = np.where(man_is_a, opp["adob"], opp["bdob"])
-opp["dob_woman"] = np.where(man_is_a, opp["bdob"], opp["adob"])
-opp["man"] = np.where(man_is_a, opp["a"], opp["b"])
-opp["woman"] = np.where(man_is_a, opp["b"], opp["a"])
-assert (opp.loc[man_is_a, "dob_man"] == opp.loc[man_is_a, "adob"]).all()
-assert (opp.loc[~man_is_a, "dob_man"] == opp.loc[~man_is_a, "bdob"]).all()
-print(f"  the man was partner A in {int(man_is_a.sum()):,} rows and B in {int((~man_is_a).sum()):,} — which is "
-      f"why the order is assigned, never inherited")
+def to_columns(m, tag, strict):
+    m = m.copy()
+    if strict:
+        keep = (((m["asex"] == MALE) & (m["bsex"] == FEMALE))
+                | ((m["asex"] == FEMALE) & (m["bsex"] == MALE)))
+        why = "opposite-sex, both recorded"
+    else:
+        same = (m["asex"] == m["bsex"]) & m["bsex"].ne("")
+        keep = m["asex"].isin([MALE, FEMALE]) & ~same
+        why = "the dated partner has a recorded sex and the pair is not known same-sex"
+    print(f"  {tag}: {int(keep.sum()):,} of {len(m):,} usable on sex ({why})")
+    m = m[keep].reset_index(drop=True)
+    man_is_a = m["asex"].eq(MALE)
+    m["dob_man"] = np.where(man_is_a, m["adob"], m["bdob"])
+    m["dob_woman"] = np.where(man_is_a, m["bdob"], m["adob"])
+    m["prec_man"] = np.where(man_is_a, m["aprec"], m["bprec"])
+    m["prec_woman"] = np.where(man_is_a, m["bprec"], m["aprec"])
+    m["man"] = np.where(man_is_a, m["a"], m["b"])
+    m["woman"] = np.where(man_is_a, m["b"], m["a"])
+    assert (m.loc[man_is_a, "dob_man"] == m.loc[man_is_a, "adob"]).all()
+    assert (m.loc[~man_is_a, "dob_man"] == m.loc[~man_is_a, "bdob"]).all()
+    print(f"      the man was partner A in {int(man_is_a.sum()):,} rows and B in {int((~man_is_a).sum()):,} — "
+          f"which is why the column is assigned, never inherited")
+    return m
 
-gap = np.abs(as_days(opp["dob_man"]) - as_days(opp["dob_woman"])) / YEAR
-opp = opp[gap < MAX_GAP_YEARS].reset_index(drop=True)
-print(f"  births less than {MAX_GAP_YEARS} years apart: {len(opp):,}")
 
-# One row per couple. A couple married twice keeps its LONGEST marriage, because the question is whether these
-# two people sustained a marriage, and the alternative — averaging, or picking the first — answers neither.
-opp["_pair"] = [f"{min(a, b)}|{max(a, b)}" for a, b in zip(opp["man"], opp["woman"])]
-dups = int(opp["_pair"].duplicated().sum())
-opp = opp.sort_values("_dur", ascending=False).drop_duplicates("_pair", keep="first").reset_index(drop=True)
-print(f"  {dups:,} duplicate pair rows collapsed, keeping the longest marriage: {len(opp):,} couples")
+test_c = to_columns(test_l, "test half", strict=True)
+train_c = to_columns(train_l, "train half", strict=False)
 
 #%% [markdown]
-# ## 4. The split is by TIME, and the boundary is asserted
+# ## 6. `00` for unknown, `0000-00-00` for absent
 #
-# Couples whose later birth is after 1850 are held out. Person-disjointness is restored from the training side:
-# any training couple sharing a person with a held-out couple is dropped, which costs training rows rather than
-# compromising the test set — the test set is the measurement.
+# Wikidata stores a year-precision date as `1850-01-01` and a month-precision one as `1850-03-01`, so the day and
+# month have to be **erased** rather than trusted — that `01` is not a claim about January or the first. The
+# precision comes from `wikibase:timePrecision`, projected by the queries, rather than being guessed back out of
+# the literal.
 
 #%%
-opp["_later"] = np.maximum(opp["dob_man"].str[:4].astype(int), opp["dob_woman"].str[:4].astype(int))
-is_test = opp["_later"] > CUT
-test_people = set(opp.loc[is_test, "man"]) | set(opp.loc[is_test, "woman"])
-shares = opp["man"].isin(test_people) | opp["woman"].isin(test_people)
-drop_person = shares & ~is_test
-train = opp[~is_test & ~drop_person].reset_index(drop=True)
-test = opp[is_test].reset_index(drop=True)
-print(f"  {int(drop_person.sum()):,} training couples dropped for sharing a person with the held-out half")
-print(f"  train {len(train):,} (later birth {train['_later'].min()}-{train['_later'].max()}) · "
-      f"test {len(test):,} ({test['_later'].min()}-{test['_later'].max()})")
+def encode(dob, prec):
+    """`YYYY-MM-DD`, `YYYY-MM-00`, `YYYY-00-00`, or `0000-00-00` when there is no date at all."""
+    out = []
+    for d, p in zip(dob, prec):
+        d = d or ""
+        if len(d) < 4 or not d[:4].isdigit():
+            out.append(ABSENT)
+        elif p >= 11:
+            out.append(d[:10])
+        elif p == 10:
+            out.append(d[:7] + "-00")
+        else:
+            out.append(d[:4] + "-00-00")
+    return np.array(out, dtype=object)
+
+
+for frame in (test_c, train_c):
+    for side in ("man", "woman"):
+        frame[f"dob_{side}"] = encode(frame[f"dob_{side}"].fillna("").to_numpy(),
+                                      frame[f"prec_{side}"].to_numpy())
+
+#%% [markdown]
+# ## 7. One row per couple, then the split, with both asserted
+#
+# A couple with two recorded marriages keeps the LONGEST: the question is whether these two people sustained a
+# marriage, and averaging or taking the first answers neither. A one-sided row is dropped when the same couple
+# was also found fully dated, since it is the same marriage with less information — which is why the sort puts
+# the better-populated copy first.
+
+#%%
+def one_per_couple(m, tag):
+    m = m.copy()
+    m["_pair"] = [f"{min(x, y)}|{max(x, y)}" for x, y in zip(m["man"], m["woman"])]
+    m["_known"] = (m["dob_man"] != ABSENT).astype(int) + (m["dob_woman"] != ABSENT).astype(int)
+    n0 = len(m)
+    m = (m.sort_values(["_known", "_dur"], ascending=[False, False])
+          .drop_duplicates("_pair", keep="first").reset_index(drop=True))
+    print(f"  {tag}: {n0 - len(m):,} duplicate rows collapsed (better-dated copy first, then longest "
+          f"marriage) — {len(m):,} couples")
+    return m
+
+
+test_u = one_per_couple(test_c, "test half")
+train_u = one_per_couple(train_c, "train half")
+
+# The birth-gap sanity filter only applies where BOTH dates exist.
+kept = []
+for tag, m in (("test", test_u), ("train", train_u)):
+    both = (m["dob_man"] != ABSENT) & (m["dob_woman"] != ABSENT)
+    gap = np.abs(pd.to_numeric(m["dob_man"].str[:4], errors="coerce")
+                 - pd.to_numeric(m["dob_woman"].str[:4], errors="coerce"))
+    drop = both & (gap >= MAX_GAP_YEARS)
+    if drop.any():
+        print(f"  {tag}: {int(drop.sum()):,} couples born {MAX_GAP_YEARS}+ years apart — dropped")
+    kept.append(m[~drop].reset_index(drop=True))
+test_u, train_u = kept
+
+
+def later_year(m):
+    """The later of the two known birth years. With one partner absent this is the only known one, which is the
+    right reading: the split asks when this couple lived, and an absent partner says nothing about that."""
+    y = np.maximum(pd.to_numeric(m["dob_man"].str[:4], errors="coerce").fillna(0),
+                   pd.to_numeric(m["dob_woman"].str[:4], errors="coerce").fillna(0))
+    return y.astype(int)
+
+
+test_u["_later"], train_u["_later"] = later_year(test_u), later_year(train_u)
+test = test_u[test_u["_later"] > CUT].reset_index(drop=True)
+train = train_u[(train_u["_later"] <= CUT) & (train_u["_later"] >= FLOOR)].reset_index(drop=True)
+
+# PERSON-DISJOINT, restored from the TRAINING side. A training couple sharing a person with a held-out couple is
+# dropped: that costs training rows rather than compromising the test set, and the test set is the measurement.
+test_people = set(test["man"]) | set(test["woman"])
+test_people.discard("")
+shares = train["man"].isin(test_people) | train["woman"].isin(test_people)
+print(f"\n  {int(shares.sum()):,} training couples dropped for sharing a person with the held-out half")
+train = train[~shares].reset_index(drop=True)
+
 assert test["_later"].min() > CUT >= train["_later"].max(), "the split is not temporal"
-print(f"  every held-out couple's later birth is after {CUT}; every training couple's is at or before it")
+tp = (set(train["man"]) | set(train["woman"])) - {""}
+sp = (set(test["man"]) | set(test["woman"])) - {""}
+assert not (tp & sp), f"{len(tp & sp)} people on both sides"
+print(f"  train {len(train):,} couples (later known birth {train['_later'].min()}-{train['_later'].max()}) · "
+      f"test {len(test):,} ({test['_later'].min()}-{test['_later'].max()})")
+print(f"  checked: the split is temporal at {CUT}, and no person appears on both sides")
 print(f"  positive rate: train {100*train['lasted_30_years'].mean():.2f}% · "
       f"test {100*test['lasted_30_years'].mean():.2f}%")
 print("  those differ, and they should: earlier-born couples died younger and their records are thinner, so")
-print("  fewer of their marriages reach thirty years. It is the reverse of the parenthood dataset's shift.")
-tp = set(train["man"]) | set(train["woman"])
-sp = set(test["man"]) | set(test["woman"])
-assert not (tp & sp), f"{len(tp & sp)} people on both sides"
-print("  checked: no person appears on both sides")
+print("  fewer of their marriages reach thirty years.")
+
+n_both = int(((train["dob_man"] != ABSENT) & (train["dob_woman"] != ABSENT)).sum())
+print(f"\n  the training half, by how much it knows:")
+print(f"      {n_both:>7,} couples with BOTH dates ({100*n_both/max(len(train),1):.1f}%)")
+print(f"      {len(train)-n_both:>7,} with one partner absent — kept, because the DURATION is known exactly")
+for side in ("man", "woman"):
+    d = train[f"dob_{side}"]
+    print(f"      {side}: {int((d.str[5:] != '00-00').sum() - (d == ABSENT).sum()):>7,} to the day · "
+          f"{int(d.str.endswith('-00').sum() - (d.str[5:] == '00-00').sum()):>6,} to the month · "
+          f"{int((d.str[5:] == '00-00').sum()):>6,} to the year · {int((d == ABSENT).sum()):>6,} absent")
 
 #%% [markdown]
-# ## 5. The files
+# ## 8. The files
+#
+# The test set is asserted strictly — every date day-precision, in window, never a placeholder. Those assertions
+# are the reason the two halves were built by separate queries rather than filtered out of one.
 
 #%%
 COLS = ["dob_man", "dob_woman", "lasted_30_years"]
-for name, frame in (("train", train), ("test", test)):
-    for col in ("dob_man", "dob_woman"):
-        assert frame[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"{name}.{col} malformed"
-        assert not (frame[col].str[5:] == "01-01").any(), f"{name}.{col} still contains a 1 January"
-        yrs = frame[col].str[:4].astype(int)
-        assert ((yrs >= FLOOR) & (yrs <= CEIL)).all(), f"{name}.{col} outside {FLOOR}-{CEIL}"
-print(f"  checked: every written date is day-precision, in {FLOOR}-{CEIL}, and never 1 January")
+for col in ("dob_man", "dob_woman"):
+    assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
+    assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
+    assert not test[col].str.endswith("-00").any(), f"test.{col} is not day-precision"
+    assert not (test[col].str[5:] == "01-01").any(), f"test.{col} still contains a 1 January"
+    y = test[col].str[:4].astype(int)
+    assert ((y > CUT) & (y <= CEIL)).all(), f"test.{col} outside {CUT+1}-{CEIL}"
+print(f"  checked: every test date is day-precision, inside {CUT+1}-{CEIL}, and never a placeholder")
+for col in ("dob_man", "dob_woman"):
+    assert train[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"train.{col} malformed"
+assert not ((train["dob_man"] == ABSENT) & (train["dob_woman"] == ABSENT)).any(), \
+    "a training row with no date at all carries no input"
+print("  checked: every training row is well-formed and carries at least one date")
 
 train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
 train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False)
-test = test.reset_index(drop=True)
 test["id"] = [f"m{i:06d}" for i in range(len(test))]
 test[["id", "dob_man", "dob_woman"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
 rng = np.random.default_rng(20260817)
-usage = np.where(rng.random(len(test)) < 0.30, "Public", "Private")
 sol = test[["id", "lasted_30_years"]].copy()
-sol["Usage"] = usage
+sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")
 sol.to_csv(os.path.join(OUT, "solution.csv"), index=False)
 samp = test[["id"]].copy()
 samp["lasted_30_years"] = 0.5
@@ -415,5 +639,9 @@ for side in ("Public", "Private"):
     print(f"    {side:<8} {len(s):>6,} rows, {100*s['lasted_30_years'].mean():5.2f}% positive")
 
 print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
-print(train[COLS].head(3).to_string(index=False))
+print("\n  training rows, showing the three shapes it can take:")
+ex = pd.concat([train[(train.dob_woman != ABSENT) & (train.dob_man.str[5:] != "00-00")].head(2),
+                train[train.dob_man.str[5:] == "00-00"].head(2),
+                train[train.dob_woman == ABSENT].head(2)])
+print(ex[COLS].to_string(index=False))
 print(f"\n  total build time {(time.time()-T0)/60:.1f} min")

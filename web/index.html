@@ -402,13 +402,30 @@ function render(i) {
   // dates. Those differ, and showing one under the other's caption is how a page ends up quietly overstating
   // its own robustness. Both are displayed, each with its own label.
   const bmk = (i.benchmark || {});
-  const head = bmk.benchmark15 != null ? bmk.benchmark15 : i.auc;
+  // THE HEADLINE PREFERS THE HELD-OUT NUMBER and says which one it is showing. The precision grid was retired
+  // when the test set became day-precision only, so `benchmark15` is now absent and this used to fall through
+  // to `i.auc` — which was the in-training selection AUC, an optimistic score, displayed under a label about a
+  // grid that no longer exists. Both halves of that were wrong.
+  const head = bmk.benchmark15 != null ? bmk.benchmark15
+             : (i.heldout ? i.heldout.auc : i.auc);
+  const headLabel = bmk.benchmark15 != null
+    ? "benchmark: row-count-weighted mean AUC over the precision grid"
+    : (i.heldout
+        ? `held-out AUC on ${Number(i.heldout.n || 0).toLocaleString()} couples born after the training years`
+        : "in-training selection AUC — optimistic, not a performance estimate");
+  const lab = document.querySelector("#s-auc + span");
+  if (lab) lab.textContent = headLabel;
   const base = bmk.reference15 != null ? bmk.reference15
-             : (i.baseline ? Object.values(i.baseline)[0] : null);
+             : (i.heldout && i.heldout.era_rule != null ? i.heldout.era_rule
+               : (i.baseline ? Object.values(i.baseline)[0] : null));
+  const baseLab = document.querySelector("#s-base + span");
+  if (baseLab && bmk.reference15 == null && i.heldout && i.heldout.era_rule != null) {
+    baseLab.textContent = "the era rule on the same held-out couples — the bar that matters";
+  }
   $("#s-auc").textContent = fmt(head);
   // Labelled "AUC when both dates are full", so it must be that grid cell — not the out-of-fold CV score,
   // which is a different measurement on a different half of the data and reads about 0.01 lower.
-  $("#s-clean").textContent = fmt((bmk.cells && bmk.cells["full|full"]) ? bmk.cells["full|full"].stack : i.auc);
+  $("#s-clean").textContent = fmt((bmk.cells && bmk.cells["full|full"]) ? bmk.cells["full|full"].stack : null);
   $("#s-base").textContent = fmt(base);
   $("#s-lift").textContent = (head != null && base != null)
     ? (head - base >= 0 ? "+" : "") + fmt(head - base) : "—";

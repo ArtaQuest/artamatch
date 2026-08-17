@@ -98,8 +98,30 @@ def main():
     # Read off the training file itself rather than restated by hand, so the page cannot claim a window the
     # model was not fitted on.
     m["train_window"] = {"from": lo, "to": hi, "n": len(years) // 2}
-    m["auc"] = res["cv_auc"]
     m["n"] = res["n_train"]
+
+    # THE HEADLINE NUMBER IS THE HELD-OUT ONE WHEN THERE IS ONE. This read `m["auc"] = res["cv_auc"]`, and the
+    # page falls back to `i.auc` for its headline whenever the precision-grid data is absent — which it now
+    # always is, because that grid was retired when the test set became day-precision only. So the prod page
+    # would have shown the in-training selection AUC as the model's score, under a label describing a metric
+    # that no longer exists.
+    #
+    # That number is optimistic and it is not a small effect: on 1,500 rows of COIN-FLIP labels it prints ~0.56
+    # while the age-gap baseline beside it correctly prints ~0.50, because the base predictions the meta model
+    # combines were produced over the same folds the meta is validated on, the hgb-vs-logit choice is made on
+    # that same vector, and block screening ran on all of train. It is a selection score, not a performance
+    # estimate, and a published figure must never be the flattering one.
+    #
+    # rank_traditions.py already measures the ensemble on the TEMPORAL held-out couples, which is the number the
+    # competition is scored on. `auc_kind` travels with it so the page can say which it is showing rather than
+    # leaving a reader to assume.
+    if rk is not None:
+        m["auc"] = rk["ensemble"]
+        m["auc_kind"] = "heldout"
+        m["heldout"] = {"auc": rk["ensemble"], "era_rule": rk["era_rule"], "n": rk["n_test"]}
+    else:
+        m["auc"] = res["cv_auc"]
+        m["auc_kind"] = "in-training selection (optimistic)"
 
     after = {k: m[k] for k in EXPORTER_OWNS if k in m}
     if after != before:
@@ -118,7 +140,9 @@ def main():
               f"held-out couples; {len(rk['traditions'])} traditions ranked, "
               f"{sum(t['beats_era'] for t in rk['traditions'])} beat the era rule")
     print(f"  train_window {lo}-{hi} over {len(years)//2:,} couples — the page will refuse anything outside it")
-    print(f"  out-of-fold AUC {res['cv_auc']:.4f}   baseline {res['baseline_auc']:.4f}")
+    print(f"  headline the page will show: {m['auc']:.4f} ({m['auc_kind']})")
+    print(f"  in-training selection AUC {res['cv_auc']:.4f} (optimistic, not published) · "
+          f"signed-gap baseline {res['baseline_auc']:.4f}")
 
 
 if __name__ == "__main__":

@@ -91,9 +91,13 @@
 #
 # ## Two traps in the dates, both measured
 #
-# **1 January is a placeholder.** Among day-precision births 1600–1900 it occurs **2.07×** as often as a median
-# January day, while 2 January sits at 1.00× — a source that knew only the year was imported with a day anyway.
-# Excluded at day precision. NOT excluded at year precision, where `1850-01-01` is simply how Wikidata spells
+# **1 January is a placeholder, and it is excluded from the TEST HALF ONLY.** Among day-precision births
+# 1600–1900 it occurs **2.07×** as often as a median January day, while 2 January sits at 1.00× — a source that
+# knew only the year was imported with a day anyway. The test half is the measurement and must not contain dates
+# claiming a precision they do not have; the training half keeps them, because 193 pairs of noise are worth more
+# than 193 fewer rows.
+#
+# It is never excluded at year precision, in either half, where `1850-01-01` is simply how Wikidata spells
 # "1850": a filter that removed them there deleted every coarse date in the file, and was quietly costing 17,000
 # training couples before the interaction was measured.
 #
@@ -103,7 +107,14 @@
 # a different footing from another. But it means a **Julian** 1 January placeholder is stored as 11, 12 or 13
 # January depending on the century, and that excess is measurably there: **2.08×** the median January day at 13
 # January among Julian-tagged records, where 11 and 12 January sit at 0.68× and 1.04×. Excluded at the
-# century-correct date, for Julian-tagged records only.
+# century-correct date, for Julian-tagged records only — and again, from the test half only.
+#
+# ## Every marriage of every person, and each couple once
+#
+# A person with three spouses contributes three rows: the dedup key is the COUPLE, never the person. What
+# collapses is the same pair arriving twice — which it does routinely, because the one-sided query runs from each
+# partner's side independently. Of those copies the better-dated one wins, and a couple who married each other
+# twice keeps its longest marriage, since the question is whether these two sustained one.
 
 #%%
 import collections
@@ -374,19 +385,32 @@ def qid(s):
 # `wikibase:rank != DeprecatedRank` drops birth dates Wikidata has explicitly marked wrong.
 
 #%%
-def dated(v, lo, hi, prec):
-    return f"""
+def dated(v, lo, hi, prec, drop_placeholders=True):
+    """The birth-date pattern. `drop_placeholders` excludes the 1 January artefacts.
+
+    THE PLACEHOLDER EXCLUSION IS FOR THE TEST HALF ONLY (operator, 2026-08-17). It costs 193 of 86,804 pairs, so
+    it was never about volume — but the test half is the measurement and must not contain dates claiming a
+    precision they do not have, while the training half is better off with the noise than short of the rows.
+
+    Both exclusions travel on one flag because they are the same artefact seen twice: a source that knew only the
+    year, imported with a day anyway. In a Gregorian-dated record that lands on 1 January; in a Julian-dated one
+    the RDF's Gregorian rendering puts it on 11, 12 or 13 January depending on the century.
+    """
+    s = f"""
   ?{v} p:P569 ?{v}st . ?{v}st psv:P569 ?{v}val .
   ?{v}st wikibase:rank ?{v}rank . FILTER(?{v}rank != wikibase:DeprecatedRank)
   ?{v}val wikibase:timeValue ?{v}dob ; wikibase:timePrecision ?{v}prec ;
           wikibase:timeCalendarModel ?{v}cal .
   FILTER(?{v}prec >= {prec})
-  FILTER(YEAR(?{v}dob) >= {lo} && YEAR(?{v}dob) <= {hi})
+  FILTER(YEAR(?{v}dob) >= {lo} && YEAR(?{v}dob) <= {hi})"""
+    if drop_placeholders:
+        s += f"""
   FILTER(!(?{v}prec >= 11 && MONTH(?{v}dob) = 1 && DAY(?{v}dob) = 1))
   FILTER(!(?{v}prec >= 11 && ?{v}cal = wd:{JULIAN} && MONTH(?{v}dob) = 1 &&
            ((YEAR(?{v}dob) <= 1700 && DAY(?{v}dob) = 11) ||
             (YEAR(?{v}dob) >  1700 && YEAR(?{v}dob) <= 1800 && DAY(?{v}dob) = 12) ||
             (YEAR(?{v}dob) >  1800 && DAY(?{v}dob) = 13))))"""
+    return s
 
 
 # The relationship and everything needed to date its end. `?rel` is P26 (marriage) or P451 (unmarried partner);
@@ -462,7 +486,8 @@ frames = []
 for rel in ("P26", "P451"):
     def both(lo, hi, rel=rel):
         return (relationship(rel) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
-                + dated('a', lo, hi, 9) + dated('b', FLOOR, CUT, 9))
+                + dated('a', lo, hi, 9, drop_placeholders=False)
+                + dated('b', FLOOR, CUT, 9, drop_placeholders=False))
     df = sparql_sliced(f"DISTINCT {PROJ}", both, f"train both dated ({rel})", FLOOR, CUT, order="?a ?b")
     df["rel"] = rel
     frames.append(df)
@@ -474,7 +499,8 @@ for rel in ("P26", "P451"):
     # placed in the training half. An OPTIONAL costs far less than the `FILTER NOT EXISTS` that would be the
     # alternative, and it tells the truth: absence is now observed rather than assumed.
     def one(lo, hi, rel=rel):
-        return (relationship(rel) + "\n  ?a wdt:P21 ?asex .\n" + dated('a', lo, hi, 9)
+        return (relationship(rel) + "\n  ?a wdt:P21 ?asex .\n"
+                + dated('a', lo, hi, 9, drop_placeholders=False)
                 + """
   OPTIONAL { ?b wdt:P21 ?bsex }
   OPTIONAL {

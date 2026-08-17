@@ -145,13 +145,22 @@
 #
 # - **No birth time.** Every chart is cast for 08:00 UT. The Moon moves about 0.5° an hour, so a Moon-based
 #   quantity carries up to ±6° of error, and anything needing an ascendant is simply absent.
-# - **The label is a record, not a life.** `parents_together = 0` means no child naming both partners is
-#   recorded. A couple whose child was never written down is indistinguishable from a couple without one.
-# - **A third of the training dates are incomplete.** Unknown parts are written `00` — `1850-00-00` is a year,
-#   `1850-03-00` a month. The test set has no `00` at all: every test row is known to the day.
-# - **1 January is stored as a year.** Among 167,044 day-precision births, 1 January occurs 767 times against a
-#   median day-of-year count of 456 — a 1.7× excess where 2 January sits at 1.0×. Roughly 311 of those are
-#   records whose source knew only the year. About 456 genuine 1 January birthdays lose their day as a result.
+# - **The label is a record, not a life.** It says whether Wikidata's record of the marriage spans thirty
+#   years, which is a fact about what was written down. A marriage whose ending was never recorded is dated
+#   from the earlier spouse's death instead, and one ended by a death is NOT counted as long automatically.
+# - **Most training rows are incomplete, on purpose.** Unknown parts are written `00` — `1850-00-00` is a
+#   year, `1850-03-00` a month — and `0000-00-00` means that partner is absent from the source entirely. The
+#   duration of a marriage is known just as exactly when one spouse's birthday is not, so those rows carry a
+#   real label and half an input. The test set has none of it: every scored row is complete and day-precision.
+# - **1 January is a placeholder, and it is excluded.** Among day-precision births 1600–1900, 1 January occurs
+#   **2.07×** as often as a median January day, where 2 January sits at 1.00× — a source that knew only the year
+#   was imported with a day anyway. Those records are dropped at day precision, which also costs the genuine
+#   1 January birthdays. They are NOT dropped at year precision, where `1850-01-01` is simply how the source
+#   spells "1850".
+# - **The same placeholder moves in the Julian calendar.** Every date here is proleptic Gregorian, whatever
+#   calendar the source recorded — so a *Julian* 1 January is stored as 11, 12 or 13 January depending on the
+#   century, and the excess is measurably there: **2.08×** the median January day at 13 January among
+#   Julian-dated records. Those are excluded at the century-correct date.
 # - **The stack is not reproducible from this notebook.** It needs the ephemeris asset and 18 modules, which live
 #   in the project repository. What is reproducible is every number quoted here, because the model, the dataset
 #   and the build notebook are all public.
@@ -175,7 +184,15 @@ try:
     train = pd.read_csv(f"{BASE}/train.csv")
 except FileNotFoundError:                       # running outside Kaggle
     train = pd.read_csv("train.csv")
-print(f"{len(train):,} training couples, {train.parents_together.mean():.2%} positive")
+# The target column is DISCOVERED, not spelled out, so this notebook keeps working when the question changes.
+LABEL = [c for c in train.columns if c not in ("id", "dob_man", "dob_woman")][0]
+ABSENT = "0000-00-00"
+n_absent = int((train.dob_man.eq(ABSENT) | train.dob_woman.eq(ABSENT)).sum())
+n_coarse = int((train.dob_man.str.contains("-00") | train.dob_woman.str.contains("-00")).sum()) - n_absent
+print(f"{len(train):,} training couples, {train[LABEL].mean():.2%} positive  (target: {LABEL})")
+print(f"  {n_absent:,} have one partner absent from the source, written {ABSENT}")
+print(f"  {n_coarse:,} more have a date known only to the month or the year")
+print(f"  the SCORED rows are all complete and day-precision, so you never predict from a placeholder")
 train.head()
 
 
@@ -188,17 +205,30 @@ train.head()
 
 #%%
 def as_day(s):
-    """Days since 1800, with `00` components replaced by 01. Month and year precision survive as coarse values."""
+    """Days since 1800. `00` components become 01, so month and year precision survive as coarse values, and an
+    ABSENT partner (`0000-00-00`) becomes NaN rather than a date in year zero.
+
+    That distinction is the one to get right. Year 0 is not a date, and letting it through produces a birth
+    -657,000 days before 1800 that silently drags every fitted coefficient. NaN is the honest value, and it is
+    also the one scikit-learn refuses loudly instead of quietly modelling.
+    """
     y = s.str.slice(0, 4).astype(int)
     m = s.str.slice(5, 7).astype(int).clip(lower=1)
     d = s.str.slice(8, 10).astype(int).clip(lower=1)
-    return (pd.to_datetime(dict(year=y, month=m, day=d), errors="coerce")
-            - pd.Timestamp("1800-01-01")).dt.days
+    out = (pd.to_datetime(dict(year=y.clip(lower=1), month=m, day=d), errors="coerce")
+           - pd.Timestamp("1800-01-01")).dt.days
+    return out.where(y > 0)
 
 
 dm, dw = as_day(train.dob_man), as_day(train.dob_woman)
-y = train.parents_together.to_numpy()
-gap = (dw - dm).to_numpy().reshape(-1, 1) / 365.2425
+# The signed-gap baseline needs BOTH dates, so it is fitted on the couples that have both. That is a property of
+# this particular baseline and not of the dataset: a real entry can use the one-sided rows, and there are a lot
+# of them. Reported rather than dropped in silence.
+both = dm.notna() & dw.notna()
+print(f"the signed-gap baseline uses the {int(both.sum()):,} couples with both dates "
+      f"({100*both.mean():.1f}% of the file); the other {int((~both).sum()):,} have one partner absent")
+y = train.loc[both, LABEL].to_numpy()
+gap = ((dw - dm)[both]).to_numpy().reshape(-1, 1) / 365.2425
 
 ref = LogisticRegression(max_iter=2000).fit(gap, y)
 print(f"signed-gap logistic, in-sample AUC: {roc_auc_score(y, ref.predict_proba(gap)[:, 1]):.4f}")
@@ -281,7 +311,7 @@ try:
 except FileNotFoundError:
     test = pd.read_csv("test.csv")
 pred = final.predict_proba(features(test)[X.columns])[:, 1]
-sub = pd.DataFrame({"id": test.id, "parents_together": pred})
+sub = pd.DataFrame({"id": test.id, LABEL: pred})
 sub.to_csv("submission.csv", index=False)
 print(f"wrote submission.csv — {len(sub):,} rows, mean {pred.mean():.4f}")
 sub.head()

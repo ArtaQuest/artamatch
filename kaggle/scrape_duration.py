@@ -234,7 +234,11 @@ def _fetch(query, accept, tries=6):
             req = urllib.request.Request(base + "?" + urllib.parse.urlencode({"query": query}),
                                          headers={"Accept": acc, "User-Agent": UA})
             try:
-                with urllib.request.urlopen(req, timeout=900) as r:
+                # 300s, not 900. WDQS answers or 504s inside 60s and qlever cost-429s inside 30s, so a socket
+                # that is still open at five minutes is a hang, not a slow answer -- and at 900s a single hang
+                # cost fifteen minutes. Build 12 made zero progress in an hour with only ten HTTP failures logged;
+                # the rest of the hour was spent inside stalled sockets.
+                with urllib.request.urlopen(req, timeout=300) as r:
                     return r.read().decode("utf-8", "replace")
             except urllib.error.HTTPError as e:
                 last = e

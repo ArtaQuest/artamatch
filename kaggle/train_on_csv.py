@@ -242,8 +242,21 @@ def main():
         pred[b] = m.predict_proba((P[b] - mu) / sd)[:, 1]
     cv = float(roc_auc_score(y, pred))
     meta = LogisticRegression(C=0.03, max_iter=4000).fit((P - mu) / sd, y)
-    log(f"  STACK out-of-fold AUC {cv:.4f}   baseline {roc_auc_score(y, bp):.4f}   "
-        f"lift {cv-roc_auc_score(y, bp):+.4f}")
+    # THIS NUMBER IS OPTIMISTIC, AND IT IS A SELECTION SCORE RATHER THAN A PERFORMANCE ESTIMATE. The meta model
+    # above is cross-validated, but three things upstream of it are not:
+    #
+    #   * the base predictions in P were themselves produced over THESE SAME folds, so when the meta trains on
+    #     P[a] those values came from base models that had seen fold b's labels;
+    #   * each base model's hgb-vs-logit choice is made by comparing AUCs computed on that same OOF vector;
+    #   * base-model selection and each block's `kept_idx` column screening ran on the whole training half.
+    #
+    # Measured under the null — 1,500 rows with coin-flip labels — this prints well above 0.5 while the age-gap
+    # baseline beside it correctly prints ~0.5. The honest number for this project is the TEMPORAL HELD-OUT AUC,
+    # which finalize.sh step 4 reports against the era rule and the signed age gap, and which is what the
+    # competition is scored on. Quote that one.
+    log(f"  STACK in-training selection AUC {cv:.4f} (optimistic — see the note in the source; the honest "
+        f"number is the held-out one)")
+    log(f"  BASELINE signed age gap {roc_auc_score(y, bp):.4f}   apparent lift {cv-roc_auc_score(y, bp):+.4f}")
 
     specs = [{"key": s["key"], "slug": s["slug"], "name": s["name"], "kind": s["kind"],
               "kept_idx": s["kept_idx"], "full_cols": s["full_cols"], "auc": s["auc"],

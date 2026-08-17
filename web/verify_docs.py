@@ -103,16 +103,35 @@ def main():
           f"base is {type(m.get('base')).__name__}"
           + (f" of {len(m['base'])}" if isinstance(m.get("base"), list) else ""))
 
+    # THIS GATE HAS TO MATCH WHATEVER THE BUILD MEASURED, and it used to demand the precision grid outright.
+    # That grid was retired when the test set became day-precision only, so a gate requiring `benchmark15` would
+    # refuse every ship from now on — and a gate that cannot go green protects nothing, because the next step is
+    # somebody switching it off. What it must still refuse is a page with NO headline measurement, or one whose
+    # headline is the optimistic in-training score.
     bm = m.get("benchmark") or {}
     cells = set((bm.get("cells") or {}))
-    check("the benchmark carries exactly the 14 man x woman cells", cells == EXPECTED_CELLS,
-          f"{len(cells)} cells; unexpected {sorted(cells - EXPECTED_CELLS)}, "
-          f"missing {sorted(EXPECTED_CELLS - cells)}")
-    check("both non-questions are excluded from the metric", not (cells & EXCLUDED_CELLS),
-          f"present: {sorted(cells & EXCLUDED_CELLS)}")
-    check("the headline metric is present and in range",
-          isinstance(bm.get("benchmark15"), (int, float)) and 0.0 < bm["benchmark15"] < 1.0,
-          f"mean of 15 = {bm.get('benchmark15')}")
+    grid = isinstance(bm.get("benchmark15"), (int, float))
+    heldout = (m.get("heldout") or {}).get("auc")
+    if grid:
+        check("the benchmark carries exactly the 14 man x woman cells", cells == EXPECTED_CELLS,
+              f"{len(cells)} cells; unexpected {sorted(cells - EXPECTED_CELLS)}, "
+              f"missing {sorted(EXPECTED_CELLS - cells)}")
+        check("both non-questions are excluded from the metric", not (cells & EXCLUDED_CELLS),
+              f"present: {sorted(cells & EXCLUDED_CELLS)}")
+        check("the headline metric is present and in range", 0.0 < bm["benchmark15"] < 1.0,
+              f"mean of 14 = {bm.get('benchmark15')}")
+    else:
+        check("a held-out measurement exists to headline",
+              isinstance(heldout, (int, float)) and 0.0 < heldout < 1.0,
+              f"heldout = {heldout!r} (no precision grid in this build, so this is the headline)")
+        check("the held-out measurement names how many couples it is over",
+              int((m.get("heldout") or {}).get("n") or 0) > 0,
+              f"n = {(m.get('heldout') or {}).get('n')!r}")
+        check("the era rule is published beside it, because that is the bar on a temporal split",
+              isinstance((m.get("heldout") or {}).get("era_rule"), (int, float)),
+              f"era_rule = {(m.get('heldout') or {}).get('era_rule')!r}")
+        check("the page is not headlining the optimistic in-training score",
+              m.get("auc_kind") == "heldout", f"auc_kind = {m.get('auc_kind')!r}")
 
     named = sorted({b["slug"] for b in m["base"]}) if isinstance(m.get("base"), list) else []
     bundled = sorted(os.path.basename(p)[5:-3] for p in glob.glob(os.path.join(DOCS, "bundle", "trad_*.py")))
@@ -145,8 +164,13 @@ def main():
     sys.modules["swisseph"] = sweshim
     import predictor
 
-    probes = [("1901-04-11", "1905-09-02"), ("1866-12-25", "1870-01-07"), ("1948-02-29", "1950-11-30"),
-              ("1820-07-04", "1825-03-18"), ("1933-10-10", "1933-10-10"), ("1899-01-01", "1944-06-06")]
+    # THE PROBES MUST LIE INSIDE THE WINDOW THE MODEL WAS FITTED ON. Four of these were 1901-1950 dates, from
+    # when the dataset ran to 1950; against a 1600-1900 model every one of them is an extrapolation, so the gate
+    # would have been checking the feature modules on exactly the inputs the page refuses to answer for.
+    # 1600 and 1900 are here on purpose — the two edges are where an off-by-one in the ephemeris span shows up —
+    # and 1700-02-29 does not exist in the Gregorian calendar, so 1700-03-01 stands in as the leap-adjacent case.
+    probes = [("1601-04-11", "1605-09-02"), ("1866-12-25", "1870-01-07"), ("1700-03-01", "1704-02-29"),
+              ("1820-07-04", "1825-03-18"), ("1833-10-10", "1833-10-10"), ("1600-06-15", "1899-12-31")]
     cand = "/tmp/aq_verify_docs_couples.json"
     json.dump([{"a": f"a{i}", "b": f"b{i}", "aDob": x, "bDob": y, "aSex": "M", "bSex": "F",
                 "aPrec": 11, "bPrec": 11, "aWin": 1, "bWin": 1, "label": 0}
@@ -185,8 +209,13 @@ def main():
     if fails:
         print(f"\n{len(fails)} check(s) failed — refusing to publish")
         raise SystemExit(1)
-    print(f"\ndocs/ is publishable — mean of 14 AUCs {bm['benchmark15']:.4f} over "
-          f"{bm.get('n_rows', 0):,} held-out couples")
+    if grid:
+        print(f"\ndocs/ is publishable — mean of 14 AUCs {bm['benchmark15']:.4f} over "
+              f"{bm.get('n_rows', 0):,} held-out couples")
+    else:
+        hd = m.get("heldout") or {}
+        print(f"\ndocs/ is publishable — held-out AUC {hd.get('auc'):.4f} against an era rule of "
+              f"{hd.get('era_rule'):.4f}, on {int(hd.get('n') or 0):,} couples born after the training years")
 
 
 if __name__ == "__main__":

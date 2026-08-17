@@ -145,12 +145,13 @@
 #
 # - **No birth time.** Every chart is cast for 08:00 UT. The Moon moves about 0.5° an hour, so a Moon-based
 #   quantity carries up to ±6° of error, and anything needing an ascendant is simply absent.
-# - **The label is a record, not a life.** It says whether Wikidata's record of the marriage spans thirty
-#   years, which is a fact about what was written down. A marriage whose ending was never recorded is dated
-#   from the earlier spouse's death instead, and one ended by a death is NOT counted as long automatically.
+# - **The label is a record, not a life.** It says whether Wikidata's record of the relationship — a marriage,
+#   a partnership of any kind, older partner first — spans thirty years, which is a fact about what was written
+#   down. A relationship whose ending was never recorded is dated from the earlier partner's death instead, and
+#   one ended by a death is NOT counted as long automatically.
 # - **Most training rows are incomplete, on purpose.** Unknown parts are written `00` — `1850-00-00` is a
 #   year, `1850-03-00` a month — and `0000-00-00` means that partner is absent from the source entirely. The
-#   duration of a marriage is known just as exactly when one spouse's birthday is not, so those rows carry a
+#   duration of a relationship is known just as exactly when one partner's birthday is not, so those rows carry a
 #   real label and half an input. The test set has none of it: every scored row is complete and day-precision.
 # - **1 January is a placeholder, and it is excluded.** Among day-precision births 1600–1900, 1 January occurs
 #   **2.07×** as often as a median January day, where 2 January sits at 1.00× — a source that knew only the year
@@ -249,10 +250,10 @@ def features(df):
     dm, dw = as_day(df.dob_older), as_day(df.dob_younger)
     ym = df.dob_older.str.slice(0, 4).astype(int)
     yw = df.dob_younger.str.slice(0, 4).astype(int)
-    out = {"era_man": ym, "era_woman": yw, "era_mean": (ym + yw) / 2}
+    out = {"era_older": ym, "era_younger": yw, "era_mean": (ym + yw) / 2}
     out["gap_years"] = (dw - dm) / 365.2425
     out["gap_abs"] = out["gap_years"].abs()
-    for nm, d in (("man", dm), ("woman", dw)):
+    for nm, d in (("older", dm), ("younger", dw)):
         for period, label in ((365.2425, "yr"), (29.530588, "syn")):
             ang = 2 * np.pi * (d % period) / period
             out[f"{nm}_{label}_sin"] = np.sin(ang)

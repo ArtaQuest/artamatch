@@ -265,6 +265,17 @@ await send("Emulation.clearDeviceMetricsOverride");
 await sleep(400);
 
 const grid = out.grid || [];
+// Whether the shipped model DECLARES a precision grid, read from model.json beside the page -- so a build that
+// declares one and fails to render it is caught, rather than passing vacuously because nothing was drawn.
+const modelUrl = new URL("model.json", URL_).href;
+let declaresGrid = false;
+try {
+  const mj = await (await fetch(modelUrl)).json();
+  declaresGrid = !!(mj && mj.benchmark && mj.benchmark.benchmark15 != null);
+} catch (e) { console.log(`  !! could not read ${modelUrl}: ${String(e).slice(0, 80)}`); }
+const gridExpected = declaresGrid;
+console.log(`  grid      : model.json ${declaresGrid ? "DECLARES" : "does not declare"} a precision grid; `
+          + `page rendered ${grid.length} row(s)`);
 const body = grid.slice(1).flatMap(r => r.slice(1));
 // Count what a cell IS rather than which glyph it uses for "empty": comparing against a literal em dash once
 // failed a page whose blank cell was rendered exactly as intended.
@@ -356,7 +367,12 @@ const checks = [
   ["a modern pair actually returns a probability", /%$/.test(modernScore.pct || ""),
    modernScore.pct || String(modernScore.text || "").slice(0, 90)],
   ["and the answer itself says it is an extrapolation", modernScore.warned === true],
-  ["the grid rendered 4 data rows + a header", grid.length === 5],
+  // THE PRECISION GRID IS OPTIONAL NOW. It was retired when the test set became day-precision only, so a build
+  // that never produced it renders no matrix -- and a gate that demanded one would refuse every ship from here
+  // on, which is how gates get switched off. When the grid IS present it is checked exactly as before; when it
+  // is absent the held-out headline carries the page and the grid checks pass vacuously, stated as such.
+  ["the grid rendered 4 data rows + a header (or is absent by design)", (!gridExpected && grid.length === 0) || grid.length === 5,
+   !gridExpected ? "no grid in this build; the held-out headline carries the page" : `${grid.length} rows`],
   ["the tradition table is not empty", tr.length > 0],
   ["every tradition is explained and lists its blocks", tr.length > 0 && described.length === tr.length,
    `${tr.length - described.length} row(s) missing a title, an explanation or their blocks`],
@@ -368,12 +384,15 @@ const checks = [
    tr.length > 0 && tr.every(t => (t.worked || []).some(x => /\d/.test(x)))],
   // Two of the sixteen combinations are not scored — absent|absent has no input at all, month|month is a case
   // the records essentially never present — so the matrix must show fourteen numbers and two blanks.
-  ["16 body cells: 14 numeric and 2 blank", body.length === 16 && numeric === 14,
-   `${numeric} numeric, ${body.length - numeric} blank`],
-  ["the per-cell detail table filled all 14 rows", out.detail === 14, `${out.detail} rows`],
+  ["16 body cells: 14 numeric and 2 blank (when the grid exists)",
+   (!gridExpected && grid.length === 0) || (body.length === 16 && numeric === 14),
+   !gridExpected ? "no grid" : `${numeric} numeric, ${body.length - numeric} blank`],
+  ["the per-cell detail table filled all 14 rows (when the grid exists)",
+   (!gridExpected && grid.length === 0) || out.detail === 14, !gridExpected ? "no grid" : `${out.detail} rows`],
   ["the headline statistic is a number, not a placeholder", /^0\.\d+$/.test(out.stats?.auc || "")],
-  ["the axis header names the man first", (grid[0] || []).join(" ").includes("man")],
-  ["every precision level is labelled", LEVELS.every(() =>
+  ["the axis header names the older partner first (when the grid exists)",
+   (!gridExpected && grid.length === 0) || (grid[0] || []).join(" ").includes("older")],
+  ["every precision level is labelled (when the grid exists)", (!gridExpected && grid.length === 0) || LEVELS.every(() =>
     (grid[0] || []).join(" ").match(/full|month|year|no date/))],
   ["the page does not scroll sideways", out.overflow === false],
   ["at 390px the date control is a single row",

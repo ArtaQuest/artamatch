@@ -35,8 +35,8 @@
 # quoted from a previous dataset. They were hardcoded here until the question changed, at which point three
 # numbers describing a retired parenthood dataset were being printed as though they described this one.
 #
-# **The era rule is the one that matters.** About 32% of the training marriages reach thirty years against 44% of
-# the held-out ones, so a model that beats chance but not the era rule has read the calendar rather than the
+# **The era rule is the one that matters.** The base rate moves across the time boundary, and a model that beats
+# chance but not the era rule has read the calendar rather than the
 # couple. That distinction is the point of the exercise.
 #
 # ## The rules given to the model
@@ -66,25 +66,27 @@ BRIEF = """You are competing on ArtaMatch Astrology. Write an astrology model.
 
 THE DATA. A pandas DataFrame with exactly three columns:
 
-    dob_older            the man's date of birth,   'YYYY-MM-DD'
-    dob_younger          the woman's date of birth, 'YYYY-MM-DD'
-    lasted_30_years    1 if their marriage lasted thirty years or longer, else 0
+    dob_older          the OLDER partner's date of birth,   'YYYY-MM-DD'
+    dob_younger        the YOUNGER partner's date of birth, 'YYYY-MM-DD'
+    lasted_30_years    1 if their relationship lasted thirty years or longer, else 0
 
-The marriage's own dates are NOT given to you. They were used to compute the label and then discarded, because
-the wedding year is the most era-revealing thing about a couple.
+The relationship is any partnership two people chose: a marriage, an unmarried or same-sex partnership, a
+business or sporting partnership. Nothing about sex is recorded; the first column is simply the older partner.
+The relationship's own dates are NOT given to you. They were used to compute the label and then discarded,
+because the start year is the most era-revealing thing about a couple.
 
-Everyone here was born between 1600 and 1900, a window chosen so that all of them are certainly dead — no
-marriage is still running, and none was cut short by the records ending. Both dates in the scored rows are known
-to the day.
+Everyone here is dead, which is why every relationship in the file has ended and none was cut short by the
+records running out. You fit on couples born 1600-1900 and are scored on couples born after 1900. Both dates
+in the scored rows are known to the day.
 
 A TRAINING ROW MAY BE INCOMPLETE, and this is deliberate rather than dirt. `00` means a component is unknown and
 `0000-00-00` means the partner is absent from the source entirely:
 
     1794-06-12,1801-03-27,1     both known to the day
-    1802-00-00,1809-11-00,0     his year only; her year and month
-    1777-04-30,0000-00-00,1     she is not in the source at all
+    1802-00-00,1809-11-00,0     one year only; the other year and month
+    1777-04-30,0000-00-00,1     the second partner is not in the source at all (always the second column)
 
-A marriage's duration is known just as exactly when one spouse's birthday is not, so those rows carry a real
+A relationship's duration is known just as exactly when one partner's birthday is not, so those rows carry a real
 label and half an input. Drop them in one line if you want only clean rows, or use them — there are several times
 as many training rows with them than without. **The rows you are SCORED on are always complete and
 day-precision**, so you never have to predict from a placeholder.
@@ -110,15 +112,16 @@ CONSTRAINTS.
   * No file or network access. No printing.
 
 WHAT WILL NOT WORK, said plainly so you do not waste the attempt: the strongest single effect in this data is
-WHEN the couples were born, not who they were — earlier-born couples died younger and their marriages had less
-room to reach thirty years. The era rule is computed on your held-out rows and reported against you, and you are
-being scored ACROSS TIME: you fit on couples born up to 1850 and are scored on couples born after it, so a rule
-that interpolates the calendar you trained on will not transfer. If your model beats chance only because it dated
-the cohort, that will be visible.
+WHEN the couples were born, not who they were. The era rule is computed on your held-out rows and reported
+against you, and you are being scored ACROSS TIME: you fit on couples born up to 1900 and are scored on couples
+born after it, so a rule that interpolates the calendar you trained on will not transfer. And because everyone
+in the file is dead, a couple born late who are already dead died young -- "born late" leans negative for a
+reason that has nothing to do with astrology. If your model beats chance only because it dated the cohort, that
+will be visible.
 
-One more thing you cannot see and should not try to exploit: whether a marriage ended by divorce or by a death is
-not a column. Marriages with a recorded ending reach thirty years far less often than ones that ran until
-somebody died, and that difference is the largest confound here.
+One more thing you cannot see and should not try to exploit: whether a relationship ended by a recorded end
+date or by a death is not a column. Ones with a recorded ending reach thirty years far less often than ones
+that ran until somebody died, and that difference is the largest confound here.
 
 Reply with ONE Python code block and nothing else."""
 
@@ -252,7 +255,7 @@ def references(fit, held):
     out["the era rule (sum of the two birth years)"] = max(a, 1.0 - a)
     gap = (held.dob_younger.str[:4].astype(int) - held.dob_older.str[:4].astype(int)).to_numpy(float)
     a = auc(y, gap)
-    out["the signed age gap (woman - man)"] = max(a, 1.0 - a)
+    out["the age gap (younger - older)"] = max(a, 1.0 - a)
     return out
 
 

@@ -18,8 +18,13 @@
 #
 # ## The two halves are built by different rules, deliberately
 #
-# **The test set is strict.** Both partners known to the day, both born 1851–1900, no placeholder dates. That is
-# what the leaderboard is scored on, so it is the half that must not be noisy.
+# **The test set is strict.** Both partners known to the day, no placeholder dates, and the couple's **later**
+# birth after 1850. That is what the leaderboard is scored on, so it is the half that must not be noisy.
+#
+# Note "later birth", not "both births". A man born 1845 married to a woman born 1860 is a held-out couple: the
+# split places a couple by when the second of them was born. Requiring both partners after the cut dropped 1,416
+# day-precision couples — 11.1% of the test half — out of the dataset entirely, since the training queries would
+# not take them either.
 #
 # **The training set is as inclusive as the data allows.** A date may be known only to the month or only to the
 # year, and **one partner may be missing from Wikidata entirely**. All three of these are real training rows:
@@ -363,7 +368,6 @@ def relationship(rel):
 
 
 PROJ = "?a ?b ?adob ?aprec ?bdob ?bprec ?asex ?bsex ?start ?end ?cause ?adeath ?bdeath"
-PROJ1 = "?a ?b ?adob ?aprec ?asex ?start ?end ?cause ?adeath ?bdeath"
 SEX = "?a wdt:P21 ?asex . ?b wdt:P21 ?bsex ."
 
 #%% [markdown]
@@ -376,13 +380,33 @@ SEX = "?a wdt:P21 ?asex . ?b wdt:P21 ?bsex ."
 #%%
 frames = []
 for rel in ("P26", "P451"):
+    # CASE 1 — both partners born after the cut.
     def body(lo, hi, rel=rel):
         return (relationship(rel) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
                 + dated('a', lo, hi, 11) + dated('b', CUT + 1, CEIL, 11))
     df = sparql_sliced(f"DISTINCT {PROJ}", body, f"test half ({rel})", CUT + 1, CEIL, order="?a ?b")
     df["rel"] = rel
     frames.append(df)
+
+    # CASE 2 — THE STRADDLE, and it is not a rounding error. The split rule places a couple by its LATER
+    # birth, so a man born 1845 married to a woman born 1860 belongs in the held-out half. Requiring BOTH
+    # partners to be born after the cut dropped every such couple from the test half AND from the training
+    # half, since neither query would take them: measured, 1,416 day-precision couples, 11.1% of what the
+    # test half should be.
+    #
+    # This is a second query rather than a `FILTER(YEAR(?ad) > CUT || YEAR(?bd) > CUT)` on one because that
+    # disjunction times out on WDQS (504). The two year ranges here are DISJOINT, which also means `?a` is
+    # always the earlier-born partner and `?b` the later one, so each couple matches exactly once and no
+    # `STR(?a) < STR(?b)` tiebreak is needed — adding one would in fact drop half of them.
+    def straddle(lo, hi, rel=rel):
+        return (relationship(rel) + "\n  " + SEX
+                + dated('a', FLOOR, CUT, 11) + dated('b', lo, hi, 11))
+    df = sparql_sliced(f"DISTINCT {PROJ}", straddle, f"test half straddling {CUT} ({rel})",
+                       CUT + 1, CEIL, order="?a ?b")
+    df["rel"] = rel
+    frames.append(df)
 raw_test = pd.concat(frames, ignore_index=True)
+print(f"  test half raw: {len(raw_test):,} rows including the couples that straddle {CUT}")
 
 #%% [markdown]
 # ## 3. The training set: one partner is enough
@@ -407,11 +431,23 @@ for rel in ("P26", "P451"):
     df["rel"] = rel
     frames.append(df)
 
+    # `?b`'s date is OPTIONAL and PROJECTED, not omitted. Leaving it out entirely meant the build could not
+    # tell "this partner has no recorded birth date" from "this partner has one I did not ask for", and wrote
+    # `0000-00-00` for both. Two things went wrong at once: a spouse with a perfectly good birth date was
+    # published as absent, and a couple whose later birth falls after the cut — so a HELD-OUT couple — was
+    # placed in the training half. An OPTIONAL costs far less than the `FILTER NOT EXISTS` that would be the
+    # alternative, and it tells the truth: absence is now observed rather than assumed.
     def one(lo, hi, rel=rel):
-        return relationship(rel) + "\n  ?a wdt:P21 ?asex .\n" + dated('a', lo, hi, 9)
-    df = sparql_sliced(f"DISTINCT {PROJ1}", one, f"train one dated ({rel})", FLOOR, CUT, order="?a ?b")
+        return (relationship(rel) + "\n  ?a wdt:P21 ?asex .\n" + dated('a', lo, hi, 9)
+                + """
+  OPTIONAL { ?b wdt:P21 ?bsex }
+  OPTIONAL {
+    ?b p:P569 ?bst . ?bst psv:P569 ?bval .
+    ?bst wikibase:rank ?brank . FILTER(?brank != wikibase:DeprecatedRank)
+    ?bval wikibase:timeValue ?bdob ; wikibase:timePrecision ?bprec .
+  }""")
+    df = sparql_sliced(f"DISTINCT {PROJ}", one, f"train one dated ({rel})", FLOOR, CUT, order="?a ?b")
     df["rel"] = rel
-    df["bdob"], df["bprec"], df["bsex"] = "", "", ""
     frames.append(df)
 raw_train = pd.concat(frames, ignore_index=True)
 
@@ -483,6 +519,34 @@ def label(mar, tag):
 
 test_l = label(raw_test, "test half")
 train_l = label(raw_train, "train half")
+
+
+def scope_partners(m, tag):
+    """A partner's date is either INSIDE the window, or the couple is out of scope. Never silently absent.
+
+    The one-sided query projects `?b`'s date as an OPTIONAL over ALL of Wikidata, not just 1600-1900, which is
+    what makes absence observable. The consequence is that `?b` may come back with a real date from 1540 or
+    1953. Writing that as `0000-00-00` would publish a spouse who is on Wikidata as though they were not, and
+    keeping it would put a birth outside the dataset's declared range and outside the ephemeris span. So the
+    couple is dropped and counted: the dataset's contract is that every date it contains is a real date inside
+    1600-1900, and a row that cannot honour that is not a row.
+    """
+    m = m.copy()
+    for side in ("a", "b"):
+        col = f"{side}dob"
+        has = m[col].str.len() >= 4
+        yr = pd.to_numeric(m[col].str[:4], errors="coerce")
+        out = has & (~yr.between(FLOOR, CEIL))
+        if out.any():
+            print(f"  {tag}: {int(out.sum()):,} couples dropped — partner {side.upper()} is dated outside "
+                  f"{FLOOR}-{CEIL} ({sorted(set(m.loc[out, col].str[:4]))[:5]}...), so the couple is out of "
+                  f"scope rather than absent")
+            m = m[~out].reset_index(drop=True)
+    return m
+
+
+test_l = scope_partners(test_l, "test half")
+train_l = scope_partners(train_l, "train half")
 
 for tag, m in (("test", test_l), ("train", train_l)):
     print(f"\n  {tag}: {len(m):,} labellable · {100*m['lasted_30_years'].mean():.1f}% reached {MIN_YEARS} years "
@@ -624,6 +688,14 @@ def later_year(m):
 
 test_u["_later"], train_u["_later"] = later_year(test_u), later_year(train_u)
 test = test_u[test_u["_later"] > CUT].reset_index(drop=True)
+# A couple the one-sided query found whose LATER birth falls after the cut belongs to the held-out era, so it is
+# excluded from training here — and it cannot enter the test half either unless BOTH its dates are
+# day-precision, which the test queries require. That is the correct outcome and not an oversight: a coarse
+# straddling couple is unusable on both sides. Counted rather than dropped in silence.
+straddling = int((train_u["_later"] > CUT).sum())
+if straddling:
+    print(f"  {straddling:,} couples found by the one-sided query have their later birth after {CUT} — held-out "
+          f"era, so excluded from training; they join the test half only if both dates are day-precision")
 train = train_u[(train_u["_later"] <= CUT) & (train_u["_later"] >= FLOOR)].reset_index(drop=True)
 
 # PERSON-DISJOINT, restored from the TRAINING side. A training couple sharing a person with a held-out couple is

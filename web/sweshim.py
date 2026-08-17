@@ -23,7 +23,7 @@ step, 360/65535 = 0.0055 deg; anything at that level is exact storage rather tha
                      UNWRAPPED angle.  longitude <= 0.0049 deg   RA/dec <= 0.011   speed <= 0.008 deg/day
     sidtime          the IAU 1982 series plus the equation of the equinoxes, because swe.sidtime returns
                      APPARENT sidereal time — omitting that is a 16 arcsec error every cusp inherits.
-                                                                                            0.0003 deg
+                                                                                            0.0007 deg
     houses           Placidus by iterating the semi-arc condition to convergence; whole-sign and equal in
                      closed form.                        Ascendant 0.0006   MC 0.0003   cusps 0.0006 deg
     rise_trans       an hour-angle bracket then Newton on the true altitude, with the horizon depression
@@ -32,7 +32,13 @@ step, 360/65535 = 0.0055 deg; anything at that level is exact storage rather tha
                      into a 23 arcsec error. Any other name raises, exactly as a missing sefstars.txt does.
                                                                                             0.0003 deg
     ayanamsa         all 21 of core.py's modes, interpolated from the asset.               <= 0.0032 deg
-    deltat           tabulated per year and interpolated; smooth by construction.          0.04 seconds
+    deltat           tabulated per year and interpolated; smooth by construction.       up to 4.3 seconds
+                     That figure said 0.04 seconds until it was measured across the whole span, and the real
+                     number is ~100x larger — worst in 1900-2000 (4.3s), not at the old edges, so it was never
+                     about widening the span. It is still harmless, and the reason is worth stating rather than
+                     trusting: 4.3 seconds displaces the FASTEST body, the Moon at 13.2 deg/day, by 6.6e-4
+                     degrees — an order of magnitude below the 0.0055 deg storage step everything else is
+                     quantised to. A wrong number that happens to be harmless is still a wrong number.
     eclipses         a lookup in the shipped table of every global solar and lunar eclipse in the span, so
                      sol_eclipse_when_glob returns the exact JD swisseph would have searched to.   exact
     julday / revjul  calendar arithmetic, Gregorian and Julian.                                    exact
@@ -869,20 +875,52 @@ def verify(n=400, seed=5):
              ("TrueNode", real.TRUE_NODE, TRUE_NODE), ("Chiron", real.CHIRON, CHIRON),
              ("Vesta", real.VESTA, VESTA), ("Cupido", real.CUPIDO, CUPIDO),
              ("Poseidon", real.POSEIDON, POSEIDON)]
-    print(f"shim vs pyswisseph over {n} random instants 1800-2030 — max |error| in degrees "
-          f"(storage step 0.005493)")
+    # The span is READ FROM THE ASSET, not asserted. This line said "1800-2030" for as long as that was the
+    # shipped span, and went on saying it after the asset was rebuilt over 1598-2032 — a published accuracy
+    # figure attached to the wrong interval.
+    y0 = int(revjul(a.jd0)[0])
+    y1 = int(revjul(a.jd0 + a.ndays)[0])
+    print(f"shim vs pyswisseph over {n} random instants {y0}-{y1} — max |error| in degrees "
+          f"(storage step {360.0/65535:.6f})")
     worst = {}
     for nm, rc, sc in codes:
         el = ed = es = 0.0
+        glitched = 0
         for jd in jds:
             p = real.calc_ut(jd, rc, RFLG)[0]; q = real.calc_ut(jd, rc, REQ)[0]
             s = calc_ut(jd, sc, FLG_SWIEPH | FLG_SPEED)[0]
             t = calc_ut(jd, sc, FLG_SWIEPH | FLG_EQUATORIAL)[0]
             el = max(el, abs(_wrap(s[0] - p[0])))
             ed = max(ed, abs(_wrap(t[0] - q[0])), abs(t[1] - q[1]))
-            es = max(es, abs(s[3] - p[3]))
+            # SWISSEPH'S SPEED FIELD IS NOT ALWAYS THE TRUTH, and reporting its glitches as our error inflated
+            # this figure thirtyfold. At 1818-07-29 it gives Poseidon -0.02167 deg/day while its OWN longitude
+            # climbs through that instant at +0.01267; the shim returns +0.01226, agreeing with the longitude to
+            # 4e-4. The shim is MORE right than the reference there, and a bare comparison called that a
+            # 0.0339 error — worse than any real one by an order of magnitude. verify_asset() has outvoted this
+            # since it was written; verify() did not, so the two disagreed about the same asset.
+            #
+            # THE OUTVOTE MUST SCALE WITH THE BODY, or it eats real errors on the fast ones. A first version
+            # asked only whether the shim sat closer to the central difference than swisseph did, and declared
+            # 63 of the Moon's 400 samples to be reference glitches. They are not: a +-1-day central difference
+            # is a poor estimate of the Moon's instantaneous speed, because the Moon's speed itself swings from
+            # 11 to 15 deg/day across a month, so `fd` is off by the curvature and "closer to fd" proves
+            # nothing. The builder already learned this — a fixed threshold there flagged 115,826 of 122,358
+            # lunar samples. A GLITCH is a gross disagreement: the wrong sign, or a magnitude that misses its
+            # own longitude's slope by more than half of that slope. Anything smaller is curvature, and the
+            # error stands.
+            d = abs(s[3] - p[3])
+            if d > 0.002:
+                fd = _wrap(real.calc_ut(jd + 1.0, rc, RFLG)[0][0]
+                           - real.calc_ut(jd - 1.0, rc, RFLG)[0][0]) / 2.0
+                gross = (np.sign(p[3]) != np.sign(fd)) or abs(p[3] - fd) > 0.5 * abs(fd)
+                if gross and abs(s[3] - fd) < abs(p[3] - fd):
+                    glitched += 1
+                    continue
+            es = max(es, d)
         worst[nm] = (el, ed, es)
-        print(f"  calc_ut {nm:<9} lon {el:.6f}  ra/dec {ed:.6f}  speed {es:.6f} deg/day")
+        note = (f"   ({glitched} swisseph speed glitch{'es' if glitched > 1 else ''} outvoted by its own "
+                f"longitude)" if glitched else "")
+        print(f"  calc_ut {nm:<9} lon {el:.6f}  ra/dec {ed:.6f}  speed {es:.6f} deg/day{note}")
     e = max(abs(_wrap(sidtime(j) * 15.0 - real.sidtime(j) * 15.0)) for j in jds)
     print(f"  sidtime                    {e:.6f}")
     e = max(abs(deltat(j) - real.deltat(j)) * 86400.0 for j in jds)

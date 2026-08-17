@@ -22,7 +22,10 @@ import sys
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "scrape_notebook.py")
+# THE LIVE BUILD, not the retired one. This published scrape_notebook.py -- the parenthood scraper --
+# which would have put a notebook describing a dataset that no longer exists beside the dataset that
+# replaced it, as the public, re-runnable proof of how it was built.
+SRC = os.path.join(HERE, "scrape_duration.py")
 STAGE = "/tmp/aqnbpush"
 # READ THE ACCOUNT FILE, DO NOT INHERIT THE AMBIENT ONE. ~/.kaggle/kaggle.json is rewritten on a timer by
 # ArtaSwitch to spread GPU hours across several accounts, and this script inherited whatever it found there: a
@@ -56,11 +59,11 @@ def main():
     if os.path.exists(STAGE):
         shutil.rmtree(STAGE)
     os.makedirs(STAGE)
-    open(os.path.join(STAGE, "scrape_notebook.ipynb"), "w").write(nb)
+    open(os.path.join(STAGE, "scrape_duration.ipynb"), "w").write(nb)
     json.dump({
         "id": f"{OWNER}/{SLUG}",
         "title": TITLE,
-        "code_file": "scrape_notebook.ipynb",
+        "code_file": "scrape_duration.ipynb",
         "language": "python",
         "kernel_type": "notebook",
         "is_private": False,

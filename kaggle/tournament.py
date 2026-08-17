@@ -39,6 +39,7 @@ Usage:
     python tournament.py round <account>             # every strategy this account has not yet sent, up to the limit
     python tournament.py board                       # print the leaderboard
 """
+import csv
 import json
 import os
 import sys
@@ -99,10 +100,28 @@ def load_matrices():
     return base, oof, y_tr, P_te[rows], comp_ids
 
 
+def prediction_column():
+    """The name Kaggle expects for the prediction, taken from the trainer's own submission.
+
+    This was the literal "parents_together". When the question became marriage duration the column became
+    `lasted_30_years`, and a submission naming the old one does not fail loudly — Kaggle accepts the file and
+    scores a column that is not there, so every entry in the tournament would have come back wrong or rejected
+    with nothing in the log to explain it. train_on_csv.py derives the name from the training header, so its
+    submission.csv is the authoritative copy and is read rather than restated here.
+    """
+    ref = os.path.join(MODEL, "submission.csv")
+    with open(ref) as f:
+        cols = next(csv.reader(f))
+    cand = [c for c in cols if c != "id"]
+    if len(cand) != 1:
+        raise SystemExit(f"cannot read the prediction column from {ref}: columns are {cols}")
+    return cand[0]
+
+
 def write_submission(ids, p, name):
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f"{name}.csv")
-    pd.DataFrame({"id": ids, "parents_together": np.clip(p, 0, 1)}).to_csv(path, index=False)
+    pd.DataFrame({"id": ids, prediction_column(): np.clip(p, 0, 1)}).to_csv(path, index=False)
     return path
 
 

@@ -60,6 +60,23 @@ def log(*a):
     print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
 
 
+def label_column(fieldnames):
+    """The target column, DISCOVERED from the header rather than hardcoded.
+
+    This read `r["parents_together"]` as a literal, which was right for exactly one dataset. When the question
+    changed to marriage duration the column became `lasted_30_years`, and a hardcoded name does not fail
+    gracefully — it raises deep in a loop, or worse, a `.get(...)` default would have trained every row on
+    label 0 and reported a perfectly plausible AUC of 0.5. The target is whatever column is neither an id nor a
+    date, and there must be exactly one of them.
+    """
+    known = {"id", "dob_man", "dob_woman"}
+    cand = [c for c in (fieldnames or []) if c not in known]
+    if len(cand) != 1:
+        raise SystemExit(f"cannot identify the label column: expected exactly one column outside {sorted(known)}, "
+                         f"found {cand} in header {fieldnames}")
+    return cand[0]
+
+
 def rows_from(path, labelled):
     """Read the published CSV into the shape core.load() wants, precision included.
 
@@ -70,9 +87,10 @@ def rows_from(path, labelled):
     """
     out = []
     with open(path) as f:
-        for i, r in enumerate(csv.DictReader(f)):
-            rec = D.couple_record(i, r["dob_man"], r["dob_woman"],
-                                  int(r["parents_together"]) if labelled else 0)
+        rd = csv.DictReader(f)
+        lab = label_column(rd.fieldnames) if labelled else None
+        for i, r in enumerate(rd):
+            rec = D.couple_record(i, r["dob_man"], r["dob_woman"], int(r[lab]) if labelled else 0)
             rec["_id"] = r.get("id")
             out.append(rec)
     return out
@@ -253,7 +271,10 @@ def main():
     np.save(os.path.join(OUT, "test_base.npy"), np.asarray(P_te, dtype=np.float32))   # (n_test, n_base)
     with open(os.path.join(OUT, "submission.csv"), "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["id", "parents_together"])
+        # The submission's prediction column must be named exactly as the training target, or Kaggle scores a
+        # column it cannot find. Read from the training header rather than restated here.
+        with open(TRAIN) as tf:
+            w.writerow(["id", label_column(csv.DictReader(tf).fieldnames)])
         for r, prob in zip(te, p):
             w.writerow([r["_id"], f"{prob:.6f}"])
     log(f"  wrote submission.csv ({len(p):,} rows, mean {p.mean():.4f})")

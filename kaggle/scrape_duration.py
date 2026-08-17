@@ -277,18 +277,25 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
         out = pd.read_csv(whole, dtype=str, keep_default_na=False)
         print(f"  {name}: {len(out):,} rows (cached, unsliced)", flush=True)
         return out
+    # Either step here may fail — the count can 504 and so can the single big fetch, since a small result set is
+    # not necessarily a fast query. Both failures fall through to slicing, which is the whole point of keeping
+    # slicing around; the only thing that must not happen is failing the run over an optimisation.
+    stage = "whole-window count"
     try:
         n = sparql_count(select, body_fn(lo0, hi0))
-        if n <= SLICE_FREE_MAX:
+        if n > SLICE_FREE_MAX:
+            print(f"  {name}: {n:,} rows over {lo0}-{hi0} — slicing by {SLICE} years", flush=True)
+        else:
             print(f"  {name}: {n:,} rows over the whole {lo0}-{hi0} window — small enough for one query",
                   flush=True)
+            stage = "unsliced fetch"
             out = sparql(select, body_fn(lo0, hi0), name, order=order)
             out.to_csv(whole + ".tmp", index=False)
             os.replace(whole + ".tmp", whole)
             return out
-        print(f"  {name}: {n:,} rows over {lo0}-{hi0} — slicing by {SLICE} years", flush=True)
     except Exception as e:
-        print(f"  {name}: whole-window count failed ({type(e).__name__}); slicing", flush=True)
+        print(f"  {name}: {stage} failed ({type(e).__name__}: {str(e)[:80]}) — falling back to "
+              f"{SLICE}-year slices", flush=True)
     for lo in range(lo0, hi0 + 1, SLICE):
         hi = min(lo + SLICE - 1, hi0)
         cache = os.path.join(SLICE_CACHE, f"{tag}_{lo}_{hi}.csv")

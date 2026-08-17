@@ -447,6 +447,14 @@ def relationship(rel, dead=("a",)):
     for v in ("a", "b"):
         s += (f"\n  ?{v} wdt:P570 ?{v}death ." if v in dead
               else f"\n  OPTIONAL {{ ?{v} wdt:P570 ?{v}death }}")
+    if not dead:
+        # WHAT THE LABEL ACTUALLY NEEDS IS A DATABLE END, and a death is only one way to have one. A marriage
+        # with a recorded divorce is dated exactly, whether or not Wikidata knows when either partner died —
+        # measured, requiring the death alone discarded 1,371 of 136,992 perfectly labellable pairs, 1.0%.
+        #
+        # The test queries still name their partners in `dead`, so they emit the same SPARQL as before and their
+        # fetched slices stay valid. This branch is the training half, where the extra rows are.
+        s += "\n  FILTER(BOUND(?adeath) || BOUND(?bdeath) || BOUND(?end))"
     return s
 
 
@@ -508,7 +516,7 @@ print(f"  test half raw: {len(raw_test):,} rows including the couples that strad
 frames = []
 for rel in ("P26", "P451"):
     def both(lo, hi, rel=rel):
-        return (relationship(rel, dead=("a", "b")) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
+        return (relationship(rel, dead=()) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
                 + dated('a', lo, hi, 9, drop_placeholders=False)
                 + dated('b', FLOOR, CUT, 9, drop_placeholders=False))
     df = sparql_sliced(f"DISTINCT {PROJ}", both, f"train both dated ({rel})", FLOOR, CUT, order="?a ?b")
@@ -522,7 +530,7 @@ for rel in ("P26", "P451"):
     # placed in the training half. An OPTIONAL costs far less than the `FILTER NOT EXISTS` that would be the
     # alternative, and it tells the truth: absence is now observed rather than assumed.
     def one(lo, hi, rel=rel):
-        return (relationship(rel) + "\n  ?a wdt:P21 ?asex .\n"
+        return (relationship(rel, dead=()) + "\n  ?a wdt:P21 ?asex .\n"
                 + dated('a', lo, hi, 9, drop_placeholders=False)
                 + """
   OPTIONAL { ?b wdt:P21 ?bsex }

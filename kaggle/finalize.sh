@@ -19,8 +19,18 @@ export KAGGLE_KEY="$($PY -c "import json;print(json.load(open('$HOME/.kaggle/kag
 # The problem's own constants, in ONE place. The split boundary appears in the scraper, in the assertion below
 # and in the dataset description, and when it moved from 1928 to 1850 the assertion was the copy that did not
 # move — it went on passing because it only ever checked a floor the new data cleared anyway.
-CUT=1850
-CEIL=1900
+# THESE MUST TRACK scrape_duration.py, and the safest way is to READ them out of it rather than restate them.
+# A copy is exactly how the old split assertion came to check a floor the data already cleared: the scraper moved
+# to a death-bounded window with a 1900 split and this file still said 1850/1900, which would have failed every
+# held-out couple born after 1900 -- that is now most of the test half.
+CUT=$($PY -c "import re,sys; s=open('$REPO/kaggle/scrape_duration.py').read(); print(re.search(r'^CUT = (\\d+)', s, re.M).group(1))")
+CEIL=$($PY -c "
+import re, time
+s = open('$REPO/kaggle/scrape_duration.py').read()
+m = re.search(r'^CEIL = int\\(os\\.environ\\.get\\("AQ_CEIL", str\\(time\\.gmtime\\(\\)\\.tm_year\\)\\)\\)', s, re.M)
+print(time.gmtime().tm_year if m else re.search(r'^CEIL = (\\d+)', s, re.M).group(1))
+")
+echo "  boundary read from the scraper: train <= $CUT, held out $((CUT+1))-$CEIL"
 LABEL=lasted_30_years
 DATASET=artaquest-foundation/artamatch-astrology
 COMPETITION=artamatch-astrology
@@ -157,14 +167,19 @@ Exactly as a Wikipedia infobox reads a marriage — *"m. 1903; div. 1919"*:
 `lasted_30_years` is `(end - start) >= 30 years`. **A marriage ended by a death is not automatically a long
 one** — twelve years is a 0, forty years is a 1. Death buys no credit.
 
-## Train 1600-1850, test 1851-1900 — a TEMPORAL split
+## Train births 1600-1900, hold out 1901 onward — a TEMPORAL split, bounded by DEATH
 
-Everybody born on or before 1900 is dead, so nothing here is right-censored: every marriage has ended, and
-every positive was observable. The split is by time, so the task is to learn from earlier couples and predict
-later ones rather than to rank couples drawn from the years you trained on.
+A marriage that has not ended cannot be given a duration. Rather than cap birth years and infer it, this
+dataset requires a recorded **death**: if the partner whose date we have is dead, their marriage has ended,
+whenever they were born. So the window runs to the present and the split is by time — learn from the historical
+couples, predict the modern ones.
 
-The base rate shifts across that boundary and you should know before you start: earlier-born couples died
-younger and their records are thinner, so fewer of their marriages reach thirty years.
+**Read this before you read the leaderboard.** That rule introduces its own bias, and it is not subtle. A couple
+born recently who are ALREADY DEAD died young, and a marriage cannot outlive its shorter-lived partner. Past
+roughly 1996 a thirty-year marriage is arithmetically impossible for anyone dead today, so the positive rate
+falls toward zero at the recent end whatever astrology says. "Born late, therefore negative" is an era rule and
+not a finding. The build notebook prints the positive rate for every birth decade and names the decades where
+the positive class is unreachable; the era-rule baseline is reported beside every score for the same reason.
 
 ## The test set is strict; the training set is not
 

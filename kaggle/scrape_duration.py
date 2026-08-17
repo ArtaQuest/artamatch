@@ -256,11 +256,39 @@ def sparql(select, body, name, order=None, page=200000):
 SLICE_CACHE = os.path.join(OUT, "_dslices")
 
 
+SLICE_FREE_MAX = 60000     # a result set this small has never timed out; slicing it only multiplies round trips
+
+
 def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
-    """Fetch in year slices and concatenate; each slice cached atomically so a 429 costs one slice, not the run."""
+    """Fetch in year slices and concatenate; each slice cached atomically so a 429 costs one slice, not the run.
+
+    SLICING IS A TIMEOUT REMEDY, NOT A HABIT. The Wikidata Query Service gives a query 60 seconds, so a large
+    result set has to be cut into pieces — but asking for a small one in eleven pieces pays eleven round trips
+    and eleven chances of a 429 to fetch what one query returns comfortably. P451 (unmarried partner) is the
+    case that made this obvious: 112 partnerships in the whole 1600-1900 window, and the sliced version was
+    spending 22 of the build's 41 remaining requests on them. So the whole-window count is asked for first, and
+    a small answer is fetched in one go.
+    """
     frames = []
     os.makedirs(SLICE_CACHE, exist_ok=True)
     tag = "".join(ch if ch.isalnum() else "_" for ch in name)
+    whole = os.path.join(SLICE_CACHE, f"{tag}_{lo0}_{hi0}_whole.csv")
+    if os.path.exists(whole):
+        out = pd.read_csv(whole, dtype=str, keep_default_na=False)
+        print(f"  {name}: {len(out):,} rows (cached, unsliced)", flush=True)
+        return out
+    try:
+        n = sparql_count(select, body_fn(lo0, hi0))
+        if n <= SLICE_FREE_MAX:
+            print(f"  {name}: {n:,} rows over the whole {lo0}-{hi0} window — small enough for one query",
+                  flush=True)
+            out = sparql(select, body_fn(lo0, hi0), name, order=order)
+            out.to_csv(whole + ".tmp", index=False)
+            os.replace(whole + ".tmp", whole)
+            return out
+        print(f"  {name}: {n:,} rows over {lo0}-{hi0} — slicing by {SLICE} years", flush=True)
+    except Exception as e:
+        print(f"  {name}: whole-window count failed ({type(e).__name__}); slicing", flush=True)
     for lo in range(lo0, hi0 + 1, SLICE):
         hi = min(lo + SLICE - 1, hi0)
         cache = os.path.join(SLICE_CACHE, f"{tag}_{lo}_{hi}.csv")

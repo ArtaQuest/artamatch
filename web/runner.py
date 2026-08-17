@@ -275,7 +275,9 @@ def train_window():
     try:
         return int(tw["from"]), int(tw["to"])
     except (KeyError, TypeError, ValueError):
-        return 1600, 1900
+        # The TRAINING half's range, not the dataset's. The dataset spans 1600-1900; the model is fitted on
+        # 1600-1850 and the rest is held out, so a 1875 couple is inside the data and outside the fit.
+        return 1600, 1850
 
 
 def _extrapolating(dob_a, dob_b):

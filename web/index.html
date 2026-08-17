@@ -1,4 +1,4 @@
-<title>ArtaMatch — astrology-only parenthood prediction from two birth dates</title>
+<title>ArtaMatch — astrology-only marriage-duration prediction from two birth dates</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23010C17'/%3E%3Ccircle cx='12' cy='16' r='7' fill='none' stroke='%23E8B923' stroke-width='2.5'/%3E%3Ccircle cx='20' cy='16' r='7' fill='none' stroke='%231746DC' stroke-width='2.5'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
@@ -97,11 +97,11 @@
 
 <div class="wrap">
 <header>
-  <h1>Can two <em>birth dates</em> predict whether a couple has children?</h1>
-  <p class="sub">An astrology-only model, trained on couples <b>born 1800&ndash;1950</b> — a window chosen so
-  that every one of them has had a full reproductive life — and reported against the one baseline it is
-  allowed: a two-parameter logistic on the signed
-  subtraction of the two dates.</p>
+  <h1>Can two <em>birth dates</em> predict whether a marriage lasts thirty years?</h1>
+  <p class="sub">An astrology-only model, trained on couples <b>born 1600&ndash;1850</b> and tested on couples
+  <b>born 1851&ndash;1900</b> — a split by <b>time</b>, into a window where everybody is certainly dead, so no
+  marriage is still running and none was cut short by the records ending. Reported against the one baseline it
+  is allowed: a two-parameter logistic on the signed subtraction of the two dates.</p>
 </header>
 
 <div class="stats">
@@ -136,11 +136,11 @@
   There is no city dimension: the model's only inputs are two dates.</p>
   <div class="grid">
     <div><label>One birth date</label><input id="f-self" type="date" value="1889-04-16"
-         min="1600-01-01" max="1900-12-31"></div>
+         min="1600-01-01" max="2032-12-31"></div>
     <div><label>Candidates from</label><input id="f-from" type="date" value="1893-01-01"
-         min="1600-01-01" max="1900-12-31"></div>
+         min="1600-01-01" max="2032-12-31"></div>
     <div><label>to</label><input id="f-to" type="date" value="1895-12-31"
-         min="1600-01-01" max="1900-12-31"></div>
+         min="1600-01-01" max="2032-12-31"></div>
     <div><label>Step (days)</label><select id="f-step">
       <option value="1">every day</option><option value="7" selected>every 7 days</option>
       <option value="14">every 14 days</option><option value="30">every 30 days</option></select></div>
@@ -178,9 +178,9 @@
 <div class="card">
   <h2><span class="n">05</span>What this is, and what it is not</h2>
   <div class="warnbox">
-    <b>A score here is a model output, not a fact about anybody.</b> The label is whether two people with a
-    declared partnership have a recorded child together — which is a fact about what Wikidata records, not
-    about what happened. A couple whose child was never written down counts here as a couple without one.
+    <b>A score here is a model output, not a fact about anybody.</b> The label is whether Wikidata's record of
+    a marriage spans thirty years or more — which is a fact about what was written down, not about what
+    happened. A marriage whose ending was never recorded is dated from the earlier spouse's death instead.
     Nothing on this page is advice.
   </div>
   <ul>
@@ -203,15 +203,25 @@
     <li><b>Person-disjoint validation, five folds of 80/20.</b> A person appears in more than one
       partnership, so folds are split by person group, never by row. Every number in the grid is
       out-of-fold, and a degraded row is scored by the fold-model that never saw it.</li>
-    <li><b>The window is the experiment.</b> An earlier version of this model was trained on births from 1800
-      to 2026, and its dominant effect was not astrology but <i>exposure</i>: recorded parenthood ran about
-      58% for couples born in the 1800s and 2% for the 1990s, because a couple born in 1990 may not have
-      finished having children and any child they do have has not had time to become notable enough to record.
-      Any smooth function of two dates scores well on that by identifying the era. Restricting the parents to
-      <b>1800&ndash;1950</b> removes the cliff — the rate across decades now spans <b>0.385</b> against
-      roughly 0.56 before, falling from 0.738 for the 1800s and settling near 0.40 from 1900 onwards. That
-      residual is real and it is not zero, so read the per-tradition table below against it rather than
-      against chance.</li>
+    <li><b>The split is the experiment, and it is a split in TIME.</b> Couples born up to 1850 train; couples
+      born 1851&ndash;1900 are held out. So the question is not &ldquo;rank couples drawn from the years you
+      learned from&rdquo; but &ldquo;learn from the earlier couples and predict the later ones&rdquo;, which is
+      the harder and the honest one. An earlier version of this project split at random and scored 0.6452
+      within its training era against 0.5159 out of it — a gap of 0.13 that was entirely the model
+      interpolating a calendar it had already seen.</li>
+    <li><b>Nothing here is censored, which is why the window ends at 1900.</b> Everybody born on or before 1900
+      is dead. That matters more for this question than for any other: a marriage still running cannot be
+      labelled, and one that has not yet had thirty years cannot reach thirty. Every marriage in this dataset
+      has ended and every positive was observable — unlike the parenthood question this project asked before,
+      where a couple born in 1990 simply had not finished.</li>
+    <li><b>The base rate still moves across the boundary, and it moves the other way.</b> About 32% of the
+      training marriages reach thirty years against 44% of the held-out ones: earlier-born couples died
+      younger and their records are thinner. Read the per-tradition table below against the era rule reported
+      beside it, not against chance.</li>
+    <li><b>The sharpest confound is which way the marriage ended.</b> Marriages with a recorded end date reach
+      thirty years about 16% of the time; marriages that ran until a death do so about 53% of the time. That is
+      not an input — a model cannot see which case a couple is in — but it correlates with things that are, so
+      a case-only reference is reported alongside every score.</li>
     <li><b>A date can say &ldquo;I do not know&rdquo;.</b> A third of the training dates are incomplete, and
       an unknown component is written <code>00</code> — <code>1889-00-00</code> is a year,
       <code>1889-04-00</code> a month. Wikidata pads an unknown day with <code>01</code> instead, which would
@@ -300,7 +310,10 @@ let redrawTraditions = () => {};
 // questions and the page needs both: a 1994 pair is answerable and is also extrapolation, and the useful thing
 // to do is give the number and say which side of the fitted range it came from. Refusing it was wrong.
 let WIN = { from: 1600, to: new Date().getFullYear(), maxGap: 60 };
-let TRAIN = { from: 1600, to: 1900 };
+// The years the model was FITTED on — the TRAINING half, 1600-1850, not the whole 1600-1900 dataset. The
+// held-out half is 1851-1900, so a couple born there is not extrapolation for the dataset but IS outside what
+// the model saw. The runner overrides this from the model header; this is only the pre-load default.
+let TRAIN = { from: 1600, to: 1850 };
 
 const clampYear = y => Math.min(WIN.to, Math.max(WIN.from, Math.trunc(Number(y) || WIN.from)));
 
@@ -355,9 +368,9 @@ function showPairValidity() {
     : outside.length
         ? [`Extrapolation.`, `${outside.length === 2 ? "Both years are" : "One year is"} outside `
            + `${TRAIN.from}–${TRAIN.to}, the range this model was fitted on. It will still be scored. The `
-           + `fitted years were chosen so every couple had a full reproductive life; a couple born in `
-           + `${Math.max(...outside)} may not have finished having children, and any child they have has not `
-           + `had time to be recorded.`]
+           + `fitted years end at ${TRAIN.to} because everybody born by then is certainly dead, so every `
+           + `marriage had already ended and could be measured; a couple born in ${Math.max(...outside)} may `
+           + `still be married, and a marriage that has not yet had thirty years cannot reach thirty.`]
         : [`Inside the fitted range.`, `Both years fall in ${TRAIN.from}–${TRAIN.to}, the years this model was `
            + `measured on.`];
   note.innerHTML = `<b>${msg[0]}</b><span>${msg[1]}</span>`;
@@ -591,13 +604,13 @@ $("#go-pair").onclick = async () => {
   const mx = Math.max(...bt.map(x => x[1]));
   $("#pair-out").innerHTML = `
     <p style="margin:18px 0 4px"><span class="big">${pct(r.p)}</span></p>
-    <p class="note" style="margin:0 0 14px">the model's probability that these two become parents
-      together — against a training-set rate of ${pct(window.__rate)}</p>
+    <p class="note" style="margin:0 0 14px">the model's probability that a marriage between these two lasts
+      thirty years or longer — against a training-set rate of ${pct(window.__rate)}</p>
     ${r.extrapolating ? `<p class="note warn" style="margin:-8px 0 14px">This pair falls outside
       ${r.train_window[0]}–${r.train_window[1]}, the years the model was fitted on, so the number above is an
-      extrapolation. Recorded parenthood among people born after the fitted range is depressed for a reason
-      that has nothing to do with the couple: their children may not exist yet, and any that do have not had
-      time to be written down.</p>` : ""}
+      extrapolation. The fitted range ends where it does because everybody born inside it is dead and every
+      marriage had therefore already ended; for anyone born later, a marriage may still be running, and one
+      that has not yet had thirty years cannot reach thirty.</p>` : ""}
     <div class="scroll"><table><thead><tr><th>Tradition says</th><th>Relative</th><th style="width:44%"></th>
       </tr></thead><tbody>${bt.map(([k, v]) =>
         `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${pct(v)}</td>

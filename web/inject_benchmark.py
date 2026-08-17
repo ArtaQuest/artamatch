@@ -64,11 +64,17 @@ def main():
             raise SystemExit(f"the grid has {len(cells)} cells, not the {len(EXPECTED)} the metric averages; "
                              f"unexpected {sorted(cells - EXPECTED)}, missing {sorted(EXPECTED - cells)}")
 
-    years = []
+    # An ABSENT partner is written 0000-00-00 and must not count as a birth in year zero. It did: the page
+    # reported the model as fitted on 0-1900 and would have accepted a year-0 date as inside the window. Caught on
+    # a fixture with one-sided rows, before the real run.
+    years, n_rows = [], 0
     with open(TRAIN) as f:
         for r in csv.DictReader(f):
-            years.append(int(r["dob_man"][:4]))
-            years.append(int(r["dob_woman"][:4]))
+            n_rows += 1
+            for c in ("dob_man", "dob_woman"):
+                y = int(r[c][:4])
+                if y > 0:
+                    years.append(y)
     lo, hi = min(years), max(years)
 
     if rk is not None:
@@ -97,7 +103,7 @@ def main():
     }
     # Read off the training file itself rather than restated by hand, so the page cannot claim a window the
     # model was not fitted on.
-    m["train_window"] = {"from": lo, "to": hi, "n": len(years) // 2}
+    m["train_window"] = {"from": lo, "to": hi, "n": n_rows}
     m["n"] = res["n_train"]
 
     # THE HEADLINE NUMBER IS THE HELD-OUT ONE WHEN THERE IS ONE. This read `m["auc"] = res["cv_auc"]`, and the
@@ -139,7 +145,7 @@ def main():
         print(f"  temporal: ensemble {rk['ensemble']:.4f} vs era rule {rk['era_rule']:.4f} on {rk['n_test']:,} "
               f"held-out couples; {len(rk['traditions'])} traditions ranked, "
               f"{sum(t['beats_era'] for t in rk['traditions'])} beat the era rule")
-    print(f"  train_window {lo}-{hi} over {len(years)//2:,} couples — the page will refuse anything outside it")
+    print(f"  train_window {lo}-{hi} over {n_rows:,} couples — the page will refuse anything outside it")
     print(f"  headline the page will show: {m['auc']:.4f} ({m['auc_kind']})")
     print(f"  in-training selection AUC {res['cv_auc']:.4f} (optimistic, not published) · "
           f"signed-gap baseline {res['baseline_auc']:.4f}")

@@ -169,8 +169,13 @@ def main():
     # would have been checking the feature modules on exactly the inputs the page refuses to answer for.
     # 1600 and 1900 are here on purpose — the two edges are where an off-by-one in the ephemeris span shows up —
     # and 1700-02-29 does not exist in the Gregorian calendar, so 1700-03-01 stands in as the leap-adjacent case.
+    # The two EDGES are probed as separate couples. A first draft paired 1600-06-15 with 1899-12-31 to hit both
+    # edges in one row, and core.py dropped it -- correctly, since it refuses couples born more than 60 years
+    # apart -- so the gate failed on a probe the model rejects by design. Each edge now sits in a couple the model
+    # is meant to score.
     probes = [("1601-04-11", "1605-09-02"), ("1866-12-25", "1870-01-07"), ("1700-03-01", "1704-02-29"),
-              ("1820-07-04", "1825-03-18"), ("1833-10-10", "1833-10-10"), ("1600-06-15", "1899-12-31")]
+              ("1820-07-04", "1825-03-18"), ("1833-10-10", "1833-10-10"),
+              ("1600-06-15", "1603-01-20"), ("1897-05-05", "1899-12-31")]
     cand = "/tmp/aq_verify_docs_couples.json"
     json.dump([{"a": f"a{i}", "b": f"b{i}", "aDob": x, "bDob": y, "aSex": "M", "bSex": "F",
                 "aPrec": 11, "bPrec": 11, "aWin": 1, "bWin": 1, "label": 0}

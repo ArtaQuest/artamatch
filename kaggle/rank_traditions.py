@@ -87,9 +87,11 @@ def main():
         p = clf.predict_proba(P_te[:, cols])[:, 1]
         a = cm._auc(y_te, p)
         pub = usage == "Public"
-        rows.append({"tradition": slug, "name": NAMES.get(slug, slug), "auc": a,
-                     "public": cm._auc(y_te[pub], p[pub]), "private": cm._auc(y_te[~pub], p[~pub]),
-                     "n_base": len(cols), "beats_era": a > era_auc})
+        # Plain Python types, because json.dump refuses numpy's. `a > era_auc` is a numpy bool when `a` is a numpy
+        # float, and that crashed the ranking's write step -- caught on a fixture, before the real run.
+        rows.append({"tradition": slug, "name": NAMES.get(slug, slug), "auc": float(a),
+                     "public": float(cm._auc(y_te[pub], p[pub])), "private": float(cm._auc(y_te[~pub], p[~pub])),
+                     "n_base": int(len(cols)), "beats_era": bool(a > era_auc)})
     # And the full ensemble, from the same files, so the table has its top line.
     meta_w = np.array(hdr.get("meta", {}).get("w", []), dtype=float)
     if meta_w.size == len(base):
@@ -109,7 +111,7 @@ def main():
         print(f"  {i:>2}  {r['name']:<40} {r['auc']:>7.4f} {r['public']:>8.4f} {r['private']:>8.4f}  "
               f"{r['n_base']:>6}  {'above' if r['beats_era'] else 'below'}")
 
-    out = {"era_rule": era_auc, "ensemble": a_all, "n_test": int(len(ids)),
+    out = {"era_rule": float(era_auc), "ensemble": float(a_all), "n_test": int(len(ids)),
            "traditions": rows}
     json.dump(out, open(os.path.join(MODEL, "tradition_ranking.json"), "w"), indent=1)
     print(f"\n  wrote {os.path.join(MODEL, 'tradition_ranking.json')}")

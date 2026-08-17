@@ -302,7 +302,11 @@ def sparql(select, body, name, order=None, page=200000):
                           .str.replace(r'^"(.*)"$', r"\1", regex=True))
         frames.append(df)
         got += len(df)
-    out = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
+    # AN EMPTY RESULT STILL HAS COLUMNS. A slice that legitimately returns nothing -- births 2001-2025 with both
+    # partners dead -- used to come back as pd.DataFrame(), which has no columns, was cached as a one-byte file,
+    # and crashed the NEXT run with EmptyDataError the moment it was read back. Zero rows is an answer; a file
+    # with no header is not one.
+    out = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=expect)
     out.columns = [c.strip().lstrip("?") for c in out.columns]
     for c in out.columns:
         out[c] = out[c].str.strip().str.strip('"')
@@ -365,9 +369,14 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
         hi = min(lo + SLICE - 1, hi0)
         cache = os.path.join(SLICE_CACHE, f"{tag}_{lo}_{hi}.csv")
         if os.path.exists(cache):
-            frames.append(pd.read_csv(cache, dtype=str, keep_default_na=False))
-            print(f"  {name} {lo}-{hi}: {len(frames[-1]):,} rows (cached)", flush=True)
-            continue
+            if os.path.getsize(cache) < 8:
+                # A one-byte file is the columnless-empty bug from an earlier build. Refetch rather than crash.
+                print(f"  {name} {lo}-{hi}: cached file is headerless — refetching", flush=True)
+                os.remove(cache)
+            else:
+                frames.append(pd.read_csv(cache, dtype=str, keep_default_na=False))
+                print(f"  {name} {lo}-{hi}: {len(frames[-1]):,} rows (cached)", flush=True)
+                continue
         df = sparql(select, body_fn(lo, hi), f"{name} {lo}-{hi}", order=order)
         df.to_csv(cache + ".tmp", index=False)
         os.replace(cache + ".tmp", cache)

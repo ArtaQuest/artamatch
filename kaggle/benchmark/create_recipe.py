@@ -29,10 +29,17 @@ from kagglesdk.benchmarks.types.benchmark_types import BenchmarkTaskOptions
 from kaggle.api.kaggle_api_extended import KaggleApi          # only for its two pure static helpers
 from slugify import slugify
 
-TITLE = "ArtaMatch: two birth dates, one shared child"
-SLUG = slugify(TITLE)                                          # 'artamatch-two-birth-dates-one-shared-child'
+# THE TASK IS TO WRITE AN ASTROLOGY MODEL, not to guess couple by couple. This pointed at artamatch_task.py,
+# the retired form: it read out 120 couples and asked for a probability each, which measures recall over dates a
+# model may have memorised from Wikidata and caps what can be learned at whatever fits in one prompt. The live
+# task asks for a `predict(train, test)` function, fits it, and scores the AUC of the code the model wrote.
+#
+# TITLE and SLUG must match the `@kbench.task(name=...)` inside TASK_FILE — `_validate_task_in_file` enforces it,
+# which is the only reason a mismatch here fails loudly rather than publishing the wrong notebook.
+TITLE = "ArtaMatch Astrology"
+SLUG = slugify(TITLE)                                          # 'artamatch-astrology'
 DATASET = "artaquest-foundation/artamatch-astrology"     # public, CC0, 1 file: train.csv
-TASK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "artamatch_task.py")
+TASK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "astrology_task.py")
 
 # ------------------------------------------------------------------------ build + validate the payload
 SOURCE = open(TASK_FILE).read()

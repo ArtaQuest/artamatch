@@ -1,11 +1,17 @@
 """
 tournament.py — the baselines, and then the accounts take turns beating each other.
 
-THE SHAPE. `artafather` posts every tradition ALONE as a public baseline, so the leaderboard shows what each
-tradition is worth on its own before anyone ensembles anything. Then the other accounts enter in turn: each reads
-the current leaderboard, builds a stacked ensemble that tries to beat the best score posted so far, and submits it.
-Every submission carries a message saying exactly what it is, so the leaderboard reads as a record rather than a
-pile of numbers.
+THE SHAPE. Every submission is a COMPETITIVE ENSEMBLE. The accounts take turns: each reads the current
+leaderboard, builds a stack over the per-tradition base predictions that tries to beat the best score posted so
+far, and submits it with a message saying exactly what it is, so the board reads as a record rather than a pile of
+numbers.
+
+PER-TRADITION BASELINES ARE NOT SUBMITTED. Nineteen single-tradition entries would consume four days of a
+five-a-day allowance to post numbers nobody is competing on, and they would bury the ensembles they are meant to
+give context to. The per-tradition ranking is still MEASURED — rank_traditions.py scores every tradition alone on
+the same held-out couples against the era rule — and published as a table in the competition and on the project's
+page, where a reader can see all nineteen at once instead of scrolling a leaderboard for them. The board is for
+the contest; the table is for the finding.
 
 WHAT AN ENSEMBLE IS ALLOWED TO BE. A weighted stack over the same per-tradition base predictions the baselines use
 — the same 19 traditions, the same held-out couples — with the weights fitted on the training half's out-of-fold
@@ -29,9 +35,9 @@ still recorded, so nothing is lost — the scores appear when the metric does. `
 prints every message without submitting.
 
 Usage:
-    python tournament.py baselines <account>              # every tradition alone
-    python tournament.py turn <account> <strategy>        # one ensemble entry: all|topk|rank|nnls|boost
-    python tournament.py board                             # print the leaderboard
+    python tournament.py turn <account> <strategy>   # one ensemble entry: all|topk|rank|nnls|boost|greedy
+    python tournament.py round <account>             # every strategy this account has not yet sent, up to the limit
+    python tournament.py board                       # print the leaderboard
 """
 import json
 import os
@@ -151,33 +157,32 @@ def fit_tradition(base, oof, y_tr, P_te, slug):
     return clf.predict_proba(P_te[:, cols])[:, 1], cols
 
 
-def baselines(acct):
+STRATEGIES = ["all", "topk", "nnls", "rank", "boost", "greedy"]
+
+
+def round_of(acct):
+    """Send every strategy this account has not sent yet, until the daily limit stops us.
+
+    The ledger makes this idempotent: run it once a day per account and it continues where it left off, so the
+    contest advances without anyone tracking which entry went where.
+    """
     api = account(acct)
     base, oof, y_tr, P_te, ids = load_matrices()
-    slugs = sorted({b["slug"] for b in base})
-    print(f"  {acct}: {len(slugs)} traditions as baselines, {len(ids):,} test couples")
-    from sklearn.metrics import roc_auc_score
-    from sklearn.model_selection import cross_val_predict
-    from sklearn.linear_model import LogisticRegression
-    for slug in slugs:
-        p, cols = fit_tradition(base, oof, y_tr, P_te, slug)
-        # An honest out-of-fold estimate on the TRAINING half, so the message carries a number the entrant can
-        # check without the private labels.
-        cvp = cross_val_predict(LogisticRegression(max_iter=2000), oof[:, cols], y_tr, cv=5,
-                                method="predict_proba")[:, 1]
-        est = roc_auc_score(y_tr, cvp)
-        path = write_submission(ids, p, f"baseline_{slug}")
-        r = submit(api, path, f"BASELINE {NAMES.get(slug, slug)} alone — {len(cols)} block(s); "
-                              f"train OOF {est:.4f}. Not an ensemble.", acct=acct)
-        if r == "limit":
+    best = board_best(api)
+    print(f"  {acct}: {len(ids):,} test couples, {len({b['slug'] for b in base})} traditions"
+          + (f", board's best {best:.4f}" if best else ", board empty (metric not set yet)"))
+    for strategy in STRATEGIES:
+        name = f"{acct}_{strategy}"
+        if already_sent(acct, name):
+            print(f"    skip {name:<40} (already sent)")
+            continue
+        p, est, what = ensemble(strategy, base, oof, y_tr, P_te)
+        path = write_submission(ids, p, name)
+        msg = (f"ENSEMBLE by {acct}: {what}; train OOF {est:.4f}"
+               + (f"; beating the board's {best:.4f}" if best else ""))
+        if submit(api, path, msg, acct=acct) == "limit":
+            print("    stopping this round; run again tomorrow")
             return
-    # And the reference nobody should lose to.
-    te = pd.read_csv(COMP_TEST).set_index("id").loc[ids]
-    era = -(te["dob_man"].str[:4].astype(int) + te["dob_woman"].str[:4].astype(int)).to_numpy(float)
-    era = (era - era.min()) / (era.max() - era.min() + 1e-9)
-    path = write_submission(ids, era, "reference_era_rule")
-    submit(api, path, "REFERENCE the era rule: older couple = more likely. Beat this or you read the calendar.",
-           acct=acct)
 
 
 def ensemble(strategy, base, oof, y_tr, P_te, k=6):
@@ -186,6 +191,7 @@ def ensemble(strategy, base, oof, y_tr, P_te, k=6):
     from sklearn.metrics import roc_auc_score
     from sklearn.model_selection import cross_val_predict
     from sklearn.ensemble import HistGradientBoostingClassifier
+    _ = (LogisticRegression, roc_auc_score, cross_val_predict)   # used by every branch below, greedy included
     if strategy == "all":
         m = LogisticRegression(C=0.03, max_iter=4000)
         est = roc_auc_score(y_tr, cross_val_predict(m, oof, y_tr, cv=5, method="predict_proba")[:, 1])
@@ -216,6 +222,32 @@ def ensemble(strategy, base, oof, y_tr, P_te, k=6):
         est = roc_auc_score(y_tr, oof @ w)
         used = int((w > 1e-6).sum())
         return P_te @ w, est, f"non-negative least-squares blend, {used} bases with weight"
+    if strategy == "greedy":
+        # Forward selection over TRADITIONS by out-of-fold gain — add the tradition that most improves the blend,
+        # stop when nothing does. The most human of the strategies and often the strongest, because it refuses a
+        # tradition that only correlates with one already in.
+        slugs = sorted({b["slug"] for b in base})
+        cols_of = {sl: [i for i, b in enumerate(base) if b["slug"] == sl] for sl in slugs}
+        chosen, cur = [], 0.0
+        while True:
+            gains = []
+            for sl in slugs:
+                if sl in chosen:
+                    continue
+                cols = [i for c in chosen + [sl] for i in cols_of[c]]
+                m = LogisticRegression(C=0.03, max_iter=4000)
+                a = roc_auc_score(y_tr, cross_val_predict(m, oof[:, cols], y_tr, cv=3,
+                                                          method="predict_proba")[:, 1])
+                gains.append((a, sl))
+            gains.sort(reverse=True)
+            if not gains or gains[0][0] <= cur + 1e-4:
+                break
+            cur, pick = gains[0]
+            chosen.append(pick)
+        cols = [i for c in chosen for i in cols_of[c]]
+        m = LogisticRegression(C=0.03, max_iter=4000).fit(oof[:, cols], y_tr)
+        return (m.predict_proba(P_te[:, cols])[:, 1], cur,
+                f"forward-greedy over traditions, {len(chosen)} kept: {', '.join(chosen)}")
     if strategy == "boost":
         m = HistGradientBoostingClassifier(max_iter=200, learning_rate=0.05, max_leaf_nodes=15, random_state=7)
         est = roc_auc_score(y_tr, cross_val_predict(m, oof, y_tr, cv=5, method="predict_proba")[:, 1])
@@ -256,8 +288,8 @@ def board():
 
 if __name__ == "__main__":
     cmd = sys.argv[1]
-    if cmd == "baselines":
-        baselines(sys.argv[2])
+    if cmd == "round":
+        round_of(sys.argv[2])
     elif cmd == "turn":
         turn(sys.argv[2], sys.argv[3])
     elif cmd == "board":

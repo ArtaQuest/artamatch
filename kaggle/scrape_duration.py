@@ -162,7 +162,15 @@ def _fetch(query, accept, tries=6):
     last = None
     live = [b for b in ENDPOINTS if b not in _DEAD] or list(ENDPOINTS)
     for base in live:
-        acc = "application/sparql-results+json" if "query.wikidata.org" in base else accept
+        # TRANSLATE the requested format for this endpoint; do NOT override it. This line used to read
+        # `"application/sparql-results+json" if "query.wikidata.org" in base else accept`, which was right for
+        # the COUNT path (qlever's JSON dialect name means nothing to WDQS) and silently wrong for the PAGING
+        # path, which asks for TSV. WDQS then answered JSON, `read_csv(sep="\t")` parsed the JSON text as a
+        # single column named `{`, and the truncation check passed because 91,142 lines of JSON is more rows
+        # than the query expected. Two whole slices of the build were garbage that looked fine.
+        acc = accept
+        if "query.wikidata.org" in base and "json" in accept:
+            acc = "application/sparql-results+json"
         for attempt in range(tries):
             req = urllib.request.Request(base + "?" + urllib.parse.urlencode({"query": query}),
                                          headers={"Accept": acc, "User-Agent": UA})
@@ -202,15 +210,29 @@ def sparql_count(select, body):
 
 
 def sparql(select, body, name, order=None, page=200000):
-    """Pages, count-verified, refusing TRUNCATION only — an extra row deduplicates away, a missing one lies."""
+    """Pages, then checks the SHAPE and the row count.
+
+    A row count alone is not a validation. When the endpoint answered JSON to a TSV request, every response
+    parsed into one column called `{` — and the count check passed, because a JSON document has more lines than
+    the query had rows. So the projected variables are asserted to be present before anything is returned: the
+    columns are the thing that proves the parse, and the count only proves nothing was dropped.
+    """
     t = time.time()
     want = sparql_count(select, body)
+    expect = [v.lstrip("?") for v in select.replace("DISTINCT", "").split()]
     frames, got = [], 0
     while got < want:
         q = (f"{PREFIXES}\nSELECT {select} WHERE {{ {body} }}" + (f" ORDER BY {order}" if order else "")
              + f" LIMIT {page} OFFSET {got}")
         raw = _fetch(q, "text/tab-separated-values")
         df = pd.read_csv(io.StringIO(raw), sep="\t", dtype=str, keep_default_na=False)
+        got_cols = [c.strip().lstrip("?") for c in df.columns]
+        missing = [v for v in expect if v not in got_cols]
+        if missing:
+            raise RuntimeError(
+                f"{name}: the response is not the TSV this query projected — missing {missing}, got columns "
+                f"{got_cols[:6]}. The first 120 bytes were {raw[:120]!r}. A row count cannot catch this, which "
+                f"is why the columns are checked.")
         if len(df) == 0:
             break
         # The Wikidata Query Service decorates values with a type suffix and quotes literals; qlever's TSV is

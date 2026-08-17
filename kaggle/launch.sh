@@ -35,6 +35,9 @@ echo "  train.csv $(wc -l < "$SRC/train.csv") lines · test.csv $(wc -l < "$SRC/
 step "finalize: split checks, train, rank, score, publish dataset + competition + model, ship page, tournament"
 "$REPO/kaggle/finalize.sh" "$SRC"
 
+step "rewrite the competition's six pages from the build's own numbers (title, brief, abstract, description, evaluation, data, rules, prizes)"
+(cd "$REPO/kaggle" && AQ_DO_WRITE=1 $PY competition_pages.py /tmp/aqdurcomp /tmp/aqdurmodel 2>&1 | tail -9) || echo "  page write failed — continuing; rerun competition_pages.py by hand"
+
 step "publish the build notebook (public, re-runnable proof of the dataset)"
 (cd "$REPO/kaggle" && $PY publish_notebook.py 2>&1 | tail -3) || echo "  notebook publish failed — continuing; rerun publish_notebook.py by hand"
 

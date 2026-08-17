@@ -59,9 +59,14 @@ def main():
     gp = os.path.join(MODEL_DIR, "grid_result.json")
     grid = json.load(open(gp)) if os.path.exists(gp) else None
     hdr = json.load(open(os.path.join(MODEL_DIR, "model.json")))
-    cv = res["cv_auc"]
+    cv = res["cv_auc"]                     # in-training selection score: optimistic, and said so below
     base = res["baseline_auc"]
     n = res["n_train"]
+    # THE HELD-OUT RANKING is the number to lead with. It is measured on couples born after the training window
+    # by rank_traditions.py, and it is what the competition scores; the in-training cv_auc is a selection score
+    # that reads ~0.56 on coin-flip labels. Publishing cv_auc as 'the AUC' would be the flattering number.
+    rp = os.path.join(MODEL_DIR, "tradition_ranking.json")
+    rk = json.load(open(rp)) if os.path.exists(rp) else None
     nb = res["blocks"]
     nt = res["traditions"]
     per = sorted(res["per_block"], key=lambda r: -r["auc"])
@@ -99,53 +104,61 @@ def main():
     else:
         grid_table = ""
 
+    heldout_rows = ""
+    if rk:
+        top = sorted(rk["traditions"], key=lambda t: -t["auc"])[:6]
+        heldout_rows = (
+            f"| **This stack, HELD OUT** — couples born after the training window, both dead, day-precision dates "
+            f"| **{rk['ensemble']:.4f}** on {rk['n_test']:,} couples |\n"
+            f"| The era rule on the same held-out couples (sum of the two birth years) | {rk['era_rule']:.4f} |\n"
+            + "".join(f"| {t['name']} alone, held out | {t['auc']:.4f} |\n" for t in top))
     overview = f"""# ArtaMatch — an astrology-only stack over two birth dates
 
-Fitted on [artaquest-foundation/artamatch-two-birth-dates](https://www.kaggle.com/datasets/{OWNER}/artamatch-two-birth-dates):
-{n:,} declared couples, two birth dates each, and whether a child exists who names both partners.
+Fitted on [artaquest-foundation/artamatch-astrology](https://www.kaggle.com/datasets/{OWNER}/artamatch-astrology):
+{n:,} relationships — marriages, unmarried and same-sex partnerships, business partnerships, non-family
+"significant person" relations — as two birth dates, **older partner first**, and whether the relationship
+lasted thirty years. Training couples were born 1600-1900; the held-out couples were born after 1900 and are
+all dead, so every relationship in the file has ended.
 
 | | AUC |
 |---|---|
-| **This stack**, {nb} feature blocks across {nt} traditions, out-of-fold | **{cv:.4f}** |
-| Two-parameter logistic on the signed gap (woman - man) | {base:.4f} |
-| Lift | **{cv-base:+.4f}** |
+{heldout_rows}| This stack, in-training selection score (OPTIMISTIC — reads ~0.56 on coin-flip labels; not a performance estimate) | {cv:.4f} |
+| Two-parameter logistic on the age gap (younger − older) | {base:.4f} |
 {grid_table}
+
+**Read the held-out row against the era rule, not against 0.5.** On a temporal split the era rule is the bar:
+a model above chance but below it has read the calendar rather than the couple.
 
 ## What it is
 
 {nb} base models, one per feature block, each the better of histogram gradient boosting and a standardised
 logistic; then a meta logistic over their out-of-fold predictions. Every feature comes from a tradition
-module — aspects, harmonics, divisional charts, calendars, heliacal risings, Uranian dials — computed from
-the two dates alone at 08:00 UT. No birthplace, no sex, no nationality, no cohort variable.
+module — aspects, harmonics, divisional charts, calendars, heliacal risings, Uranian dials, and numerology —
+computed from the two dates alone at 08:00 UT. No birthplace, no sex, no nationality, no cohort variable; the
+column order is age, computed from the dates.
 
-Strongest blocks:
+Strongest blocks by in-training selection score (see the caveat above):
 
 {chr(10).join(f"- `{r['key']}` — {r['auc']:.4f} ({r['kind']})" for r in per[:8])}
 
 ## What to compare it against
 
-Chance is 0.5, but 0.5 is not the bar. The reference is a two-parameter logistic on the **signed** difference
-between the two dates — woman minus man, which is meaningful here only because the dataset's column order
-carries sex, assigned from Wikidata's P21. That reference is in the table above and is the number this model
-is measured against.
+Two references, both reported every time. The **era rule** — the sum of the two birth years — is the one that
+matters on a split by time. The **age gap** — younger minus older, non-negative because the older partner is
+always the first column — is the one baseline this project permits itself, and it is in the table above.
 
-## Robustness to missing and wrong dates
+## What the training rows look like
 
-The headline score is not a single AUC on clean inputs. Each partner's date is degraded independently over four
-levels — the full date, the month only, the year only, absent — and the model is scored in every cell of the
-resulting grid. The `absent x absent` cell is excluded: with neither date there is no input, so no model can
-rank anything there. The metric is the row-count-weighted mean of the remaining per-cell AUCs, which means a model
-that is strong on clean dates and useless on vague ones scores worse than one that degrades gracefully.
-
-That metric is NOT a pooled AUC over the same rows, and the difference is not small: every cell holds the same
-couples with the same labels, so only one pair in fourteen that a pooled AUC ranks comes from inside a cell. A
-submission ranking perfectly within every cell scores 1.000 on this metric and can score near 0.5 pooled.
+Test rows are complete and day-precision. Training rows may be coarse (`1802-00-00` is a year, `1809-11-00` a
+month) or one-sided (`0000-00-00` in the second column means that partner is absent from Wikidata). A
+relationship's duration is known just as exactly when one partner's birthday is not, so those rows carry a real
+label; drop them in one line if you want only clean rows.
 
 ## Provenance
 
 Built by [the dataset notebook](https://www.kaggle.com/code/artafather/artamatch-build-the-dataset) from live
-SPARQL against Wikidata. Companion benchmark:
-`artamatch-two-birth-dates-one-shared-child`.
+SPARQL against Wikidata. Companion competition: `artamatch-astrology`. Companion benchmark:
+`artamatch-astrology`, where a language model is asked to write an astrology model and is scored on it.
 """
 
     usage = """## The files
@@ -180,7 +193,7 @@ version runs, which is why a score here and a score there agree.
             "isPrivate": False, "fineTunable": False,
             "modelInstanceType": "Unspecified",
             "overview": overview, "usage": usage,
-            "trainingData": [f"{OWNER}/artamatch-two-birth-dates"]}
+            "trainingData": [f"{OWNER}/artamatch-astrology"]}
     json.dump(meta, open(os.path.join(STAGE, "model-instance-metadata.json"), "w"), indent=1)
     json.dump({"ownerSlug": OWNER, "slug": SLUG,
                "title": "ArtaMatch two-dates astrology stack",
@@ -192,7 +205,9 @@ version runs, which is why a score here and a score there agree.
     from kaggle.api.kaggle_api_extended import KaggleApi
     api = KaggleApi()
     api.authenticate()
-    print(f"  model {cv:.4f} vs baseline {base:.4f} on {n:,} couples · {nb} blocks / {nt} traditions")
+    print(f"  model in-training {cv:.4f} (optimistic) vs baseline {base:.4f} on {n:,} couples · {nb} blocks / {nt} traditions")
+    if rk:
+        print(f"  HELD OUT: {rk['ensemble']:.4f} vs era rule {rk['era_rule']:.4f} on {rk['n_test']:,} couples")
     if grid:
         print(f"  grid  mean of 15 AUCs {grid['mean15']:.4f} vs reference "
               f"{grid['reference_signed_gap_mean15']:.4f} on {grid['couples']:,} held-out couples")

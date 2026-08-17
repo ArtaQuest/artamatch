@@ -41,7 +41,7 @@ step "publish the build notebook (public, re-runnable proof of the dataset)"
 step "publish the benchmark task (a new version of artamatch-astrology)"
 (cd "$REPO/kaggle/benchmark" && AQ_DO_CREATE=1 $PY create_recipe.py 2>&1 | tail -4) || echo "  benchmark push failed — continuing; rerun create_recipe.py by hand"
 
-step "deploy the page: commit docs/ + sources and push main (GitHub Pages builds from docs/)"
+step "deploy the page: commit docs/ + sources and push feature/artamatch (the branch GitHub Pages serves)"
 cd "$REPO"
 # The page gates ran inside finalize step 6; do not deploy a docs/ that did not pass them.
 $PY web/verify_docs.py docs 2>&1 | tail -1 | grep -q "publishable" || { echo "  docs/ is not publishable — not deploying"; exit 1; }
@@ -54,7 +54,11 @@ births 1600-1900 to train and 1901+ dead couples held out. The page headlines
 the temporal held-out AUC against the era rule; the precision grid is retired.
 Built and finalized unattended by kaggle/launch.sh from a build whose own
 assertions passed." || echo "  nothing new to commit"
-git push origin HEAD:main 2>&1 | tail -2
-echo "  pushed — GitHub Pages will publish docs/ from main"
+# THE SERVED BRANCH IS feature/artamatch, read from the Pages API -- origin has no main at all, and a push to
+# HEAD:main would have created a stray branch that Pages ignores while reporting a deploy. This branch is a
+# clean fast-forward of feature/artamatch (30 ahead, 0 behind at the time of writing); if that ever stops being
+# true the push is rejected rather than forced, and a person decides.
+git push origin HEAD:feature/artamatch 2>&1 | tail -2
+echo "  pushed — GitHub Pages will publish docs/ from feature/artamatch (https://artaquest.github.io/artamatch/)"
 
 step "done"

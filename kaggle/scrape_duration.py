@@ -133,8 +133,14 @@ import pandas as pd
 OUT = "/kaggle/working" if os.path.isdir("/kaggle/working") else "."
 T0 = time.time()
 
-FLOOR, CEIL = 1600, 1900          # everybody born inside this window is certainly dead
-CUT = 1850                        # couples whose later known birth is after this are held out
+# THE WINDOW IS NOW BOUNDED BY DEATH, NOT BY A BIRTH YEAR (operator, 2026-08-17). The old design closed at 1900
+# because everybody born by then is certainly dead, and a marriage that has not ended cannot be given a duration.
+# Requiring a recorded DEATH does that job directly and without a ceiling: if the partner we have a date for is
+# dead, their marriage has ended, whenever they were born. So the span opens to the present and the split moves to
+# 1900 — train on the historical couples, predict the modern ones.
+FLOOR = 1600
+CEIL = int(os.environ.get("AQ_CEIL", str(time.gmtime().tm_year)))
+CUT = 1900                        # couples whose later known birth is after this are held out
 MIN_YEARS = 30                    # the label's threshold
 MAX_GAP_YEARS = 60
 MALE, FEMALE = "Q6581097", "Q6581072"
@@ -416,15 +422,25 @@ def dated(v, lo, hi, prec, drop_placeholders=True):
 # The relationship and everything needed to date its end. `?rel` is P26 (marriage) or P451 (unmarried partner);
 # romantic relationships were asked for and P451 turns out to be numerically tiny — 112 partnerships against
 # 86,600 marriages — but it costs one extra query and it is the honest reading of "not necessarily marriages".
-def relationship(rel):
-    return f"""
+def relationship(rel, dead=("a",)):
+    """The relationship and everything needed to date its end.
+
+    `dead` names the partners whose death date is REQUIRED rather than optional, and it is what replaces the old
+    1900 birth ceiling. A recorded death proves the marriage ended, so it can be given a duration no matter when
+    the couple was born — where a birth-year cap only proves it by proxy. The partners not named here keep an
+    OPTIONAL death, because a one-sided row's absent spouse has no death date to require and the row is still
+    perfectly labellable from the partner we do have.
+    """
+    s = f"""
   ?a p:{rel} ?m . ?m ps:{rel} ?b .
   ?m pq:P580 ?start .
   ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
   OPTIONAL {{ ?m pq:P582 ?end }}
-  OPTIONAL {{ ?m pq:P1534 ?cause }}
-  OPTIONAL {{ ?a wdt:P570 ?adeath }}
-  OPTIONAL {{ ?b wdt:P570 ?bdeath }}"""
+  OPTIONAL {{ ?m pq:P1534 ?cause }}"""
+    for v in ("a", "b"):
+        s += (f"\n  ?{v} wdt:P570 ?{v}death ." if v in dead
+              else f"\n  OPTIONAL {{ ?{v} wdt:P570 ?{v}death }}")
+    return s
 
 
 PROJ = "?a ?b ?adob ?aprec ?bdob ?bprec ?asex ?bsex ?start ?end ?cause ?adeath ?bdeath"
@@ -442,7 +458,7 @@ frames = []
 for rel in ("P26", "P451"):
     # CASE 1 — both partners born after the cut.
     def body(lo, hi, rel=rel):
-        return (relationship(rel) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
+        return (relationship(rel, dead=("a", "b")) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
                 + dated('a', lo, hi, 11) + dated('b', CUT + 1, CEIL, 11))
     df = sparql_sliced(f"DISTINCT {PROJ}", body, f"test half ({rel})", CUT + 1, CEIL, order="?a ?b")
     df["rel"] = rel
@@ -459,7 +475,7 @@ for rel in ("P26", "P451"):
     # always the earlier-born partner and `?b` the later one, so each couple matches exactly once and no
     # `STR(?a) < STR(?b)` tiebreak is needed — adding one would in fact drop half of them.
     def straddle(lo, hi, rel=rel):
-        return (relationship(rel) + "\n  " + SEX
+        return (relationship(rel, dead=("a", "b")) + "\n  " + SEX
                 + dated('a', FLOOR, CUT, 11) + dated('b', lo, hi, 11))
     df = sparql_sliced(f"DISTINCT {PROJ}", straddle, f"test half straddling {CUT} ({rel})",
                        CUT + 1, CEIL, order="?a ?b")
@@ -485,7 +501,7 @@ print(f"  test half raw: {len(raw_test):,} rows including the couples that strad
 frames = []
 for rel in ("P26", "P451"):
     def both(lo, hi, rel=rel):
-        return (relationship(rel) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
+        return (relationship(rel, dead=("a", "b")) + "\n  FILTER(STR(?a) < STR(?b))\n  " + SEX
                 + dated('a', lo, hi, 9, drop_placeholders=False)
                 + dated('b', FLOOR, CUT, 9, drop_placeholders=False))
     df = sparql_sliced(f"DISTINCT {PROJ}", both, f"train both dated ({rel})", FLOOR, CUT, order="?a ?b")
@@ -712,15 +728,37 @@ for frame in (test_c, train_c):
 # the better-populated copy first.
 
 #%%
+def precision_class(col):
+    """3 = day, 2 = month, 1 = year, 0 = absent — read back off the encoded string.
+
+    Written out because the obvious one-liner is wrong in two ways at once. `(d.str[5:] != "00-00")` counts a
+    MONTH-precision date as a day-precision one, since "1809-11-00"[5:] is "11-00"; and subtracting the absent
+    count afterwards double-subtracts, because "0000-00-00"[5:] is already "00-00" and never counted. Together
+    those reported 130 day-precision women where there are about 17,000, which looked like a catastrophic data
+    fault rather than a bad print.
+    """
+    day = ~col.str.endswith("-00")
+    absent = col.eq(ABSENT)
+    year = col.str[5:].eq("00-00") & ~absent
+    month = col.str.endswith("-00") & ~year & ~absent
+    return (day * 3 + month * 2 + year * 1).astype(int)
+
+
 def one_per_couple(m, tag):
     m = m.copy()
     m["_pair"] = [f"{min(x, y)}|{max(x, y)}" for x, y in zip(m["man"], m["woman"])]
+    # PREFER THE MORE PRECISE COPY, not merely a non-absent one. 3.5% of people carry two non-deprecated P569
+    # statements at different precisions — Q104093886 has both 1830-01-01 (year) and 1830-07-20 (day) — so the
+    # query returns two rows for the couple. Ranking only on "is it absent" left those tied, and the tie was
+    # broken by whichever row the endpoint happened to return first, throwing away a known birthday for about
+    # one couple in thirty for no reason at all.
+    m["_prec"] = precision_class(m["dob_man"]) + precision_class(m["dob_woman"])
     m["_known"] = (m["dob_man"] != ABSENT).astype(int) + (m["dob_woman"] != ABSENT).astype(int)
     n0 = len(m)
-    m = (m.sort_values(["_known", "_dur"], ascending=[False, False])
+    m = (m.sort_values(["_known", "_prec", "_dur"], ascending=[False, False, False])
           .drop_duplicates("_pair", keep="first").reset_index(drop=True))
-    print(f"  {tag}: {n0 - len(m):,} duplicate rows collapsed (better-dated copy first, then longest "
-          f"marriage) — {len(m):,} couples")
+    print(f"  {tag}: {n0 - len(m):,} duplicate rows collapsed (most dates first, then the most precise, then "
+          f"the longest marriage) — {len(m):,} couples")
     return m
 
 
@@ -780,15 +818,49 @@ print(f"  positive rate: train {100*train['lasted_30_years'].mean():.2f}% · "
 print("  those differ, and they should: earlier-born couples died younger and their records are thinner, so")
 print("  fewer of their marriages reach thirty years.")
 
+#%% [markdown]
+# ### The rate by birth decade, and the ceiling that death imposes
+#
+# This table is the most important diagnostic in the build, because the design that removed one bias introduced
+# another. Requiring a recorded death is what lets the window run to the present — but a couple born recently who
+# are *already dead* died young, and a marriage cannot outlive the shorter-lived partner. Past roughly 1996 a
+# thirty-year marriage is arithmetically impossible for anyone dead by now, so the positive rate must fall to
+# zero at the recent end whatever astrology says.
+#
+# A model can score on that alone: "born late → negative" is an era rule, not a finding. So the rate is printed
+# per decade and the last decade where a positive is even *possible* is named. If the held-out half is dominated
+# by decades that cannot produce a positive, the leaderboard measures the calendar again — and the fix is to cap
+# the test window, not to hope.
+
+#%%
+print("\n  positive rate by the couple's LATER birth decade:")
+for name, frame in (("train", train), ("test", test)):
+    y = frame["_later"] // 10 * 10
+    tab = frame.groupby(y)["lasted_30_years"].agg(["mean", "size"])
+    tab = tab[tab["size"] >= 25]
+    if tab.empty:
+        continue
+    print(f"    {name}:")
+    for dec, row in tab.iterrows():
+        # The soonest a couple born in `dec` could reach 30 married years, if they married at 20.
+        earliest_possible = int(dec) + 20 + MIN_YEARS
+        flag = "  <- 30 years IMPOSSIBLE for anyone dead by now" if earliest_possible > CEIL else ""
+        print(f"      {int(dec)}s  {100*row['mean']:5.1f}%  ({int(row['size']):>6,} couples){flag}")
+    impossible = tab.index[(tab.index + 20 + MIN_YEARS) > CEIL]
+    if len(impossible):
+        n_imp = int(tab.loc[impossible, "size"].sum())
+        print(f"      {n_imp:,} of {int(tab['size'].sum()):,} {name} couples are in a decade where the "
+              f"positive class is unreachable ({100*n_imp/int(tab['size'].sum()):.1f}%)")
+
 n_both = int(((train["dob_man"] != ABSENT) & (train["dob_woman"] != ABSENT)).sum())
 print(f"\n  the training half, by how much it knows:")
 print(f"      {n_both:>7,} couples with BOTH dates ({100*n_both/max(len(train),1):.1f}%)")
 print(f"      {len(train)-n_both:>7,} with one partner absent — kept, because the DURATION is known exactly")
 for side in ("man", "woman"):
-    d = train[f"dob_{side}"]
-    print(f"      {side}: {int((d.str[5:] != '00-00').sum() - (d == ABSENT).sum()):>7,} to the day · "
-          f"{int(d.str.endswith('-00').sum() - (d.str[5:] == '00-00').sum()):>6,} to the month · "
-          f"{int((d.str[5:] == '00-00').sum()):>6,} to the year · {int((d == ABSENT).sum()):>6,} absent")
+    pc = precision_class(train[f"dob_{side}"])
+    print(f"      {side:<5}: {int((pc == 3).sum()):>7,} to the day · {int((pc == 2).sum()):>6,} to the month · "
+          f"{int((pc == 1).sum()):>6,} to the year · {int((pc == 0).sum()):>6,} absent")
+    assert int(pc.notna().sum()) == len(train), "every row must fall in exactly one precision class"
 
 #%% [markdown]
 # ## 8. The files
@@ -803,9 +875,18 @@ for col in ("dob_man", "dob_woman"):
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
     assert not test[col].str.endswith("-00").any(), f"test.{col} is not day-precision"
     assert not (test[col].str[5:] == "01-01").any(), f"test.{col} still contains a 1 January"
+    # EACH PARTNER IS IN THE WINDOW; THE COUPLE IS PLACED BY ITS LATER BIRTH. This asserted `y > CUT` on BOTH
+    # columns, which contradicted the straddle fix in the very same file: a couple whose man was born 1845 and
+    # whose wife was born 1860 is a held-out couple by the split rule, and its man's year is 1845. The query was
+    # corrected to include those couples and this assertion was the copy that did not move — the same failure
+    # mode as the split assertion that went on checking a floor the new data already cleared.
     y = test[col].str[:4].astype(int)
-    assert ((y > CUT) & (y <= CEIL)).all(), f"test.{col} outside {CUT+1}-{CEIL}"
-print(f"  checked: every test date is day-precision, inside {CUT+1}-{CEIL}, and never a placeholder")
+    assert ((y >= FLOOR) & (y <= CEIL)).all(), f"test.{col} outside {FLOOR}-{CEIL}"
+assert (np.maximum(test["dob_man"].str[:4].astype(int),
+                   test["dob_woman"].str[:4].astype(int)) > CUT).all(), \
+    f"a held-out couple has BOTH births at or before {CUT} — it belongs in the training half"
+print(f"  checked: every test date is day-precision inside {FLOOR}-{CEIL}, never a placeholder, and every "
+      f"held-out couple's LATER birth is after {CUT}")
 for col in ("dob_man", "dob_woman"):
     assert train[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"train.{col} malformed"
 assert not ((train["dob_man"] == ABSENT) & (train["dob_woman"] == ABSENT)).any(), \

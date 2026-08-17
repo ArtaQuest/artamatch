@@ -107,6 +107,7 @@
 
 #%%
 import collections
+import hashlib
 import io
 import json
 import os
@@ -276,7 +277,12 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
     """
     frames = []
     os.makedirs(SLICE_CACHE, exist_ok=True)
-    tag = "".join(ch if ch.isalnum() else "_" for ch in name)
+    # THE CACHE KEY INCLUDES THE QUERY, not just its name. It used to be the name alone, which meant editing a
+    # query while keeping its label served the OLD answer forever — and the edit that exposed this added a
+    # column, so the stale rows would have come back with the wrong shape under the right name. A cache keyed on
+    # anything less than the request is a cache that can lie about what it holds.
+    qhash = hashlib.sha256((select + "|" + body_fn(lo0, hi0)).encode()).hexdigest()[:10]
+    tag = "".join(ch if ch.isalnum() else "_" for ch in name) + "_" + qhash
     whole = os.path.join(SLICE_CACHE, f"{tag}_{lo0}_{hi0}_whole.csv")
     if os.path.exists(whole):
         out = pd.read_csv(whole, dtype=str, keep_default_na=False)

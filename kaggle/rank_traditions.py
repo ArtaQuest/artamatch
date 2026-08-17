@@ -60,10 +60,17 @@ def main():
     P_te = np.load(os.path.join(MODEL, "test_base.npy"))          # (n_test, n_base)
     test_ids = pd.read_csv(TEST)["id"].to_numpy()
     sol = pd.read_csv(SOL).set_index("id")
+    # The target column is whatever the solution file calls it — `lasted_30_years` for the duration dataset,
+    # `parents_together` for the retired parenthood one. Hardcoding it silently ranked nothing when it changed.
+    lab = [c for c in sol.columns if c != "Usage"]
+    if len(lab) != 1:
+        raise SystemExit(f"solution.csv should have one target column beside Usage, found {lab}")
+    lab = lab[0]
     keep = np.isin(test_ids, sol.index.to_numpy())
     P_te, ids = P_te[keep], test_ids[keep]
-    y_te = sol.loc[ids, "parents_together"].to_numpy()
+    y_te = sol.loc[ids, lab].to_numpy()
     usage = sol.loc[ids, "Usage"].to_numpy()
+    print(f"  target column: {lab}")
 
     print(f"  {len(base)} base models, {oof.shape[0]:,} training couples, {len(ids):,} held-out day-precision couples")
 

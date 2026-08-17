@@ -209,7 +209,14 @@ def _fetch(query, accept, tries=6):
                 last = e
                 if e.code not in (429, 500, 502, 503, 504):
                     raise
-                if attempt == tries - 1:
+                # A 429 ON A HEAVY QUERY DOES NOT CLEAR IN 80 SECONDS, so do not spend 155s of backoff
+                # rediscovering that. qlever answers a trivial query 200 while refusing these, which means its
+                # limit is priced on query COST, not request count — the budget is spent and waiting inside one
+                # request cannot refill it. Give up after two tries and let the cooldown bring the endpoint
+                # back later, when it can actually help. A 5xx still gets the full backoff: that IS often
+                # transient.
+                patience = 2 if e.code == 429 else tries
+                if attempt >= patience - 1:
                     if e.code in (429, 500, 502, 503):
                         _DEAD[base] = time.monotonic()
                         print(f"    {base.split('/')[2]}: HTTP {e.code} — struck off for "

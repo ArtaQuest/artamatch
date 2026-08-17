@@ -12,7 +12,7 @@ So this asset is built for a different plan: carry enough that a pure-numpy `swi
 BROWSER RUN THOSE FILES UNCHANGED. Parity then stops being something to test and starts being structural —
 there is only one implementation of every feature.
 
-WHAT IS STORED. 1698-01-01 to 2032-12-31 for twenty-six bodies — core.py's eighteen in its exact order, then
+WHAT IS STORED. 1598-01-01 to 2032-12-31 for twenty-six bodies — core.py's eighteen in its exact order, then
 the eight Uranian hypotheticals that trad_uranian resolves by name — FIVE quantities each: ecliptic
 longitude, ecliptic latitude, distance, longitude speed, heliocentric longitude. Plus all twenty-one
 ayanamsas core.py knows.
@@ -78,8 +78,8 @@ FLG_HC = swe.FLG_SWIEPH | swe.FLG_HELCTR
 # because training uses real Swiss Ephemeris, which has no such edge; it appeared the moment the same code
 # ran on the shipped asset, which is what a browser runs. Two years either side covers a synodic lookback
 # with room to spare, and costs under 2% of the file.
-Y0, Y1 = 1698, 2032
-YEAR_ACCEPTED = (1700, 2026)     # what core.py will actually accept; the span above brackets it
+Y0, Y1 = 1598, 2032
+YEAR_ACCEPTED = (1600, 2026)     # what core.py will actually accept; the span above brackets it
 QUANT = 360.0 / 65535.0          # 0.005493 deg — the storage step for an angle, and so the error budget
 
 # SPEED IS SCALED PER BODY, and that is not a micro-optimisation. The first version quantised every body's

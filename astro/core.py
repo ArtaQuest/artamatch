@@ -131,7 +131,7 @@ DEFAULT_HOUR = float(os.environ.get("AQ_BIRTH_HOUR", "8.0"))
 # would have dropped 53,756 of 135,005 couples, and the dropped ones are 46.3% parents against 24.0% for
 # those kept — so it removes the most separable part of the data along with the era confound, and the same
 # stacked model measures 0.7012 there against 0.7311 on everything. Worth knowing which number is which.
-YEAR_FLOOR = int(os.environ.get("AQ_YEAR_FLOOR", "1700"))
+YEAR_FLOOR = int(os.environ.get("AQ_YEAR_FLOOR", "1600"))
 YEAR_CEIL = int(os.environ.get("AQ_YEAR_CEIL", "2026"))
 
 

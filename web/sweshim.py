@@ -687,6 +687,17 @@ def _next_ecl(jds, fls, jd_start, backward):
 
 
 # ── verification, run on the laptop where the real thing is importable ────────────────────────────────
+# THE SPEED BUDGET, ABSOLUTE, and why it is not a fraction of the body's speed range. It was going to be a
+# fraction, until the fractions were measured: the reconstruction's speed error is ~0.0007-0.001 deg/day for
+# 21 of the 26 bodies regardless of how fast they move, because it comes from the Hermite tangent and the
+# quantisation step rather than from the body. Divided by the range that uniform error is nonsense — the mean
+# lunar node moves at a nearly constant rate, so its speed RANGE is 0.000116 deg/day and 0.003 of error is
+# 2580% of it, while the Moon's 0.0056 is 0.15% of its 3.78. So the budget is absolute. 0.01 deg/day is about
+# 1.8x the worst honest reconstruction here (the Moon at 0.0056) and far under 2x the slowest body's typical
+# speed, which is what an inverted or mis-scaled speed block produces.
+SPEED_BUDGET = 0.01
+
+
 def verify_asset(bodies, span, span_default, quant, n=140, seed=17, nodelike=()):
     """Gate for build_asset_v4: reconstruct EVERY body and EVERY quantity from the written bytes.
 
@@ -710,7 +721,10 @@ def verify_asset(bodies, span, span_default, quant, n=140, seed=17, nodelike=())
     RFL = real.FLG_SWIEPH | real.FLG_SPEED
     print(f"asset gate — reconstruct from the written bytes vs pyswisseph, {n} instants per body")
     print(f"  budget: {2*quant:.6f} deg on any angle (two storage steps), 1e-3 relative on distance,")
-    print(f"          retrograde sign exact outside a stationary window of 1% of the body's speed range")
+    print(f"          {SPEED_BUDGET} deg/day on speed (absolute — the error does not scale with the body),")
+    print(f"          retrograde sign exact outside a stationary window of 1% of the body's speed range,")
+    print(f"          widened per body to the speed error itself where that is larger (a sign is only")
+    print(f"          meaningful where the speed exceeds the accuracy it is known to)")
     print(f"  {'body':<10} {'lon':>9} {'lat':>9} {'helio':>9} {'dist(rel)':>10} {'speed':>10} "
           f"{'retro':>11}")
     bad = []
@@ -723,6 +737,7 @@ def verify_asset(bodies, span, span_default, quant, n=140, seed=17, nodelike=())
         el = et = eh = ed = es = 0.0
         sign_bad = 0
         glitch = 0
+        disagree = []          # sign disagreements, judged after the loop when the speed error is known
         step = (float(a.shi[bi]) - float(a.slo[bi])) / 65535.0
         station = 0.01 * (float(a.shi[bi]) - float(a.slo[bi]))
         for jd in jds:
@@ -752,7 +767,14 @@ def verify_asset(bodies, span, span_default, quant, n=140, seed=17, nodelike=())
             # step: the step is now so fine (5e-7 deg/day) that a step-based window would be no window at
             # all, while the thing that actually limits the sign near a station is how well the interpolated
             # derivative tracks the true one. Outside that window the sign must be right.
-            if abs(p[3]) > station and np.sign(g[3]) != np.sign(p[3]):
+            #
+            # AND THE WINDOW MUST BE AT LEAST THE MEASURED SPEED ERROR, which 1% of the range is not. Kronos
+            # reconstructs its speed to 0.000746 deg/day against a 1%-of-range window of 0.000372, so the gate
+            # was demanding a correct sign across a band twice as wide as the error it tolerates everywhere
+            # else — a requirement no reconstruction can meet, and it duly refused an asset that was fine. The
+            # sign of a quantity known to +-e is only meaningful where the quantity exceeds e. Since `es` is
+            # not known until the loop has finished, the disagreements are collected here and judged below.
+            if np.sign(g[3]) != np.sign(p[3]):
                 # CROSS-CHECKED AGAINST SWISSEPH'S OWN LONGITUDE, because swisseph's speed FIELD is not
                 # always trustworthy for the Uranian hypotheticals. At jd 2383698.0483 it reports Vulkanus
                 # at -0.01416 deg/day while its own longitude is rising monotonically through that instant
@@ -762,13 +784,30 @@ def verify_asset(bodies, span, span_default, quant, n=140, seed=17, nodelike=())
                 # for being MORE right than the reference. When the signs disagree, the tiebreaker is the
                 # central difference of swisseph's own longitude, which cannot glitch in the same way; only
                 # if that also disagrees is it counted.
+                # NOTE ON THE VARIABLES, because getting them backwards inverts this test into one that
+                # passes a deliberately sign-flipped asset: `p` is REAL pyswisseph and `g` is the shim. So the
+                # comparison below is the SHIM against the central difference, which is the tiebreaker the
+                # comment describes; comparing `p` with it instead stops examining the reconstruction at all.
                 fd = (real.calc_ut(float(jd) + 1.0, code, RFL)[0][0]
                       - real.calc_ut(float(jd) - 1.0, code, RFL)[0][0])
                 fd = _wrap(fd) / 2.0
                 if np.sign(g[3]) != np.sign(fd):
-                    sign_bad += 1
+                    disagree.append((float(jd), float(p[3])))
                 else:
                     glitch += 1
+
+        # The sign window, now that the speed error for this body is known. A disagreement inside it is the
+        # unavoidable consequence of a station falling within the reconstruction's own accuracy; outside it,
+        # the reconstruction is wrong.
+        #
+        # THE WIDENING IS CAPPED, or it neutralises itself. Widening the window to `es` and leaving `es`
+        # ungated makes the gate unfalsifiable: inverting the sign of every reconstructed speed sets
+        # es = 2|speed|, which widens the window past every speed there is, and the injected error is
+        # forgiven — measured, not imagined, when a deliberately sign-flipped asset passed with 0 failures.
+        # So the window may grow only to SPEED_BUDGET, and es above that is itself a failure.
+        station = max(station, min(es, SPEED_BUDGET))
+        sign_bad = sum(1 for _, p3 in disagree if abs(p3) > station)
+        near_station = len(disagree) - sign_bad
         # THE BUDGETS, and why each is the number it is.
         #
         # ANGLES: two storage steps. One step is 0.0055 deg, and rounding to the nearest step already costs
@@ -792,15 +831,24 @@ def verify_asset(bodies, span, span_default, quant, n=140, seed=17, nodelike=())
             flag += " HELIO"
         if ed > 1e-3 and int(code) not in nodelike:
             bad.append(f"{nm}: distance {ed:.3g} relative exceeds 1e-3"); flag += " DIST"
+        if es > SPEED_BUDGET:
+            bad.append(f"{nm}: speed {es:.6f} deg/day exceeds the {SPEED_BUDGET} budget")
+            flag += " SPEED"
         if sign_bad:
-            bad.append(f"{nm}: retrograde sign wrong on {sign_bad} of {n} instants while moving faster "
-                       f"than {station:.3g} deg/day, which is outside the stationary window — the speed "
-                       f"reconstruction is wrong for this body, not merely imprecise")
+            worst = max((jd for jd, p3 in disagree if abs(p3) > station), default=0.0)
+            bad.append(f"{nm}: retrograde sign wrong on {sign_bad} of {n} instants (e.g. jd {worst:.4f}) while "
+                       f"moving faster than {station:.3g} deg/day, which is outside the stationary window — the "
+                       f"speed reconstruction is wrong for this body, not merely imprecise")
             flag += " RETRO"
+        notes = []
+        if glitch:
+            notes.append(f"{glitch} swisseph speed glitch{'es' if glitch > 1 else ''} outvoted by its own "
+                         f"longitude")
+        if near_station:
+            notes.append(f"{near_station} sign flip{'s' if near_station > 1 else ''} inside the "
+                         f"{station:.3g} deg/day station window")
         print(f"  {nm:<10} {el:>9.6f} {et:>9.6f} {eh:>9.6f} {ed:>10.3g} {es:>10.6f} "
-              f"{sign_bad:>7}/{n}{flag}"
-              + (f"   ({glitch} swisseph speed glitch{'es' if glitch > 1 else ''} outvoted by its own "
-                 f"longitude)" if glitch else ""))
+              f"{sign_bad:>7}/{n}{flag}" + (f"   ({'; '.join(notes)})" if notes else ""))
     return bad
 
 

@@ -334,7 +334,7 @@ console.log(`  search    : 1994-02-15/1994-01-01/2008-01-01 became ` +
 
 // Read the bounds off the inputs instead of restating them. Hardcoding 1800-1950 here failed the moment the
 // computable range widened to the present, reporting a stale expectation as a page defect.
-const fLo = Number(String(finder.min || "1700-01-01").slice(0, 4));
+const fLo = Number(String(finder.min || "1600-01-01").slice(0, 4));
 const fHi = Number(String(finder.max || "2026-12-31").slice(0, 4));
 const inWin = v => /^(\d{4})-/.test(v || "")
                    && Number(String(v).slice(0, 4)) >= fLo && Number(String(v).slice(0, 4)) <= fHi;
@@ -344,7 +344,7 @@ const checks = [
    inWin(finder.self) && inWin(finder.from) && inWin(finder.to),
    `${finder.self} / ${finder.from} / ${finder.to} against ${fLo}-${fHi}`],
   ["the computable range reaches the present, not only the fitted years",
-   clamp.min === 1700 && clamp.max >= 2026, `min=${clamp.min} max=${clamp.max}`],
+   clamp.min === 1600 && clamp.max >= 2026, `min=${clamp.min} max=${clamp.max}`],
   ["a modern year is accepted rather than refused",
    clamp.modern?.year === 1994 && clamp.modern?.disabled === false, `1994 -> ${clamp.modern?.year}`],
   ["and it is labelled as an extrapolation",

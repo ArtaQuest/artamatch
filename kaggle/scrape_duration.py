@@ -157,7 +157,7 @@ MAX_GAP_YEARS = 60
 # P451 4,766, P3342 1,158, P1327 665. Same-sex marriages number 123 and are in by construction, since nothing
 # here reads a sex.
 RELS = {"P26": "marriage", "P451": "unmarried partnership",
-        "P1327": "business or sport partnership", "P3342": "significant person"}
+        "P1327": "business or sport partnership", "P3342": "significant person (non-family)"}
 JULIAN = "Q1985786"
 SLICE = int(os.environ.get("AQ_YEAR_SLICE", "25"))
 ABSENT = "0000-00-00"
@@ -476,6 +476,19 @@ def relationship(rel, dead=("a",)):
     for v in ("a", "b"):
         s += (f"\n  ?{v} wdt:P570 ?{v}death ." if v in dead
               else f"\n  OPTIONAL {{ ?{v} wdt:P570 ?{v}death }}")
+    if rel == "P3342":
+        # NO FAMILY RELATIONSHIPS (operator, 2026-08-17). P3342 "significant person" is Wikidata's catch-all and
+        # its guidance says to prefer a specific property where one exists -- so a parent or sibling should be
+        # under P22/P25/P40/P3373 rather than here -- but that is guidance, not a constraint. Any P3342 pair that
+        # ALSO carries a family link in either direction is excluded: parent, child, sibling, relative, godparent,
+        # and the deprecated brother/sister properties. This is a FILTER NOT EXISTS, which is expensive, but
+        # P3342 is about 1,200 pairs and the cost is nothing; it is NOT applied to P26/P451/P1327, which are
+        # chosen partnerships by definition even when the partners happen to be cousins.
+        s += """
+  FILTER NOT EXISTS {
+    VALUES ?fam { wdt:P22 wdt:P25 wdt:P40 wdt:P3373 wdt:P1038 wdt:P1290 wdt:P8810 wdt:P7 wdt:P9 }
+    { ?a ?fam ?b } UNION { ?b ?fam ?a }
+  }"""
     if not dead:
         # WHAT THE LABEL ACTUALLY NEEDS IS A DATABLE END, and a death is only one way to have one. A marriage
         # with a recorded divorce is dated exactly, whether or not Wikidata knows when either partner died —

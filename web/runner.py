@@ -116,7 +116,17 @@ def init(asset_bytes, tables_json, model_json, model_npz_bytes):
             "contract": _stack.h.get("contract"),
             "tradition_auc": _stack.h.get("tradition_auc"),
             "clean_auc": _stack.h.get("clean_auc"),
-            "benchmark": _stack.h.get("benchmark")}
+            "benchmark": _stack.h.get("benchmark"),
+            # THE FIELDS inject_benchmark.py WRITES FOR THE PAGE, which this projection silently dropped. The
+            # page read `i.train_window` and got undefined, so it kept a hardcoded fitted range and told a
+            # 1994 couple they were outside 1600-1850 while the model's own header said 1600-1900. It read
+            # `i.heldout` and got undefined, so it labelled the (correct) held-out headline as "in-training
+            # selection AUC -- optimistic" and put the age gap where the era rule belongs. Right numbers under
+            # the wrong words, from one dict not passing three keys through. Every key the page reads is here.
+            "train_window": _stack.h.get("train_window"),
+            "heldout": _stack.h.get("heldout"),
+            "auc_kind": _stack.h.get("auc_kind"),
+            "temporal": _stack.h.get("temporal")}
 
 
 def worked_examples(dob_a, dob_b):

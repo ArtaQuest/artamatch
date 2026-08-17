@@ -7,12 +7,11 @@ this is the model as a competitor would have to build it, on exactly the columns
 makes its score comparable to theirs rather than to a privileged version of the task.
 
 WHAT IT DOES
-  1. Turns train.csv into the couples file core.py reads. SEX IS CARRIED BY THE COLUMN ORDER — `dob_man`
-     then `dob_woman`, assigned from Wikidata's P21 — so `aSex`/`bSex` are facts here rather than the
-     placeholders they used to be. That matters for exactly one number: the baseline is a logistic on
-     `dob_woman - dob_man`, which is the SIGNED age gap and not the unsigned ordering it had to be while the
-     pair was sorted by Q-number. Anything asymmetric in the features means the same for every row now,
-     where before its sign was arbitrary.
+  1. Turns train.csv into the couples file core.py reads. THE COLUMN ORDER IS AGE — `dob_older` then
+     `dob_younger`, computed from the dates themselves — and no sex is read anywhere (`aSex`/`bSex` are empty
+     placeholders; no tradition module consumes them, checked). That matters for exactly one number: the
+     baseline is a logistic on `dob_younger - dob_older`, the AGE GAP, which is non-negative by construction.
+     Anything asymmetric in the features now means "older partner vs younger partner" for every row.
   2. Builds every tradition's feature blocks through the shim — the same astronomy the browser runs.
   3. Fits one model per block (boosted trees or a standardised logistic, whichever scores better
      out-of-fold), then a meta logistic over their out-of-fold predictions, over person-disjoint folds.
@@ -69,7 +68,7 @@ def label_column(fieldnames):
     label 0 and reported a perfectly plausible AUC of 0.5. The target is whatever column is neither an id nor a
     date, and there must be exactly one of them.
     """
-    known = {"id", "dob_man", "dob_woman"}
+    known = {"id", "dob_older", "dob_younger"}
     cand = [c for c in (fieldnames or []) if c not in known]
     if len(cand) != 1:
         raise SystemExit(f"cannot identify the label column: expected exactly one column outside {sorted(known)}, "
@@ -90,7 +89,7 @@ def rows_from(path, labelled):
         rd = csv.DictReader(f)
         lab = label_column(rd.fieldnames) if labelled else None
         for i, r in enumerate(rd):
-            rec = D.couple_record(i, r["dob_man"], r["dob_woman"], int(r[lab]) if labelled else 0)
+            rec = D.couple_record(i, r["dob_older"], r["dob_younger"], int(r[lab]) if labelled else 0)
             rec["_id"] = r.get("id")
             out.append(rec)
     return out
@@ -154,7 +153,7 @@ def main():
     bp = np.zeros(len(y))
     for a, b in folds:
         bp[b] = LogisticRegression(max_iter=2000).fit(gap[a, None], y[a]).predict_proba(gap[b, None])[:, 1]
-    log(f"  BASELINE two-parameter logistic on the SIGNED gap (woman - man): AUC {roc_auc_score(y, bp):.4f}")
+    log(f"  BASELINE two-parameter logistic on the AGE GAP (younger - older): AUC {roc_auc_score(y, bp):.4f}")
 
     def hgb():
         return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.06, max_leaf_nodes=15,
@@ -252,11 +251,11 @@ def main():
     #
     # Measured under the null — 1,500 rows with coin-flip labels — this prints well above 0.5 while the age-gap
     # baseline beside it correctly prints ~0.5. The honest number for this project is the TEMPORAL HELD-OUT AUC,
-    # which finalize.sh step 4 reports against the era rule and the signed age gap, and which is what the
+    # which finalize.sh step 4 reports against the era rule and the age gap, and which is what the
     # competition is scored on. Quote that one.
     log(f"  STACK in-training selection AUC {cv:.4f} (optimistic — see the note in the source; the honest "
         f"number is the held-out one)")
-    log(f"  BASELINE signed age gap {roc_auc_score(y, bp):.4f}   apparent lift {cv-roc_auc_score(y, bp):+.4f}")
+    log(f"  BASELINE age gap {roc_auc_score(y, bp):.4f}   apparent lift {cv-roc_auc_score(y, bp):+.4f}")
 
     specs = [{"key": s["key"], "slug": s["slug"], "name": s["name"], "kind": s["kind"],
               "kept_idx": s["kept_idx"], "full_cols": s["full_cols"], "auc": s["auc"],
@@ -265,7 +264,7 @@ def main():
                               "intercept": meta.intercept_[0], "auc": cv,
                               "n": int(len(y)), "rate": float(y.mean()), "hour": "08:00 UT",
                               "contract": "two birth dates only, as published",
-                              "baseline": {"logistic on the signed gap (woman - man)": float(roc_auc_score(y, bp))}},
+                              "baseline": {"logistic on the age gap (younger - older)": float(roc_auc_score(y, bp))}},
                       os.path.join(OUT, "model.json"), os.path.join(OUT, "model.npz"))
     log(f"  exported model.json + model.npz")
     # The per-base out-of-fold matrix and the labels, so every tradition can be scored ALONE afterwards without

@@ -185,10 +185,10 @@ try:
 except FileNotFoundError:                       # running outside Kaggle
     train = pd.read_csv("train.csv")
 # The target column is DISCOVERED, not spelled out, so this notebook keeps working when the question changes.
-LABEL = [c for c in train.columns if c not in ("id", "dob_man", "dob_woman")][0]
+LABEL = [c for c in train.columns if c not in ("id", "dob_older", "dob_younger")][0]
 ABSENT = "0000-00-00"
-n_absent = int((train.dob_man.eq(ABSENT) | train.dob_woman.eq(ABSENT)).sum())
-n_coarse = int((train.dob_man.str.contains("-00") | train.dob_woman.str.contains("-00")).sum()) - n_absent
+n_absent = int((train.dob_older.eq(ABSENT) | train.dob_younger.eq(ABSENT)).sum())
+n_coarse = int((train.dob_older.str.contains("-00") | train.dob_younger.str.contains("-00")).sum()) - n_absent
 print(f"{len(train):,} training couples, {train[LABEL].mean():.2%} positive  (target: {LABEL})")
 print(f"  {n_absent:,} have one partner absent from the source, written {ABSENT}")
 print(f"  {n_coarse:,} more have a date known only to the month or the year")
@@ -220,7 +220,7 @@ def as_day(s):
     return out.where(y > 0)
 
 
-dm, dw = as_day(train.dob_man), as_day(train.dob_woman)
+dm, dw = as_day(train.dob_older), as_day(train.dob_younger)
 # The signed-gap baseline needs BOTH dates, so it is fitted on the couples that have both. That is a property of
 # this particular baseline and not of the dataset: a real entry can use the one-sided rows, and there are a lot
 # of them. Reported rather than dropped in silence.
@@ -246,9 +246,9 @@ print(f"signed-gap logistic, in-sample AUC: {roc_auc_score(y, ref.predict_proba(
 
 #%%
 def features(df):
-    dm, dw = as_day(df.dob_man), as_day(df.dob_woman)
-    ym = df.dob_man.str.slice(0, 4).astype(int)
-    yw = df.dob_woman.str.slice(0, 4).astype(int)
+    dm, dw = as_day(df.dob_older), as_day(df.dob_younger)
+    ym = df.dob_older.str.slice(0, 4).astype(int)
+    yw = df.dob_younger.str.slice(0, 4).astype(int)
     out = {"era_man": ym, "era_woman": yw, "era_mean": (ym + yw) / 2}
     out["gap_years"] = (dw - dm) / 365.2425
     out["gap_abs"] = out["gap_years"].abs()

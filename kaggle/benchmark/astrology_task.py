@@ -66,8 +66,8 @@ BRIEF = """You are competing on ArtaMatch Astrology. Write an astrology model.
 
 THE DATA. A pandas DataFrame with exactly three columns:
 
-    dob_man            the man's date of birth,   'YYYY-MM-DD'
-    dob_woman          the woman's date of birth, 'YYYY-MM-DD'
+    dob_older            the man's date of birth,   'YYYY-MM-DD'
+    dob_younger          the woman's date of birth, 'YYYY-MM-DD'
     lasted_30_years    1 if their marriage lasted thirty years or longer, else 0
 
 The marriage's own dates are NOT given to you. They were used to compute the label and then discarded, because
@@ -141,7 +141,7 @@ def find_train():
 
 def label_of(df):
     """The target column, discovered. Hardcoding it meant a renamed target silently scored nothing."""
-    cand = [c for c in df.columns if c not in ("id", "dob_man", "dob_woman")]
+    cand = [c for c in df.columns if c not in ("id", "dob_older", "dob_younger")]
     if len(cand) != 1:
         raise RuntimeError(f"expected exactly one target column, found {cand}")
     return cand[0]
@@ -150,8 +150,8 @@ def label_of(df):
 def later_year(df):
     """The later of the two KNOWN birth years. An absent partner is `0000-00-00`, and a plain max() over the
     year strings would make that absent partner the later birth at year zero."""
-    a = df.dob_man.str[:4].astype(int).to_numpy()
-    b = df.dob_woman.str[:4].astype(int).to_numpy()
+    a = df.dob_older.str[:4].astype(int).to_numpy()
+    b = df.dob_younger.str[:4].astype(int).to_numpy()
     return np.maximum(np.where(a == 0, b, a), np.where(b == 0, a, b))
 
 
@@ -167,9 +167,9 @@ def load():
     FIT half — the brief tells the model they are there and they are most of the data — while the HELD half is
     strictly complete and day-precision, so a model is never scored on a row it could only guess at.
     """
-    df = pd.read_csv(find_train(), dtype={"dob_man": str, "dob_woman": str})
+    df = pd.read_csv(find_train(), dtype={"dob_older": str, "dob_younger": str})
     lab = label_of(df)
-    complete = ~(df.dob_man.str.contains("-00") | df.dob_woman.str.contains("-00"))
+    complete = ~(df.dob_older.str.contains("-00") | df.dob_younger.str.contains("-00"))
 
     yr = later_year(df)
     cut = int(np.quantile(yr[complete.to_numpy()], 1.0 - HOLDOUT))
@@ -247,10 +247,10 @@ def references(fit, held):
     lab = label_of(held)
     y = held[lab]
     out = {}
-    era = (held.dob_man.str[:4].astype(int) + held.dob_woman.str[:4].astype(int)).to_numpy(float)
+    era = (held.dob_older.str[:4].astype(int) + held.dob_younger.str[:4].astype(int)).to_numpy(float)
     a = auc(y, era)
     out["the era rule (sum of the two birth years)"] = max(a, 1.0 - a)
-    gap = (held.dob_woman.str[:4].astype(int) - held.dob_man.str[:4].astype(int)).to_numpy(float)
+    gap = (held.dob_younger.str[:4].astype(int) - held.dob_older.str[:4].astype(int)).to_numpy(float)
     a = auc(y, gap)
     out["the signed age gap (woman - man)"] = max(a, 1.0 - a)
     return out

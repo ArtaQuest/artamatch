@@ -130,10 +130,10 @@ def egyptian_civil(jd):
     return doy, decan
 
 
-def examples(dob_man, dob_woman):
+def examples(dob_older, dob_younger):
     """Every tradition, worked for one couple. Keys are the model's own tradition slugs."""
-    jm, jw = jd_of(dob_man), jd_of(dob_woman)
-    ym, yw = int(dob_man[:4]), int(dob_woman[:4])
+    jm, jw = jd_of(dob_older), jd_of(dob_younger)
+    ym, yw = int(dob_older[:4]), int(dob_younger[:4])
     out = {}
 
     sm, em, bm, im = sexagenary(ym)
@@ -335,6 +335,39 @@ def examples(dob_man, dob_woman):
         f"{_lon(jw, swe.SUN) % 22.5:.2f}°.",
         "The hypothetical bodies — Cupido through Poseidon — are added to the same dial, and a "
         "“picture” is any three of them summing to the same midpoint.",
+    ]
+
+    # NUMEROLOGY, the one tradition here that needs no sky. It was the nineteenth module added and the only one
+    # without a worked example, which the browser gate reported as "1 of 19 rows have none" — the tradition
+    # explained in prose but never worked. The arithmetic mirrors astro/trad_numerology.py exactly: Pythagorean
+    # reduction keeping 11/22/33 as master numbers, and the relationship number is the two Life Paths summed
+    # and reduced again without master numbers, as most schools do for a pair.
+    def _reduce(n, master=True):
+        while n > 9 and not (master and n in (11, 22, 33)):
+            n = sum(int(c) for c in str(n))
+        return n or 9
+
+    def _lp(d):
+        y, m, dd = int(d[:4]), int(d[5:7]), int(d[8:10])
+        raw = sum(int(c) for c in str(y)) + sum(int(c) for c in str(m)) + sum(int(c) for c in str(dd))
+        return raw, _reduce(raw)
+
+    raw_m, lp_m = _lp(dob_older)
+    raw_w, lp_w = _lp(dob_younger)
+    rel = _reduce(lp_m + lp_w, master=False)
+    group = {1: "1-5-7, the thinkers", 5: "1-5-7, the thinkers", 7: "1-5-7, the thinkers",
+             2: "2-4-8, the builders", 4: "2-4-8, the builders", 8: "2-4-8, the builders",
+             3: "3-6-9, the creatives", 6: "3-6-9, the creatives", 9: "3-6-9, the creatives",
+             11: "2-4-8, the builders", 22: "2-4-8, the builders", 33: "3-6-9, the creatives"}
+    out["numerology"] = [
+        f"His Life Path: the digits of {dob_older} sum to {raw_m}, which reduces to {lp_m}"
+        + (" — a master number, kept unreduced." if lp_m in (11, 22, 33) else "."),
+        f"Hers: the digits of {dob_younger} sum to {raw_w}, reducing to {lp_w}"
+        + (" — a master number." if lp_w in (11, 22, 33) else "."),
+        f"The relationship number is {lp_m} + {lp_w} = {lp_m + lp_w}, reduced to {rel}. "
+        f"He belongs to the {group[lp_m]} group and she to the {group[lp_w]} — "
+        + ("the same group, which numerologists read as compatible." if group[lp_m] == group[lp_w]
+           else "different groups, which they read as needing work."),
     ]
     return out
 

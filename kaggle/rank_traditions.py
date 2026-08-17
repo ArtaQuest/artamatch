@@ -76,7 +76,7 @@ def main():
 
     # The era rule on the same held-out rows: older couple = more likely. The bar every tradition must clear.
     te = pd.read_csv(TEST).set_index("id").loc[ids]
-    era = -(te["dob_man"].str[:4].astype(int) + te["dob_woman"].str[:4].astype(int)).to_numpy(float)
+    era = -(te["dob_older"].str[:4].astype(int) + te["dob_younger"].str[:4].astype(int)).to_numpy(float)
     era_auc = max(cm._auc(y_te, era), 1 - cm._auc(y_te, era))
 
     slugs = sorted({b["slug"] for b in base})

@@ -105,7 +105,7 @@ def coarsen(d, level):
     raise ValueError(f"unknown level {level!r}")
 
 
-def couple_record(i, dob_man, dob_woman, label=0):
+def couple_record(i, dob_older, dob_younger, label=0):
     """One row in the shape `core.load()` reads, with precision and window derived from the dates themselves.
 
     The trainer used to hardcode `aPrec: 11, bPrec: 11` — telling core that every day was known, including for
@@ -120,16 +120,17 @@ def couple_record(i, dob_man, dob_woman, label=0):
     partner's own chart, which is the real content of a one-sided row. Imputing a plausible spouse — the median
     age gap, say — would invent exactly the pair structure the model is being asked to find.
     """
-    pm, pw = precision(dob_man), precision(dob_woman)
+    pm, pw = precision(dob_older), precision(dob_younger)
     if pm == PRECISION_ABSENT and pw == PRECISION_ABSENT:
         raise ValueError("a couple with no date on either side carries no input")
-    cm = concrete(dob_woman if pm == PRECISION_ABSENT else dob_man)
-    cw = concrete(dob_man if pw == PRECISION_ABSENT else dob_woman)
+    cm = concrete(dob_younger if pm == PRECISION_ABSENT else dob_older)
+    cw = concrete(dob_older if pw == PRECISION_ABSENT else dob_younger)
     return {"a": f"a{i}", "b": f"b{i}",
             "aDob": cm, "bDob": cw,
-            "aSex": "M", "bSex": "F",
+            # No sex is known or used: the columns are ordered by AGE, and no tradition reads aSex/bSex (checked).
+            "aSex": "", "bSex": "",
             "aPrec": pm, "bPrec": pw,
-            "aWin": window(dob_man), "bWin": window(dob_woman),
+            "aWin": window(dob_older), "bWin": window(dob_younger),
             "label": int(label)}
 
 

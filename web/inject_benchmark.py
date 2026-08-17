@@ -71,7 +71,7 @@ def main():
     with open(TRAIN) as f:
         for r in csv.DictReader(f):
             n_rows += 1
-            for c in ("dob_man", "dob_woman"):
+            for c in ("dob_older", "dob_younger"):
                 y = int(r[c][:4])
                 if y > 0:
                     years.append(y)
@@ -92,7 +92,7 @@ def main():
         "reference15": g["reference_signed_gap_mean15"],
         "lift": g["lift"],
         "n_rows": g["couples"],
-        "grid": "man x woman",
+        "grid": "older x younger",
         # The list, not a sentence: the page renders a blank per excluded cell and needs to know which.
         "excluded": sorted(g.get("excluded") or D.EXCLUDED_CELLS),
         "cells_scored": len(g["per_cell"]),

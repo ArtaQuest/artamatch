@@ -18,10 +18,11 @@
 #
 # ## The two halves are built by different rules, deliberately
 #
-# **The test set is strict.** Both partners known to the day, no placeholder dates, and the couple's **later**
-# birth after 1850. That is what the leaderboard is scored on, so it is the half that must not be noisy.
+# **The test set is strict.** Both partners known to the day, both **dead**, no placeholder dates, and the
+# couple's **later** birth after 1900. That is what the leaderboard is scored on, so it is the half that must not
+# be noisy.
 #
-# Note "later birth", not "both births". A man born 1845 married to a woman born 1860 is a held-out couple: the
+# Note "later birth", not "both births". A man born 1895 married to a woman born 1910 is a held-out couple: the
 # split places a couple by when the second of them was born. Requiring both partners after the cut dropped 1,416
 # day-precision couples — 11.1% of the test half — out of the dataset entirely, since the training queries would
 # not take them either.
@@ -38,13 +39,14 @@
 #
 # `00` means unknown and `0000-00-00` means absent, so precision is visible in the value rather than hidden in a
 # separate column. A model that wants only clean rows filters them in one line; a model that wants every marriage
-# has them. This is not a rounding decision — it is the difference between **12,661 training couples and 86,600**:
+# has them. This is not a rounding decision — measured on Wikidata, it is an order of magnitude:
 #
-# | training rule | couples |
+# | training rule | pairs |
 # |---|---|
 # | both partners known to the day | 12,661 |
 # | both partners, any precision | 30,110 |
-# | **at least one partner, any precision** | **86,600** |
+# | at least one partner, any precision | 86,602 |
+# | **the same, with the window opened to 1900 by requiring death** | **135,619** |
 #
 # A marriage's duration is known just as exactly when one spouse's birthday is not, so a one-sided row carries a
 # real label and half the input. Discarding it was throwing away six sevenths of the data.
@@ -68,18 +70,23 @@
 # The third column is this classification rather than the duration in years because the competition is scored by
 # AUC, which needs a binary label. The duration is what produces it and is printed in the summaries below.
 #
-# ## Why 1600–1900, and why the split is at 1850
+# ## Death is the boundary, not a birth year
 #
-# Everybody born on or before 1900 is dead, which matters more here than for any other question in this project:
-# a marriage still running cannot be labelled, and one that has not yet had thirty years cannot reach thirty.
-# Closing the window at 1900 removes right-censoring — every marriage in this file has ended, and every positive
-# was observable.
+# A marriage that has not ended cannot be given a duration. An earlier version of this dataset handled that by
+# stopping at births of 1900, on the grounds that everybody born by then is certainly dead — which is true, and
+# also a proxy. Requiring a recorded **death** proves the same thing directly and without a ceiling, so the
+# window runs to the present: **train on births 1600–1900, hold out 1901 onward**, and require the partner whose
+# date we have to be dead. That is worth 135,619 pairs against 86,602.
 #
-# The split is **temporal**: train on couples born up to 1850, predict the ones born after. Not "rank couples
-# drawn from the years you learned from" but "learn from the earlier ones and predict the later ones".
+# The split is **temporal**: learn from the historical couples and predict the modern ones. Not "rank couples
+# drawn from the years you learned from".
 #
-# The base rate shifts across that boundary; it is printed below rather than asserted. Earlier-born couples died
-# younger and their records are thinner, so fewer of their marriages reach thirty years.
+# **AND IT INTRODUCES ITS OWN BIAS, which the build measures rather than hopes about.** A couple born recently who
+# are ALREADY DEAD died young, and a marriage cannot outlive its shorter-lived partner. Past roughly 1996 a
+# thirty-year marriage is arithmetically impossible for anyone dead by now, so the positive rate must fall to zero
+# at the recent end whatever astrology says — and "born late → negative" is an era rule, not a finding. The build
+# prints the positive rate per birth decade, names every decade where the positive class is unreachable, and says
+# what share of each half sits in them. Read the held-out score against that table.
 #
 # ## The one confound worth naming out loud
 #
@@ -92,7 +99,7 @@
 # ## Two traps in the dates, both measured
 #
 # **1 January is a placeholder, and it is excluded from the TEST HALF ONLY.** Among day-precision births
-# 1600–1900 it occurs **2.07×** as often as a median January day, while 2 January sits at 1.00× — a source that
+# 1600–1900 it occurred **2.07×** as often as a median January day, while 2 January sits at 1.00× — a source that
 # knew only the year was imported with a day anyway. The test half is the measurement and must not contain dates
 # claiming a precision they do not have; the training half keeps them, because 193 pairs of noise are worth more
 # than 193 fewer rows.

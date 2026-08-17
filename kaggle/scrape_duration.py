@@ -139,10 +139,32 @@ DEATHCAUSE = {"Q24037741": "death of spouse", "Q99521170": "death of subject", "
               "Q90110620": "death of partner", "Q179115": "widow"}
 
 ENDPOINTS = ["https://qlever.dev/api/wikidata", "https://query.wikidata.org/sparql"]
-_DEAD = set()
+
+# A RATE LIMIT EXPIRES, SO THE STRIKE-OFF HAS TO EXPIRE TOO. This was a permanent set: the first endpoint to
+# answer 429 six times was abandoned for the rest of the run. On a build that takes hours that is exactly wrong —
+# qlever's limit lifted after about forty minutes while the build was still grinding through WDQS 502s, unable to
+# go back to the endpoint that was answering trivial queries in 0.2s. `_DEAD` now records WHEN each endpoint was
+# struck off and lets it back in after a cooldown. Permanent skips still exist, via AQ_SKIP_ENDPOINTS, because
+# that is a human deciding rather than a heuristic guessing.
+_DEAD = {}                      # base -> monotonic time it was struck off
+_BANNED = set()                 # never retried, operator's choice
+DEAD_COOLDOWN = float(os.environ.get("AQ_ENDPOINT_COOLDOWN", "600"))
 for _ep in os.environ.get("AQ_SKIP_ENDPOINTS", "").split(","):
     if _ep.strip():
-        _DEAD.update(b for b in ENDPOINTS if _ep.strip() in b)
+        _BANNED.update(b for b in ENDPOINTS if _ep.strip() in b)
+
+
+def live_endpoints():
+    """Endpoints worth trying now: never-banned, and either never struck off or past their cooldown."""
+    now = time.monotonic()
+    for base, when in list(_DEAD.items()):
+        if now - when >= DEAD_COOLDOWN:
+            del _DEAD[base]
+            print(f"    {base.split('/')[2]}: cooldown elapsed — trying it again", flush=True)
+    out = [b for b in ENDPOINTS if b not in _BANNED and b not in _DEAD]
+    # Never return nothing: if everything is cooling down, try whatever is not permanently banned rather than
+    # failing the run on a timer.
+    return out or [b for b in ENDPOINTS if b not in _BANNED] or list(ENDPOINTS)
 
 UA = "ArtaMatch/4.0 (https://www.artaquest.com) marriage duration dataset build"
 
@@ -166,7 +188,7 @@ def _fetch(query, accept, tries=6):
     rediscover the first.
     """
     last = None
-    live = [b for b in ENDPOINTS if b not in _DEAD] or list(ENDPOINTS)
+    live = live_endpoints()
     for base in live:
         # TRANSLATE the requested format for this endpoint; do NOT override it. This line used to read
         # `"application/sparql-results+json" if "query.wikidata.org" in base else accept`, which was right for
@@ -188,9 +210,10 @@ def _fetch(query, accept, tries=6):
                 if e.code not in (429, 500, 502, 503, 504):
                     raise
                 if attempt == tries - 1:
-                    if e.code == 429:
-                        _DEAD.add(base)
-                        print(f"    {base.split('/')[2]}: rate-limited — struck off for this run", flush=True)
+                    if e.code in (429, 500, 502, 503):
+                        _DEAD[base] = time.monotonic()
+                        print(f"    {base.split('/')[2]}: HTTP {e.code} — struck off for "
+                              f"{DEAD_COOLDOWN/60:.0f} min, then retried", flush=True)
                     break
                 wait = min(90, 5 * (2 ** attempt))
                 print(f"    {base.split('/')[2]}: HTTP {e.code}; waiting {wait}s", flush=True)

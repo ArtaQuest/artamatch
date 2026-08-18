@@ -8,13 +8,19 @@
 #
 # | column | meaning |
 # |---|---|
-# | `dob_man` | the man's date of birth |
-# | `dob_woman` | the woman's date of birth |
-# | `lasted_30_years` | 1 if the marriage lasted thirty years or longer, else 0 |
+# | `dob_older` | the older partner's date of birth |
+# | `dob_younger` | the younger partner's date of birth |
+# | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
 #
-# The first column is the man and the second the woman — always, assigned from `P21` and never inherited from
-# whatever order Wikidata happened to state the couple in. The marriage's own dates are used to compute the third
-# column and are then **thrown away**; they are not inputs.
+# **Any relationship two people chose**: a marriage (`P26`), an unmarried or same-sex partnership (`P451`), a
+# business or sporting partnership (`P1327`), or Wikidata's general "significant person" relation (`P3342`, with
+# every pair that also carries a family link excluded). Family relations are not here — a sibling does not
+# "last".
+#
+# The first column is the **older** partner, computed from the two dates themselves. **Nothing here reads a
+# sex**, which is why same-sex couples are included by construction rather than by a special case. The
+# relationship's own dates are used to compute the third column and are then **thrown away**; they are not
+# inputs.
 #
 # ## The two halves are built by different rules, deliberately
 #
@@ -727,15 +733,20 @@ for tag, m in (("test", test_l), ("train", train_l)):
               f"reach {MIN_YEARS} years")
 
 #%% [markdown]
-# ## 5. Sex decides which column, and nothing else may
+# ## 5. AGE decides which column, and nothing else may
 #
-# The man is column one. An earlier dataset in this project inherited the pair's Q-number ordering instead, which
-# made that claim false for about half the rows and flipped the sign of every asymmetric feature.
+# The older partner is column one, whatever anybody's sex. The ordering key is the birth date itself, compared at
+# whatever precision each side has, with ties broken by Q-number so the order is a deterministic function of the
+# row — two runs cannot disagree.
 #
-# On a one-sided training row only one partner is known, so their sex alone decides which column they occupy and
-# the other is `0000-00-00`. Where both sexes are recorded the couple must be opposite-sex; where only one is,
-# the other is taken to be the opposite — which is what "the man is column one" has to mean for a row that names
-# only a wife. A row whose two recorded sexes are the SAME is dropped rather than forced into the columns.
+# The previous version of this dataset ordered by sex, from `P21`. That had two costs. It dropped every couple
+# whose two recorded sexes matched, which is the only reason same-sex partnerships were absent; and it dropped
+# every couple where a partner had no recorded sex, for a column assignment that carries no information the two
+# dates do not already contain. Age is free, always available, and asymmetric in a way a model can use: every
+# asymmetric feature now means "older partner versus younger" on every row.
+#
+# **A one-sided row has no age order**, so the known partner goes first and the absent one second. That is the
+# only choice that invents nothing — putting the absent partner first would claim they were older.
 
 #%%
 def order_by_age(m, tag):

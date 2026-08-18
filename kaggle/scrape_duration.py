@@ -274,10 +274,30 @@ def _fetch(query, accept, tries=6):
     raise last if last else RuntimeError("no endpoint answered")
 
 
-def sparql_count(select, body):
-    """How many rows the query should return, counted through the SAME projection it is read with."""
+def sparql_count(select, body, tries=4):
+    """How many rows the query should return, counted through the SAME projection it is read with.
+
+    A 200 IS NOT NECESSARILY JSON. WDQS answers a stressed request with HTTP 200 and a truncated or non-JSON
+    body — seen live as `JSONDecodeError after every retry` — and `_fetch` cannot catch that, because it retries
+    on status codes and 200 is a success. So the parse is the real health check, and a body that will not parse
+    is treated as the transient server failure it is rather than escalated to the caller. Without this, one
+    truncated response spent a slice's entire retry budget re-issuing an expensive query.
+    """
     q = f"{PREFIXES}\nSELECT (COUNT(*) AS ?n) WHERE {{ {{ SELECT {select} WHERE {{ {body} }} }} }}"
-    d = json.loads(_fetch(q, "application/qlever-results+json"))
+    raw = None
+    for attempt in range(tries):
+        raw = _fetch(q, "application/qlever-results+json")
+        try:
+            d = json.loads(raw)
+            break
+        except ValueError:
+            if attempt == tries - 1:
+                raise RuntimeError(f"the count endpoint answered 200 with {len(raw)} bytes that are not JSON, "
+                                   f"{tries} times: {raw[:160]!r}")
+            wait = 10 * (attempt + 1)
+            print(f"    count: 200 with a non-JSON body ({len(raw)} bytes) — waiting {wait}s and asking again",
+                  flush=True)
+            time.sleep(wait)
     if isinstance(d.get("res"), list) and d["res"]:
         return int(str(d["res"][0][0]).split('"')[1])
     binds = (d.get("results") or {}).get("bindings") or []

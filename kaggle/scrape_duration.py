@@ -10,7 +10,15 @@
 # |---|---|
 # | `dob_older` | the older partner's date of birth |
 # | `dob_younger` | the younger partner's date of birth |
+# | `lat_older`, `lon_older` | the older partner's place of birth, decimal degrees (empty when Wikidata has none) |
+# | `lat_younger`, `lon_younger` | the younger partner's place of birth |
 # | `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD` |
+#
+# **The place of birth is an input (third edition, operator 2026-08-18: "use pob and the local time to encode
+# their time of birth as 9:00 AM").** Nobody's birth TIME is in Wikidata, so every chart in this project is cast
+# at a fixed hour; with the place known that hour can be a LOCAL one -- 09:00 at the birthplace, converted to
+# UT through the historical time zone of the coordinates -- which gives the chart an ascendant and houses for
+# the first time. The convention is the dataset's, stated here, not a fact about anyone: 09:00 local, every row.
 # | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
 #
 # **The start is an input now (operator, 2026-08-18: "start over and use marriage year", then "use jan 1 for
@@ -567,6 +575,14 @@ def relationship(rel, dead=("a",)):
     for v in ("a", "b"):
         s += (f"\n  ?{v} wdt:P570 ?{v}death ." if v in dead
               else f"\n  OPTIONAL {{ ?{v} wdt:P570 ?{v}death }}")
+    # PLACE OF BIRTH (third edition, operator 2026-08-18: "use pob and the local time to encode their time of
+    # birth as 9:00 AM"). The birthplace's coordinates, through the place item: P19 is the place, P625 its
+    # point. OPTIONAL on both partners -- a person without a recorded birthplace still carries a labellable row
+    # -- and the test half requires it separately, downstream, where the requirement is visible. Truthy `wdt:`
+    # so a person with two birthplace statements at different ranks contributes the preferred one; a person
+    # with two at equal rank contributes two rows, and the couple dedupe keeps one.
+    for v in ("a", "b"):
+        s += f"\n  OPTIONAL {{ ?{v} wdt:P19 ?{v}place . ?{v}place wdt:P625 ?{v}pob }}"
     if rel == "P3342":
         # NO FAMILY RELATIONSHIPS (operator, 2026-08-17). P3342 "significant person" is Wikidata's catch-all and
         # its guidance says to prefer a specific property where one exists -- so a parent or sibling should be
@@ -591,7 +607,7 @@ def relationship(rel, dead=("a",)):
     return s
 
 
-PROJ = "?a ?b ?adob ?aprec ?bdob ?bprec ?start ?end ?cause ?adeath ?bdeath"
+PROJ = "?a ?b ?adob ?aprec ?bdob ?bprec ?start ?end ?cause ?adeath ?bdeath ?apob ?bpob"
 
 #%% [markdown]
 # ## 2. The test set: both partners, to the day, 1851–1900
@@ -723,6 +739,16 @@ def label(mar, tag):
         mar[c] = mar[c].str[:10] if c in mar else ""
     for c in ("aprec", "bprec"):
         mar[c] = pd.to_numeric(mar[c], errors="coerce").fillna(0).astype(int) if c in mar else 0
+    # THE BIRTHPLACE, from Wikidata's WKT literal `Point(lon lat)` -- longitude FIRST, which is the WKT
+    # convention and the reverse of how a person says it. Missing -> NaN on both. Parsed once, here, so every
+    # later stage sees numbers.
+    for v in ("a", "b"):
+        col = mar[f"{v}pob"] if f"{v}pob" in mar else pd.Series([""] * len(mar), index=mar.index)
+        m = col.astype(str).str.extract(r"Point\(\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s*\)")
+        mar[f"{v}lon"] = pd.to_numeric(m[0], errors="coerce")
+        mar[f"{v}lat"] = pd.to_numeric(m[1], errors="coerce")
+        bad = mar[f"{v}lat"].abs().gt(90) | mar[f"{v}lon"].abs().gt(180)
+        mar.loc[bad, [f"{v}lat", f"{v}lon"]] = np.nan
     start = as_days(mar["start"])
     stated = as_days(mar["end"])
     d_a, d_b = as_days(mar["adeath"]), as_days(mar["bdeath"])
@@ -887,6 +913,9 @@ def order_by_age(m, tag):
     m["dob_younger"] = np.where(a_first, m["bdob"], m["adob"])
     m["prec_older"] = np.where(a_first, m["aprec"], m["bprec"])
     m["prec_younger"] = np.where(a_first, m["bprec"], m["aprec"])
+    for q in ("lat", "lon"):
+        m[f"{q}_older"] = np.where(a_first, m[f"a{q}"], m[f"b{q}"])
+        m[f"{q}_younger"] = np.where(a_first, m[f"b{q}"], m[f"a{q}"])
     m["older"] = np.where(a_first, m["a"], m["b"])
     m["younger"] = np.where(a_first, m["b"], m["a"])
     # The claim the column makes must hold wherever both dates exist.
@@ -967,8 +996,9 @@ def one_per_couple(m, tag):
     # one couple in thirty for no reason at all.
     m["_prec"] = precision_class(m["dob_older"]) + precision_class(m["dob_younger"])
     m["_known"] = (m["dob_older"] != ABSENT).astype(int) + (m["dob_younger"] != ABSENT).astype(int)
+    m["_places"] = m["lat_older"].notna().astype(int) + m["lat_younger"].notna().astype(int)
     n0 = len(m)
-    m = (m.sort_values(["_known", "_prec", "_dur"], ascending=[False, False, False])
+    m = (m.sort_values(["_known", "_prec", "_places", "_dur"], ascending=[False, False, False, False])
           .drop_duplicates("_pair", keep="first").reset_index(drop=True))
     print(f"  {tag}: {n0 - len(m):,} duplicate rows collapsed (most dates first, then the most precise, then "
           f"the longest marriage) — {len(m):,} couples")
@@ -1001,6 +1031,12 @@ def later_year(m):
 
 test_u["_later"], train_u["_later"] = later_year(test_u), later_year(train_u)
 test = test_u[test_u["_later"] > CUT].reset_index(drop=True)
+# THE PLACE, required in the held-out half. The whole point of this edition is a chart cast at 09:00 LOCAL, and
+# there is no local time without a place. Counted aloud, because it is the largest single filter on the test half.
+no_place = test["lat_older"].isna() | test["lat_younger"].isna()
+print(f"  {int(no_place.sum()):,} of {len(test):,} held-out couples lack a birthplace for a partner — removed "
+      f"(the training half keeps such rows, with the place empty)")
+test = test[~no_place].reset_index(drop=True)
 # THE CEILING, applied to the held-out half only. Every held-out couple is dead by CEIL, so a relationship that
 # began after CEIL - MIN_YEARS cannot have lasted MIN_YEARS: its label is 0 by arithmetic, not by anything a
 # model could learn. Left in, such rows are free points for whoever notices and noise for whoever does not, and
@@ -1114,7 +1150,8 @@ for side in ("older", "younger"):
 # are the reason the two halves were built by separate queries rather than filtered out of one.
 
 #%%
-COLS = ["dob_older", "dob_younger", "start", "lasted_30_years"]
+COLS = ["dob_older", "dob_younger", "lat_older", "lon_older", "lat_younger", "lon_younger", "start",
+        "lasted_30_years"]
 for col in ("dob_older", "dob_younger"):
     assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
@@ -1143,6 +1180,16 @@ for name, frame in (("test", test), ("train", train)):
         assert (sy[known] >= yr[known]).all(), f"{name}: a relationship starts before the {col} birth"
 assert (test["start_year"] <= CEIL - MIN_YEARS).all(), \
     f"a held-out couple began after {CEIL - MIN_YEARS}: its label is 0 by arithmetic and it must not be scored"
+for side in ("older", "younger"):
+    assert test[f"lat_{side}"].notna().all() and test[f"lon_{side}"].notna().all(), f"test.{side} lacks a place"
+    assert test[f"lat_{side}"].between(-90, 90).all() and test[f"lon_{side}"].between(-180, 180).all()
+    ok = train[f"lat_{side}"].isna() | (train[f"lat_{side}"].between(-90, 90) & train[f"lon_{side}"].between(-180, 180))
+    assert ok.all(), f"train.{side}: a coordinate out of range"
+    absent = train[f"dob_{side}"] == ABSENT
+    assert train.loc[absent, f"lat_{side}"].isna().all(), "an absent partner carries a place"
+np_ = {n: int((f["lat_older"].notna() & f["lat_younger"].notna()).sum()) for n, f in (("train", train), ("test", test))}
+print(f"  checked: every held-out partner has a birthplace inside the world; training rows may leave it empty — "
+      f"both places known in {np_['train']:,} of {len(train):,} training rows and all {np_['test']:,} test rows")
 jan1 = {n: int((f["start"].str[5:] == "01-01").sum()) for n, f in (("train", train), ("test", test))}
 print(f"  checked: every start is a YYYY-MM-DD date inside {FLOOR}-{CEIL}, never before a known birth, and no "
       f"held-out relationship began too late for {MIN_YEARS} years before {CEIL}")
@@ -1157,9 +1204,10 @@ print("  checked: every training row is well-formed and carries at least one dat
 
 train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
-train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False)
+train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
 test["id"] = [f"m{i:06d}" for i in range(len(test))]
-test[["id", "dob_older", "dob_younger", "start"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
+test[["id", "dob_older", "dob_younger", "lat_older", "lon_older", "lat_younger", "lon_younger", "start"]]\
+    .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
 rng = np.random.default_rng(20260817)
 sol = test[["id", "lasted_30_years"]].copy()
 sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")

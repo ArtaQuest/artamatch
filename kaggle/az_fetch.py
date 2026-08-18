@@ -160,7 +160,7 @@ def missing():
 
 WORKER = r'''
 import base64, gzip, io, json, sys, time, urllib.parse, urllib.request, urllib.error
-JOBS = json.loads(base64.b64decode(sys.argv[1]).decode())
+JOBS = json.loads(gzip.decompress(base64.b64decode(sys.argv[1])).decode())
 PREFIXES, SELECT, UA = JOBS["prefixes"], JOBS["select"], JOBS["ua"]
 EP = "https://query.wikidata.org/sparql"
 def ask(q, accept, tries=5):
@@ -241,15 +241,22 @@ def run():
 
     names = []
     for i, g in enumerate(groups):
-        payload = base64.b64encode(json.dumps({
+        # GZIPPED, because the whole `sh -c "..."` script is ONE argument and Linux caps a single argument at
+        # 128 KB (MAX_ARG_STRLEN). Adding the birthplace OPTIONALs to every query body pushed 74 jobs past that,
+        # and every container died at exec with "argument list too long" -- after `az container create` had
+        # answered success, so the harvest loop watched six containers terminate with nothing to harvest. The
+        # bodies are repetitive and gzip about tenfold; the assertion below makes the next overrun fail HERE.
+        payload = base64.b64encode(gzip.compress(json.dumps({
             "prefixes": PREFIXES, "select": SELECT, "ua": UA,
             "wholes": [{"tag": w["tag"], "lo0": w["lo0"], "hi0": w["hi0"], "body": w["body"]}
                        for w in g["wholes"]],
             "slices": [{"tag": s["tag"], "lo": s["lo"], "hi": s["hi"], "body": s["body"]} for s in g["slices"]],
-        }).encode()).decode()
+        }).encode())).decode()
         w = base64.b64encode(WORKER.encode()).decode()
         cname = f"aqfetch{i}"
         cmd = (f"/bin/sh -c \"echo {w} | base64 -d > /w.py && python /w.py {payload}\"")
+        assert len(cmd) < 100_000, (f"container command is {len(cmd):,} bytes; Linux caps one argument at 131,072 "
+                                    f"and the container would die at exec -- use more containers or a smaller group")
         subprocess.run(["az", "container", "create", "-g", RG, "-n", cname, "--image", IMAGE,
                         "--os-type", "Linux", "--cpu", "1", "--memory", "1.5",
                         "--restart-policy", "Never", "--location", LOC,

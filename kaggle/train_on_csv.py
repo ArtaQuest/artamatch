@@ -69,7 +69,10 @@ def label_column(fieldnames):
     label 0 and reported a perfectly plausible AUC of 0.5. The target is whatever column is neither an id nor a
     date, and there must be exactly one of them.
     """
-    known = {"id", "dob_older", "dob_younger"}
+    # `start_year` joined the inputs in the second edition (2026-08-18). It is carried on the record under a
+    # private key that core.load() never sees -- the tradition modules read charts, not years -- and the label
+    # is still whatever single column is left.
+    known = {"id", "dob_older", "dob_younger", "start_year"}
     cand = [c for c in (fieldnames or []) if c not in known]
     if len(cand) != 1:
         raise SystemExit(f"cannot identify the label column: expected exactly one column outside {sorted(known)}, "
@@ -92,6 +95,7 @@ def rows_from(path, labelled):
         for i, r in enumerate(rd):
             rec = D.couple_record(i, r["dob_older"], r["dob_younger"], int(r[lab]) if labelled else 0)
             rec["_id"] = r.get("id")
+            rec["_start_year"] = int(r["start_year"]) if r.get("start_year") else None
             out.append(rec)
     return out
 

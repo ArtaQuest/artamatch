@@ -4,13 +4,23 @@
 # This notebook builds the **ArtaMatch Duration** dataset from scratch, from live SPARQL against Wikidata. Every
 # query is in the cells below, so anyone can re-run them and get a different answer as Wikidata changes.
 #
-# Three columns. That is the whole file.
+# Four columns. That is the whole file.
 #
 # | column | meaning |
 # |---|---|
 # | `dob_older` | the older partner's date of birth |
 # | `dob_younger` | the younger partner's date of birth |
+# | `start_year` | the year the relationship began — the wedding year for a marriage |
 # | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
+#
+# **The start year is an input now (operator, 2026-08-18: "start over and use marriage year").** The first
+# edition of this dataset computed the label from the relationship's own dates and then discarded them; this one
+# keeps the START. It is given as a year, not a date, for a reason that is data rather than taste: Wikidata's
+# `P580` qualifier is often year-precision, and the query that built this file did not fetch that qualifier's
+# precision flag, so a month and day would be placeholders for a large share of rows and could not be told from
+# real ones. The year is exact at every precision. What the start year buys a model is real and large — each
+# partner's AGE at the start, the era the relationship began in, and, for the held-out half, the ceiling on how
+# long it could possibly have run before 2026 (see the test filter below).
 #
 # **Any relationship two people chose**: a marriage (`P26`), an unmarried or same-sex partnership (`P451`), a
 # business or sporting partnership (`P1327`), or Wikidata's general "significant person" relation (`P3342`, with
@@ -37,10 +47,10 @@
 # year, and **one partner may be missing from Wikidata entirely**. All three of these are real training rows:
 #
 # ```
-# dob_man,dob_woman,lasted_30_years
-# 1794-06-12,1801-03-27,1     <- both known to the day
-# 1802-00-00,1809-11-00,0     <- his year only; her year and month
-# 1777-04-30,0000-00-00,1     <- she is not in Wikidata at all, and the row is still worth learning from
+# dob_older,dob_younger,start_year,lasted_30_years
+# 1794-06-12,1801-03-27,1823,1     <- both known to the day; began 1823
+# 1802-00-00,1809-11-00,1831,0     <- one year only; the other's year and month
+# 1777-04-30,0000-00-00,1799,1     <- the partner is not in Wikidata at all, and the row is still worth learning from
 # ```
 #
 # `00` means unknown and `0000-00-00` means absent, so precision is visible in the value rather than hidden in a
@@ -166,7 +176,12 @@ MAX_GAP_YEARS = 60
 RELS = {"P26": "marriage", "P451": "unmarried partnership",
         "P1327": "business or sport partnership", "P3342": "significant person (non-family)"}
 JULIAN = "Q1985786"
-SLICE = int(os.environ.get("AQ_YEAR_SLICE", "25"))
+# TEN, BECAUSE THAT IS WHAT THE CACHE IS. The whole slice cache on disk was fetched in ten-year slices, and a
+# slice is looked up under `{tag}_{lo}_{hi}.csv`, so a run at any other width misses every file and starts
+# refetching from a rate-limited endpoint -- which is exactly what a fresh run at the old default of 25 did
+# (2026-08-18: "6 slices, 6 to fetch" against a complete cache, then qlever 429s). The width is part of the
+# cache key in effect if not in name.
+SLICE = int(os.environ.get("AQ_YEAR_SLICE", "10"))
 ABSENT = "0000-00-00"
 
 # The end causes Wikidata records on a marriage, looked up rather than guessed. Used only to REPORT how the file
@@ -395,7 +410,13 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
     # P451 is 4,766 pairs and fits one request comfortably where P26 does not, and assuming otherwise would slice
     # a query that needs no slicing into thirty. AQ_NO_WHOLE=1 skips the attempt outright, which is the right
     # setting only when every remaining query is known to be large.
-    if os.environ.get("AQ_NO_WHOLE") == "1" or tag in _WHOLE_TOO_BIG:
+    # The unsliced attempt is remembered only within a process (`_WHOLE_TOO_BIG` is a set), so a FRESH run pays
+    # it again for every family -- and the very first thing a fresh run does is hit qlever with the biggest
+    # query it has, get struck off for ten minutes, and print nothing else for that long. When the slice cache is
+    # already complete there is nothing to gain from it, so it is skipped by default whenever the cache
+    # directory exists; AQ_NO_WHOLE=0 forces the attempt.
+    skip_whole = os.environ.get("AQ_NO_WHOLE", "1" if os.path.isdir(SLICE_CACHE) else "0") == "1"
+    if skip_whole or tag in _WHOLE_TOO_BIG:
         print(f"  {name}: skipping the unsliced attempt (known too big for one request)", flush=True)
         raise_whole = False
     else:
@@ -724,6 +745,22 @@ def label(mar, tag):
         print(f"  {tag}: {int(bad.sum()):,} ended BEFORE they started — dropped as data errors")
         mar = mar[~bad].reset_index(drop=True)
     mar["lasted_30_years"] = (mar["_dur"] >= MIN_YEARS).astype(int)
+    # THE START YEAR, kept. It is exact at every precision of the underlying date, which is why it and not the
+    # full date is the column (see the header). Two sanity rules, both data errors when violated: a start must
+    # not precede either KNOWN birth, and it must sit inside the window the whole file lives in.
+    mar["start_year"] = pd.to_numeric(mar["start"].str[:4], errors="coerce")
+    ya = pd.to_numeric(mar["adob"].str[:4], errors="coerce")
+    yb = pd.to_numeric(mar["bdob"].str[:4], errors="coerce")
+    before_birth = (mar["start_year"] < ya) | (mar["start_year"] < yb)      # NaN compares False: absent = fine
+    n_bb = int(before_birth.sum())
+    if n_bb:
+        print(f"  {tag}: {n_bb:,} started BEFORE a partner was born — dropped as data errors")
+        mar = mar[~before_birth].reset_index(drop=True)
+    inwin = mar["start_year"].between(FLOOR, CEIL)
+    if (~inwin).any():
+        print(f"  {tag}: {int((~inwin).sum()):,} with a start year outside {FLOOR}-{CEIL} — dropped")
+        mar = mar[inwin].reset_index(drop=True)
+    mar["start_year"] = mar["start_year"].astype(int)
     return mar
 
 
@@ -959,6 +996,16 @@ def later_year(m):
 
 test_u["_later"], train_u["_later"] = later_year(test_u), later_year(train_u)
 test = test_u[test_u["_later"] > CUT].reset_index(drop=True)
+# THE CEILING, applied to the held-out half only. Every held-out couple is dead by CEIL, so a relationship that
+# began after CEIL - MIN_YEARS cannot have lasted MIN_YEARS: its label is 0 by arithmetic, not by anything a
+# model could learn. Left in, such rows are free points for whoever notices and noise for whoever does not, and
+# either way they measure the calendar rather than the couple. They are removed here and counted aloud. The
+# training half is unaffected: every training couple was born by CUT, so no start there is anywhere near CEIL.
+too_late = test["start_year"] > CEIL - MIN_YEARS
+if too_late.any():
+    print(f"  {int(too_late.sum()):,} held-out couples began after {CEIL - MIN_YEARS} — {MIN_YEARS} years before "
+          f"{CEIL} is impossible, so their label is 0 by arithmetic; removed from the test half")
+    test = test[~too_late].reset_index(drop=True)
 # A couple the one-sided query found whose LATER birth falls after the cut belongs to the held-out era, so it is
 # excluded from training here — and it cannot enter the test half either unless BOTH its dates are
 # day-precision, which the test queries require. That is the correct outcome and not an oversight: a coarse
@@ -1023,6 +1070,28 @@ for name, frame in (("train", train), ("test", test)):
         print(f"      {n_imp:,} of {int(tab['size'].sum()):,} {name} couples are in a decade where the "
               f"positive class is unreachable ({100*n_imp/int(tab['size'].sum()):.1f}%)")
 
+print("\n  positive rate by the START decade (the wedding decade for a marriage):")
+for name, frame in (("train", train), ("test", test)):
+    tab = frame.groupby(frame["start_year"] // 10 * 10)["lasted_30_years"].agg(["mean", "size"])
+    tab = tab[tab["size"] >= 25]
+    print(f"    {name}:")
+    for dec, row in tab.iterrows():
+        print(f"      {int(dec)}s  {100*row['mean']:5.1f}%  ({int(row['size']):>6,} couples)")
+print("\n  positive rate by the OLDER partner's age at the start (where that birth is known):")
+for name, frame in (("train", train), ("test", test)):
+    yo = pd.to_numeric(frame["dob_older"].str[:4], errors="coerce")
+    age = (frame["start_year"] - yo)
+    ok = yo.notna()
+    tab = frame[ok].groupby(pd.cut(age[ok], [0, 20, 25, 30, 35, 40, 50, 60, 200], right=False),
+                            observed=True)["lasted_30_years"].agg(["mean", "size"])
+    tab = tab[tab["size"] >= 25]
+    print(f"    {name}:")
+    if tab.empty:
+        print(f"      (no band with >= 25 couples: {len(frame):,} rows, {int(ok.sum()):,} with a known older birth, "
+              f"start_year dtype {frame['start_year'].dtype}, age min {age[ok].min()} max {age[ok].max()})")
+    for band, row in tab.iterrows():
+        print(f"      {str(band):<10} {100*row['mean']:5.1f}%  ({int(row['size']):>6,} couples)")
+
 n_both = int(((train["dob_older"] != ABSENT) & (train["dob_younger"] != ABSENT)).sum())
 print(f"\n  the training half, by how much it knows:")
 print(f"      {n_both:>7,} couples with BOTH dates ({100*n_both/max(len(train),1):.1f}%)")
@@ -1040,7 +1109,7 @@ for side in ("older", "younger"):
 # are the reason the two halves were built by separate queries rather than filtered out of one.
 
 #%%
-COLS = ["dob_older", "dob_younger", "lasted_30_years"]
+COLS = ["dob_older", "dob_younger", "start_year", "lasted_30_years"]
 for col in ("dob_older", "dob_younger"):
     assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
@@ -1058,6 +1127,18 @@ assert (np.maximum(test["dob_older"].str[:4].astype(int),
     f"a held-out couple has BOTH births at or before {CUT} — it belongs in the training half"
 print(f"  checked: every test date is day-precision inside {FLOOR}-{CEIL}, never a placeholder, and every "
       f"held-out couple's LATER birth is after {CUT}")
+for name, frame in (("test", test), ("train", train)):
+    sy = frame["start_year"]
+    assert sy.notna().all() and (sy == sy.astype(int)).all(), f"{name}.start_year is not an integer year"
+    assert sy.between(FLOOR, CEIL).all(), f"{name}.start_year outside {FLOOR}-{CEIL}"
+    for col in ("dob_older", "dob_younger"):
+        yr = pd.to_numeric(frame[col].str[:4], errors="coerce")
+        known = frame[col] != ABSENT
+        assert (sy[known] >= yr[known]).all(), f"{name}: a relationship starts before the {col} birth"
+assert (test["start_year"] <= CEIL - MIN_YEARS).all(), \
+    f"a held-out couple began after {CEIL - MIN_YEARS}: its label is 0 by arithmetic and it must not be scored"
+print(f"  checked: every start_year is an integer inside {FLOOR}-{CEIL}, never before a known birth, and no "
+      f"held-out relationship began too late for {MIN_YEARS} years before {CEIL}")
 for col in ("dob_older", "dob_younger"):
     assert train[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"train.{col} malformed"
 assert not ((train["dob_older"] == ABSENT) & (train["dob_younger"] == ABSENT)).any(), \
@@ -1068,7 +1149,7 @@ train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
 train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False)
 test["id"] = [f"m{i:06d}" for i in range(len(test))]
-test[["id", "dob_older", "dob_younger"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
+test[["id", "dob_older", "dob_younger", "start_year"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
 rng = np.random.default_rng(20260817)
 sol = test[["id", "lasted_30_years"]].copy()
 sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")

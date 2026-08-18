@@ -8,11 +8,16 @@
 #
 # Usage: kaggle/finalize.sh /tmp/aqdur          # the directory scrape_duration.py wrote its four CSVs into
 set -euo pipefail
-SRC="${1:-/tmp/aqdur}"
+# THE EDITION. 2026-08-18, operator: "start over and use marriage year. i.e., new dataset and new competition".
+# The second edition keeps the relationship's START YEAR as an input, so it lives under its own directories and
+# its own Kaggle slugs; the first edition's artefacts (/tmp/aqdur*, artamatch-astrology) are left untouched.
+# Every one of these can be overridden from the environment to run the first edition again.
+SRC="${1:-${AQ_SRC:-/tmp/aqmy}}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 PY=~/.artamatch-venv/bin/python
-MODEL=/tmp/aqdurmodel
-COMP=/tmp/aqdurcomp
+MODEL="${AQ_MODEL_DIR:-/tmp/aqmymodel}"
+COMP="${AQ_COMP_DIR:-/tmp/aqmycomp}"
+DS="${AQ_DS_DIR:-/tmp/aqmyds}"
 export KAGGLE_USERNAME=artafather
 export KAGGLE_KEY="$($PY -c "import json;print(json.load(open('$HOME/.kaggle/kaggle.artafather.json'))['key'])")"
 
@@ -39,8 +44,8 @@ print(ns['CUT'], ns['CEIL'])
 ")"
 echo "  boundary read from the scraper: train <= $CUT, held out $((CUT+1))-$CEIL"
 LABEL=lasted_30_years
-DATASET=artaquest-foundation/artamatch-astrology
-COMPETITION=artamatch-astrology
+DATASET="${AQ_DATASET:-artaquest-foundation/artamatch-marriage-year}"
+COMPETITION="${AQ_COMPETITION:-artamatch-marriage-year}"
 
 # NOTE on the heredocs below: a lone `-` immediately before one makes zsh report "redirection with no
 # command". Blocks that pass arguments keep the `-` (it makes them sys.argv); the rest omit it, since python
@@ -79,6 +84,21 @@ for r in te:
     for c in ("dob_older", "dob_younger"):
         assert r[c][:4] != "0000" and not r[c].endswith("-00"), f"test row is not day-precision: {r}"
 print("  every test date is day-precision and present")
+
+# THE START YEAR, the second edition's new input. An integer year in every row of both halves; never before a
+# known birth; and in the held-out half never so late that thirty years before the ceiling is impossible.
+for name, rows in (("train", tr), ("test", te)):
+    for r in rows:
+        sy = r["start_year"]
+        assert sy.isdigit() and 1600 <= int(sy) <= ceil, f"{name}: start_year {sy!r} is not a year in range: {r}"
+        for c in ("dob_older", "dob_younger"):
+            if r[c][:4] != "0000":
+                assert int(sy) >= int(r[c][:4]), f"{name}: relationship starts before the {c} birth: {r}"
+assert max(int(r["start_year"]) for r in te) <= ceil - 30, \
+    "a held-out relationship began too late for thirty years before the ceiling; its label is 0 by arithmetic"
+sy_te = [int(r["start_year"]) for r in te]; sy_tr = [int(r["start_year"]) for r in tr]
+print(f"  start_year present everywhere: train {min(sy_tr)}-{max(sy_tr)} · test {min(sy_te)}-{max(sy_te)} "
+      f"(<= {ceil-30}, so thirty years is always possible)")
 
 # The training half is deliberately mixed. Report the shape rather than demand one.
 one = sum(1 for r in tr if "0000-00-00" in (r["dob_older"], r["dob_younger"]))
@@ -137,7 +157,32 @@ era = (te.dob_older.str[:4].astype(int) + te.dob_younger.str[:4].astype(int)).to
 a = cm._auc(y, era)
 print(f"  era rule (sum of the two birth years): AUC {max(a, 1-a):.4f}")
 
-# THE AGE GAP, the only permitted baseline for this project: a 2-parameter logistic on dob_younger - dob_older.
+# THE SECOND EDITION'S REFERENCE. With the start year given, each partner's AGE AT THE START is the strongest
+# ordinary predictor in the problem (older partner's age alone: 0.6351 held out on the first build; boosted
+# trees on the two ages: 0.6486). That, and not the two-dates age gap, is what a leaderboard place must be read
+# against now, so it is what `baseline_auc` carries. Fitted on the training rows where both ages are known.
+if "start_year" in te.columns:
+    from sklearn.ensemble import HistGradientBoostingClassifier
+    trn = pd.read_csv(f"{C}/train.csv", dtype={"dob_older": str, "dob_younger": str})
+    def ages(df):
+        yo = pd.to_numeric(df.dob_older.str[:4], errors="coerce").where(df.dob_older != "0000-00-00")
+        yy = pd.to_numeric(df.dob_younger.str[:4], errors="coerce").where(df.dob_younger != "0000-00-00")
+        return np.column_stack([df.start_year - yo, df.start_year - yy])
+    Atr, Ate = ages(trn), ages(te)
+    okr = ~np.isnan(Atr).any(1)
+    pb = np.zeros(len(te))
+    for sd in range(3):
+        cl = HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, max_leaf_nodes=15,
+                                            l2_regularization=1.0, early_stopping=True,
+                                            validation_fraction=0.15, random_state=sd)
+        cl.fit(Atr[okr], trn.loc[okr, LABEL].to_numpy())
+        pb += cl.predict_proba(Ate)[:, 1]
+    ages_auc = cm._auc(y, pb / 3)
+    a_old = cm._auc(y, Ate[:, 0]); a_old = max(a_old, 1 - a_old)
+    print(f"  the older partner's AGE AT THE START alone:  AUC {a_old:.4f}")
+    print(f"  boosted trees on the two ages at the start: AUC {ages_auc:.4f}   <- the reference for this edition")
+
+# THE AGE GAP, the first edition's only permitted baseline: a 2-parameter logistic on dob_younger - dob_older.
 #
 # AND IT IS WRITTEN BACK INTO result.json, because the page was publishing the WRONG ONE. train_on_csv.py
 # computes `baseline_auc` out-of-fold on the TRAINING half, where the gap is worth 0.5388; every published
@@ -157,37 +202,68 @@ print(f"  the ensemble is {'ABOVE' if ens > gap_heldout else 'BELOW'} the age-ga
 rp = f"{M}/result.json"
 res = json.load(open(rp))
 res["baseline_heldout_auc"] = float(gap_heldout)
-res["baseline_train_auc"] = float(res.get("baseline_auc", float("nan")))
+# Only on the FIRST correction, or a rerun would record the corrected figure as the original and the
+# training-half number would be lost. `setdefault` makes this step idempotent.
+res.setdefault("baseline_train_auc", float(res.get("baseline_auc", float("nan"))))
 res["baseline_auc"] = float(gap_heldout)       # what every page reads -- now on the model's own rows
+if "start_year" in te.columns:
+    res["baseline_gap_auc"] = float(gap_heldout)
+    res["baseline_auc"] = float(ages_auc)          # the second edition's reference: the two ages at the start
+    res["baseline_older_age_auc"] = float(a_old)
+    res["baseline_name"] = "boosted trees on the two ages at the start"
 res["heldout_auc"] = float(ens)
 json.dump(res, open(rp, "w"), indent=1)
 print(f"  wrote baseline_heldout_auc={gap_heldout:.4f} into result.json (was {res['baseline_train_auc']:.4f}, "
       f"measured on the training half)")
+
+# model.json is what the PAGE reads, and it carried the training-half baseline under a name that did not say so,
+# sitting directly beside the held-out ensemble. Relabel it on the model's own rows. The old figure is kept
+# under an explicit name rather than dropped -- it is a real number, it was just never a baseline for this
+# comparison.
+mp = f"{M}/model.json"
+mj = json.load(open(mp))
+b = mj.setdefault("baseline", {})
+stale = b.pop("logistic on the age gap (younger - older)", None)
+b["logistic on the age gap (younger - older), held out"] = float(gap_heldout)
+if stale is not None:
+    b["the same logistic measured out-of-fold on the TRAINING half (not a baseline for the held-out score)"] = float(stale)
+mj.setdefault("heldout", {})["age_gap"] = float(gap_heldout)
+mj.setdefault("temporal", {})["age_gap"] = float(gap_heldout)
+json.dump(mj, open(mp, "w"), indent=1)
+print(f"  model.json baseline relabelled to the held-out age gap {gap_heldout:.4f}"
+      + (f" (training-half {stale:.4f} kept under its own name)" if stale is not None else ""))
 PYEOF
 
 step "5. publish: dataset version, competition data, model version"
-rm -rf /tmp/aqdurds && mkdir -p /tmp/aqdurds
-cp "$SRC/train.csv" "$SRC/test.csv" "$SRC/sample_submission.csv" /tmp/aqdurds/
-$PY - "$DATASET" <<'PYEOF'
+rm -rf "$DS" && mkdir -p "$DS"
+cp "$SRC/train.csv" "$SRC/test.csv" "$SRC/sample_submission.csv" "$DS/"
+$PY - "$DATASET" "$DS" <<'PYEOF'
 import json, sys
 ref = sys.argv[1]
 owner, slug = ref.split("/")
 desc = """# Let's end this loneliness epidemic with astrology.
 
-Two birth dates in, one bit out: **did the relationship last thirty years?**
+Two birth dates and the year it began, one bit out: **did the relationship last thirty years?**
 
 | column | meaning |
 |---|---|
 | `dob_older` | the older partner's date of birth |
 | `dob_younger` | the younger partner's date of birth |
+| `start_year` | the year the relationship began — the wedding year for a marriage |
 | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
+
+**Second edition.** The first edition of this dataset (`artamatch-astrology`) computed the label from the
+relationship's own dates and then discarded them. This one **keeps the start year as an input**. It is given as
+a year rather than a full date because Wikidata's `P580` qualifier is often year-precision and the build did not
+fetch its precision flag — a month and day would be placeholders for a large share of rows and could not be told
+from real ones. The year is exact at every precision. What it buys a model is real: each partner's **age at the
+start**, the **era** the relationship began in, and — for the held-out half — the ceiling on how long it could
+possibly have run.
 
 **Any relationship two people chose**: a marriage, an unmarried partnership, a business or sporting
 partnership, or Wikidata's general "significant person" relation (`P26`, `P451`, `P1327`, `P3342`). Same-sex
 couples are in by construction, because nothing here reads a sex: the first column is simply the older partner,
-computed from the two dates. **The relationship's own dates are not columns.** They compute the label and are then
-discarded — the start year is the most era-revealing thing about a couple, and a model given it would learn the
-century instead.
+computed from the two dates.
 
 ## How the label is computed
 
@@ -207,26 +283,31 @@ dataset requires a **datable end** — a recorded end date, or a recorded death 
 half requires both partners to be dead. So the window runs to the present and the split is by time: learn from
 the historical couples, predict the modern ones.
 
-**Read this before you read the leaderboard.** That rule introduces its own bias. A couple born recently who
-are ALREADY DEAD died young, and a relationship cannot outlive its shorter-lived partner, so "born late" leans
-negative for a reason that has nothing to do with astrology. In practice the held-out half is almost entirely
-born before 1951 — there are essentially no couples born after 1975 who are both dead with dated relationships —
-and the build notebook prints the positive rate for every birth decade so you can see exactly where the
-boundary bites. The era-rule baseline is reported beside every score for the same reason.
+**Read this before you read the leaderboard.** That rule has a consequence you can now compute exactly, because
+the start year is a column: a held-out couple is dead by 2026, so a relationship that began in year *s* cannot
+have lasted longer than *2026 − s*. Relationships that began after **1996** cannot reach thirty years at all —
+their label would be 0 by arithmetic — and they are **removed from the test set** rather than left in as free
+points. Nearer the boundary the effect is soft but real: the later the start, the more "both already dead"
+selects for early deaths, and an early death ends a relationship. The build notebook prints the positive rate by
+start decade and by age at the start so you can see exactly where it bites. **The training half, all born by
+1900, contains no couple for whom this ceiling ever binds** — a model cannot learn it from the rows; it has to
+come from the definition.
 
 ## The test set is strict; the training set is not
 
-**Test**: both partners known to the day, both dead, no placeholder dates, the couple's later birth after 1900.
+**Test**: both partners known to the day, both dead, no placeholder dates, the couple's later birth after 1900,
+the start year at or before 1996.
 
 **Train**: as inclusive as the data allows. A date may be known only to the month (`1809-11-00`) or only to the
 year (`1802-00-00`), and **one partner may be absent from Wikidata entirely** (`0000-00-00`, always in the
-second column, since a one-sided row has no age order). `00` means unknown; `0000-00-00` means absent.
+second column, since a one-sided row has no age order). `00` means unknown; `0000-00-00` means absent. The start
+year is present in every row of both halves.
 
 ```
-dob_older,dob_younger,lasted_30_years
-1794-06-12,1801-03-27,1     <- both known to the day
-1802-00-00,1809-11-00,0     <- one year only; the other year and month
-1777-04-30,0000-00-00,1     <- the second partner is not in Wikidata at all
+dob_older,dob_younger,start_year,lasted_30_years
+1794-06-12,1801-03-27,1823,1     <- both known to the day; began 1823
+1802-00-00,1809-11-00,1831,0     <- one year only; the other year and month
+1777-04-30,0000-00-00,1799,1     <- the second partner is not in Wikidata at all
 ```
 
 That is not a rounding decision. Measured on Wikidata, requiring both partners to the day gives about a tenth of
@@ -234,11 +315,12 @@ the rows that requiring one partner at any precision does. A relationship's dura
 when one partner's birthday is not, so a one-sided row carries a real label and half an input. Filter them out
 in one line if you want only clean rows.
 
-## The confound to know about
+## The confounds to know about
 
 Relationships with a recorded END date reach thirty years far less often than ones that ran until a death.
-Which case a couple is in **is not a column** — but it correlates with things that are. Read a leaderboard
-place against the baselines, not against 0.5.
+Which case a couple is in **is not a column** — but it correlates with things that are. And with the start year
+given, **age at the start** and the **age gap** are strong, ordinary predictors that owe nothing to any tradition.
+Read a leaderboard place against those, not against 0.5.
 
 ## Two traps in the dates, both measured and both handled
 
@@ -256,23 +338,30 @@ century-correct date.
 
 Built by a public notebook that runs the SPARQL live, so anyone can re-run it and contradict it.
 """
-meta = {"title": "ArtaMatch: astrology and how long relationships last",
+meta = {"title": "ArtaMatch: two birth dates and a start year",
         "id": ref, "licenses": [{"name": "CC0-1.0"}],
-        "subtitle": "Two birth dates, older first. Did the relationship last thirty years?",
+        "subtitle": "Two birth dates, older first, and the year it began. Did the relationship last thirty years?",
         "description": desc}
-json.dump(meta, open("/tmp/aqdurds/dataset-metadata.json", "w"), indent=1)
+json.dump(meta, open(sys.argv[2] + "/dataset-metadata.json", "w"), indent=1)
 print(f"  metadata written for {ref}")
 PYEOF
-$PY - "$DATASET" <<'PYEOF' 2>&1 | grep -viE "^\s*[0-9]+%|B/s" | tail -2
+$PY - "$DATASET" "$DS" <<'PYEOF' 2>&1 | grep -viE "^\s*[0-9]+%|B/s" | tail -2
 import sys, time
 from kaggle.api.kaggle_api_extended import KaggleApi
 ref = sys.argv[1]
 api = KaggleApi(); api.authenticate()
-notes = "any relationship, older partner first, births 1600-1900 train / 1901+ dead test, inclusive training half"
+notes = "second edition: the START YEAR is a column; births 1600-1900 train / 1901+ dead test; test excludes starts after 1996"
 for i in range(4):
     try:
-        print("  dataset ->", api.dataset_create_version("/tmp/aqdurds", version_notes=notes,
-                                                         quiet=True, dir_mode="skip"))
+        # A NEW dataset the first time, a new version after that. dataset_create_version on a slug that does
+        # not exist yet answers 404 rather than creating it.
+        try:
+            print("  dataset ->", api.dataset_create_new(sys.argv[2], public=True, quiet=True, dir_mode="skip"))
+        except Exception as e0:
+            if "already exists" not in str(e0).lower() and "409" not in str(e0):
+                raise
+            print("  dataset ->", api.dataset_create_version(sys.argv[2], version_notes=notes,
+                                                             quiet=True, dir_mode="skip"))
         break
     except Exception as e:
         print(f"  attempt {i+1}: {str(e)[:100]}")
@@ -283,6 +372,10 @@ AQ_COMP="$COMPETITION" $PY "$REPO/kaggle/publish_competition.py" "$COMP" 2>&1 \
 (cd "$REPO/kaggle" && AQ_MODEL_DIR="$MODEL" $PY publish_model.py 2>&1 \
   | grep -viE "^\s*[0-9]+%|B/s" | tail -2) || true
 
+if [ -n "${AQ_SKIP_PAGE:-}" ]; then
+  echo; echo "══ 6-8 skipped (AQ_SKIP_PAGE): the web page and the tournament are first-edition surfaces; the page takes two dates only ══"
+  exit 0
+fi
 step "6. the page: inject, ship, verify"
 (cd "$REPO" && AQ_MODEL="$MODEL" AQ_TRAIN="$SRC/train.csv" $PY web/inject_benchmark.py \
   && $PY web/ship.py 2>&1 | grep -E "end to end|wrote docs" \

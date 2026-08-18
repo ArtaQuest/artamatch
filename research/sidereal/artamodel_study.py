@@ -289,5 +289,40 @@ def main():
     log(f"wrote {OUT}/artamodel_study.json with {len(R)} results")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and not os.environ.get("AQ_SUMMARISE"):
     main()
+
+
+def selected_by_inner(R):
+    """The honest headline of every sweep: the configuration the INNER split picks, and only its held-out score.
+    Printing the max of a held-out column is selection on the test set; this is the number to quote instead, and
+    the gap between the two is the optimism a reader should subtract from any 'best held-out' in the tables."""
+    out = {}
+    fams = {"E1 term subsets (F=1)": lambda k: k.startswith("E1 terms "),
+            "E1 F=8 rungs": lambda k: k.startswith("E1 F8 "),
+            "E3 3-term body sets": lambda k: k.startswith("E3 3-term"),
+            "E3 6-term body sets": lambda k: k.startswith("E3 6-term"),
+            "E5 harmonics": lambda k: k.startswith("E5 "),
+            "E6 fields x L2": lambda k: k.startswith("E6 3-term F="),
+            "E9 conventions, 3-term": lambda k: k.startswith("E9 ") and k.endswith("3-term"),
+            "E9 conventions, 6-term": lambda k: k.startswith("E9 ") and k.endswith("6-term")}
+    for fam, pred in fams.items():
+        rows = {k: v for k, v in R.items() if pred(k) and isinstance(v, dict) and "inner" in v}
+        if not rows:
+            continue
+        best_inner = max(rows, key=lambda k: rows[k]["inner"])
+        best_held = max(rows, key=lambda k: rows[k]["held"])
+        out[fam] = {"n_configs": len(rows), "selected_by_inner": best_inner, "its_inner": rows[best_inner]["inner"],
+                    "its_held": rows[best_inner]["held"], "max_held_in_family": rows[best_held]["held"],
+                    "optimism_if_selected_on_held": rows[best_held]["held"] - rows[best_inner]["held"]}
+    return out
+
+
+if __name__ == "__main__" and os.environ.get("AQ_SUMMARISE"):
+    R = json.load(open(os.path.join(OUT, "artamodel_study.json")))
+    S = selected_by_inner(R)
+    print(f"  {'sweep':<28} {'n':>3}  {'selected by inner':<34} {'inner':>6} {'held':>6}  {'max held':>8} {'optimism':>8}")
+    for fam, v in S.items():
+        print(f"  {fam:<28} {v['n_configs']:>3}  {v['selected_by_inner'][:34]:<34} {v['its_inner']:.4f} {v['its_held']:.4f}  "
+              f"{v['max_held_in_family']:.4f} {v['optimism_if_selected_on_held']:+.4f}")
+    json.dump(S, open(os.path.join(OUT, "artamodel_selected.json"), "w"), indent=1)

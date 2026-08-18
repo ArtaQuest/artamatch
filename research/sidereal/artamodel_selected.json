@@ -1,0 +1,66 @@
+{
+ "E1 term subsets (F=1)": {
+  "n_configs": 70,
+  "selected_by_inner": "E1 terms m+d",
+  "its_inner": 0.6426429599219167,
+  "its_held": 0.6303868028308671,
+  "max_held_in_family": 0.6318152802643866,
+  "optimism_if_selected_on_held": 0.0014284774335194816
+ },
+ "E1 F=8 rungs": {
+  "n_configs": 6,
+  "selected_by_inner": "E1 F8 terms a+m+d",
+  "its_inner": 0.6479533311196305,
+  "its_held": 0.621263016459523,
+  "max_held_in_family": 0.6310528484705769,
+  "optimism_if_selected_on_held": 0.009789832011053878
+ },
+ "E3 3-term body sets": {
+  "n_configs": 45,
+  "selected_by_inner": "E3 3-term drop chiron",
+  "its_inner": 0.6488664835330697,
+  "its_held": 0.6245990162840656,
+  "max_held_in_family": 0.6419098541279247,
+  "optimism_if_selected_on_held": 0.017310837843859117
+ },
+ "E3 6-term body sets": {
+  "n_configs": 45,
+  "selected_by_inner": "E3 6-term drop outer",
+  "its_inner": 0.6290387498616435,
+  "its_held": 0.584257082073676,
+  "max_held_in_family": 0.6404028825808864,
+  "optimism_if_selected_on_held": 0.05614580050721041
+ },
+ "E5 harmonics": {
+  "n_configs": 6,
+  "selected_by_inner": "E5 harmonic 2 terms a+m+d",
+  "its_inner": 0.6284878397279158,
+  "its_held": 0.628358653456569,
+  "max_held_in_family": 0.628358653456569,
+  "optimism_if_selected_on_held": 0.0
+ },
+ "E6 fields x L2": {
+  "n_configs": 28,
+  "selected_by_inner": "E6 3-term F=64 l2=0.01",
+  "its_inner": 0.651917871625361,
+  "its_held": 0.6163225046086434,
+  "max_held_in_family": 0.6364966461081348,
+  "optimism_if_selected_on_held": 0.020174141499491482
+ },
+ "E9 conventions, 3-term": {
+  "n_configs": 10,
+  "selected_by_inner": "E9 hour 12:00 UT, place ignored 3-term",
+  "its_inner": 0.6417071673659955,
+  "its_held": 0.6258785857669394,
+  "max_held_in_family": 0.625995749774618,
+  "optimism_if_selected_on_held": 0.00011716400767858293
+ },
+ "E9 conventions, 6-term": {
+  "n_configs": 10,
+  "selected_by_inner": "E9 TROPICAL 6-term",
+  "its_inner": 0.6041144685603888,
+  "its_held": 0.5941404144258329,
+  "max_held_in_family": 0.5941404144258329,
+  "optimism_if_selected_on_held": 0.0
+ }
+}

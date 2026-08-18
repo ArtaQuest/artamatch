@@ -131,6 +131,7 @@
 
 #%%
 import collections
+import concurrent.futures
 import hashlib
 import io
 import json
@@ -402,40 +403,56 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
     except Exception as e:
         print(f"  {name}: {stage} failed ({type(e).__name__}: {str(e)[:80]}) — falling back to "
               f"{SLICE}-year slices", flush=True)
+    # SLICES RUN CONCURRENTLY, because the wall clock is dominated by WAITING rather than by querying.
+    # Measured over 33 minutes of one build: 19 slices fetched, 7 minutes actually inside queries, 26 minutes
+    # in retry sleeps after 504s and 502s. Serially, a stuck slice blocks every slice behind it; concurrently,
+    # its sleep overlaps their work. The cap is deliberately small -- WDQS's own guidance is around five
+    # concurrent queries, and the goal is to stop wasting our own sleeps, not to lean on their service.
+    #
+    # Each slice is independent and cached under its own name, so this changes nothing about the result: the
+    # frames are reassembled in slice order below, not in completion order.
+    WORKERS = max(1, int(os.environ.get("AQ_SLICE_WORKERS", "4")))
+    ROUNDS = int(os.environ.get("AQ_SLICE_ROUNDS", "12"))
+    spans = []
     for lo in range(lo0, hi0 + 1, SLICE):
         hi = min(lo + SLICE - 1, hi0)
         cache = os.path.join(SLICE_CACHE, f"{tag}_{lo}_{hi}.csv")
+        if os.path.exists(cache) and os.path.getsize(cache) < 8:
+            # A one-byte file is the columnless-empty bug from an earlier build. Refetch rather than crash.
+            print(f"  {name} {lo}-{hi}: cached file is headerless — refetching", flush=True)
+            os.remove(cache)
+        spans.append((lo, hi, cache))
+
+    def one_slice(span):
+        lo, hi, cache = span
         if os.path.exists(cache):
-            if os.path.getsize(cache) < 8:
-                # A one-byte file is the columnless-empty bug from an earlier build. Refetch rather than crash.
-                print(f"  {name} {lo}-{hi}: cached file is headerless — refetching", flush=True)
-                os.remove(cache)
-            else:
-                frames.append(pd.read_csv(cache, dtype=str, keep_default_na=False))
-                print(f"  {name} {lo}-{hi}: {len(frames[-1]):,} rows (cached)", flush=True)
-                continue
-        df = None
-        ROUNDS = int(os.environ.get("AQ_SLICE_ROUNDS", "12"))
+            df = pd.read_csv(cache, dtype=str, keep_default_na=False)
+            print(f"  {name} {lo}-{hi}: {len(df):,} rows (cached)", flush=True)
+            return df
         for round_ in range(ROUNDS):
             try:
                 df = sparql(select, body_fn(lo, hi), f"{name} {lo}-{hi}", order=order)
-                break
+                df.to_csv(cache + ".tmp", index=False)
+                os.replace(cache + ".tmp", cache)
+                return df
             except Exception as e:
-                # BOTH ENDPOINTS EXHAUSTED ON ONE SLICE. Four rounds of three minutes was enough for a twenty-
-                # minute blip and not for the outage that followed: WDQS answered nothing but 502/504/timeouts
-                # for over an hour, and the fourth round would have ended a build with a full test half already
-                # fetched. A build has to OUTLAST an outage rather than need a person at 2am, so this now sleeps
-                # longer each round -- 3, 6, 9 ... up to 15 minutes -- for twelve rounds, roughly two hours of
-                # patience. Every slice already fetched is cached, so nothing is lost by waiting.
+                # A slice whose fetch exhausts every endpoint sleeps and tries the whole slice again, growing
+                # 3, 6, 9 ... up to 15 minutes over twelve rounds -- about two hours of patience. A build has to
+                # OUTLAST an outage rather than need a person at 2am, and every slice already fetched is cached.
                 if round_ == ROUNDS - 1:
                     raise
                 wait = min(900, 180 * (round_ + 1))
                 print(f"    {name} {lo}-{hi}: {type(e).__name__} after every retry — sleeping {wait//60} min, "
                       f"then round {round_ + 2} of {ROUNDS}", flush=True)
                 time.sleep(wait)
-        df.to_csv(cache + ".tmp", index=False)
-        os.replace(cache + ".tmp", cache)
-        frames.append(df)
+
+    todo = [sp for sp in spans if not os.path.exists(sp[2])]
+    if WORKERS > 1 and len(todo) > 1:
+        print(f"  {name}: {len(spans)} slices, {len(todo)} to fetch, {WORKERS} at a time", flush=True)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as pool:
+            frames = list(pool.map(one_slice, spans))
+    else:
+        frames = [one_slice(sp) for sp in spans]
     out = pd.concat(frames, ignore_index=True)
     print(f"  {name}: {len(out):,} rows over {len(frames)} slices", flush=True)
     return out

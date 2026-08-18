@@ -58,3 +58,6 @@ astro/*-out/*.npz
 # web/__pycache__/ and astro/__pycache__/ individually rather than the pattern.
 __pycache__/
 *.pyc
+
+# A Hugging Face token, if one is dropped here rather than in the environment. Never committed.
+.artamatch-hf-token

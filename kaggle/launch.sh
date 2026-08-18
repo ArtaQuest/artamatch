@@ -44,6 +44,18 @@ step "publish the build notebook (public, re-runnable proof of the dataset)"
 step "publish the benchmark task (a new version of artamatch-astrology)"
 (cd "$REPO/kaggle/benchmark" && AQ_DO_CREATE=1 $PY create_recipe.py 2>&1 | tail -4) || echo "  benchmark push failed — continuing; rerun create_recipe.py by hand"
 
+step "publish the model to Hugging Face (skipped, not failed, when no token is present)"
+# The AQ Vault's HF_TOKEN is encrypted with PROD's wp-config salts, so a local Studio cannot read it. This picks
+# it up from the environment or ~/.artamatch-hf-token (0600) and SKIPS when neither exists -- a missing optional
+# credential must not fail a run that has already published the dataset, competition and model.
+if [ -n "${HF_TOKEN:-}" ] || [ -f "$HOME/.artamatch-hf-token" ]; then
+  (cd "$REPO/kaggle" && AQ_DO_PUSH=1 $PY publish_hf.py /tmp/aqdurmodel 2>&1 | tail -5) \
+    || echo "  HF push failed — continuing; rerun publish_hf.py by hand"
+else
+  echo "  no HF token — skipping. Set HF_TOKEN or write ~/.artamatch-hf-token (chmod 600), then:"
+  echo "    AQ_DO_PUSH=1 $PY $REPO/kaggle/publish_hf.py /tmp/aqdurmodel"
+fi
+
 step "deploy the page: commit docs/ + sources and push feature/artamatch (the branch GitHub Pages serves)"
 cd "$REPO"
 # The page gates ran inside finalize step 6; do not deploy a docs/ that did not pass them.

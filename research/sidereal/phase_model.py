@@ -1,7 +1,8 @@
 """
 phase_model.py — the operator's sidereal phase model, fitted:
 
-    y = | b + SUM_i  a_i e^{i(theta_m,i - theta_d,i)}  +  m_i e^{i(theta(t)_i - theta_m,i)}  +  d_i e^{i(theta(t)_i - theta_d,i)} |^2
+    y = | b + SUM_i  a_i e^{i(theta_m,i - theta_d,i)}  +  m_i e^{i(theta(t)_i - theta_m,i)}  +  d_i e^{i(theta(t)_i - theta_d,i)}
+                   +  mn_i e^{i theta_m,i}  +  dn_i e^{i theta_d,i}  +  tn_i e^{i theta(t)_i} |^2
 
 theta_m, theta_d are mom's and dad's SIDEREAL longitudes (Lahiri, 09:00 local at each birthplace), theta(t) the
 sidereal longitudes on the wedding date (noon UT), all through KERYKEION (kerykeion_phases.py); i runs over
@@ -50,14 +51,25 @@ def log(*a):
     print(f"[{time.time()-T0:6.1f}s]", *a, flush=True)
 
 
-def phases(D, M, W, bodies, wed_bodies, with_angles):
-    """The phase differences in DEGREES per row: a_i (mom - dad) for every body (angles too, if asked), then
-    m_i (wedding - mom) and d_i (wedding - dad) for the wedding bodies. Returns (n, K) and the labels."""
+def phases(D, M, W, bodies, wed_bodies, with_angles, natal=True):
+    """The phases in DEGREES per row: a_i (mom - dad) for every body (angles too, if asked), then m_i
+    (wedding - mom) and d_i (wedding - dad) for the wedding bodies, then -- the extension of 2026-08-18 -- the
+    NATAL terms mn_i (mom's own longitude) and dn_i (dad's own longitude). Returns (n, K) and the labels."""
     P, lab = [], []
     for j, b in enumerate(bodies):
         if b in ANGLES and not with_angles:
             continue
         P.append(M[:, j] - D[:, j]); lab.append(f"a_{b}: mom-dad")
+    if natal:
+        for j, b in enumerate(bodies):
+            if b in ANGLES and not with_angles:
+                continue
+            P.append(M[:, j]); lab.append(f"mn_{b}: mom natal")
+            P.append(D[:, j]); lab.append(f"dn_{b}: dad natal")
+        for j, b in enumerate(bodies):
+            if b not in wed_bodies:
+                continue
+            P.append(W[:, j]); lab.append(f"tn_{b}: wedding sky")        # the sixth term, 2026-08-18
     for j, b in enumerate(bodies):
         if b not in wed_bodies:
             continue
@@ -68,7 +80,11 @@ def phases(D, M, W, bodies, wed_bodies, with_angles):
 
 def fit_family(Ptr, ytr, Pte, inner, F, l2=1e-3, seeds=3, epochs=60):
     rad = np.pi / 180.0
-    Ctr, Str = np.cos(Ptr * rad), np.sin(Ptr * rad); Cte, Ste = np.cos(Pte * rad), np.sin(Pte * rad)
+    # A NaN phase means the term does not exist for that row -- the wedding day is not known, so the wedding
+    # phasors are DROPPED (operator: "if wedding is not known, drop the last two terms"). Setting cos = sin = 0
+    # makes the phasor's contribution exactly zero while the same weights serve every row.
+    Ctr, Str = np.nan_to_num(np.cos(Ptr * rad)), np.nan_to_num(np.sin(Ptr * rad))
+    Cte, Ste = np.nan_to_num(np.cos(Pte * rad)), np.nan_to_num(np.sin(Pte * rad))
     fitm = ~inner; idx = np.where(fitm)[0]
     outs, ivs = [], []
     for seed in range(seeds):
@@ -106,27 +122,59 @@ def main():
     PLANETS = [b for b in bodies if b not in ANGLES]
     results = {}
     log(f"phases from Kerykeion: {len(bodies)} bodies · train {len(ytr):,} · held out {len(yte):,}")
-    for variant, wed_bodies, angles, rm_tr, rm_te in (
-            ("real-day starts: 14 bodies x 3 phasors + ASC/MC synastry", PLANETS, True, ~j1, ~j1e),
-            ("real-day starts: 14 bodies x 3 phasors", PLANETS, False, ~j1, ~j1e),
-            ("all rows: synastry on all bodies, wedding terms on the slow bodies", [b for b in PLANETS if b in SLOW], False,
-             np.ones(len(ytr), bool), np.ones(len(yte), bool)),
-            ("all rows: synastry only (no wedding terms)", [], True, np.ones(len(ytr), bool), np.ones(len(yte), bool))):
-        Ptr, labels = phases(Dtr, Mtr, Wtr, bodies, wed_bodies, angles); Pte, _ = phases(Dte, Mte, Wte, bodies, wed_bodies, angles)
-        ok_tr = rm_tr & np.isfinite(Ptr).all(1); ok_te = rm_te & np.isfinite(Pte).all(1)
+    # On a year-only start the wedding phasors are set to NaN for EVERY body (not only the fast ones): the
+    # instruction is to drop the last two terms whenever the wedding is not known.
+    Wtr = Wtr.copy(); Wte = Wte.copy(); Wtr[j1] = np.nan; Wte[j1e] = np.nan
+    for variant, wed_bodies, angles, rm_tr, rm_te, need_wed in (
+            ("ALL rows: every term present only where both of its phases are known", PLANETS, False,
+             np.ones(len(ytr), bool), np.ones(len(yte), bool), False),
+            ("ALL rows, the same with ASC/MC in the synastry term", PLANETS, True,
+             np.ones(len(ytr), bool), np.ones(len(yte), bool), False),
+            ("real-day starts only: 14 bodies x 3 phasors", PLANETS, False, ~j1, ~j1e, True),
+            ("all rows: synastry terms only (no wedding terms at all)", [], False, np.ones(len(ytr), bool), np.ones(len(yte), bool), False),
+            ("all rows: WITHOUT the natal terms (the previous formula)", PLANETS, False, np.ones(len(ytr), bool), np.ones(len(yte), bool), "nonatal"),
+        ):
+        natal = need_wed != "nonatal"; need_wed = bool(need_wed) and need_wed != "nonatal"
+        Ptr, labels = phases(Dtr, Mtr, Wtr, bodies, wed_bodies, angles, natal); Pte, _ = phases(Dte, Mte, Wte, bodies, wed_bodies, angles, natal)
+        n_syn = sum(1 for l in labels if l.startswith("a_")); n_nat = sum(1 for l in labels if l.startswith(("mn_", "dn_", "tn_")))
+        # EVERY TERM EXISTS ONLY WHEN BOTH OF ITS PHASES DO (operator: "if dob of either is not known, drop the
+        # natal term of it"; "if wedding is not known, drop the last two terms"). A phasor with a missing phase is
+        # NaN here and contributes zero in the fit, so an absent partner drops the synastry term and their own
+        # wedding term, a year-only birth keeps only its slow-body terms, and a row is used as long as it has at
+        # least one phasor. The "real-day only" variant is the one exception: it asks for every term.
+        any_tr = np.isfinite(Ptr).any(1); any_te = np.isfinite(Pte).any(1)
+        ok_tr = rm_tr & any_tr & (np.isfinite(Ptr).all(1) if need_wed else True)
+        ok_te = rm_te & any_te & (np.isfinite(Pte).all(1) if need_wed else True)
         if ok_tr.sum() < 500 or ok_te.sum() < 200:
             log(f"  {variant}: too few complete rows (train {int(ok_tr.sum())}, test {int(ok_te.sum())}); skipped"); continue
         Ptr_, ytr_, Pte_, yte_, pub_ = Ptr[ok_tr], ytr[ok_tr], Pte[ok_te], yte[ok_te], pub[ok_te]
         lat = later[ok_tr]; inner = lat > np.quantile(lat, 0.85)
-        log(f"{variant}: {len(labels)} phasors · train {len(ytr_):,} (inner {int(inner.sum()):,}) · held out {len(yte_):,}")
+        syn_tr = int(np.isfinite(Ptr_[:, :n_syn]).all(1).sum()); syn_te = int(np.isfinite(Pte_[:, :n_syn]).all(1).sum())
+        kw_tr = int(np.isfinite(Ptr_[:, n_syn:]).all(1).sum()) if Ptr_.shape[1] > n_syn else 0
+        kw_te = int(np.isfinite(Pte_[:, n_syn:]).all(1).sum()) if Pte_.shape[1] > n_syn else 0
+        log(f"{variant}: {len(labels)} phasors ({n_syn} synastry, {n_nat} natal, {len(labels)-n_syn-n_nat} wedding) · "
+            f"train {len(ytr_):,} (both charts {syn_tr:,}, wedding known {kw_tr:,}; inner {int(inner.sum()):,}) · "
+            f"held out {len(yte_):,} (both charts {syn_te:,}, wedding known {kw_te:,})")
         for F in (1, 8, 32):
             iv, p = fit_family(Ptr_, ytr_, Pte_, inner, F)
             a = auc(yte_, p); ap = auc(yte_[pub_], p[pub_]); av = auc(yte_[~pub_], p[~pub_])
             results[f"{variant} | F={F}"] = {"inner": iv, "held": a, "public": ap, "private": av,
                                              "n_train": int(len(ytr_)), "n_test": int(len(yte_)), "phasors": len(labels)}
             log(f"    F={F:<3} inner {iv:.4f}  ->  held out {a:.4f}  (public {ap:.4f} / private {av:.4f})")
-        ad = pte[ok_te][:, pn.index("age_dad_at_start")]; aa = auc(yte_, -ad)
-        log(f"    reference on these rows — dad's age at the start alone: {max(aa, 1-aa):.4f}")
+        # THE REFERENCE ON THESE ROWS: the plain columns, boosted. Dad's age alone would be too weak a bar here:
+        # a slow body's wedding-transit phase (Saturn 12 deg/yr) reads each partner's age at the wedding directly.
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        cols = [pn.index(c) for c in ("age_dad_at_start", "age_mom_at_start", "age_gap", "start_year")]
+        Rtr, Rte = ptr[ok_tr][:, cols], pte[ok_te][:, cols]
+        pr = np.zeros(len(Rte))
+        for sd in range(3):
+            c = HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, max_leaf_nodes=15, l2_regularization=1.0,
+                                               early_stopping=True, validation_fraction=0.15, random_state=sd).fit(Rtr, ytr_)
+            pr += c.predict_proba(Rte)[:, 1]
+        ad = Rte[:, 0]; aa = auc(yte_, -ad)
+        log(f"    reference on these rows — dad's age at the start alone: {max(aa, 1-aa):.4f} · "
+            f"boosted trees on the two ages, the gap and the start year: {auc(yte_, pr/3):.4f}")
+        results[f"{variant} | reference: ages+gap+start boosted"] = {"held": auc(yte_, pr / 3)}
     json.dump(results, open(os.path.join(OUT, "phase_model.json"), "w"), indent=1)
     log(f"wrote {OUT}/phase_model.json")
 

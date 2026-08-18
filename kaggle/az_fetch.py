@@ -255,15 +255,19 @@ def run():
         for cname in names:
             if cname in done:
                 continue
-            st = subprocess.run(["az", "container", "show", "-g", RG, "-n", cname,
-                                 "--query", "instanceView.state", "-o", "tsv"],
+            # THE STATE LIVES UNDER containers[0], not instanceView. `--query instanceView.state` returns an
+            # empty string for a running container instance, so this loop could only ever terminate on the
+            # worker's own ###DONE marker -- and a container that CRASHED would leave it waiting out the full
+            # timeout with nothing to show. Verified against a live container: containers[0] reports "Running".
+            st = subprocess.run(["az", "container", "show", "-g", RG, "-n", cname, "--query",
+                                 "containers[0].instanceView.currentState.state", "-o", "tsv"],
                                 capture_output=True, text=True).stdout.strip()
             logs = subprocess.run(["az", "container", "logs", "-g", RG, "-n", cname],
                                   capture_output=True, text=True).stdout
             n_new, n_fail = harvest(logs, lookup)
             saved += n_new
             failed += n_fail
-            if "###DONE" in logs or st in ("Terminated", "Failed"):
+            if "###DONE" in logs or st in ("Terminated", "Failed", "Succeeded"):
                 done.add(cname)
                 print(f"    {cname} finished ({st}); {saved} slices written so far", flush=True)
     for cname in names:

@@ -98,6 +98,24 @@ Three measurements confirm it (`decisive.py`):
 So the field's entire out-of-time score is the age gap in disguise, and a two-parameter logistic reads that gap
 better than 3,961 fitted parameters do.
 
+## The control is validated in both directions
+
+Every negative conclusion here rests on one estimator, so `validate_control.py` plants five features with known
+answers on the REAL held-out labels and REAL age gaps:
+
+| planted feature | raw | gap-matched | |
+|---|---|---|---|
+| pure age gap | 0.6046 | **0.4982** | removed |
+| gap-independent signal | 0.5958 | **0.5961** | preserved to 0.0003 |
+| weaker gap-independent signal | 0.5472 | 0.5406 | preserved |
+| half gap + half signal | 0.6483 | 0.5980 | partially removed |
+| pure noise | 0.5032 | 0.5034 | unchanged |
+
+Showing only that the gap's own AUC falls to 0.50 inside its own bands is **half** the requirement — it proves
+the estimator destroys what it holds flat. The second row is the other half: a gap-independent effect at 0.5958
+survives at 0.5961. Without it, "nothing survives the control" could have been a property of the arithmetic
+rather than of the data.
+
 ## The same control applied to 30 existing blocks
 
 `test_blocks.py` over numerology, `vedic_match` and `harmonics` (30 blocks, 30,000 training couples). Raw
@@ -138,4 +156,13 @@ python research/coherent/coherent_fit.py --gradcheck  # exact gradients vs finit
 AQ_SEEDS=3 python research/coherent/sweep.py          # the 27-configuration sweep
 python research/coherent/decisive.py                  # the three measurements above
 AQ_MODS=numerology,harmonics AQ_SUB=30000 python research/coherent/test_blocks.py
+python research/coherent/validate_control.py       # the estimator, on five cases with known answers
 ```
+
+## At scale on Kaggle GPU
+
+`gpu_notebook.py` + `publish_gpu_notebook.py` — private (the longitudes carry `y_test`), `machine_shape:
+NvidiaTeslaT4` because Kaggle's default P100 is compute capability 6.0 and the preinstalled torch needs 7.0+.
+It scales the BASIS (24 harmonics, 18 bodies) and the RESTARTS, not the field count, since 8 fields beat 64
+locally. Reports held-out AUC, the age-gap logistic, and the gap-matched AUC, plus the best fast-body
+configuration separately.

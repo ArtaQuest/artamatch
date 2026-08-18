@@ -59,6 +59,11 @@ def main():
         "language": "python",
         "kernel_type": "notebook",
         "is_private": True,                 # reads held-out labels — see the module docstring
+        # THE CARD MUST BE ASKED FOR BY NAME. `enable_gpu` alone lands on Kaggle's default, a Tesla P100 at
+        # compute capability 6.0, and the preinstalled torch supports 7.0+ only -- the first run of this
+        # notebook died on exactly that. `machine_shape` takes NvidiaTeslaT4 | NvidiaTeslaP100 | Tpu1VmV38, and
+        # the T4 shape lands a T4 PAIR (sm_75, 2x15 GB, 31 GB RAM) that Kaggle's own torch runs on.
+        "machine_shape": "NvidiaTeslaT4",
         "enable_gpu": True,
         "enable_tpu": False,
         "enable_internet": False,

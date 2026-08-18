@@ -42,12 +42,32 @@ import torch
 
 T0 = time.time()
 DEV = "cuda" if torch.cuda.is_available() else "cpu"
-print(f"torch {torch.__version__} · device {DEV} · "
-      f"{torch.cuda.get_device_name(0) if DEV=='cuda' else 'no gpu'}")
+_card = torch.cuda.get_device_name(0) if DEV == "cuda" else "no gpu"
+print(f"torch {torch.__version__} · device {DEV} · {_card}")
+if DEV == "cuda":
+    _cap = torch.cuda.get_device_capability(0)
+    print(f"compute capability {_cap[0]}.{_cap[1]}")
+    # Kaggle's DEFAULT accelerator is a Tesla P100 at capability 6.0, and the preinstalled torch supports 7.0+
+    # only -- every cuda call on it raises. The kernel must therefore request NvidiaTeslaT4 (sm_75) in its
+    # metadata, not merely enable_gpu. Say so loudly rather than falling back to a CPU fit that would take days.
+    if _cap[0] < 7:
+        raise SystemExit(f"{_card} is capability {_cap[0]}.{_cap[1]} and this torch needs 7.0+. "
+                         f"Push with machine_shape=NvidiaTeslaT4.")
 torch.backends.cuda.matmul.allow_tf32 = True
 
 # %%
-Z = np.load("/kaggle/input/artamatch-longitudes/lon.npz")
+# FIND THE INPUT, DO NOT ASSUME ITS PATH. The first run of this notebook died with FileNotFoundError on a
+# hardcoded /kaggle/input/artamatch-longitudes/lon.npz: the dataset had been created seconds earlier and Kaggle
+# had not finished processing it, so the mount was not there yet. A hardcoded path turns that into an error
+# about a missing file rather than about a missing dataset, so the search prints what IS mounted.
+import glob
+_hits = sorted(glob.glob("/kaggle/input/**/lon.npz", recursive=True))
+if not _hits:
+    _have = sorted(glob.glob("/kaggle/input/*")) or ["(nothing mounted at all)"]
+    raise SystemExit("lon.npz is not mounted. /kaggle/input holds: " + ", ".join(_have)
+                     + "\n  If the dataset was just created, wait for Kaggle to finish processing it and rerun.")
+print(f"reading {_hits[0]}")
+Z = np.load(_hits[0])
 LONtr, LONte = Z["lon_train"], Z["lon_test"]
 ytr_all, yte = Z["y_train"].astype(np.int64), Z["y_test"].astype(np.int64)
 yr_tr_all, yr_te = Z["yr_train"], Z["yr_test"]

@@ -109,6 +109,27 @@ def tag_of(name, body_fn, lo0, hi0):
     return "".join(c if c.isalnum() else "_" for c in name) + "_" + qh
 
 
+def wholes():
+    """Every query that has neither a _whole.csv nor a complete set of slices — try it as ONE request first.
+
+    This is the piece az_fetch was missing. It enumerated slices only, so it planned 31 decade queries for P451
+    (4,766 pairs in total), P1327 (665) and P3342 (1,133) -- 279 of 356 outstanding requests to move a few
+    hundred rows. The local build has always tried the whole window first; the container now does too, and a
+    query too large for one page says so and falls through to its slices.
+    """
+    out = []
+    for name, lo0, hi0, fn in queries():
+        tag = tag_of(name, fn, lo0, hi0)
+        if os.path.exists(os.path.join(CACHE, f"{tag}_{lo0}_{hi0}_whole.csv")):
+            continue
+        spans = [(lo, min(lo + SLICE - 1, hi0)) for lo in range(lo0, hi0 + 1, SLICE)]
+        if all(os.path.exists(os.path.join(CACHE, f"{tag}_{lo}_{hi}.csv")) for lo, hi in spans):
+            continue                                  # already complete as slices
+        out.append({"name": name, "tag": tag, "lo0": lo0, "hi0": hi0, "body": fn(lo0, hi0),
+                    "path": os.path.join(CACHE, f"{tag}_{lo0}_{hi0}_whole.csv")})
+    return out
+
+
 def missing():
     """Slices with no cache file yet — the work Azure should do."""
     todo = []
@@ -143,46 +164,77 @@ def ask(q, accept, tries=5):
             last = e
             time.sleep(5 * (i + 1))
     raise last
+def fetch(body, key):
+    """Count, then read, then emit. The count is what proves the read was not truncated."""
+    cq = PREFIXES + "\nSELECT (COUNT(*) AS ?n) WHERE { { SELECT " + SELECT + " WHERE { " + body + " } } }"
+    d = json.loads(ask(cq, "application/sparql-results+json"))
+    want = int(next(iter(d["results"]["bindings"][0].values()))["value"])
+    # 60,000 ROWS, NOT THE 200k PAGE LIMIT, because the ceiling here is the LOG and not the endpoint. A 60k-row
+    # TSV is about 8 MB, which gzips to ~0.8 MB and base64s to ~1.1 MB -- comfortably inside a container log's
+    # ~4 MB. At 200k the blob would be truncated, the count check would refuse it, and the slices would run
+    # anyway: the same work plus a wasted read. This matches the local build's own SLICE_FREE_MAX.
+    if want > 60000:
+        raise RuntimeError("too big for one log-sized response (" + str(want) + " rows); must be sliced")
+    rq = PREFIXES + "\nSELECT " + SELECT + " WHERE { " + body + " } ORDER BY ?a ?b LIMIT 200000"
+    tsv = ask(rq, "text/tab-separated-values")
+    got = max(0, len(tsv.strip().splitlines()) - 1)
+    blob = base64.b64encode(gzip.compress(tsv.encode())).decode()
+    print("###SLICE " + key + " " + str(want) + " " + str(got) + " " + str(len(blob)), flush=True)
+    for i in range(0, len(blob), 3000):
+        print(blob[i:i+3000])
+    print("###END " + key, flush=True)
+
+# WHOLE QUERIES FIRST, because most of these do not need slicing at all. P451 is 4,766 pairs in total, P1327 is
+# 665 and P3342 is 1,133 -- cutting each into 31 decade slices asks 31 questions to move a hundred rows, and 279
+# of the 356 outstanding slices were exactly that. One request per query where one request suffices.
+SATISFIED = set()
+for w in JOBS.get("wholes", []):
+    key = w["tag"] + "|whole|" + str(w["lo0"]) + "_" + str(w["hi0"])
+    try:
+        fetch(w["body"], key)
+        SATISFIED.add(w["tag"])
+        print("###WHOLE_OK " + w["tag"], flush=True)
+    except Exception as e:
+        print("###FAIL " + key + " " + type(e).__name__ + " " + str(e)[:120], flush=True)
 for j in JOBS["slices"]:
     key = j["tag"] + "|" + str(j["lo"]) + "|" + str(j["hi"])
+    # A query answered in one request needs none of its slices. Without this the worker fetched the whole AND all
+    # thirty-one decades of the same query -- the slices are the FALLBACK, not a second helping.
+    if j["tag"] in SATISFIED:
+        print("###SKIP " + key + " satisfied by the whole query", flush=True)
+        continue
     try:
-        cq = PREFIXES + "\nSELECT (COUNT(*) AS ?n) WHERE { { SELECT " + SELECT + " WHERE { " + j["body"] + " } } }"
-        d = json.loads(ask(cq, "application/sparql-results+json"))
-        want = int(next(iter(d["results"]["bindings"][0].values()))["value"])
-        rq = (PREFIXES + "\nSELECT " + SELECT + " WHERE { " + j["body"] + " } ORDER BY ?a ?b LIMIT 200000")
-        tsv = ask(rq, "text/tab-separated-values")
-        got = max(0, len(tsv.strip().splitlines()) - 1)
-        blob = base64.b64encode(gzip.compress(tsv.encode())).decode()
-        print("###SLICE " + key + " " + str(want) + " " + str(got) + " " + str(len(blob)))
-        for i in range(0, len(blob), 3000):
-            print(blob[i:i+3000])
-        print("###END " + key)
+        fetch(j["body"], key)
     except Exception as e:
-        print("###FAIL " + key + " " + type(e).__name__ + " " + str(e)[:120])
-print("###DONE")
+        print("###FAIL " + key + " " + type(e).__name__ + " " + str(e)[:120], flush=True)
+print("###DONE", flush=True)
 '''
 
 
 def run():
-    todo = missing()
-    if not todo:
-        print("  nothing to fetch — every slice is already cached")
+    todo, whole = missing(), wholes()
+    if not todo and not whole:
+        print("  nothing to fetch — every slice is already cached", flush=True)
         return
-    groups = [todo[i::CONTAINERS] for i in range(CONTAINERS)]
-    groups = [g for g in groups if g]
-    print(f"  {len(todo)} slices missing, {len(groups)} containers, "
-          f"{min(len(g) for g in groups)}-{max(len(g) for g in groups)} slices each")
-    for g in groups[:1]:
-        print(f"    e.g. {g[0]['name']} {g[0]['lo']}-{g[0]['hi']}")
+    # The wholes go FIRST and are spread one per container, so several queries are tried unsliced at once and a
+    # query that turns out to fit costs one request instead of thirty-one.
+    groups = [{"wholes": whole[i::CONTAINERS], "slices": todo[i::CONTAINERS]} for i in range(CONTAINERS)]
+    groups = [g for g in groups if g["wholes"] or g["slices"]]
+    print(f"  {len(whole)} whole queries to try + {len(todo)} slices as the fallback, "
+          f"across {len(groups)} containers", flush=True)
+    for w in whole[:4]:
+        print(f"    whole: {w['name']} {w['lo0']}-{w['hi0']}", flush=True)
     if os.environ.get("AQ_DO_FETCH") != "1":
-        print("\n  PLAN ONLY — set AQ_DO_FETCH=1 to create the containers")
+        print("\n  PLAN ONLY — set AQ_DO_FETCH=1 to create the containers", flush=True)
         return
 
     names = []
     for i, g in enumerate(groups):
         payload = base64.b64encode(json.dumps({
             "prefixes": PREFIXES, "select": SELECT, "ua": UA,
-            "slices": [{"tag": s["tag"], "lo": s["lo"], "hi": s["hi"], "body": s["body"]} for s in g],
+            "wholes": [{"tag": w["tag"], "lo0": w["lo0"], "hi0": w["hi0"], "body": w["body"]}
+                       for w in g["wholes"]],
+            "slices": [{"tag": s["tag"], "lo": s["lo"], "hi": s["hi"], "body": s["body"]} for s in g["slices"]],
         }).encode()).decode()
         w = base64.b64encode(WORKER.encode()).decode()
         cname = f"aqfetch{i}"
@@ -192,9 +244,10 @@ def run():
                         "--restart-policy", "Never", "--location", LOC,
                         "--command-line", cmd, "-o", "none"], check=False)
         names.append(cname)
-        print(f"    started {cname} with {len(g)} slices")
+        print(f"    started {cname}: {len(g['wholes'])} whole + {len(g['slices'])} slices", flush=True)
 
     lookup = {s["tag"] + "|" + str(s["lo"]) + "|" + str(s["hi"]): s for s in todo}
+    lookup.update({w["tag"] + "|whole|" + str(w["lo0"]) + "_" + str(w["hi0"]): w for w in whole})
     done, saved, failed = set(), 0, 0
     t0 = time.time()
     while len(done) < len(names) and time.time() - t0 < 3600:
@@ -212,11 +265,11 @@ def run():
             failed += n_fail
             if "###DONE" in logs or st in ("Terminated", "Failed"):
                 done.add(cname)
-                print(f"    {cname} finished ({st}); {saved} slices written so far")
+                print(f"    {cname} finished ({st}); {saved} slices written so far", flush=True)
     for cname in names:
         subprocess.run(["az", "container", "delete", "-g", RG, "-n", cname, "--yes", "-o", "none"],
                        check=False)
-    print(f"  wrote {saved} slices, {failed} failed; containers deleted")
+    print(f"  wrote {saved} slices, {failed} failed; containers deleted", flush=True)
     left = missing()
     print(f"  {len(left)} slices still missing — the local build will fetch those" if left
           else "  every slice is now cached")
@@ -230,7 +283,7 @@ def harvest(logs, lookup):
     while i < len(lines):
         if lines[i].startswith("###FAIL "):
             failed += 1
-            print(f"      {lines[i][8:140]}")
+            print(f"      {lines[i][8:140]}", flush=True)
             i += 1
             continue
         if not lines[i].startswith("###SLICE "):
@@ -251,7 +304,7 @@ def harvest(logs, lookup):
         try:
             tsv = gzip.decompress(base64.b64decode("".join(body))).decode()
         except Exception as e:
-            print(f"      {key}: log block did not decode ({type(e).__name__}) — leaving it to the local build")
+            print(f"      {key}: log block did not decode ({type(e).__name__}) — leaving it to the local build", flush=True)
             failed += 1
             continue
         df = pd.read_csv(io.StringIO(tsv), sep="\t", dtype=str, keep_default_na=False)
@@ -263,17 +316,17 @@ def harvest(logs, lookup):
             df[c] = df[c].str.strip().str.strip('"')
         expect = [v.lstrip("?") for v in SELECT.replace("DISTINCT", "").split()]
         if [c for c in expect if c not in df.columns]:
-            print(f"      {key}: columns are {list(df.columns)[:4]}, not the projection — refusing")
+            print(f"      {key}: columns are {list(df.columns)[:4]}, not the projection — refusing", flush=True)
             failed += 1
             continue
         if len(df) < want:
-            print(f"      {key}: {len(df):,} rows against a count of {want:,} — truncated, refusing")
+            print(f"      {key}: {len(df):,} rows against a count of {want:,} — truncated, refusing", flush=True)
             failed += 1
             continue
         os.makedirs(CACHE, exist_ok=True)
         df.to_csv(s["path"] + ".tmp", index=False)
         os.replace(s["path"] + ".tmp", s["path"])
-        print(f"      {s['name']} {s['lo']}-{s['hi']}: {len(df):,} rows (from Azure, count-verified)")
+        print(f"      {s['name']} {s['lo']}-{s['hi']}: {len(df):,} rows (from Azure, count-verified)", flush=True)
         saved += 1
     return saved, failed
 

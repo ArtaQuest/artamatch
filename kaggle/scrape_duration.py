@@ -358,6 +358,7 @@ def sparql(select, body, name, order=None, page=200000):
 SLICE_CACHE = os.path.join(OUT, "_dslices")
 
 
+_WHOLE_TOO_BIG = set()      # query tags that already failed as one request; do not pay the timeout twice
 SLICE_FREE_MAX = 60000     # a result set this small has never timed out; slicing it only multiplies round trips
 
 
@@ -387,8 +388,22 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
     # Either step here may fail — the count can 504 and so can the single big fetch, since a small result set is
     # not necessarily a fast query. Both failures fall through to slicing, which is the whole point of keeping
     # slicing around; the only thing that must not happen is failing the run over an optimisation.
+    # THE UNSLICED ATTEMPT IS WORTH ONE TRY AND NOT MORE. It pays a full 504 -- about 65 seconds -- at the head
+    # of every sliced query, and once a run has learned that a query is too big for one request, every later
+    # query of the same shape pays it again for nothing. The memo is keyed on the query HASH, so it stops the
+    # SAME query paying twice within a run and deliberately does NOT generalise across relationship types --
+    # P451 is 4,766 pairs and fits one request comfortably where P26 does not, and assuming otherwise would slice
+    # a query that needs no slicing into thirty. AQ_NO_WHOLE=1 skips the attempt outright, which is the right
+    # setting only when every remaining query is known to be large.
+    if os.environ.get("AQ_NO_WHOLE") == "1" or tag in _WHOLE_TOO_BIG:
+        print(f"  {name}: skipping the unsliced attempt (known too big for one request)", flush=True)
+        raise_whole = False
+    else:
+        raise_whole = True
     stage = "whole-window count"
     try:
+        if not raise_whole:
+            raise RuntimeError("skipped")
         n = sparql_count(select, body_fn(lo0, hi0))
         if n > SLICE_FREE_MAX:
             print(f"  {name}: {n:,} rows over {lo0}-{hi0} — slicing by {SLICE} years", flush=True)
@@ -401,8 +416,10 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
             os.replace(whole + ".tmp", whole)
             return out
     except Exception as e:
-        print(f"  {name}: {stage} failed ({type(e).__name__}: {str(e)[:80]}) — falling back to "
-              f"{SLICE}-year slices", flush=True)
+        if raise_whole:
+            _WHOLE_TOO_BIG.add(tag)
+            print(f"  {name}: {stage} failed ({type(e).__name__}: {str(e)[:80]}) — falling back to "
+                  f"{SLICE}-year slices", flush=True)
     # SLICES RUN CONCURRENTLY, because the wall clock is dominated by WAITING rather than by querying.
     # Measured over 33 minutes of one build: 19 slices fetched, 7 minutes actually inside queries, 26 minutes
     # in retry sleeps after 504s and 502s. Serially, a stuck slice blocks every slice behind it; concurrently,

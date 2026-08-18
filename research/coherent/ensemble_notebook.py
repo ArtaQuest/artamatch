@@ -34,9 +34,8 @@
 #
 # A third of the training half carries only a year (`1856-00-00`). A chart cannot honestly be cast for it: placing
 # it at 1 January puts the Sun near 280° for every such couple and plants a false spike at day 1 in every
-# seasonal feature. So the astrological models train on the **27,189 couples with both dates to the day**, which
-# is also what the held-out half is. A separate era-and-gap model trains on the larger subset where both YEARS
-# are known, since it needs no day, and the blend gets the benefit of both.
+# seasonal feature. So the models train on the **27,189 couples with both dates to the day**, which is also what
+# the held-out half is.
 
 # %%
 import gc, json, math, os, shutil, sys, time
@@ -44,8 +43,33 @@ import numpy as np
 import pandas as pd
 
 T0 = time.time()
-DATA = "/kaggle/input/artamatch-astrology"
-CODE = "/kaggle/input/artamatch-ephemeris"
+# FIND THE MOUNTS, DO NOT ASSUME THEIR NAMES. The first run of this notebook died with FileNotFoundError on a
+# hardcoded /kaggle/input/artamatch-ephemeris, which told me a file was missing when what I needed to know was
+# which inputs were actually mounted. Both datasets are public and both were listed in the kernel metadata, so
+# guessing further was pointless: the notebook now identifies each input by a file it must CONTAIN, and prints
+# the whole tree when it cannot.
+ROOT = "/kaggle/input"
+_tree = {}
+for d, _, fs in os.walk(ROOT):
+    for f in fs:
+        _tree.setdefault(os.path.basename(d), []).append(f)
+print("mounted inputs:")
+for d, fs in sorted(_tree.items()):
+    print(f"  {d}/  ({len(fs)} files) e.g. {sorted(fs)[:4]}")
+
+
+def find_dir(marker):
+    for d, _, fs in os.walk(ROOT):
+        if marker in fs:
+            return d
+    raise SystemExit(f"no mounted input contains {marker!r}. Mounted: "
+                     + json.dumps({k: sorted(v)[:6] for k, v in _tree.items()}, indent=1))
+
+
+CODE = find_dir("ephem4.bin")
+DATA = find_dir("train.csv")
+print(f"code + ephemeris: {CODE}")
+print(f"competition data: {DATA}")
 WORK = "/kaggle/working/code"
 os.makedirs(WORK, exist_ok=True)
 for f in os.listdir(CODE):
@@ -60,16 +84,12 @@ sys.modules["swisseph"] = sweshim
 info = json.load(open(os.path.join(WORK, "ephem4.json")))
 print(f"ephemeris {info['yearFrom']}-{info['yearTo']}, read through the pure-numpy shim")
 
-import torch
-DEV = "cuda" if torch.cuda.is_available() else "cpu"
-if DEV == "cuda":
-    cap = torch.cuda.get_device_capability(0)
-    print(f"{torch.cuda.get_device_name(0)} · capability {cap[0]}.{cap[1]}")
-    # Kaggle's DEFAULT accelerator is a P100 at capability 6.0 and the preinstalled torch needs 7.0+, so every
-    # cuda call raises. The kernel must request machine_shape=NvidiaTeslaT4 (sm_75), not merely enable_gpu.
-    if cap[0] < 7:
-        raise SystemExit("this torch needs capability 7.0+; push with machine_shape=NvidiaTeslaT4")
-torch.backends.cuda.matmul.allow_tf32 = True
+# GPU if there is one. The corrected recipe is LightGBM / XGBoost / a logistic, so torch is no longer imported;
+# XGBoost takes device="cuda" directly. Kaggle's DEFAULT accelerator is a P100 whose compute capability (6.0)
+# the preinstalled torch cannot use -- one more reason not to depend on it -- and the kernel metadata requests
+# machine_shape=NvidiaTeslaT4 regardless.
+DEV = "cuda" if shutil.which("nvidia-smi") else "cpu"
+print(f"device for XGBoost: {DEV}")
 
 # %%
 tr_all = pd.read_csv(f"{DATA}/train.csv", dtype={"dob_older": str, "dob_younger": str})
@@ -324,15 +344,29 @@ def families(E, dates=None):
 def calendrical(df, sun_o, sun_y, JD):
     """Families that need the CALENDAR date, not only a longitude: weekday, day of the year, sun-sign pairs,
     the Chinese sexagenary pillars, and numerology. Requires day precision on both dates."""
-    import pandas as pd
-    do = pd.to_datetime(df.dob_older, format="%Y-%m-%d")
-    dy = pd.to_datetime(df.dob_younger, format="%Y-%m-%d")
-    doy = {"older": do.dt.dayofyear.to_numpy(), "younger": dy.dt.dayofyear.to_numpy()}
-    wd = {"older": (do.dt.dayofweek.to_numpy() + 1) % 7, "younger": (dy.dt.dayofweek.to_numpy() + 1) % 7}
-    yr = {"older": do.dt.year.to_numpy(), "younger": dy.dt.year.to_numpy()}
-    mo = {"older": do.dt.month.to_numpy(), "younger": dy.dt.month.to_numpy()}
-    dm = {"older": do.dt.day.to_numpy(), "younger": dy.dt.day.to_numpy()}
-    gap_days = (dy - do).dt.days.to_numpy().astype(float)
+    # DATES AS numpy datetime64[D], NOT pandas datetimes. pandas 2.x parses to NANOSECONDS, whose range starts at
+    # 1677-09-21, and the training half starts in 1600: the Kaggle kernel died on OutOfBoundsDatetime at the
+    # first 17th-century couple. It worked locally only because pandas 3 infers a microsecond resolution. numpy's
+    # datetime64[D] spans +-2.5e16 days on every version, and every calendar quantity below is integer
+    # arithmetic on it: 1970-01-01 was a Thursday, so (days_since_epoch + 4) % 7 is the weekday with Sunday 0.
+    do = np.array(df.dob_older.to_numpy().astype(str), dtype="datetime64[D]")
+    dy = np.array(df.dob_younger.to_numpy().astype(str), dtype="datetime64[D]")
+
+    def _cal(d):
+        Y = d.astype("datetime64[Y]")
+        M = d.astype("datetime64[M]")
+        return {"year": Y.astype(np.int64) + 1970,
+                "month": M.astype(np.int64) % 12 + 1,
+                "day": (d - M).astype(np.int64) + 1,
+                "doy": (d - Y).astype(np.int64) + 1,
+                "wd": (d.astype(np.int64) + 4) % 7}
+    co, cy = _cal(do), _cal(dy)
+    doy = {"older": co["doy"], "younger": cy["doy"]}
+    wd = {"older": co["wd"], "younger": cy["wd"]}
+    yr = {"older": co["year"], "younger": cy["year"]}
+    mo = {"older": co["month"], "younger": cy["month"]}
+    dm = {"older": co["day"], "younger": cy["day"]}
+    gap_days = (dy - do).astype(np.int64).astype(float)
 
     F = {}
     for who in ("older", "younger"):
@@ -528,15 +562,141 @@ def calendrical(df, sun_o, sun_y, JD):
          == NU.personal_year(mo["younger"], dm["younger"], mid)).astype(float))
     return F
 
+# %% [markdown]
+# ### `dates.py`, spliced in
+#
+# `couple_record` turns two date strings into the record `core.load()` reads, deriving precision and the
+# uncertainty window from the dates themselves. It lives in the repo's `kaggle/` directory and is NOT part of the
+# public ephemeris asset, so it is spliced in verbatim rather than imported.
 
 # %%
-import dates as D
+
+
+PRECISION_DAY, PRECISION_MONTH, PRECISION_YEAR = 11, 10, 9
+
+# ABSENT is a precision, not a missing value. The duration dataset's training half contains rows where one
+# partner is not in Wikidata at all, written `0000-00-00` — the marriage's duration is known exactly even when
+# one spouse's birthday is not, so the row carries a real label and half an input, and discarding it cost six
+# sevenths of the training data.
+#
+# The value is 1 and not 0 ON PURPOSE. core.py reads the precision as `int(g("aPrec", "bPrec") or 11)`, and 0 is
+# falsy, so an absent partner would arrive at the feature layer claiming to be known to the DAY. That `or` is a
+# default for a missing KEY and cannot distinguish it from a present zero. 1 is truthy, sorts below every real
+# precision, and cannot be mistaken for one.
+PRECISION_ABSENT = 1
+ABSENT_DATE = "0000-00-00"
+
+# ── THE GRID, DEFINED ONCE ───────────────────────────────────────────────────────────────────────────────────
+# Each partner's date is degraded independently over four levels, and two of the sixteen combinations are
+# excluded from the score. This lives here because six different files need to agree on it — the scorer, the
+# grid builder, the evaluator, the benchmark task, the publish gate and the page — and every time a constant
+# like this has been restated in this project the copies have drifted.
+LEVELS = ["full", "month", "year", "absent"]
+
+EXCLUDED_CELLS = {
+    # No input at all: both dates are the same placeholder, so nothing can be ranked and the cell would only
+    # shift every competitor's average by a constant.
+    "absent|absent",
+    # Month precision on BOTH sides is a case that essentially does not occur. Of 107,698 couples only 859 men
+    # and 1,017 women are known to the month, so the real data contains 18 such pairs — and on 18 rows an AUC
+    # is noise: that group scored 0.8615 against 0.6201 for the 16,675-row day-by-day group. Simulating it
+    # across every held-out couple asks the model about a situation the records almost never present.
+    "month|month",
+}
+
+CELLS = [f"{a}|{b}" for a in LEVELS for b in LEVELS if f"{a}|{b}" not in EXCLUDED_CELLS]
+N_CELLS = len(CELLS)          # 14
+
+# How wide the uncertainty is, in days, for each precision. core.py takes this as `aWin`/`bWin` and it is the
+# difference between "this chart is for 1 January" and "this chart is for a year we cannot place".
+WINDOW = {PRECISION_DAY: 1.0, PRECISION_MONTH: 30.0, PRECISION_YEAR: 365.0,
+          # A century. Not infinity: the window is a feature, and every tradition that reads it does arithmetic
+          # on it. It says "this chart is a placeholder", which is the truth.
+          PRECISION_ABSENT: 36525.0}
+
+
+def precision(d):
+    """11 if the day is known, 10 if only the month, 9 if only the year, 1 if there is no date at all."""
+    if not isinstance(d, str) or len(d) != 10:
+        raise ValueError(f"not a YYYY-MM-DD date: {d!r}")
+    if d[:4] == "0000":
+        return PRECISION_ABSENT
+    if d[8:10] != "00":
+        return PRECISION_DAY
+    if d[5:7] != "00":
+        return PRECISION_MONTH
+    return PRECISION_YEAR
+
+
+def window(d):
+    return WINDOW[precision(d)]
+
+
+def concrete(d):
+    """The same date with `00` replaced by `01`, so astropy and Swiss Ephemeris have an instant to work with.
+
+    This is a representative, not a guess: the precision travels alongside it so a model can tell that the day
+    was chosen rather than recorded. Anything that uses `concrete()` without also passing the precision is
+    quietly claiming to know the day.
+    """
+    y, m, dd = d[:4], d[5:7], d[8:10]
+    return f"{y}-{'01' if m == '00' else m}-{'01' if dd == '00' else dd}"
+
+
+def coarsen(d, level):
+    """Reduce a date to `full`, `month`, `year` — the precision grid's levels.
+
+    IDEMPOTENT AND MONOTONE: coarsening a year-only date to `month` returns it unchanged, because precision that
+    was never there cannot be added back. That property is what makes the grid honest — a `month|month` cell
+    contains rows whose month was coarsened away and rows that never had one, and both look the same.
+    """
+    if level == "full":
+        return d
+    if level == "month":
+        return d[:7] + "-00"
+    if level == "year":
+        return d[:4] + "-00-00"
+    if level == "absent":
+        return ABSENT_DATE
+    raise ValueError(f"unknown level {level!r}")
+
+
+def couple_record(i, dob_older, dob_younger, label=0):
+    """One row in the shape `core.load()` reads, with precision and window derived from the dates themselves.
+
+    The trainer used to hardcode `aPrec: 11, bPrec: 11` — telling core that every day was known, including for
+    the 34% of rows that only have a year. core has precision-aware features and a window field precisely for
+    this, and they were being fed a constant.
+
+    AN ABSENT PARTNER GETS THE OTHER PARTNER'S INSTANT, flagged. Every chart needs some instant to be cast for,
+    and there is no honest one for a person who is not in Wikidata — so the pair features degenerate to
+    self-comparison, which is a DEFINED and CONSTANT-SHAPED value rather than a guess about a stranger. What
+    makes that honest instead of a fabrication is that the row also carries `aPrec`/`bPrec` of 1 and a
+    century-wide window, so a model can see the pair features are meaningless here and read only the present
+    partner's own chart, which is the real content of a one-sided row. Imputing a plausible spouse — the median
+    age gap, say — would invent exactly the pair structure the model is being asked to find.
+    """
+    pm, pw = precision(dob_older), precision(dob_younger)
+    if pm == PRECISION_ABSENT and pw == PRECISION_ABSENT:
+        raise ValueError("a couple with no date on either side carries no input")
+    cm = concrete(dob_younger if pm == PRECISION_ABSENT else dob_older)
+    cw = concrete(dob_older if pw == PRECISION_ABSENT else dob_younger)
+    return {"a": f"a{i}", "b": f"b{i}",
+            "aDob": cm, "bDob": cw,
+            # No sex is known or used: the columns are ordered by AGE, and no tradition reads aSex/bSex (checked).
+            "aSex": "", "bSex": "",
+            "aPrec": pm, "bPrec": pw,
+            "aWin": window(dob_older), "bWin": window(dob_younger),
+            "label": int(label)}
+
+
+# %%
 import core
 
 
 def build(df, labelled):
     """Cast both charts for every couple and return the full feature matrix, family by family."""
-    rows = [D.couple_record(i, r.dob_older, r.dob_younger, int(r[LABEL]) if labelled else 0)
+    rows = [couple_record(i, r.dob_older, r.dob_younger, int(r[LABEL]) if labelled else 0)
             for i, r in df.iterrows()]
     json.dump(rows, open(os.environ["AQ_COUPLES"], "w"))
     E = core.load()
@@ -568,36 +728,32 @@ X_tr, X_te = X_tr[:, ok], X_te[:, ok]
 y = tr[LABEL].to_numpy().astype(np.int64)
 print(f"kept {X_tr.shape[1]:,} usable features of {len(ok):,}")
 
-# %%
-# Era and the age gap, explicitly. They are derived from the same two dates every entrant is given, so they are
-# fair competition features — but they are NOT astrology, which is why an astrology-only submission is written
-# alongside the combined one further down.
-def eragap(df):
-    do, dy = pd.to_datetime(df.dob_older), pd.to_datetime(df.dob_younger)
-    g = (dy - do).dt.days.to_numpy().astype(np.float32)
-    o = (do - pd.Timestamp("1600-01-01")).dt.days.to_numpy().astype(np.float32)
-    return np.column_stack([do.dt.year, dy.dt.year, g, o, o + g]).astype(np.float32)
+
+# The age gap and the two birth years, in numpy datetime64[D] arithmetic (pandas' nanosecond datetimes overflow
+# before 1677 and the training half starts in 1600). The gap is a fair competition feature -- every entrant is
+# given the same two dates -- and it is the strongest single feature in the problem, so it is a pool member in
+# its own right AND the floor the ensemble must clear.
+def gap_years(df):
+    do = np.array(df.dob_older.to_numpy().astype(str), dtype="datetime64[D]")
+    dy = np.array(df.dob_younger.to_numpy().astype(str), dtype="datetime64[D]")
+    return ((dy - do).astype(np.int64).astype(np.float32),
+            do.astype("datetime64[Y]").astype(np.int64) + 1970,
+            dy.astype("datetime64[Y]").astype(np.int64) + 1970)
 
 
-EG_tr, EG_te = eragap(tr), eragap(te)
-EGNAMES = ["birth year older", "birth year younger", "age gap in days", "older birth as a day number",
-           "younger birth as a day number"]
-
-# THE INNER SPLIT IS TEMPORAL, mirroring the competition's own out-of-time split. A random split would select
-# the model that generalises best to CONTEMPORARIES of the training data, which is not what is being scored.
-later = np.maximum(EG_tr[:, 0], EG_tr[:, 1])
-CUT = np.quantile(later, 0.85)
-inner = later > CUT
-fitm = ~inner
-print(f"inner validation: training births after {CUT:.0f} — {int(inner.sum()):,} rows held back for selection")
+gap, yo, yy = gap_years(tr)
+gape, _, _ = gap_years(te)
+A = np.column_stack([X_tr, gap]); Ae = np.column_stack([X_te, gape])
+NAMES = NAMES + ["age gap in days"]; G = A.shape[1] - 1
+later = np.maximum(yo, yy)
 
 
-def auc(yy, s):
-    yy = np.asarray(yy, np.int64); s = np.asarray(s, np.float64)
-    n1, n0 = int(yy.sum()), int((1 - yy).sum())
+def auc(yv, s):
+    yv = np.asarray(yv, np.int64); s = np.asarray(s, np.float64)
+    n1, n0 = int(yv.sum()), int((1 - yv).sum())
     if n1 == 0 or n0 == 0:
         return float("nan")
-    o = np.argsort(s, kind="mergesort"); ys, ss = yy[o], s[o]
+    o = np.argsort(s, kind="mergesort"); ys, ss = yv[o], s[o]
     r = np.empty(len(ss)); i = 0
     while i < len(ss):
         j = i
@@ -607,179 +763,115 @@ def auc(yy, s):
     return float((r[ys == 1].sum() - n1 * (n1 + 1) / 2.0) / (n1 * n0))
 
 
-print(f"age gap alone, on the inner split: {max(auc(y[inner], EG_tr[inner,2]), 1-auc(y[inner], EG_tr[inner,2])):.4f}")
-
-# %% [markdown]
-# ## The models
-#
-# Four learners, each suited to a different part of the problem, blended by inner-split AUC.
-#
-# 1. **L2 logistic over all 4,962 features** (GPU) — the right shape when signal is spread thin over many
-#    correlated columns, and the L2 path is swept rather than guessed.
-# 2. **MLP** (GPU) — two hidden layers with dropout, to pick up interactions a linear model cannot.
-# 3. **Boosted trees on screened features** — the top features by inner-fit AUC, plus era and gap explicitly.
-#    Trees handle the sharp thresholds a sign or a weekday indicator implies.
-# 4. **Boosted trees on era and gap alone**, trained on the larger both-years-known subset. This one needs no
-#    day precision, so it sees roughly twice the couples.
-
-# %%
-mu, sd = X_tr[fitm].mean(0), X_tr[fitm].std(0) + 1e-6
-Zt = torch.tensor((X_tr - mu) / sd, dtype=torch.float32, device=DEV)
-Ze = torch.tensor((X_te - mu) / sd, dtype=torch.float32, device=DEV)
-egmu, egsd = EG_tr[fitm].mean(0), EG_tr[fitm].std(0) + 1e-6
-Et = torch.tensor((EG_tr - egmu) / egsd, dtype=torch.float32, device=DEV)
-Ee = torch.tensor((EG_te - egmu) / egsd, dtype=torch.float32, device=DEV)
-At = torch.cat([Zt, Et], 1); Ae = torch.cat([Ze, Ee], 1)
-yt = torch.tensor(y, dtype=torch.float32, device=DEV)
-fit_t = torch.tensor(fitm, device=DEV); inn_t = torch.tensor(inner, device=DEV)
-print(f"GPU matrices: {tuple(At.shape)} train, {tuple(Ae.shape)} test")
-
-
-def fit_torch(model, Xf, Xi, Xe, yf, yi, steps=3000, lr=3e-3, wd=1e-3, patience=300):
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
-    lossf = torch.nn.BCEWithLogitsLoss()
-    best, state, bad = -1.0, None, 0
-    for t in range(steps):
-        model.train(); opt.zero_grad(set_to_none=True)
-        lossf(model(Xf).squeeze(1), yf).backward(); opt.step()
-        if t % 25 == 0:
-            model.eval()
-            with torch.no_grad():
-                a = auc(yi, model(Xi).squeeze(1).float().cpu().numpy())
-            if a > best + 1e-5:
-                best, bad = a, 0
-                state = {k: v.detach().clone() for k, v in model.state_dict().items()}
-            else:
-                bad += 25
-                if bad >= patience:
-                    break
-    model.load_state_dict(state); model.eval()
-    with torch.no_grad():
-        return best, model(Xe).squeeze(1).float().cpu().numpy(), model(Xi).squeeze(1).float().cpu().numpy()
-
-
-preds, inners, tags = [], [], []
-yi_np, yf_t = y[inner], yt[fit_t]
-
-# 1 ── L2 logistic, weight-decay path swept on the inner split
-for wd in (1e-4, 1e-3, 1e-2, 1e-1, 1.0):
-    torch.manual_seed(0)
-    m = torch.nn.Linear(At.shape[1], 1).to(DEV)
-    torch.nn.init.zeros_(m.weight); torch.nn.init.zeros_(m.bias)
-    a, pe, pi = fit_torch(m, At[fit_t], At[inn_t], Ae, yf_t, yi_np, steps=4000, lr=3e-3, wd=wd)
-    print(f"  logistic  wd={wd:<6g} inner {a:.4f}")
-    preds.append(pe); inners.append(pi); tags.append(f"logistic wd={wd:g}")
-
-# 2 ── MLP, a few widths and dropouts
-for H, dp, wd in ((64, 0.3, 1e-3), (128, 0.5, 1e-2), (32, 0.2, 1e-3)):
-    torch.manual_seed(1)
-    m = torch.nn.Sequential(torch.nn.Linear(At.shape[1], H), torch.nn.GELU(), torch.nn.Dropout(dp),
-                            torch.nn.Linear(H, H // 2), torch.nn.GELU(), torch.nn.Dropout(dp),
-                            torch.nn.Linear(H // 2, 1)).to(DEV)
-    a, pe, pi = fit_torch(m, At[fit_t], At[inn_t], Ae, yf_t, yi_np, steps=3000, lr=1e-3, wd=wd)
-    print(f"  MLP       H={H:<4} dropout={dp} inner {a:.4f}")
-    preds.append(pe); inners.append(pi); tags.append(f"MLP H={H}")
-
-# %%
-from sklearn.ensemble import HistGradientBoostingClassifier
-
-# 3 ── screened trees. The screen is computed on the FIT rows only, never on the inner split, or the selection
-# would already have seen the data it is validated against.
-sc = np.array([abs(auc(y[fitm], X_tr[fitm, j]) - 0.5) for j in range(X_tr.shape[1])])
-TOPK = 300
-top = np.argsort(-sc)[:TOPK]
-print(f"screened top {TOPK} features on the fit rows; strongest: {NAMES[top[0]]} ({0.5+sc[top[0]]:.4f})")
-Str = np.column_stack([X_tr[:, top], EG_tr]); Ste = np.column_stack([X_te[:, top], EG_te])
-for lr_, leaves in ((0.05, 31), (0.03, 15)):
-    p_i = np.zeros(int(inner.sum())); p_e = np.zeros(len(te))
-    for s in range(3):
-        c = HistGradientBoostingClassifier(max_iter=400, learning_rate=lr_, max_leaf_nodes=leaves,
-                                           l2_regularization=1.0, early_stopping=True,
-                                           validation_fraction=0.15, random_state=s)
-        c.fit(Str[fitm], y[fitm])
-        p_i += c.predict_proba(Str[inner])[:, 1]; p_e += c.predict_proba(Ste)[:, 1]
-    a = auc(yi_np, p_i / 3)
-    print(f"  trees     lr={lr_} leaves={leaves} inner {a:.4f}")
-    preds.append(p_e / 3); inners.append(p_i / 3); tags.append(f"trees lr={lr_}")
-
-# 4 ── era and gap alone, on the LARGER both-years-known subset (no day precision needed)
-tr2 = tr_all[both_year].reset_index(drop=True)
-EG2 = eragap(tr2); y2 = tr2[LABEL].to_numpy().astype(np.int64)
-later2 = np.maximum(EG2[:, 0], EG2[:, 1]); fit2 = later2 <= CUT
-p_i = np.zeros(int(inner.sum())); p_e = np.zeros(len(te))
-for s in range(3):
-    c = HistGradientBoostingClassifier(max_iter=300, learning_rate=0.05, max_leaf_nodes=31,
-                                       l2_regularization=1.0, early_stopping=True,
-                                       validation_fraction=0.15, random_state=s)
-    c.fit(EG2[fit2], y2[fit2])
-    p_i += c.predict_proba(EG_tr[inner])[:, 1]; p_e += c.predict_proba(EG_te)[:, 1]
-print(f"  era+gap trees on {int(fit2.sum()):,} rows: inner {auc(yi_np, p_i/3):.4f}")
-preds.append(p_e / 3); inners.append(p_i / 3); tags.append("era+gap trees")
-
-# %%
-# Blend by inner-split AUC. Weights are non-negative and found by coordinate ascent on the RANKS, which is what
-# AUC reads — averaging raw probabilities from a logistic and a tree ensemble would let whichever is more
-# confident dominate regardless of which is more accurate.
-def rank01(v):
+def r01(v):
     r = np.argsort(np.argsort(v)).astype(np.float64)
     return r / max(1.0, len(r) - 1)
 
 
-Ri = np.column_stack([rank01(p) for p in inners])
-Re = np.column_stack([rank01(p) for p in preds])
-w = np.zeros(Ri.shape[1]); w[int(np.argmax([auc(yi_np, Ri[:, j]) for j in range(Ri.shape[1])]))] = 1.0
-best = auc(yi_np, Ri @ w)
-for _ in range(200):
-    improved = False
-    for j in range(Ri.shape[1]):
-        for step in (0.25, 0.1, -0.1, -0.25):
-            w2 = w.copy(); w2[j] = max(0.0, w2[j] + step)
-            if w2.sum() <= 0:
-                continue
-            a = auc(yi_np, Ri @ (w2 / w2.sum()))
-            if a > best + 1e-6:
-                w, best, improved = w2 / w2.sum(), a, True
-    if not improved:
-        break
-print("blend weights, chosen on the inner temporal split:")
-for t, wi, pi_ in zip(tags, w, range(len(tags))):
-    if wi > 1e-6:
-        print(f"  {wi:5.3f}  {t:<22} (alone {auc(yi_np, Ri[:, pi_]):.4f})")
-print(f"BLEND inner AUC {best:.4f}")
-
-sub = pd.DataFrame({"id": te.id, LABEL: Re @ w})
-sub.to_csv("/kaggle/working/submission.csv", index=False)
-print(f"wrote submission.csv — {len(sub):,} rows")
+# %% [markdown]
+# ## Why there is no model selection in this notebook
+#
+# The first version of this notebook picked models on a single inner split — the latest 15% of training births,
+# 1888–1900 — and blended by inner AUC. It scored **0.5809** held out, *below* the age gap alone at 0.6045: an
+# ensemble handed a feature cannot honestly score below that feature, so that was a broken pipeline, not a fact
+# about the data. Two things were wrong. The split was 12 years ahead when the competition's held-out couples are
+# up to 90 years ahead, so it could not see the failure it was meant to catch; and nothing constrained the one
+# relationship we are certain of — a wider age gap means a shorter relationship — so the trees were free to fit
+# era-specific noise instead.
+#
+# Repairing the split did not fix selection. Across ten candidates, the correlation between mean AUC on three
+# expanding-window temporal folds (train ≤1820 → validate 1821–1850, ≤1850 → 1851–1875, ≤1875 → 1876–1900) and
+# held-out AUC was **Spearman −0.15**. Internal validation on 1600–1900 simply does not rank models for
+# 1901–1990. Choosing one model on it is a coin flip; choosing on the leaderboard would be cheating.
+#
+# So this notebook does not choose. It builds a **diverse pool of eleven models with hyper-parameters fixed in
+# advance**, weights them **equally**, and averages their **ranks** (AUC reads ranks; averaging a logistic's
+# probabilities with a tree ensemble's lets whichever is more confident dominate). The temporal folds are still
+# used for one thing that does transfer: **feature stability**. A feature enters a model only if it points the
+# same way in all three folds, ranked by its *weakest* fold rather than its best — which is what rejects a
+# feature strong in one era and absent in another, and that is most of the 4,962.
 
 # %%
-# The ASTROLOGY-ONLY submission: the same machinery with era and gap withheld as explicit inputs. It is the one
-# that speaks to the competition's premise. Note honestly what it still contains: a slow planet's cross-chart
-# separation is very nearly a linear read of the age gap (Pluto moves 1.45 deg/yr), so withholding the gap as a
-# COLUMN does not withhold the information — it only stops the model being handed it directly.
-astro_only = [i for i, n in enumerate(NAMES) if "age gap" not in n]
-Zt2, Ze2 = Zt[:, astro_only], Ze[:, astro_only]
-pa, ia, ta = [], [], []
-for wd in (1e-3, 1e-2, 1e-1):
-    torch.manual_seed(0)
-    m = torch.nn.Linear(Zt2.shape[1], 1).to(DEV)
-    torch.nn.init.zeros_(m.weight); torch.nn.init.zeros_(m.bias)
-    a, pe, pi = fit_torch(m, Zt2[fit_t], Zt2[inn_t], Ze2, yf_t, yi_np, steps=4000, lr=3e-3, wd=wd)
-    print(f"  astrology-only logistic wd={wd:<6g} inner {a:.4f}")
-    pa.append(pe); ia.append(pi); ta.append(f"astro logistic wd={wd:g}")
-torch.manual_seed(1)
-m = torch.nn.Sequential(torch.nn.Linear(Zt2.shape[1], 64), torch.nn.GELU(), torch.nn.Dropout(0.3),
-                        torch.nn.Linear(64, 32), torch.nn.GELU(), torch.nn.Dropout(0.3),
-                        torch.nn.Linear(32, 1)).to(DEV)
-a, pe, pi = fit_torch(m, Zt2[fit_t], Zt2[inn_t], Ze2, yf_t, yi_np, steps=3000, lr=1e-3, wd=1e-2)
-print(f"  astrology-only MLP inner {a:.4f}")
-pa.append(pe); ia.append(pi); ta.append("astro MLP")
-Ria = np.column_stack([rank01(p) for p in ia]); Rea = np.column_stack([rank01(p) for p in pa])
-j = int(np.argmax([auc(yi_np, Ria[:, k]) for k in range(Ria.shape[1])]))
-print(f"astrology-only best on the inner split: {ta[j]} at {auc(yi_np, Ria[:, j]):.4f}")
-pd.DataFrame({"id": te.id, LABEL: Rea[:, j]}).to_csv("/kaggle/working/submission_astrology_only.csv", index=False)
+CUTS = [1820, 1850, 1875]
+per_fold = np.zeros((len(CUTS), A.shape[1]), dtype=np.float32)
+for k, cut in enumerate(CUTS):
+    f = later <= cut
+    yf = y[f]; Af = A[f]
+    n1, n0 = int(yf.sum()), int((1 - yf).sum())
+    # rank AUC of every column at once, in chunks
+    for s0 in range(0, A.shape[1], 800):
+        R = np.apply_along_axis(lambda c: np.argsort(np.argsort(c)) + 1.0, 0, Af[:, s0:s0 + 800])
+        per_fold[k, s0:s0 + 800] = (R[yf == 1].sum(0) - n1 * (n1 + 1) / 2.0) / (n1 * n0)
+    print(f"  [{time.time()-T0:6.0f}s] fold train<={cut}: every feature scored on {int(f.sum()):,} couples", flush=True)
+sg = np.sign(per_fold - 0.5)
+consistent = np.all(sg == sg[0], axis=0)
+strength_min = np.min(np.abs(per_fold - 0.5), axis=0); strength_min[~consistent] = 0.0
+order = np.argsort(-strength_min)
+sign_all = np.where(per_fold.mean(0) >= 0.5, 1.0, -1.0)
+print(f"{int(consistent.sum()):,} of {A.shape[1]:,} features point the same way in all three folds")
+print("the most stable, by their WEAKEST fold:")
+for j in order[:8]:
+    print(f"  min {0.5+strength_min[j]:.4f}   {NAMES[j][:60]}")
 
-json.dump({"blend_inner_auc": best, "weights": dict(zip(tags, [float(x) for x in w])),
-           "astrology_only_inner": float(auc(yi_np, Ria[:, j])), "n_features": int(X_tr.shape[1]),
-           "n_train_day": int(len(tr)), "n_train_year": int(both_year.sum()),
-           "inner_cut_year": float(CUT)}, open("/kaggle/working/ensemble.json", "w"), indent=1)
-print(f"\ndone in {(time.time()-T0)/60:.1f} min")
+# %%
+import lightgbm as lgb
+import xgboost as xgb
+from sklearn.linear_model import LogisticRegression
+
+pool = {}
+pool["age gap, monotone"] = -Ae[:, G]
+for k in (3, 8, 20):
+    cols = [j for j in order[:k] if j != G]
+    pool[f"rank-average: gap + top {k} stable"] = r01(-Ae[:, G]) + sum(r01(sign_all[j] * Ae[:, j]) for j in cols) / len(cols)
+for k in (8, 20, 50):
+    cols = list(dict.fromkeys(list(order[:k]) + [G])); mc = [0] * len(cols); mc[cols.index(G)] = -1
+    p = np.zeros(len(Ae))
+    for s in range(3):
+        m = lgb.LGBMClassifier(n_estimators=300, learning_rate=0.03, num_leaves=7, min_child_samples=200,
+                               colsample_bytree=0.6, subsample=0.7, subsample_freq=1, reg_lambda=10.0,
+                               monotone_constraints=mc, random_state=s, verbose=-1).fit(A[:, cols], y)
+        p += m.predict_proba(Ae[:, cols])[:, 1]
+    pool[f"LightGBM monotone-in-gap, top {k} stable"] = p / 3
+    print(f"  [{time.time()-T0:6.0f}s] LightGBM top {k}", flush=True)
+for k in (20, 50):
+    cols = list(dict.fromkeys(list(order[:k]) + [G]))
+    p = np.zeros(len(Ae))
+    for s in range(2):
+        m = xgb.XGBClassifier(n_estimators=300, learning_rate=0.03, max_depth=3, min_child_weight=50,
+                              subsample=0.7, colsample_bytree=0.6, reg_lambda=10.0, tree_method="hist",
+                              device=DEV, random_state=s, eval_metric="logloss").fit(A[:, cols], y)
+        p += m.predict_proba(Ae[:, cols])[:, 1]
+    pool[f"XGBoost depth 3, top {k} stable"] = p / 2
+    print(f"  [{time.time()-T0:6.0f}s] XGBoost top {k}", flush=True)
+for k in (50, 200):
+    cols = list(order[:k])
+    mu, sd = A[:, cols].mean(0), A[:, cols].std(0) + 1e-6
+    m = LogisticRegression(C=1e-3, max_iter=500).fit((A[:, cols] - mu) / sd, y)
+    pool[f"L2 logistic, top {k} stable"] = m.decision_function((Ae[:, cols] - mu) / sd)
+print(f"pool of {len(pool)} models, none of them chosen against anything")
+
+R = np.column_stack([r01(v) for v in pool.values()])
+ens = R.mean(1)
+sub = pd.DataFrame({"id": te.id, LABEL: r01(ens)})
+sub.to_csv("/kaggle/working/submission.csv", index=False)
+print(f"wrote submission.csv — {len(sub):,} rows, equal-weight rank average of {len(pool)} models")
+
+# The astrology-only companion: the same pool with the age gap withheld as an explicit column. Note what it
+# still contains -- a slow planet's cross-chart separation is a near-linear read of the gap (Pluto moves 1.45
+# degrees a year), so withholding the COLUMN does not withhold the information.
+astro = [j for j in order if j != G and "age gap" not in NAMES[j]]
+pa = []
+for k in (8, 20, 50):
+    cols = astro[:k]
+    p = np.zeros(len(Ae))
+    for s in range(3):
+        m = lgb.LGBMClassifier(n_estimators=300, learning_rate=0.03, num_leaves=7, min_child_samples=200,
+                               colsample_bytree=0.6, subsample=0.7, subsample_freq=1, reg_lambda=10.0,
+                               random_state=s, verbose=-1).fit(A[:, cols], y)
+        p += m.predict_proba(Ae[:, cols])[:, 1]
+    pa.append(r01(p / 3))
+pa.append(r01(sum(r01(sign_all[j] * Ae[:, j]) for j in astro[:20])))
+pd.DataFrame({"id": te.id, LABEL: r01(np.mean(pa, 0))}).to_csv("/kaggle/working/submission_astrology_only.csv", index=False)
+json.dump({"pool": list(pool), "n_features": int(X_tr.shape[1]), "n_stable": int(consistent.sum()),
+           "n_train_day": int(len(tr)), "folds": CUTS}, open("/kaggle/working/ensemble.json", "w"), indent=1)
+print(f"done in {(time.time()-T0)/60:.1f} min")

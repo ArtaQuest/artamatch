@@ -60,7 +60,11 @@ def main():
             if bad in r:
                 raise SystemExit(f"the notebook READS {bad!r} in `{r[:80]}` — it may use only the competition "
                                  f"dataset and the ephemeris asset")
-    assert "/kaggle/input/artamatch-astrology" in code, "the notebook does not read the competition dataset"
+    # Check the MECHANISM, not a literal path: the notebook now DISCOVERS its mounts rather than hardcoding
+    # them, so asserting the old string would fail on the improved notebook. What must be true is that it reads
+    # from the mounted input tree and locates the competition's train.csv there.
+    assert '"/kaggle/input"' in code, "the notebook does not read from /kaggle/input"
+    assert 'find_dir("train.csv")' in code, "the notebook does not locate the competition's train.csv"
     print(f"  gate: {len(reads)} read calls checked, none touches a forbidden path")
     nb = KaggleApi._convert_py_to_notebook(src)
     if os.path.exists(STAGE):

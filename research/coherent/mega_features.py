@@ -262,15 +262,29 @@ def families(E, dates=None):
 def calendrical(df, sun_o, sun_y, JD):
     """Families that need the CALENDAR date, not only a longitude: weekday, day of the year, sun-sign pairs,
     the Chinese sexagenary pillars, and numerology. Requires day precision on both dates."""
-    import pandas as pd
-    do = pd.to_datetime(df.dob_older, format="%Y-%m-%d")
-    dy = pd.to_datetime(df.dob_younger, format="%Y-%m-%d")
-    doy = {"older": do.dt.dayofyear.to_numpy(), "younger": dy.dt.dayofyear.to_numpy()}
-    wd = {"older": (do.dt.dayofweek.to_numpy() + 1) % 7, "younger": (dy.dt.dayofweek.to_numpy() + 1) % 7}
-    yr = {"older": do.dt.year.to_numpy(), "younger": dy.dt.year.to_numpy()}
-    mo = {"older": do.dt.month.to_numpy(), "younger": dy.dt.month.to_numpy()}
-    dm = {"older": do.dt.day.to_numpy(), "younger": dy.dt.day.to_numpy()}
-    gap_days = (dy - do).dt.days.to_numpy().astype(float)
+    # DATES AS numpy datetime64[D], NOT pandas datetimes. pandas 2.x parses to NANOSECONDS, whose range starts at
+    # 1677-09-21, and the training half starts in 1600: the Kaggle kernel died on OutOfBoundsDatetime at the
+    # first 17th-century couple. It worked locally only because pandas 3 infers a microsecond resolution. numpy's
+    # datetime64[D] spans +-2.5e16 days on every version, and every calendar quantity below is integer
+    # arithmetic on it: 1970-01-01 was a Thursday, so (days_since_epoch + 4) % 7 is the weekday with Sunday 0.
+    do = np.array(df.dob_older.to_numpy().astype(str), dtype="datetime64[D]")
+    dy = np.array(df.dob_younger.to_numpy().astype(str), dtype="datetime64[D]")
+
+    def _cal(d):
+        Y = d.astype("datetime64[Y]")
+        M = d.astype("datetime64[M]")
+        return {"year": Y.astype(np.int64) + 1970,
+                "month": M.astype(np.int64) % 12 + 1,
+                "day": (d - M).astype(np.int64) + 1,
+                "doy": (d - Y).astype(np.int64) + 1,
+                "wd": (d.astype(np.int64) + 4) % 7}
+    co, cy = _cal(do), _cal(dy)
+    doy = {"older": co["doy"], "younger": cy["doy"]}
+    wd = {"older": co["wd"], "younger": cy["wd"]}
+    yr = {"older": co["year"], "younger": cy["year"]}
+    mo = {"older": co["month"], "younger": cy["month"]}
+    dm = {"older": co["day"], "younger": cy["day"]}
+    gap_days = (dy - do).astype(np.int64).astype(float)
 
     F = {}
     for who in ("older", "younger"):

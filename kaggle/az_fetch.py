@@ -326,7 +326,11 @@ def harvest(logs, lookup):
         os.makedirs(CACHE, exist_ok=True)
         df.to_csv(s["path"] + ".tmp", index=False)
         os.replace(s["path"] + ".tmp", s["path"])
-        print(f"      {s['name']} {s['lo']}-{s['hi']}: {len(df):,} rows (from Azure, count-verified)", flush=True)
+        # A WHOLE entry has lo0/hi0 and a SLICE entry has lo/hi -- the same dict is not the same shape, and
+        # printing slice keys for a whole entry raised KeyError AFTER the file was written, killing the whole
+        # harvest loop on the very first success. The write survived; the run did not.
+        span = f"{s['lo']}-{s['hi']}" if "lo" in s else f"{s['lo0']}-{s['hi0']} (whole)"
+        print(f"      {s['name']} {span}: {len(df):,} rows (from Azure, count-verified)", flush=True)
         saved += 1
     return saved, failed
 

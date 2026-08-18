@@ -113,6 +113,7 @@ need "$MODEL/tradition_ranking.json"
 
 step "4. the ensemble's held-out score, and the two references it must be read against"
 $PY - "$MODEL" "$COMP" "$LABEL" <<'PYEOF'
+import json
 import sys
 import numpy as np
 import pandas as pd
@@ -137,9 +138,31 @@ a = cm._auc(y, era)
 print(f"  era rule (sum of the two birth years): AUC {max(a, 1-a):.4f}")
 
 # THE AGE GAP, the only permitted baseline for this project: a 2-parameter logistic on dob_younger - dob_older.
+#
+# AND IT IS WRITTEN BACK INTO result.json, because the page was publishing the WRONG ONE. train_on_csv.py
+# computes `baseline_auc` out-of-fold on the TRAINING half, where the gap is worth 0.5388; every published
+# surface then set that beside the HELD-OUT ensemble at 0.5862 and read a +0.047 lift off two different row
+# sets. On the held-out rows the gap is worth 0.6047, so the true comparison is a 0.019 LOSS. A baseline
+# measured on other rows than the model is not a baseline, and the error ran in the flattering direction.
+#
+# The logistic needs no fitting for this number: b0 + b1*gap is monotone in gap and AUC is invariant under a
+# monotone transform, so max(auc, 1-auc) IS the two-parameter model's AUC, with the sign of b1 the only choice.
 gap = (te.dob_younger.str[:4].astype(int) - te.dob_older.str[:4].astype(int)).to_numpy(float)
 a = cm._auc(y, gap)
-print(f"  age gap (younger - older):             AUC {max(a, 1-a):.4f}")
+gap_heldout = max(a, 1 - a)
+print(f"  age gap (younger - older):             AUC {gap_heldout:.4f}")
+ens = cm._auc(y, m.p)
+print(f"  the ensemble is {'ABOVE' if ens > gap_heldout else 'BELOW'} the age-gap baseline on the same rows "
+      f"({ens:.4f} vs {gap_heldout:.4f}, {ens-gap_heldout:+.4f})")
+rp = f"{M}/result.json"
+res = json.load(open(rp))
+res["baseline_heldout_auc"] = float(gap_heldout)
+res["baseline_train_auc"] = float(res.get("baseline_auc", float("nan")))
+res["baseline_auc"] = float(gap_heldout)       # what every page reads -- now on the model's own rows
+res["heldout_auc"] = float(ens)
+json.dump(res, open(rp, "w"), indent=1)
+print(f"  wrote baseline_heldout_auc={gap_heldout:.4f} into result.json (was {res['baseline_train_auc']:.4f}, "
+      f"measured on the training half)")
 PYEOF
 
 step "5. publish: dataset version, competition data, model version"

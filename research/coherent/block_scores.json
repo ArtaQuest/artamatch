@@ -1,0 +1,295 @@
+{
+ "age_gap": 0.6046827366061054,
+ "age_gap_matched": 0.5,
+ "band": 1,
+ "blocks": [
+  {
+   "block": "coherent::coh: all eighteen bodies \u2014 era-capable, read beside the era rule",
+   "cols": 192,
+   "auc": 0.560191344607126,
+   "matched": 0.5245771867456915,
+   "public": 0.5612072719084376,
+   "private": 0.5597434197610973
+  },
+  {
+   "block": "harmonics::har: declination parallels + out-of-bounds",
+   "cols": 502,
+   "auc": 0.5765755398797887,
+   "matched": 0.5200374539335916,
+   "public": 0.5813924871692424,
+   "private": 0.5744908172998392
+  },
+  {
+   "block": "harmonics::har: heliocentric + helio-geo contacts",
+   "cols": 288,
+   "auc": 0.5938224833331055,
+   "matched": 0.5140661623045056,
+   "public": 0.5952688107225378,
+   "private": 0.5933274021019
+  },
+  {
+   "block": "vedic_match::vm: kuja dosha (moon/sun/venus lagna proxies)",
+   "cols": 182,
+   "auc": 0.5119433052172051,
+   "matched": 0.5139308897366536,
+   "public": 0.5174368525461743,
+   "private": 0.5095485629798246
+  },
+  {
+   "block": "vedic_match::vm: ten poruthams (Krishnamurti)",
+   "cols": 43,
+   "auc": 0.5121174702775613,
+   "matched": 0.5100975601052613,
+   "public": 0.518398598904192,
+   "private": 0.5093637934755081
+  },
+  {
+   "block": "harmonics::har: harmonic 10/11/13/16 conj",
+   "cols": 400,
+   "auc": 0.5758074500904546,
+   "matched": 0.5073038083506323,
+   "public": 0.58912544101837,
+   "private": 0.5701207644676091
+  },
+  {
+   "block": "harmonics::har: draconic-tropical cross contacts",
+   "cols": 400,
+   "auc": 0.504193985335867,
+   "matched": 0.5071561555208504,
+   "public": 0.5050989246176181,
+   "private": 0.5037890743832244
+  },
+  {
+   "block": "vedic_match::vm: guna milan verdict (total, grade, doshas)",
+   "cols": 33,
+   "auc": 0.505553573300159,
+   "matched": 0.5058817167927694,
+   "public": 0.5075568454121635,
+   "private": 0.5047121492025338
+  },
+  {
+   "block": "coherent::coh: FAST bodies (Sun Moon Mercury Venus Mars) \u2014 era-blind by construction",
+   "cols": 192,
+   "auc": 0.5068850337439108,
+   "matched": 0.5054374838646953,
+   "public": 0.5003779979534556,
+   "private": 0.509835095032077
+  },
+  {
+   "block": "vedic_match::vm: ten poruthams (True Citra)",
+   "cols": 43,
+   "auc": 0.5094817883133513,
+   "matched": 0.5053176866242558,
+   "public": 0.5143943115231213,
+   "private": 0.5074340514999978
+  },
+  {
+   "block": "numerology::num: personal years, in each other's birth year and at the midpoint",
+   "cols": 39,
+   "auc": 0.5285803975447374,
+   "matched": 0.5049156922368839,
+   "public": 0.5403737932711133,
+   "private": 0.5235398362208359
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot ayanamsa spread (7 modes)",
+   "cols": 29,
+   "auc": 0.5006675415931865,
+   "matched": 0.5048326716568833,
+   "public": 0.5037209445988264,
+   "private": 0.4992773594674667
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (Krishnamurti)",
+   "cols": 53,
+   "auc": 0.5048881051005482,
+   "matched": 0.5040292290701659,
+   "public": 0.5052370464398197,
+   "private": 0.5046957585482413
+  },
+  {
+   "block": "harmonics::har: draconic zodiac synastry",
+   "cols": 346,
+   "auc": 0.5226653474415235,
+   "matched": 0.5039569501880161,
+   "public": 0.5089274772005584,
+   "private": 0.5284792535527446
+  },
+  {
+   "block": "harmonics::har: harmonic 5/7/9 conj (Addey creative)",
+   "cols": 300,
+   "auc": 0.5869671264587805,
+   "matched": 0.5036731144770049,
+   "public": 0.5883984643942118,
+   "private": 0.5862422608013476
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (Raman)",
+   "cols": 53,
+   "auc": 0.5038877838384667,
+   "matched": 0.5029448637752444,
+   "public": 0.5009052023478467,
+   "private": 0.5051867991356225
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (True Citra)",
+   "cols": 53,
+   "auc": 0.5031860540358264,
+   "matched": 0.5023713663476079,
+   "public": 0.5009288661406496,
+   "private": 0.5041172621125999
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot under the +-6deg moon smear",
+   "cols": 24,
+   "auc": 0.5028053926460603,
+   "matched": 0.5020731476852369,
+   "public": 0.5067799257305635,
+   "private": 0.501053474181816
+  },
+  {
+   "block": "vedic_match::vm: ashtakoot 36pt (Lahiri)",
+   "cols": 53,
+   "auc": 0.5036846596216854,
+   "matched": 0.5020467485972981,
+   "public": 0.5020418116800496,
+   "private": 0.5042977934620209
+  },
+  {
+   "block": "harmonics::har: speed, stations, applying/separating",
+   "cols": 557,
+   "auc": 0.5788778611692117,
+   "matched": 0.501829547825498,
+   "public": 0.5777766596289716,
+   "private": 0.579448404842792
+  },
+  {
+   "block": "coherent::coh: cross-partner interference only, FAST bodies \u2014 synastry generalised",
+   "cols": 192,
+   "auc": 0.502611234147653,
+   "matched": 0.5017685568292256,
+   "public": 0.4973019539816449,
+   "private": 0.5049513825095422
+  },
+  {
+   "block": "vedic_match::vm: ten poruthams (Lahiri)",
+   "cols": 43,
+   "auc": 0.5059338017835742,
+   "matched": 0.500842586061937,
+   "public": 0.5166910694340517,
+   "private": 0.5012975310242305
+  },
+  {
+   "block": "vedic_match::vm: nakshatra pair low-rank + kuta vector",
+   "cols": 88,
+   "auc": 0.5077423250260883,
+   "matched": 0.5008291134239544,
+   "public": 0.510557414339561,
+   "private": 0.506550805970619
+  },
+  {
+   "block": "vedic_match::vm: kuta category pairs one-hot",
+   "cols": 330,
+   "auc": 0.4988756966374569,
+   "matched": 0.5003839701825032,
+   "public": 0.5044401993537543,
+   "private": 0.496474932226986
+  },
+  {
+   "block": "numerology::num: the pair \u2014 relationship number, groups and matches",
+   "cols": 177,
+   "auc": 0.5001422780899261,
+   "matched": 0.4995417482459171,
+   "public": 0.5022951388093176,
+   "private": 0.49926513672240863
+  },
+  {
+   "block": "harmonics::har: minor-aspect family tallies",
+   "cols": 118,
+   "auc": 0.4984271942655858,
+   "matched": 0.4995333733628469,
+   "public": 0.5002028858867147,
+   "private": 0.4976107109085705
+  },
+  {
+   "block": "numerology::num: life path, birthday, attitude and pillars, both partners",
+   "cols": 134,
+   "auc": 0.49600371615925487,
+   "matched": 0.4995331913001715,
+   "public": 0.5049079951735826,
+   "private": 0.4922776134757778
+  },
+  {
+   "block": "harmonics::har: minor-aspect kernels (Kepler/Addey)",
+   "cols": 288,
+   "auc": 0.5446994718542518,
+   "matched": 0.49590868755750905,
+   "public": 0.5601694277746171,
+   "private": 0.5378946541740534
+  },
+  {
+   "block": "vedic_match::vm: moon nakshatra/rasi/pada one-hot",
+   "cols": 110,
+   "auc": 0.49676539209923126,
+   "matched": 0.4944408982681106,
+   "public": 0.49844578699796643,
+   "private": 0.4961260220275408
+  },
+  {
+   "block": "harmonics::har: ecliptic latitude contacts",
+   "cols": 204,
+   "auc": 0.5801251441122458,
+   "matched": 0.49369007179459545,
+   "public": 0.5920822942022214,
+   "private": 0.5749233666666167
+  },
+  {
+   "block": "coherent::coh: classical seven \u2014 adds Jupiter and Saturn, partly era-capable",
+   "cols": 192,
+   "auc": 0.4995838972508168,
+   "matched": 0.49314697883375747,
+   "public": 0.5028787626676019,
+   "private": 0.49813479037196107
+  },
+  {
+   "block": "harmonics::har: harmonic 5/7/9 circular cos/sin",
+   "cols": 294,
+   "auc": 0.49313182681923196,
+   "matched": 0.49262391276721795,
+   "public": 0.5049799829222144,
+   "private": 0.4879668713968659
+  },
+  {
+   "block": "harmonics::har: harmonic 2/3/4/6/8/12 conj",
+   "cols": 600,
+   "auc": 0.5771217765565262,
+   "matched": 0.4914401412515061,
+   "public": 0.5901316503976015,
+   "private": 0.5715846840481282
+  },
+  {
+   "block": "harmonics::har: Addey wave amplitudes N=1..16",
+   "cols": 288,
+   "auc": 0.500703370289865,
+   "matched": 0.49084261155071157,
+   "public": 0.5024565507854885,
+   "private": 0.500010255866543
+  },
+  {
+   "block": "harmonics::har: fixed stars conj + parallels",
+   "cols": 700,
+   "auc": 0.4965067989081646,
+   "matched": 0.48903363680753825,
+   "public": 0.4893991190094486,
+   "private": 0.49951415759155166
+  },
+  {
+   "block": "harmonics::har: antiscia + Ebertin dial midpoints",
+   "cols": 476,
+   "auc": 0.47711851836662156,
+   "matched": 0.4815364778955885,
+   "public": 0.4931673911938807,
+   "private": 0.4702099155778277
+  }
+ ]
+}

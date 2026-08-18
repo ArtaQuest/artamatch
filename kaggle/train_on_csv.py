@@ -130,30 +130,51 @@ def main():
                if m.startswith("trad_") and m.endswith(".py")
                and m[5:-3] not in ("electional", "muhurta", "wedding_transits")]
 
-    def build(rows):
+    def build(rows, keep=None, subsample=0):
+        """Feature blocks for these rows. `keep` retains only those block keys; `subsample` thins by couple.
+
+        WHY BOTH ARGUMENTS EXIST — this is a memory bound, not a nicety. Every block is held at once as
+        float32, so the footprint is (total columns) x rows x 4 bytes: 57,132 columns over 271 blocks is
+        10.6 GB at 50,000 couples and 21.3 GB at 100,000, on a machine with 16 GB. Building the full set at
+        full scale is a certain OOM past about 80,000 rows, and the training half is larger than that.
+
+        core.py has documented the remedy since it was written — screen on a subsample, then recompute only
+        the survivors at full scale — and this file defeated it by popping AQ_SUBSAMPLE and AQ_ONLY_KEYS from
+        the environment and keeping every block regardless. Now the screening pass passes `subsample` and the
+        fitting pass passes `keep`, which is about 57 blocks of 271, so neither pass holds more than a few GB.
+
+        The modules still COMPUTE all of their own blocks — filtering that would mean editing nineteen
+        modules and risking a width change, which is the one thing verify_docs refuses to publish. What
+        bounds memory is that unwanted blocks are never RETAINED; a module's own dict is transient.
+        """
         write(rows)
+        if subsample:
+            os.environ["AQ_SUBSAMPLE"] = str(subsample)
+        else:
+            os.environ.pop("AQ_SUBSAMPLE", None)
         E = core.load()
-        if E.n != len(rows):
+        if not subsample and E.n != len(rows):
             raise SystemExit(f"core kept {E.n} of {len(rows)} rows — predictions could not be aligned")
         blocks = {}
         for slug in MODULES:
             for k, v in (__import__(f"trad_{slug}").build(E) or {}).items():
-                if v is not None:
-                    blocks[f"{slug}::{k}"] = np.asarray(v, dtype=np.float32)
+                key = f"{slug}::{k}"
+                if v is None or (keep is not None and key not in keep):
+                    continue
+                blocks[key] = np.asarray(v, dtype=np.float32)
         return E, blocks
 
-    log("building features for the training half")
-    Etr, Btr = build(tr)
-    y = Etr.Y.astype(int)
-    log(f"  {len(Btr)} blocks · {sum(v.shape[1] for v in Btr.values()):,} columns")
-
-    YR = 365.2425
-    gap = (Etr.JD[1] - Etr.JD[0]) / YR
-    folds = list(StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=7).split(np.zeros(len(y)), y))
-    bp = np.zeros(len(y))
-    for a, b in folds:
-        bp[b] = LogisticRegression(max_iter=2000).fit(gap[a, None], y[a]).predict_proba(gap[b, None])[:, 1]
-    log(f"  BASELINE two-parameter logistic on the AGE GAP (younger - older): AUC {roc_auc_score(y, bp):.4f}")
+    # PASS 1 — SCREEN on a subsample of couples. Below the threshold this is the whole training half and the
+    # two passes see identical data; above it, the screen ranks blocks on a seeded subsample drawn by PERSON
+    # GROUP (core.py's own rule, so a couple is never split from its partner's other relationships).
+    SCREEN_COUPLES = int(os.environ.get("AQ_SCREEN_COUPLES") or 30000)
+    sub = SCREEN_COUPLES if len(tr) > SCREEN_COUPLES else 0
+    log(f"building features for the screening pass"
+        + (f" ({SCREEN_COUPLES:,}-couple subsample of {len(tr):,})" if sub else f" (all {len(tr):,} rows)"))
+    Es, Bs = build(tr, subsample=sub)
+    ys = Es.Y.astype(int)
+    log(f"  {len(Bs)} blocks · {sum(v.shape[1] for v in Bs.values()):,} columns on {len(ys):,} rows "
+        f"({sum(v.nbytes for v in Bs.values())/2**30:.1f} GB)")
 
     def hgb():
         return HistGradientBoostingClassifier(max_iter=300, learning_rate=0.06, max_leaf_nodes=15,
@@ -173,14 +194,14 @@ def main():
     # everything with five folds and both kinds.
     SCREEN_ROWS = int(os.environ.get("AQ_SCREEN_ROWS") or 15000)
     rng = np.random.default_rng(11)
-    sidx = (np.sort(rng.permutation(len(y))[:SCREEN_ROWS]) if SCREEN_ROWS < len(y)
-            else np.arange(len(y)))
-    sy = y[sidx]
+    sidx = (np.sort(rng.permutation(len(ys))[:SCREEN_ROWS]) if SCREEN_ROWS < len(ys)
+            else np.arange(len(ys)))
+    sy = ys[sidx]
     sfolds = list(StratifiedKFold(n_splits=3, shuffle=True, random_state=7)
                   .split(np.zeros(len(sidx)), sy))
-    log(f"screening {len(Btr)} blocks on {len(sidx):,} rows, 3 folds, one cheap model")
+    log(f"screening {len(Bs)} blocks on {len(sidx):,} rows, 3 folds, one cheap model")
     ranked = []
-    for key, X in Btr.items():
+    for key, X in Bs.items():
         keep = X.std(0) > 1e-12
         if keep.sum() == 0:
             continue
@@ -206,7 +227,37 @@ def main():
             continue
         per[s["slug"]] = per.get(s["slug"], 0) + 1
         chosen.append(s)
-    log(f"  selected {len(chosen)} across {len(per)} traditions; refitting on all {len(y):,} rows")
+    # PASS 2 — rebuild ONLY the surviving blocks, at full scale. The screening arrays are freed first, so the
+    # two footprints never coexist. `kept_idx` was measured on the subsample: a column constant there but not
+    # here is dropped (a real but tiny loss) and one constant here but not there is kept (a harmless constant),
+    # and the block WIDTH is a function of the module alone, so the shape contract holds either way.
+    keep_keys = {s_["key"] for s_ in chosen}
+    del Bs, Es, ys
+    gc.collect()
+    log(f"  selected {len(chosen)} across {len(per)} traditions; rebuilding those {len(keep_keys)} blocks "
+        f"on all {len(tr):,} rows")
+    Etr, Btr = build(tr, keep=keep_keys)
+    y = Etr.Y.astype(int)
+    missing = keep_keys - set(Btr)
+    if missing:
+        raise SystemExit(f"the full-scale build lost blocks the screen chose: {sorted(missing)[:4]}")
+    log(f"  {len(Btr)} blocks · {sum(v.shape[1] for v in Btr.values()):,} columns on {len(y):,} rows "
+        f"({sum(v.nbytes for v in Btr.values())/2**30:.1f} GB)")
+    for s_ in chosen:
+        w = Btr[s_["key"]].shape[1]
+        if w != s_["full_cols"]:
+            raise SystemExit(f"{s_['key']} is {w} columns at full scale and was {s_['full_cols']} on the "
+                             f"screen — a block width changed between passes, which invalidates kept_idx")
+
+    # The baseline and the folds belong to the FULL training half, so they are computed here rather than
+    # before the screen.
+    YR = 365.2425
+    gap = (Etr.JD[1] - Etr.JD[0]) / YR
+    folds = list(StratifiedKFold(n_splits=FOLDS, shuffle=True, random_state=7).split(np.zeros(len(y)), y))
+    bp = np.zeros(len(y))
+    for a, b in folds:
+        bp[b] = LogisticRegression(max_iter=2000).fit(gap[a, None], y[a]).predict_proba(gap[b, None])[:, 1]
+    log(f"  BASELINE two-parameter logistic on the AGE GAP (younger - older): AUC {roc_auc_score(y, bp):.4f}")
 
     scored = []
     for s in chosen:

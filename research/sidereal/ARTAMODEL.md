@@ -118,3 +118,23 @@ plain reference (0.6371 on FULL), which it does not reach (0.6304 at best, m+d) 
 
 What would move it: information that is not a function of the three dates — birth **times** (the angles would
 then be real), or a wedding **place** (a real electional lagna). Both are absent from Wikidata for these couples.
+
+## 7 · Ensembles, boosting, and split single-sum models (`artamodel_ensemble.py`)
+
+Arash, 2026-08-18: "use ensembles and boosting techniques and split multiple single sum model". FULL population;
+the plain reference on the same rows is 0.6353.
+
+| construction | 3-term | 6-term |
+|---|---|---|
+| single ArtaModel F=1 | 0.6251 | 0.5820 |
+| BAG, 25 bootstraps rank-averaged | 0.6339 | 0.6031 |
+| BOOST, single-sum fields on residuals | 0.6318 | 0.5933–0.5969 |
+| SPLIT per body (14 single sums), linear head | 0.6339 | 0.6251 |
+| SPLIT per term / per phasor, linear head | 0.6291 / 0.6297 | 0.6195 / 0.6070 |
+| SPLIT → LightGBM on the intensities | 0.6220–0.6293 | 0.6097–0.6269 |
+| **BOOST over SPLIT, per phasor** | **0.6373** | **0.6388** |
+
+Splitting rescues the six-term formula (each absolute-phase term in its own sum can be weighted down); boosting
+over the split sums reaches the reference but does not cross it; the age-cell-matched control stays at 0.50–0.52
+for every construction — better instruments for the same two quantities. Inner-selected picks: 3-term BOOST
+0.6318, 6-term BOOST-over-SPLIT-per-body 0.6293 (the top held-out numbers carry about +0.007 of optimism).

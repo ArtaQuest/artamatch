@@ -1,0 +1,176 @@
+{
+ "3-term single ArtaModel F=1": {
+  "held": 0.625122502761723,
+  "age_cell_matched": 0.49745920614307493,
+  "inner": 0.642
+ },
+ "3-term BAG 25 bootstraps (rank-average)": {
+  "held": 0.6338806566263461,
+  "age_cell_matched": 0.5090339337135114,
+  "inner_mean": 0.631
+ },
+ "3-term BOOST single-sum fields nu=0.05": {
+  "held": 0.6317858449718171,
+  "age_cell_matched": 0.5057591327423635,
+  "inner": 0.6505,
+  "stages": 2
+ },
+ "3-term BOOST single-sum fields nu=0.1": {
+  "held": 0.6318100858009921,
+  "age_cell_matched": 0.5060132121280561,
+  "inner": 0.6505,
+  "stages": 2
+ },
+ "3-term BOOST single-sum fields nu=0.3": {
+  "held": 0.6318135487765885,
+  "age_cell_matched": 0.5055615154423805,
+  "inner": 0.6502,
+  "stages": 2
+ },
+ "3-term SPLIT per body (14 single sums), linear head": {
+  "held": 0.6339023002238237,
+  "age_cell_matched": 0.5096267856134605,
+  "inner": 0.6488
+ },
+ "3-term SPLIT per body -> LightGBM on the 14 intensities": {
+  "held": 0.622015636489143,
+  "age_cell_matched": 0.49466433290045736
+ },
+ "3-term SPLIT per body -> LightGBM on intensities + plain columns": {
+  "held": 0.6192856573939723,
+  "age_cell_matched": 0.4904014454293942
+ },
+ "3-term BOOST over SPLIT per body (stage k -> group k)": {
+  "held": 0.6314118436074048,
+  "age_cell_matched": 0.495821805657501,
+  "inner": 0.6476,
+  "stages": 8
+ },
+ "3-term SPLIT per term (3 single sums), linear head": {
+  "held": 0.6291389772909604,
+  "age_cell_matched": 0.49822144430015247,
+  "inner": 0.6457
+ },
+ "3-term SPLIT per term -> LightGBM on the 3 intensities": {
+  "held": 0.6121412501572768,
+  "age_cell_matched": 0.48924397267235054
+ },
+ "3-term SPLIT per term -> LightGBM on intensities + plain columns": {
+  "held": 0.6292789392213153,
+  "age_cell_matched": 0.5131415504488736
+ },
+ "3-term BOOST over SPLIT per term (stage k -> group k)": {
+  "held": 0.6356776523795837,
+  "age_cell_matched": 0.5104172548133928,
+  "inner": 0.6461,
+  "stages": 9
+ },
+ "3-term SPLIT per phasor (42 single sums), linear head": {
+  "held": 0.6296918990611873,
+  "age_cell_matched": 0.5084410818135622,
+  "inner": 0.6482
+ },
+ "3-term SPLIT per phasor -> LightGBM on the 42 intensities": {
+  "held": 0.6286102963499083,
+  "age_cell_matched": 0.4999153068714358
+ },
+ "3-term SPLIT per phasor -> LightGBM on intensities + plain columns": {
+  "held": 0.6274986811834604,
+  "age_cell_matched": 0.49525718480040654
+ },
+ "3-term BOOST over SPLIT per phasor (stage k -> group k)": {
+  "held": 0.6372821644059208,
+  "age_cell_matched": 0.5185195641126983,
+  "inner": 0.6383,
+  "stages": 36
+ },
+ "6-term single ArtaModel F=1": {
+  "held": 0.5820165368627981,
+  "age_cell_matched": 0.5054485912709615,
+  "inner": 0.5639
+ },
+ "6-term BAG 25 bootstraps (rank-average)": {
+  "held": 0.6030887433669588,
+  "age_cell_matched": 0.48578566992264693,
+  "inner_mean": 0.5898
+ },
+ "6-term BOOST single-sum fields nu=0.05": {
+  "held": 0.5968519243178226,
+  "age_cell_matched": 0.4862232510868951,
+  "inner": 0.6325,
+  "stages": 20
+ },
+ "6-term BOOST single-sum fields nu=0.1": {
+  "held": 0.5932585099739469,
+  "age_cell_matched": 0.479306645587488,
+  "inner": 0.6381,
+  "stages": 48
+ },
+ "6-term BOOST single-sum fields nu=0.3": {
+  "held": 0.5955648517211566,
+  "age_cell_matched": 0.49031675230083,
+  "inner": 0.6365,
+  "stages": 14
+ },
+ "6-term SPLIT per body (14 single sums), linear head": {
+  "held": 0.6251149996479308,
+  "age_cell_matched": 0.5018632488284117,
+  "inner": 0.6387
+ },
+ "6-term SPLIT per body -> LightGBM on the 14 intensities": {
+  "held": 0.6096695513253385,
+  "age_cell_matched": 0.4905708316865225
+ },
+ "6-term SPLIT per body -> LightGBM on intensities + plain columns": {
+  "held": 0.626894969104486,
+  "age_cell_matched": 0.5038394218282424
+ },
+ "6-term BOOST over SPLIT per body (stage k -> group k)": {
+  "held": 0.6293398298755521,
+  "age_cell_matched": 0.48952628310089774,
+  "inner": 0.6571,
+  "stages": 21
+ },
+ "6-term SPLIT per term (6 single sums), linear head": {
+  "held": 0.6194865099785641,
+  "age_cell_matched": 0.4926316978149173,
+  "inner": 0.6523
+ },
+ "6-term SPLIT per term -> LightGBM on the 6 intensities": {
+  "held": 0.6214165417109639,
+  "age_cell_matched": 0.49271639094348146
+ },
+ "6-term SPLIT per term -> LightGBM on intensities + plain columns": {
+  "held": 0.6220208309525376,
+  "age_cell_matched": 0.4918129975721303
+ },
+ "6-term BOOST over SPLIT per term (stage k -> group k)": {
+  "held": 0.6292243973556718,
+  "age_cell_matched": 0.4935350911862684,
+  "inner": 0.6496,
+  "stages": 24
+ },
+ "6-term SPLIT per phasor (84 single sums), linear head": {
+  "held": 0.6070313410834727,
+  "age_cell_matched": 0.49096606628648864,
+  "inner": 0.6336
+ },
+ "6-term SPLIT per phasor -> LightGBM on the 84 intensities": {
+  "held": 0.5995645885350113,
+  "age_cell_matched": 0.4670826040313929
+ },
+ "6-term SPLIT per phasor -> LightGBM on intensities + plain columns": {
+  "held": 0.6200226940334085,
+  "age_cell_matched": 0.47933487663034274
+ },
+ "6-term BOOST over SPLIT per phasor (stage k -> group k)": {
+  "held": 0.6388410805869051,
+  "age_cell_matched": 0.5197052679125967,
+  "inner": 0.6367,
+  "stages": 37
+ },
+ "REFERENCE plain columns (two ages, gap, start year), LightGBM": {
+  "held": 0.6353325091451414,
+  "age_cell_matched": 0.5061402518209023
+ }
+}

@@ -27,8 +27,8 @@ import time
 
 import requests
 
-SLUG = os.environ.get("AQ_COMPETITION", "artamatch-marriage-year")
-OLD_SLUG = os.environ.get("AQ_OLD_COMPETITION", "artamatch-astrology")
+SLUG = os.environ.get("AQ_COMPETITION", "artamatch-sidereal")
+OLD_SLUG = os.environ.get("AQ_OLD_COMPETITION", "artamatch-astrology")   # the first edition, the one that is live
 ORG_ID = 5418
 DEADLINE = "2027-02-28T23:59:00Z"
 B = "https://api.kaggle.com/v1/competitions.CompetitionApiService/"
@@ -39,9 +39,9 @@ if U != "artafather":
 
 # LENGTH LIMITS THE API DOES NOT ENFORCE BUT THE LAUNCH CHECKLIST DOES: title <= 60 characters, brief <= 140.
 # The first values here were 61 and 389 and the settings page showed both in red; the API had answered 200.
-TITLE = "ArtaMatch Astrology II: two births and a wedding date"
-BRIEF = ("Two birth dates and the date it began: did the relationship last thirty years? "
-         "Train on births 1600-1900, predict the couples born after.")
+TITLE = os.environ.get("AQ_COMP_TITLE", "ArtaMatch Astrology III: sidereal, place and date")
+BRIEF = os.environ.get("AQ_COMP_BRIEF", ("Two birth dates, two birthplaces and the date it began: did the relationship "
+                                         "last thirty years? Sidereal charts at 09:00 local."))
 assert len(TITLE) <= 60 and len(BRIEF) <= 140, (len(TITLE), len(BRIEF))
 
 

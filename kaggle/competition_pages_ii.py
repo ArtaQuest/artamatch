@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import competition_pages as P1                                       # noqa: E402
+_P1_PAGES = P1.pages                # the original, captured BEFORE it is overridden below (else recursion)
 
 SLUG = os.environ.get("AQ_COMPETITION", "artamatch-marriage-year")
 TITLE = "ArtaMatch Astrology II: two births and a wedding date"
@@ -277,7 +278,7 @@ ages at the start would be worth publishing, and so would one that clearly beats
 
 Nothing here is advice about any real person, and no score means anything about anybody's life.
 """
-    PRIZES = P1.pages(N)[5][1].replace(
+    PRIZES = _P1_PAGES(N)[5][1].replace(
         "a leaderboard\nthat tops out at the era rule",
         "a leaderboard\nthat tops out at the two ages at the start").replace(
         "how much two birth dates actually carry",

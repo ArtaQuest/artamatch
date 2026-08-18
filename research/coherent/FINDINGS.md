@@ -166,3 +166,63 @@ NvidiaTeslaT4` because Kaggle's default P100 is compute capability 6.0 and the p
 It scales the BASIS (24 harmonics, 18 bodies) and the RESTARTS, not the field count, since 8 fields beat 64
 locally. Reports held-out AUC, the age-gap logistic, and the gap-matched AUC, plus the best fast-body
 configuration separately.
+
+---
+
+# Addendum, 2026-08-18 (later): from one formula to 4,962 features, and what the leaderboard can reach
+
+## Named features, then thousands of them
+
+`named_features.py` (667) and then `mega_features.py` (**4,962** across nine families) define every feature
+with a name and a sentence, and `rank_named.py` / `rank_mega.py` score each with its own two-parameter
+logistic — sign fitted on the training half, AUC read held out. Ranked by **training** AUC, because the largest
+of 4,962 null draws sits near 0.5254 held out and ranking on that column surfaces the luckiest feature.
+
+Result: median held-out **0.4999**, median gap-matched **0.4999**, **51% reverse direction out of time**.
+Ranks 1–11 are Pluto/Uranus/Neptune cross-chart separations and **the age gap itself sits at rank 12** among
+them — a slow planet's separation between two charts is the gap, read less precisely. Best numerology feature
+(birth-year digit sum) is 0.5358 train → 0.4591 held out, reversed.
+
+A contamination was fixed on the way: `dates.concrete()` places a year-only date at 1 January, so every
+longitude for such a couple was fabricated. Only the **27,189 couples with both dates to the day** are used.
+
+## The periodicity argument, and its false positives
+
+Two dates are two numbers, so every feature is a function of era and gap; independence was never available.
+What *is* separable is **periodicity** — the dates modulo a cycle. `fine_structure.py` tests 52 periodic
+claims (sun-sign compatibility in every popular form, Chaldean weekdays, Chinese san-he/liu-chong, seasonal
+harmonics, gap mod 7/12/19/29.53/60) against a model given era and gap explicitly: **0 of 52** clear the noise
+floor. The first version reported two — Metonic-mod-19 at +0.0212 and Chinese animal distance at +0.0149 —
+because its baseline, a tree on the two raw years, scored 0.5311 while the gap scores 0.6045: **an axis-aligned
+tree cannot represent a difference**, and every gap-correlated feature was credited for patching that. Handing
+the baseline the rotated coordinates sent both negative.
+
+## The ensemble that scored below its own feature
+
+The first ensemble scored **0.5809** held out with the age gap as an input — impossible for an honest pipeline.
+Adversarial validation ruled out extrapolation (top features' ranges overlap 100%). It was overfitting behind a
+validation split (1888–1900) too close in time to expose it. Repairing the split with three expanding-window
+temporal folds did **not** repair selection: across ten candidates, mean fold AUC vs held-out AUC is
+**Spearman −0.15**. Internal validation on 1600–1900 does not rank models for 1901–1990.
+
+`sota_ensemble.py` therefore keeps a hard floor (ship the gap alone if nothing beats it on the folds), and the
+shipping recipe does **no selection at all**: eleven pre-registered models, equal weights, rank-averaged.
+
+| | held out |
+|---|---|
+| age gap alone | 0.6045 |
+| **equal-weight rank average of 11** | **0.6103** |
+| best member (XGBoost depth 3, top-50 stable) | 0.6164 |
+| worst member (L2 logistic, top-200) | 0.5814 |
+| the broken first ensemble | 0.5809 |
+
+## What 0.7 would require
+
+A model fitted and scored **on the same rows** with bins fine enough to memorise reaches **0.6484** from the two
+birth years — the most optimistic number any function of era and gap can print, even cheating. Out of time the
+best two-year model is the gap alone at 0.6045. So 0.7 is not reachable from era-and-gap under any modelling;
+it would need astrology to add ≥0.09 held out. The measured astrological contribution is real but small: the
+corrected ensemble sits at 0.5291 with the gap held flat.
+
+Honesty note: the held-out labels were read many times during this session for diagnosis, so every number
+above is mildly optimistic; the private leaderboard is the arbiter.

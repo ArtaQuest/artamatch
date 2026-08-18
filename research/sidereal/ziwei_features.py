@@ -103,10 +103,10 @@ def person(a):
 
 
 def couple(ao, ay):
-    """Both partners' features (older_/younger_) plus the crossings the tradition reads."""
+    """Both partners' features (dad_/mom_) plus the crossings the tradition reads."""
     O, Y = person(ao), person(ay)
-    F = {f"older_{k}": v for k, v in O.items()}
-    F.update({f"younger_{k}": v for k, v in Y.items()})
+    F = {f"dad_{k}": v for k, v in O.items()}
+    F.update({f"mom_{k}": v for k, v in Y.items()})
     if not O or not Y:
         return F
     so, sy = O["soul_branch"], Y["soul_branch"]
@@ -122,8 +122,8 @@ def couple(ao, ay):
     for st in MAJOR:
         a_sp = O.get(f"in_spouse_{st}", 0.0); b_soul = Y.get(f"in_soul_{st}", 0.0)
         b_sp = Y.get(f"in_spouse_{st}", 0.0); a_soul = O.get(f"in_soul_{st}", 0.0)
-        F[f"pair_{st}_older_spouse_x_younger_soul"] = float(a_sp * b_soul)
-        F[f"pair_{st}_younger_spouse_x_older_soul"] = float(b_sp * a_soul)
+        F[f"pair_{st}_dad_spouse_x_mom_soul"] = float(a_sp * b_soul)
+        F[f"pair_{st}_mom_spouse_x_dad_soul"] = float(b_sp * a_soul)
     F["pair_spouse_soul_overlap"] = float(sum(O.get(f"in_spouse_{s}", 0) * Y.get(f"in_soul_{s}", 0) for s in MAJOR)
                                           + sum(Y.get(f"in_spouse_{s}", 0) * O.get(f"in_soul_{s}", 0) for s in MAJOR))
     F["pair_spouse_bright_sum"] = O.get("pal_spouse_bright_sum", np.nan) + Y.get("pal_spouse_bright_sum", np.nan)

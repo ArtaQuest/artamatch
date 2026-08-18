@@ -8,10 +8,15 @@
 #
 # | column | meaning |
 # |---|---|
-# | `dob_older` | the older partner's date of birth |
-# | `dob_younger` | the younger partner's date of birth |
-# | `lat_older`, `lon_older` | the older partner's place of birth, decimal degrees (empty when Wikidata has none) |
-# | `lat_younger`, `lon_younger` | the younger partner's place of birth |
+# | `dob_dad` | the man's date of birth (Wikidata P21 male) |
+# | `dob_mom` | the woman's date of birth (P21 female) |
+# | `lat_dad`, `lon_dad` | his place of birth, decimal degrees (empty when Wikidata has none) |
+# | `lat_mom`, `lon_mom` | her place of birth |
+#
+# **The columns are ordered by SEX in this edition (operator, 2026-08-18: "switch to gendered model (mom and
+# dad) instead of old first"): dad first, mom second, read from P21.** A pair that is not one man and one woman
+# has no such order and is excluded from this edition, counted in the build log. The two-dates editions order by
+# age and read no sex; they keep every couple. An absent partner (`0000-00-00`) may now be in EITHER column.
 # | `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD` |
 #
 # **The place of birth is an input (third edition, operator 2026-08-18: "use pob and the local time to encode
@@ -56,7 +61,7 @@
 # year, and **one partner may be missing from Wikidata entirely**. All three of these are real training rows:
 #
 # ```
-# dob_older,dob_younger,start,lasted_30_years
+# dob_dad,dob_mom,start,lasted_30_years
 # 1794-06-12,1801-03-27,1823-05-19,1     <- both known to the day; wed 19 May 1823
 # 1802-00-00,1809-11-00,1831-01-01,0     <- one year only; the other's year and month; the start known to the year
 # 1777-04-30,0000-00-00,1799-09-02,1     <- the partner is not in Wikidata at all, and the row is still worth learning from
@@ -871,65 +876,56 @@ for tag, m in (("test", test_l), ("train", train_l)):
 # only choice that invents nothing — putting the absent partner first would claim they were older.
 
 #%%
-def order_by_age(m, tag):
-    """The OLDER partner is column one, whatever anybody's sex.
+SEX_CSV = os.environ.get("AQ_SEX_CSV", "/tmp/aqdur/_sex.csv")
+MALE, FEMALE = "Q6581097", "Q6581072"
 
-    Nothing here reads a sex: the ordering key is the birth date itself, compared at whatever precision each
-    side has (a year-only date is placed at its 1 January for the comparison, which is the same convention the
-    concrete() step uses downstream). Ties on the concrete date fall to the Q-number, so the order is a
-    deterministic function of the row and two runs cannot disagree.
 
-    A ONE-SIDED ROW HAS NO AGE ORDER, so the known partner goes first and the absent one second. That is the only
-    choice that does not invent information: putting the absent partner first would claim they were older. A
-    model reads it as "one date, one placeholder", which is exactly what it is.
+def _sex_table():
+    """Q-id -> P21 value, from the side lookup sex_lookup.py writes (a query change would have refetched every
+    slice; the ids were already in the cache, so P21 was asked for by itself)."""
+    if not os.path.exists(SEX_CSV):
+        raise SystemExit(f"{SEX_CSV} is missing — run kaggle/sex_lookup.py first (the dad/mom ordering needs P21)")
+    t = pd.read_csv(SEX_CSV, header=None, names=["qid", "sex"], dtype=str).fillna("")
+    return dict(zip(t.qid, t.sex))
+
+
+def order_by_sex(m, tag):
+    """DAD is column one and MOM column two (third edition, operator 2026-08-18: "switch to gendered model (mom
+    and dad) instead of old first").
+
+    The order is read from Wikidata's P21 for each partner: Q6581097 male -> dad, Q6581072 female -> mom. A pair
+    that is not exactly one of each -- both male, both female, either sex unrecorded, or a value other than those
+    two -- has no dad/mom order and is EXCLUDED FROM THIS EDITION, counted aloud below. That is a consequence of
+    the ordering rule the operator chose for this edition, not a claim about anyone; the two-dates editions,
+    which order by age and read no sex, keep every couple.
+
+    A one-sided row (partner b without a date) is still orderable when b's sex is on file, because b is a
+    Wikidata item; it keeps its side. Ties cannot occur: the rule never compares the two partners.
     """
     m = m.copy()
     n0 = len(m)
-
-    def concrete_key(d):
-        d = d or ""
-        if len(d) < 4 or not d[:4].isdigit():
-            return None
-        y, mo, da = d[:4], (d[5:7] if len(d) >= 7 and d[5:7] not in ("", "00") else "01"), \
-                    (d[8:10] if len(d) >= 10 and d[8:10] not in ("", "00") else "01")
-        return f"{y}-{mo}-{da}"
-
-    ka = [concrete_key(d) for d in m["adob"]]
-    kb = [concrete_key(d) for d in m["bdob"]]
-    a_first = []
-    for x, y, qa, qb in zip(ka, kb, m["a"], m["b"]):
-        if x is None and y is None:
-            a_first.append(True)                 # unlabellable anyway; dropped below
-        elif y is None:
-            a_first.append(True)                 # only A is dated -> A first
-        elif x is None:
-            a_first.append(False)                # only B is dated -> B first
-        elif x != y:
-            a_first.append(x < y)                # the earlier birth is the older partner
-        else:
-            a_first.append(qa <= qb)             # identical dates: deterministic tiebreak
-    a_first = np.array(a_first, dtype=bool)
-    m["dob_older"] = np.where(a_first, m["adob"], m["bdob"])
-    m["dob_younger"] = np.where(a_first, m["bdob"], m["adob"])
-    m["prec_older"] = np.where(a_first, m["aprec"], m["bprec"])
-    m["prec_younger"] = np.where(a_first, m["bprec"], m["aprec"])
+    sex = _sex_table()
+    sa = m["a"].map(lambda q: sex.get(q, "")); sb = m["b"].map(lambda q: sex.get(q, ""))
+    a_dad = (sa == MALE) & (sb == FEMALE)
+    b_dad = (sa == FEMALE) & (sb == MALE)
+    keep = a_dad | b_dad
+    both_m = ((sa == MALE) & (sb == MALE)).sum(); both_f = ((sa == FEMALE) & (sb == FEMALE)).sum()
+    unk = (~keep).sum() - both_m - both_f
+    print(f"  {tag}: {int(keep.sum()):,} of {n0:,} rows are one man + one woman and take the dad/mom order; "
+          f"excluded from this edition: {int(both_m):,} male-male, {int(both_f):,} female-female, {int(unk):,} with a sex "
+          f"unrecorded or outside those two values")
+    m = m[keep].reset_index(drop=True); a_first = a_dad[keep].to_numpy()
+    m["dob_dad"] = np.where(a_first, m["adob"], m["bdob"]); m["dob_mom"] = np.where(a_first, m["bdob"], m["adob"])
+    m["prec_dad"] = np.where(a_first, m["aprec"], m["bprec"]); m["prec_mom"] = np.where(a_first, m["bprec"], m["aprec"])
     for q in ("lat", "lon"):
-        m[f"{q}_older"] = np.where(a_first, m[f"a{q}"], m[f"b{q}"])
-        m[f"{q}_younger"] = np.where(a_first, m[f"b{q}"], m[f"a{q}"])
-    m["older"] = np.where(a_first, m["a"], m["b"])
-    m["younger"] = np.where(a_first, m["b"], m["a"])
-    # The claim the column makes must hold wherever both dates exist.
-    both = np.array([x is not None and y is not None for x, y in zip(ka, kb)])
-    ko = np.array([concrete_key(d) or "" for d in m["dob_older"]])
-    ky = np.array([concrete_key(d) or "" for d in m["dob_younger"]])
-    assert (ko[both] <= ky[both]).all(), "an older-column date is later than its younger-column date"
-    print(f"  {tag}: {n0:,} rows ordered older-first; partner A was the older in {int(a_first.sum()):,} "
-          f"and B in {int((~a_first).sum()):,} — the order is computed, never inherited")
+        m[f"{q}_dad"] = np.where(a_first, m[f"a{q}"], m[f"b{q}"]); m[f"{q}_mom"] = np.where(a_first, m[f"b{q}"], m[f"a{q}"])
+    m["dad"] = np.where(a_first, m["a"], m["b"]); m["mom"] = np.where(a_first, m["b"], m["a"])
     return m
 
 
-test_c = order_by_age(test_l, "test half")
-train_c = order_by_age(train_l, "train half")
+
+test_c = order_by_sex(test_l, "test half")
+train_c = order_by_sex(train_l, "train half")
 
 #%% [markdown]
 # ## 6. `00` for unknown, `0000-00-00` for absent
@@ -957,7 +953,7 @@ def encode(dob, prec):
 
 
 for frame in (test_c, train_c):
-    for side in ("older", "younger"):
+    for side in ("dad", "mom"):
         frame[f"dob_{side}"] = encode(frame[f"dob_{side}"].fillna("").to_numpy(),
                                       frame[f"prec_{side}"].to_numpy())
 
@@ -988,15 +984,15 @@ def precision_class(col):
 
 def one_per_couple(m, tag):
     m = m.copy()
-    m["_pair"] = [f"{min(x, y)}|{max(x, y)}" for x, y in zip(m["older"], m["younger"])]
+    m["_pair"] = [f"{min(x, y)}|{max(x, y)}" for x, y in zip(m["dad"], m["mom"])]
     # PREFER THE MORE PRECISE COPY, not merely a non-absent one. 3.5% of people carry two non-deprecated P569
     # statements at different precisions — Q104093886 has both 1830-01-01 (year) and 1830-07-20 (day) — so the
     # query returns two rows for the couple. Ranking only on "is it absent" left those tied, and the tie was
     # broken by whichever row the endpoint happened to return first, throwing away a known birthday for about
     # one couple in thirty for no reason at all.
-    m["_prec"] = precision_class(m["dob_older"]) + precision_class(m["dob_younger"])
-    m["_known"] = (m["dob_older"] != ABSENT).astype(int) + (m["dob_younger"] != ABSENT).astype(int)
-    m["_places"] = m["lat_older"].notna().astype(int) + m["lat_younger"].notna().astype(int)
+    m["_prec"] = precision_class(m["dob_dad"]) + precision_class(m["dob_mom"])
+    m["_known"] = (m["dob_dad"] != ABSENT).astype(int) + (m["dob_mom"] != ABSENT).astype(int)
+    m["_places"] = m["lat_dad"].notna().astype(int) + m["lat_mom"].notna().astype(int)
     n0 = len(m)
     m = (m.sort_values(["_known", "_prec", "_places", "_dur"], ascending=[False, False, False, False])
           .drop_duplicates("_pair", keep="first").reset_index(drop=True))
@@ -1011,9 +1007,9 @@ train_u = one_per_couple(train_c, "train half")
 # The birth-gap sanity filter only applies where BOTH dates exist.
 kept = []
 for tag, m in (("test", test_u), ("train", train_u)):
-    both = (m["dob_older"] != ABSENT) & (m["dob_younger"] != ABSENT)
-    gap = np.abs(pd.to_numeric(m["dob_older"].str[:4], errors="coerce")
-                 - pd.to_numeric(m["dob_younger"].str[:4], errors="coerce"))
+    both = (m["dob_dad"] != ABSENT) & (m["dob_mom"] != ABSENT)
+    gap = np.abs(pd.to_numeric(m["dob_dad"].str[:4], errors="coerce")
+                 - pd.to_numeric(m["dob_mom"].str[:4], errors="coerce"))
     drop = both & (gap >= MAX_GAP_YEARS)
     if drop.any():
         print(f"  {tag}: {int(drop.sum()):,} couples born {MAX_GAP_YEARS}+ years apart — dropped")
@@ -1024,8 +1020,8 @@ test_u, train_u = kept
 def later_year(m):
     """The later of the two known birth years. With one partner absent this is the only known one, which is the
     right reading: the split asks when this couple lived, and an absent partner says nothing about that."""
-    y = np.maximum(pd.to_numeric(m["dob_older"].str[:4], errors="coerce").fillna(0),
-                   pd.to_numeric(m["dob_younger"].str[:4], errors="coerce").fillna(0))
+    y = np.maximum(pd.to_numeric(m["dob_dad"].str[:4], errors="coerce").fillna(0),
+                   pd.to_numeric(m["dob_mom"].str[:4], errors="coerce").fillna(0))
     return y.astype(int)
 
 
@@ -1033,7 +1029,7 @@ test_u["_later"], train_u["_later"] = later_year(test_u), later_year(train_u)
 test = test_u[test_u["_later"] > CUT].reset_index(drop=True)
 # THE PLACE, required in the held-out half. The whole point of this edition is a chart cast at 09:00 LOCAL, and
 # there is no local time without a place. Counted aloud, because it is the largest single filter on the test half.
-no_place = test["lat_older"].isna() | test["lat_younger"].isna()
+no_place = test["lat_dad"].isna() | test["lat_mom"].isna()
 print(f"  {int(no_place.sum()):,} of {len(test):,} held-out couples lack a birthplace for a partner — removed "
       f"(the training half keeps such rows, with the place empty)")
 test = test[~no_place].reset_index(drop=True)
@@ -1059,15 +1055,15 @@ train = train_u[(train_u["_later"] <= CUT) & (train_u["_later"] >= FLOOR)].reset
 
 # PERSON-DISJOINT, restored from the TRAINING side. A training couple sharing a person with a held-out couple is
 # dropped: that costs training rows rather than compromising the test set, and the test set is the measurement.
-test_people = set(test["older"]) | set(test["younger"])
+test_people = set(test["dad"]) | set(test["mom"])
 test_people.discard("")
-shares = train["older"].isin(test_people) | train["younger"].isin(test_people)
+shares = train["dad"].isin(test_people) | train["mom"].isin(test_people)
 print(f"\n  {int(shares.sum()):,} training couples dropped for sharing a person with the held-out half")
 train = train[~shares].reset_index(drop=True)
 
 assert test["_later"].min() > CUT >= train["_later"].max(), "the split is not temporal"
-tp = (set(train["older"]) | set(train["younger"])) - {""}
-sp = (set(test["older"]) | set(test["younger"])) - {""}
+tp = (set(train["dad"]) | set(train["mom"])) - {""}
+sp = (set(test["dad"]) | set(test["mom"])) - {""}
 assert not (tp & sp), f"{len(tp & sp)} people on both sides"
 print(f"  train {len(train):,} couples (later known birth {train['_later'].min()}-{train['_later'].max()}) · "
       f"test {len(test):,} ({test['_later'].min()}-{test['_later'].max()})")
@@ -1118,9 +1114,9 @@ for name, frame in (("train", train), ("test", test)):
     print(f"    {name}:")
     for dec, row in tab.iterrows():
         print(f"      {int(dec)}s  {100*row['mean']:5.1f}%  ({int(row['size']):>6,} couples)")
-print("\n  positive rate by the OLDER partner's age at the start (where that birth is known):")
+print("\n  positive rate by the DAD's age at the start (where his birth is known):")
 for name, frame in (("train", train), ("test", test)):
-    yo = pd.to_numeric(frame["dob_older"].str[:4], errors="coerce")
+    yo = pd.to_numeric(frame["dob_dad"].str[:4], errors="coerce")
     age = (frame["start_year"] - yo)
     ok = yo.notna()
     tab = frame[ok].groupby(pd.cut(age[ok], [0, 20, 25, 30, 35, 40, 50, 60, 200], right=False),
@@ -1128,16 +1124,16 @@ for name, frame in (("train", train), ("test", test)):
     tab = tab[tab["size"] >= 25]
     print(f"    {name}:")
     if tab.empty:
-        print(f"      (no band with >= 25 couples: {len(frame):,} rows, {int(ok.sum()):,} with a known older birth, "
+        print(f"      (no band with >= 25 couples: {len(frame):,} rows, {int(ok.sum()):,} with a known dad birth, "
               f"start_year dtype {frame['start_year'].dtype}, age min {age[ok].min()} max {age[ok].max()})")
     for band, row in tab.iterrows():
         print(f"      {str(band):<10} {100*row['mean']:5.1f}%  ({int(row['size']):>6,} couples)")
 
-n_both = int(((train["dob_older"] != ABSENT) & (train["dob_younger"] != ABSENT)).sum())
+n_both = int(((train["dob_dad"] != ABSENT) & (train["dob_mom"] != ABSENT)).sum())
 print(f"\n  the training half, by how much it knows:")
 print(f"      {n_both:>7,} couples with BOTH dates ({100*n_both/max(len(train),1):.1f}%)")
 print(f"      {len(train)-n_both:>7,} with one partner absent — kept, because the DURATION is known exactly")
-for side in ("older", "younger"):
+for side in ("dad", "mom"):
     pc = precision_class(train[f"dob_{side}"])
     print(f"      {side:<5}: {int((pc == 3).sum()):>7,} to the day · {int((pc == 2).sum()):>6,} to the month · "
           f"{int((pc == 1).sum()):>6,} to the year · {int((pc == 0).sum()):>6,} absent")
@@ -1150,9 +1146,9 @@ for side in ("older", "younger"):
 # are the reason the two halves were built by separate queries rather than filtered out of one.
 
 #%%
-COLS = ["dob_older", "dob_younger", "lat_older", "lon_older", "lat_younger", "lon_younger", "start",
+COLS = ["dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start",
         "lasted_30_years"]
-for col in ("dob_older", "dob_younger"):
+for col in ("dob_dad", "dob_mom"):
     assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
     assert not test[col].str.endswith("-00").any(), f"test.{col} is not day-precision"
@@ -1164,8 +1160,8 @@ for col in ("dob_older", "dob_younger"):
     # mode as the split assertion that went on checking a floor the new data already cleared.
     y = test[col].str[:4].astype(int)
     assert ((y >= FLOOR) & (y <= CEIL)).all(), f"test.{col} outside {FLOOR}-{CEIL}"
-assert (np.maximum(test["dob_older"].str[:4].astype(int),
-                   test["dob_younger"].str[:4].astype(int)) > CUT).all(), \
+assert (np.maximum(test["dob_dad"].str[:4].astype(int),
+                   test["dob_mom"].str[:4].astype(int)) > CUT).all(), \
     f"a held-out couple has BOTH births at or before {CUT} — it belongs in the training half"
 print(f"  checked: every test date is day-precision inside {FLOOR}-{CEIL}, never a placeholder, and every "
       f"held-out couple's LATER birth is after {CUT}")
@@ -1174,20 +1170,26 @@ for name, frame in (("test", test), ("train", train)):
     assert (frame["start"].str[:4].astype(int) == frame["start_year"]).all(), f"{name}: start and start_year disagree"
     sy = frame["start_year"]
     assert sy.between(FLOOR, CEIL).all(), f"{name}.start outside {FLOOR}-{CEIL}"
-    for col in ("dob_older", "dob_younger"):
+    for col in ("dob_dad", "dob_mom"):
         yr = pd.to_numeric(frame[col].str[:4], errors="coerce")
         known = frame[col] != ABSENT
         assert (sy[known] >= yr[known]).all(), f"{name}: a relationship starts before the {col} birth"
 assert (test["start_year"] <= CEIL - MIN_YEARS).all(), \
     f"a held-out couple began after {CEIL - MIN_YEARS}: its label is 0 by arithmetic and it must not be scored"
-for side in ("older", "younger"):
+for side in ("dad", "mom"):
     assert test[f"lat_{side}"].notna().all() and test[f"lon_{side}"].notna().all(), f"test.{side} lacks a place"
     assert test[f"lat_{side}"].between(-90, 90).all() and test[f"lon_{side}"].between(-180, 180).all()
     ok = train[f"lat_{side}"].isna() | (train[f"lat_{side}"].between(-90, 90) & train[f"lon_{side}"].between(-180, 180))
     assert ok.all(), f"train.{side}: a coordinate out of range"
+    # A partner whose DATE is absent is still a Wikidata item and may well have a recorded birthPLACE -- the
+    # one-sided rows are "no date on file", not "no person". The first run asserted the opposite and failed on
+    # 1,000-odd honest rows. Kept as data: a place without a date casts no chart, but it is a real fact about
+    # the partner and a model may read it (latitude, longitude) as it likes.
     absent = train[f"dob_{side}"] == ABSENT
-    assert train.loc[absent, f"lat_{side}"].isna().all(), "an absent partner carries a place"
-np_ = {n: int((f["lat_older"].notna() & f["lat_younger"].notna()).sum()) for n, f in (("train", train), ("test", test))}
+    n_place_no_date = int(train.loc[absent, f"lat_{side}"].notna().sum())
+    if n_place_no_date:
+        print(f"  {n_place_no_date:,} training rows know the {side} partner's birthplace but not their birth date — kept")
+np_ = {n: int((f["lat_dad"].notna() & f["lat_mom"].notna()).sum()) for n, f in (("train", train), ("test", test))}
 print(f"  checked: every held-out partner has a birthplace inside the world; training rows may leave it empty — "
       f"both places known in {np_['train']:,} of {len(train):,} training rows and all {np_['test']:,} test rows")
 jan1 = {n: int((f["start"].str[5:] == "01-01").sum()) for n, f in (("train", train), ("test", test))}
@@ -1196,9 +1198,9 @@ print(f"  checked: every start is a YYYY-MM-DD date inside {FLOOR}-{CEIL}, never
 print(f"  starts on 1 January (mostly year-only records, published as such): train {jan1['train']:,} of "
       f"{len(train):,} ({100*jan1['train']/len(train):.1f}%) · test {jan1['test']:,} of {len(test):,} "
       f"({100*jan1['test']/len(test):.1f}%)")
-for col in ("dob_older", "dob_younger"):
+for col in ("dob_dad", "dob_mom"):
     assert train[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"train.{col} malformed"
-assert not ((train["dob_older"] == ABSENT) & (train["dob_younger"] == ABSENT)).any(), \
+assert not ((train["dob_dad"] == ABSENT) & (train["dob_mom"] == ABSENT)).any(), \
     "a training row with no date at all carries no input"
 print("  checked: every training row is well-formed and carries at least one date")
 
@@ -1206,7 +1208,7 @@ train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
 train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
 test["id"] = [f"m{i:06d}" for i in range(len(test))]
-test[["id", "dob_older", "dob_younger", "lat_older", "lon_older", "lat_younger", "lon_younger", "start"]]\
+test[["id", "dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"]]\
     .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
 rng = np.random.default_rng(20260817)
 sol = test[["id", "lasted_30_years"]].copy()
@@ -1222,8 +1224,8 @@ for side in ("Public", "Private"):
 
 print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
 print("\n  training rows, showing the three shapes it can take:")
-ex = pd.concat([train[(train.dob_younger != ABSENT) & (train.dob_older.str[5:] != "00-00")].head(2),
-                train[train.dob_older.str[5:] == "00-00"].head(2),
-                train[train.dob_younger == ABSENT].head(2)])
+ex = pd.concat([train[(train.dob_mom != ABSENT) & (train.dob_dad.str[5:] != "00-00")].head(2),
+                train[train.dob_dad.str[5:] == "00-00"].head(2),
+                train[train.dob_mom == ABSENT].head(2)])
 print(ex[COLS].to_string(index=False))
 print(f"\n  total build time {(time.time()-T0)/60:.1f} min")

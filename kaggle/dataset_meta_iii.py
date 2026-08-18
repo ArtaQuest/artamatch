@@ -6,20 +6,20 @@ import sys
 
 ref, d, src = sys.argv[1], sys.argv[2], sys.argv[3]
 tr = list(csv.DictReader(open(f"{src}/train.csv"))); te = list(csv.DictReader(open(f"{src}/test.csv")))
-both = sum(1 for r in tr if r["lat_older"] not in ("", "nan") and r["lat_younger"] not in ("", "nan"))
-one = sum(1 for r in tr if "0000-00-00" in (r["dob_older"], r["dob_younger"]))
+both = sum(1 for r in tr if r["lat_dad"] not in ("", "nan") and r["lat_mom"] not in ("", "nan"))
+one = sum(1 for r in tr if "0000-00-00" in (r["dob_dad"], r["dob_mom"]))
 jan1_tr = sum(1 for r in tr if r["start"][5:] == "01-01"); jan1_te = sum(1 for r in te if r["start"][5:] == "01-01")
 desc = f"""# Let's end this loneliness epidemic with astrology.
 
-**Third edition.** Two birth dates, two birthplaces, and the date the relationship began. Did it last thirty
+**Third edition.** His and her birth dates and birthplaces, and the date the relationship began. Did it last thirty
 years?
 
 | column | meaning |
 |---|---|
-| `dob_older` | the older partner's date of birth |
-| `dob_younger` | the younger partner's date of birth |
-| `lat_older`, `lon_older` | the older partner's place of birth, decimal degrees (empty when Wikidata has none) |
-| `lat_younger`, `lon_younger` | the younger partner's place of birth |
+| `dob_dad` | the man's date of birth (Wikidata P21 male) |
+| `dob_mom` | the woman's date of birth (P21 female) |
+| `lat_dad`, `lon_dad` | his place of birth, decimal degrees (empty when Wikidata has none) |
+| `lat_mom`, `lon_mom` | her place of birth |
 | `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD`, 1 January where only the year is known |
 | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
 
@@ -42,8 +42,9 @@ Nothing about the data forces that on you.
 ## The rows
 
 **Any relationship two people chose**: a marriage, an unmarried partnership, a business or sporting
-partnership, or Wikidata's general "significant person" relation (`P26`, `P451`, `P1327`, `P3342`). Same-sex
-couples are in by construction; nothing here reads a sex — the first partner is simply the older one.
+partnership, or Wikidata's general "significant person" relation (`P26`, `P451`, `P1327`, `P3342`). **This edition orders the columns by sex — dad first, mom second, from Wikidata's P21 — so a pair that is
+not one man and one woman has no such order and is not in this edition** (the two-dates editions, which order
+by age and read no sex, keep every couple).
 
 `lasted_30_years` is `(end − start) >= 30 years`, the end being a recorded end date or, failing that, the
 earlier of the two deaths. **A relationship ended by a death is not automatically a long one.**
@@ -67,6 +68,6 @@ editions: `artamatch-astrology` (two dates), `artamatch-marriage-year` (two date
 """
 json.dump({"title": "ArtaMatch: two births, two birthplaces, a start date", "id": ref,
            "licenses": [{"name": "CC0-1.0"}],
-           "subtitle": "Birth dates and places, older first, and the date it began. Did the relationship last thirty years?",
+           "subtitle": "His and her birth dates and places, and the date it began. Did the relationship last thirty years?",
            "description": desc}, open(f"{d}/dataset-metadata.json", "w"), indent=1)
 print(f"  metadata written for {ref}: {len(tr):,} train / {len(te):,} test")

@@ -23,8 +23,7 @@ WHAT IS COMPUTED, per person (PyJHora, Lahiri by default; the ayanamsa is a para
   ashtakavarga  sarva points in each of the 12 houses, and the bhinna points of each graha in its own house
   doshas  manglik (from lagna, Moon, Venus), kala sarpa, ganda moola
   vimsottari  the maha-dasa lord and bhukti lord RUNNING AT THE START DATE (the wedding), and the years into it
-and per couple: Ashtakoota / poruthams both ways round (the dataset reads no sex, so both orderings are computed
-and their min/max/mean kept), Moon-sign and lagna distances, each partner's grahas in the other's houses, and
+and per couple: Ashtakoota with the dad as the boy and the mom as the girl, Moon-sign and lagna distances, each partner's grahas in the other's houses, and
 the same-dasa-lord-at-the-wedding indicators.
 """
 import datetime as dt
@@ -228,29 +227,86 @@ def person(dob, lat, lon, start=None):
     return F
 
 
+_MUH_CACHE = {}
+VIVAHA_NAK = {4, 5, 10, 12, 13, 15, 17, 19, 21, 26, 27}     # Rohini Mrigasira Magha U.Phalguni Hasta Svati Anuradha Mula U.Ashadha U.Bhadrapada Revati (1-based)
+GOOD_TITHI = {2, 3, 5, 7, 10, 11, 13}
+GOOD_VAARA = {1, 3, 4, 5}                                     # Mon Wed Thu Fri (0 = Sunday)
+_GREENWICH = drik.Place("greenwich", 51.48, 0.0, 0.0)
+
+
+def _panchanga_at(start):
+    if start in _MUH_CACHE:
+        return _MUH_CACHE[start]
+    y, m, d = int(start[:4]), int(start[5:7]), int(start[8:10])
+    jd = JU.julian_day_number((y, m, d), (12, 0, 0))
+    out = {}
+    try:
+        out["tithi"] = int(drik.tithi(jd, _GREENWICH)[0]); out["nak"] = int(drik.nakshatra(jd, _GREENWICH)[0])
+        out["yoga"] = int(drik.yogam(jd, _GREENWICH)[0]); out["karana"] = int(drik.karana(jd, _GREENWICH)[0])
+        out["vaara"] = int(drik.vaara(jd, _GREENWICH)); lm = drik.lunar_month(jd, _GREENWICH)
+        out["lunar_month"] = int(lm[0]); out["adhika"] = int(bool(lm[1]))
+        pp = charts.rasi_chart(jd, _GREENWICH)
+        pos = {GRAHA[r[0]]: r[1] for r in pp[1:]}
+        out["lon"] = {g: float(v[0] * 30 + v[1]) for g, v in pos.items()}
+        out["sun_sign"] = int(pos["Sun"][0]); out["moon_sign"] = int(pos["Moon"][0])
+        out["jup_sign"] = int(pos["Jupiter"][0]); out["ven_sign"] = int(pos["Venus"][0])
+        # combustion of Jupiter / Venus (Guru / Shukra asta): within 11 / 10 degrees of the Sun (Raman)
+        sl = pos["Sun"][0] * 30 + pos["Sun"][1]
+        for g, orb in (("Jupiter", 11.0), ("Venus", 10.0)):
+            gl = pos[g][0] * 30 + pos[g][1]; d_ = abs((gl - sl + 180) % 360 - 180)
+            out[f"{g}_combust"] = int(d_ < orb)
+    except Exception:
+        pass
+    _MUH_CACHE[start] = out
+    return out
+
+
+def muhurta(start, nak_o, nak_y, moon_o, moon_y):
+    """Vivaha muhurta features of the wedding day against the two natal Moons. All keys prefixed wed_."""
+    P = _panchanga_at(start)
+    F = {}
+    if not P:
+        return F
+    F["wed_tithi"] = float(P["tithi"]); F["wed_nakshatra"] = float(P["nak"]); F["wed_yoga"] = float(P["yoga"])
+    F["wed_karana"] = float(P["karana"]); F["wed_vaara"] = float(P["vaara"]); F["wed_lunar_month"] = float(P["lunar_month"])
+    F["wed_adhika_masa"] = float(P["adhika"])
+    F["wed_vivaha_nakshatra"] = float(P["nak"] in VIVAHA_NAK)
+    F["wed_good_tithi"] = float(P["tithi"] in GOOD_TITHI or (P["tithi"] - 15) in GOOD_TITHI)
+    F["wed_good_vaara"] = float(P["vaara"] in GOOD_VAARA)
+    F["wed_kharmas"] = float(P["sun_sign"] in (8, 11))               # Sun in Dhanu / Meena (0-based 8, 11)
+    F["wed_guru_asta"] = float(P.get("Jupiter_combust", 0)); F["wed_shukra_asta"] = float(P.get("Venus_combust", 0))
+    F["wed_sun_sign"] = float(P["sun_sign"]); F["wed_moon_sign"] = float(P["moon_sign"])
+    F["wed_jupiter_sign"] = float(P["jup_sign"]); F["wed_venus_sign"] = float(P["ven_sign"])
+    for who, nk, ms in (("dad", nak_o, moon_o), ("mom", nak_y, moon_y)):
+        if nk is not None and not (isinstance(nk, float) and math.isnan(nk)):
+            tara = ((P["nak"] - int(nk)) % 27) % 9 + 1                 # 1..9 from the janma nakshatra
+            F[f"wed_tara_{who}"] = float(tara)
+            F[f"wed_tara_bad_{who}"] = float(tara in (3, 5, 7))          # Vipat, Pratyari, Naidhana
+        if ms is not None and not (isinstance(ms, float) and math.isnan(ms)):
+            cb = (P["moon_sign"] - int(ms)) % 12 + 1                     # transit Moon from the janma rasi
+            F[f"wed_chandra_{who}"] = float(cb)
+            F[f"wed_chandra_bad_{who}"] = float(cb in (4, 8, 12))
+    return F
+
+
 def couple(dob_o, lat_o, lon_o, dob_y, lat_y, lon_y, start=None):
-    """Both persons plus the pair features. Keys are prefixed older_/younger_/pair_."""
+    """Both persons plus the pair features. First person = DAD, second = MOM. Keys are prefixed dad_/mom_/pair_."""
     O = person(dob_o, lat_o, lon_o, start)
     Y = person(dob_y, lat_y, lon_y, start)
-    F = {f"older_{k}": v for k, v in O.items()}
-    F.update({f"younger_{k}": v for k, v in Y.items()})
-    # Ashtakoota both ways round: the dataset reads no sex, so "boy" and "girl" are both orderings
+    F = {f"dad_{k}": v for k, v in O.items()}
+    F.update({f"mom_{k}": v for k, v in Y.items()})
+    # Ashtakoota in its own orientation: the tradition's "boy" is the dad and "girl" the mom, which the dad/mom
+    # ordering of this edition makes literal (the two-dates editions had no sex and scored both orderings).
     no, po = O.get("moon_nakshatra"), O.get("moon_pada")
     ny, py = Y.get("moon_nakshatra"), Y.get("moon_pada")
     if all(v is not None and not (isinstance(v, float) and math.isnan(v)) for v in (no, po, ny, py)):
         KUTA = ["varna", "vasiya", "tara", "yoni", "maitri", "gana", "bhakoot", "nadi", "total"]
-        both = []
-        for (bn, bp, gn, gp) in ((no, po, ny, py), (ny, py, no, po)):
-            try:
-                sc = compatibility.Ashtakoota(int(bn), int(bp), int(gn), int(gp)).compatibility_score()
-                both.append([float(x) for x in sc[:9]])
-            except Exception:
-                pass
-        if both:
-            arr = np.array(both)
+        try:
+            sc = compatibility.Ashtakoota(int(no), int(po), int(ny), int(py)).compatibility_score()
             for ki, kn in enumerate(KUTA):
-                F[f"pair_ak_{kn}_min"] = float(arr[:, ki].min()); F[f"pair_ak_{kn}_max"] = float(arr[:, ki].max())
-            F["pair_ashtakoota_mean"] = float(arr[:, 8].mean())
+                F[f"pair_ak_{kn}"] = float(sc[ki])
+        except Exception:
+            pass
         F["pair_nakshatra_distance"] = float(min((no - ny) % 27, (ny - no) % 27))
         F["pair_same_nakshatra"] = float(no == ny)
     for k in ("Moon_sign", "lagna_sign", "Sun_sign", "Venus_sign", "Jupiter_sign", "Saturn_sign", "Rahu_sign"):
@@ -264,9 +320,26 @@ def couple(dob_o, lat_o, lon_o, dob_y, lat_y, lon_y, start=None):
         for g in GRAHA:
             so, sy = O.get(f"{g}_sign"), Y.get(f"{g}_sign")
             if so is not None and not math.isnan(so):
-                F[f"pair_older_{g}_in_younger_house"] = float((so - ly) % 12 + 1)
+                F[f"pair_dad_{g}_in_mom_house"] = float((so - ly) % 12 + 1)
             if sy is not None and not math.isnan(sy):
-                F[f"pair_younger_{g}_in_older_house"] = float((sy - lo) % 12 + 1)
+                F[f"pair_mom_{g}_in_dad_house"] = float((sy - lo) % 12 + 1)
+    # VIVAHA MUHURTA -- the wedding day itself, read as the muhurta texts read it, for rows whose start has a
+    # real day (a YYYY-01-01 start is a year-only record and gets NaN here). The panchanga at noon UT is
+    # place-independent to within the day; the lagna of the wedding would need the wedding place, which the data
+    # does not have, so it is not fabricated. Tara bala and chandra bala are read from EACH partner's natal Moon.
+    if start:
+        try:
+            P = _panchanga_at(start)
+            real_day = start[5:] != "01-01"
+            for g, lon in P.get("lon", {}).items():
+                # the wedding sky, sidereal, noon UT: every graha on a real day; on a year-only start (published
+                # as 1 January) only the bodies that move slowly enough for the year to place them
+                if real_day or g in SLOW:
+                    F[f"wed_{g}_lon"] = lon
+            if real_day:
+                F.update(muhurta(start, O.get("moon_nakshatra"), Y.get("moon_nakshatra"), O.get("Moon_sign"), Y.get("Moon_sign")))
+        except Exception:
+            pass
     for k in ("dasa_lord_at_start", "bhukti_lord_at_start", "manglik", "kala_sarpa"):
         a, b = O.get(k), Y.get(k)
         if a is not None and b is not None:
@@ -284,5 +357,5 @@ if __name__ == "__main__":
         print(f"    {k:<36} {f[k]}")
     g = couple("1856-00-00", 48.85, 2.35, "1858-02-03", 51.5, -0.12)
     nan = sum(1 for v in g.values() if isinstance(v, float) and math.isnan(v))
-    print(f"  year-only older partner: {len(g)} features, {nan} NaN (day-dependent ones), "
-          f"older Jupiter sign = {g.get('older_Jupiter_sign')}, older Moon nakshatra = {g.get('older_Moon_nakshatra')}")
+    print(f"  year-only dad: {len(g)} features, {nan} NaN (day-dependent ones), "
+          f"dad Jupiter sign = {g.get('dad_Jupiter_sign')}, dad Moon nakshatra = {g.get('dad_Moon_nakshatra')}")

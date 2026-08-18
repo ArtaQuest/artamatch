@@ -32,8 +32,8 @@ def numbers(comp, feat):
     plain = next((r for r in fams if r["family"] == "plain"), None)
     return {"label": lab, "n_train": len(tr), "n_test": len(sol), "pub_n": len(pub), "prv_n": len(prv),
             "pub_pos": 100 * sum(pub) / len(pub), "prv_pos": 100 * sum(prv) / len(prv),
-            "one_sided": sum(1 for r in tr if "0000-00-00" in (r["dob_older"], r["dob_younger"])),
-            "both_places": sum(1 for r in tr if r["lat_older"] not in ("", "nan") and r["lat_younger"] not in ("", "nan")),
+            "one_sided": sum(1 for r in tr if "0000-00-00" in (r["dob_dad"], r["dob_mom"])),
+            "both_places": sum(1 for r in tr if r["lat_dad"] not in ("", "nan") and r["lat_mom"] not in ("", "nan")),
             "jan1_tr": 100 * sum(1 for r in tr if r["start"][5:] == "01-01") / len(tr),
             "jan1_te": 100 * sum(1 for r in te if r["start"][5:] == "01-01") / len(te),
             "fams": fams, "plain": plain["held"] if plain else float("nan"),
@@ -69,8 +69,8 @@ not allowed to know astrology.
 
 ## The question
 
-Three dates and two places. `dob_older` and `dob_younger` are the two births, ordered by age (nothing about
-anybody's sex is recorded or used); `lat_*`/`lon_*` are the birthplaces; `start` is when the relationship
+Three dates and two places. `dob_dad` and `dob_mom` are his and her births — this edition orders by sex, from Wikidata's P21, and
+keeps only pairs of one man and one woman; `lat_*`/`lon_*` are the birthplaces; `start` is when the relationship
 began — the wedding date, for a marriage. Predict the probability that it lasted **thirty years or longer**.
 
 A relationship is anything two people chose: a marriage (`P26`), an unmarried partnership (`P451`), a business
@@ -157,16 +157,16 @@ relationship began.
 
 | file | rows | what |
 |---|---|---|
-| `train.csv` | {N['n_train']:,} | `dob_older`, `dob_younger`, `lat_older`, `lon_older`, `lat_younger`, `lon_younger`, `start`, `{lab}` |
+| `train.csv` | {N['n_train']:,} | `dob_dad`, `dob_mom`, `lat_dad`, `lon_dad`, `lat_mom`, `lon_mom`, `start`, `{lab}` |
 | `test.csv` | {N['n_test']:,} | `id` + the seven inputs |
 | `sample_submission.csv` | {N['n_test']:,} | `id`, `{lab}` = 0.5 |
 
 ## The columns
 
-* `dob_older`, `dob_younger` — dates of birth, `YYYY-MM-DD`; in the training half a date may be known only to
-  the month (`1809-11-00`) or the year (`1802-00-00`), and one partner may be absent entirely (`0000-00-00`,
-  always the second column). {N['one_sided']:,} training rows are one-sided.
-* `lat_older`, `lon_older`, `lat_younger`, `lon_younger` — birthplaces in decimal degrees, from Wikidata's
+* `dob_dad`, `dob_mom` — dates of birth, `YYYY-MM-DD`; in the training half a date may be known only to
+  the month (`1809-11-00`) or the year (`1802-00-00`), and one partner may be absent entirely (`0000-00-00`, in
+  either column). {N['one_sided']:,} training rows are one-sided.
+* `lat_dad`, `lon_dad`, `lat_mom`, `lon_mom` — birthplaces in decimal degrees, from Wikidata's
   place-of-birth item; empty in the training half when unknown, always present in the test half.
 * `start` — the date the relationship began; `YYYY-01-01` when only the year is known.
 * `{lab}` — 1 if the relationship lasted thirty years or longer, else 0.

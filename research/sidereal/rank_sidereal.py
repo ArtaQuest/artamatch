@@ -48,8 +48,10 @@ def subfamily(name):
     if name.startswith("plain_"):
         return "plain"
     src, k = name.split("::", 1)
-    k2 = re.sub(r"^(older|younger|pair)_", "", k)
+    k2 = re.sub(r"^(dad|mom|pair)_", "", k)
     if src == "vedic":
+        if k.startswith("pair_wed_") or k2.startswith("wed_"):
+            return "vedic:vivaha muhurta (the wedding day)"
         if k.startswith("pair_"):
             return "vedic:pair (ashtakoota, transposition, dasa)"
         if re.match(r"D\d+_", k2):

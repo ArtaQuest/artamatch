@@ -1,7 +1,7 @@
 """
 build_sidereal.py — the third edition's feature matrices: non-astrological, Vedic (PyJHora), ZWDS (iztro).
 
-Reads train.csv / test.csv with dob_older, dob_younger, lat_older, lon_older, lat_younger, lon_younger, start
+Reads train.csv / test.csv with dob_dad, dob_mom, lat_dad, lon_dad, lat_mom, lon_mom, start
 [, lasted_30_years]; writes AQ_OUT/sidereal.npz with X_train, X_test (float32, NaN allowed), names, family per
 column, y_train, ids, and the plain columns (ages at the start, gap, start year) beside them.
 
@@ -44,21 +44,21 @@ def _vedic_worker(args):
 
 def plain(df):
     """The non-astrological columns every entrant has: ages at the start, the gap, the start year, the room."""
-    yo = pd.to_numeric(df.dob_older.str[:4], errors="coerce").where(df.dob_older != "0000-00-00")
-    yy = pd.to_numeric(df.dob_younger.str[:4], errors="coerce").where(df.dob_younger != "0000-00-00")
+    yo = pd.to_numeric(df.dob_dad.str[:4], errors="coerce").where(df.dob_dad != "0000-00-00")
+    yy = pd.to_numeric(df.dob_mom.str[:4], errors="coerce").where(df.dob_mom != "0000-00-00")
     sy = df.start.str[:4].astype(float)
-    return pd.DataFrame({"plain_age_older_at_start": sy - yo, "plain_age_younger_at_start": sy - yy,
+    return pd.DataFrame({"plain_age_dad_at_start": sy - yo, "plain_age_mom_at_start": sy - yy,
                          "plain_age_gap": yy - yo, "plain_start_year": sy, "plain_room": 2026 - sy,
                          "plain_start_is_jan1": (df.start.str[5:] == "01-01").astype(float),
-                         "plain_lat_older": df.lat_older, "plain_lon_older": df.lon_older,
-                         "plain_lat_younger": df.lat_younger, "plain_lon_younger": df.lon_younger})
+                         "plain_lat_dad": df.lat_dad, "plain_lon_dad": df.lon_dad,
+                         "plain_lat_mom": df.lat_mom, "plain_lon_mom": df.lon_mom})
 
 
 def build(df, tag):
     n = len(df)
     P = plain(df)
     # Vedic
-    jobs = [(i, r.dob_older, r.lat_older, r.lon_older, r.dob_younger, r.lat_younger, r.lon_younger, r.start)
+    jobs = [(i, r.dob_dad, r.lat_dad, r.lon_dad, r.dob_mom, r.lat_mom, r.lon_mom, r.start)
             for i, r in enumerate(df.itertuples(index=False))]
     with mp.Pool(max(1, mp.cpu_count() - 1)) as pool:
         res = pool.map(_vedic_worker, jobs, chunksize=64)
@@ -75,10 +75,10 @@ def build(df, tag):
         return len(s) == 10 and not s.endswith("-00") and s[5:7] != "00"
     items = []
     for i, r in enumerate(df.itertuples(index=False)):
-        if dayp(r.dob_older):
-            items.append((f"o{i}", r.dob_older))
-        if dayp(r.dob_younger):
-            items.append((f"y{i}", r.dob_younger))
+        if dayp(r.dob_dad):
+            items.append((f"o{i}", r.dob_dad))
+        if dayp(r.dob_mom):
+            items.append((f"y{i}", r.dob_mom))
     A = Z.astrolabes(items)
     log(f"  {tag}: {len(A):,} astrolabes")
     zrows = [Z.couple(A.get(f"o{i}"), A.get(f"y{i}")) for i in range(n)]
@@ -94,10 +94,10 @@ def build(df, tag):
 
 
 def main():
-    tr = pd.read_csv(f"{SRC}/train.csv", dtype={"dob_older": str, "dob_younger": str, "start": str})
-    te = pd.read_csv(f"{SRC}/test.csv", dtype={"dob_older": str, "dob_younger": str, "start": str})
-    LABEL = [c for c in tr.columns if c not in {"id", "dob_older", "dob_younger", "lat_older", "lon_older",
-                                                 "lat_younger", "lon_younger", "start"}][0]
+    tr = pd.read_csv(f"{SRC}/train.csv", dtype={"dob_dad": str, "dob_mom": str, "start": str})
+    te = pd.read_csv(f"{SRC}/test.csv", dtype={"dob_dad": str, "dob_mom": str, "start": str})
+    LABEL = [c for c in tr.columns if c not in {"id", "dob_dad", "dob_mom", "lat_dad", "lon_dad",
+                                                 "lat_mom", "lon_mom", "start"}][0]
     if LIMIT:
         tr, te = tr.head(LIMIT), te.head(max(200, LIMIT // 4))
         log(f"AQ_LIMIT={LIMIT}: DRY RUN")
@@ -118,9 +118,9 @@ def main():
     np.savez_compressed(f"{OUT}/sidereal.npz", X_train=Xtr, X_test=Xte, y_train=tr[LABEL].to_numpy().astype(np.int8),
                         names=np.array(names, dtype=object), family=np.array(fam, dtype=object),
                         id_test=te.id.to_numpy() if "id" in te else np.arange(len(te)),
-                        yr_train=np.column_stack([pd.to_numeric(tr.dob_older.str[:4], errors="coerce").fillna(0),
-                                                  pd.to_numeric(tr.dob_younger.str[:4], errors="coerce").fillna(0)]).astype(np.int16),
-                        yr_test=np.column_stack([te.dob_older.str[:4].astype(int), te.dob_younger.str[:4].astype(int)]).astype(np.int16))
+                        yr_train=np.column_stack([pd.to_numeric(tr.dob_dad.str[:4], errors="coerce").fillna(0),
+                                                  pd.to_numeric(tr.dob_mom.str[:4], errors="coerce").fillna(0)]).astype(np.int16),
+                        yr_test=np.column_stack([te.dob_dad.str[:4].astype(int), te.dob_mom.str[:4].astype(int)]).astype(np.int16))
     log(f"wrote {OUT}/sidereal.npz: {Xtr.shape[1]:,} features · train {Xtr.shape[0]:,} · test {Xte.shape[0]:,} · "
         f"NaN share train {np.isnan(Xtr).mean()*100:.1f}%")
 

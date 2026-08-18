@@ -27,29 +27,27 @@ $PY - "$SRC" "$LABEL" <<'PYEOF'
 import csv, re, sys
 src, label = sys.argv[1], sys.argv[2]
 tr = list(csv.DictReader(open(f"{src}/train.csv"))); te = list(csv.DictReader(open(f"{src}/test.csv")))
-COLS = ["dob_older", "dob_younger", "lat_older", "lon_older", "lat_younger", "lon_younger", "start"]
+COLS = ["dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"]
 assert list(tr[0]) == COLS + [label], f"train columns {list(tr[0])}"
 assert list(te[0]) == ["id"] + COLS, f"test columns {list(te[0])}"
 def later(r):
-    ys = [int(r[c][:4]) for c in ("dob_older", "dob_younger") if r[c][:4] != "0000"]; return max(ys)
+    ys = [int(r[c][:4]) for c in ("dob_dad", "dob_mom") if r[c][:4] != "0000"]; return max(ys)
 assert max(later(r) for r in tr) <= 1900 < min(later(r) for r in te), "the split is not temporal at 1900"
 for r in te:
-    for c in ("dob_older", "dob_younger"):
+    for c in ("dob_dad", "dob_mom"):
         assert r[c][:4] != "0000" and not r[c].endswith("-00"), f"test row not day-precision: {r}"
-    for c in ("lat_older", "lon_older", "lat_younger", "lon_younger"):
+    for c in ("lat_dad", "lon_dad", "lat_mom", "lon_mom"):
         assert r[c] not in ("", "nan"), f"test row lacks a birthplace: {r}"
-    assert -90 <= float(r["lat_older"]) <= 90 and -180 <= float(r["lon_older"]) <= 180
+    assert -90 <= float(r["lat_dad"]) <= 90 and -180 <= float(r["lon_dad"]) <= 180
     assert re.match(r"^\d{4}-\d{2}-\d{2}$", r["start"]) and int(r["start"][:4]) <= 1996, r["start"]
 for r in tr:
-    for side in ("older", "younger"):
-        if r[f"dob_{side}"] == "0000-00-00":
-            assert r[f"lat_{side}"] in ("", "nan"), "an absent partner carries a place"
     assert re.match(r"^\d{4}-\d{2}-\d{2}$", r["start"]), r["start"]
+    assert not (r["dob_dad"] == "0000-00-00" and r["dob_mom"] == "0000-00-00"), "a training row with no date"
 sol = list(csv.DictReader(open(f"{src}/solution.csv")))
 for side in ("Public", "Private"):
     s = [int(r[label]) for r in sol if r["Usage"] == side]
     assert 0 < sum(s) < len(s); print(f"    {side:<8} {len(s):>6,} rows, {100*sum(s)/len(s):5.2f}% positive")
-both = sum(1 for r in tr if r["lat_older"] not in ("", "nan") and r["lat_younger"] not in ("", "nan"))
+both = sum(1 for r in tr if r["lat_dad"] not in ("", "nan") and r["lat_mom"] not in ("", "nan"))
 print(f"  train {len(tr):,} (both places known in {both:,}) · test {len(te):,}, every partner placed and dated to the day, "
       f"every start <= 1996")
 PYEOF

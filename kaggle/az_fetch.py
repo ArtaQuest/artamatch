@@ -77,30 +77,41 @@ SELECT = f"DISTINCT {PROJ}"
 
 
 def queries():
-    """Every (name, lo0, hi0, body_fn) the build runs, in the build's own order and with its own bodies."""
+    """Every (name, lo0, hi0, body_fn) the build runs — EXTRACTED from the scraper, never restated.
+
+    This function used to hold its own copy of the four query bodies, and the copies drifted within hours: the
+    scraper dropped `OPTIONAL { ?b wdt:P21 ?bsex }` from the one-sided query when sex ordering was removed, this
+    file kept it, and the resulting body hashed differently. Every one of the 31 slices Azure fetched for that
+    query landed under a filename the build would never look for, so the build refetched all of them. The rows
+    were fine; the KEY was wrong.
+
+    So the bodies now come out of scrape_duration.py itself. The four `def body/straddle/both/one` closures live
+    inside a module-level `for rel in RELS:` loop, which cannot be imported without running the whole scrape --
+    so their SOURCE is lifted and compiled here against the scraper's own `dated` and `relationship`. If the
+    scraper's bodies change, these change with them, and a drift becomes impossible rather than merely unlikely.
+    """
+    src = open(SRC).read()
     out = []
-    for rel in RELS:
-        out.append((f"test half ({rel})", CUT + 1, CEIL,
-                    lambda lo, hi, rel=rel: (relationship(rel, dead=("a", "b"))
-                                             + "\n  FILTER(STR(?a) < STR(?b))\n"
-                                             + dated('a', lo, hi, 11) + dated('b', CUT + 1, CEIL, 11))))
-        out.append((f"test half straddling {CUT} ({rel})", FLOOR, CUT,
-                    lambda lo, hi, rel=rel: (relationship(rel, dead=("a", "b")) + "\n"
-                                             + dated('a', lo, hi, 11) + dated('b', CUT + 1, CEIL, 11))))
-        out.append((f"train both dated ({rel})", FLOOR, CUT,
-                    lambda lo, hi, rel=rel: (relationship(rel, dead=()) + "\n  FILTER(STR(?a) < STR(?b))\n"
-                                             + dated('a', lo, hi, 9, drop_placeholders=False)
-                                             + dated('b', FLOOR, CUT, 9, drop_placeholders=False))))
-        out.append((f"train one dated ({rel})", FLOOR, CUT,
-                    lambda lo, hi, rel=rel: (relationship(rel, dead=()) + "\n"
-                                             + dated('a', lo, hi, 9, drop_placeholders=False)
-                                             + """
-  OPTIONAL { ?b wdt:P21 ?bsex }
-  OPTIONAL {
-    ?b p:P569 ?bst . ?bst psv:P569 ?bval .
-    ?bst wikibase:rank ?brank . FILTER(?brank != wikibase:DeprecatedRank)
-    ?bval wikibase:timeValue ?bdob ; wikibase:timePrecision ?bprec .
-  }""")))
+    specs = [("def body(lo, hi, rel=rel):", "test half ({rel})", CUT + 1, CEIL),
+             ("def straddle(lo, hi, rel=rel):", "test half straddling %d ({rel})" % CUT, FLOOR, CUT),
+             ("def both(lo, hi, rel=rel):", "train both dated ({rel})", FLOOR, CUT),
+             ("def one(lo, hi, rel=rel):", "train one dated ({rel})", FLOOR, CUT)]
+    for marker, label, lo0, hi0 in specs:
+        i = src.index(marker)
+        j = src.index("df = sparql_sliced", i)
+        block = src[i:j]
+        # Dedent from the scraper's loop body to module level so it compiles on its own. The `def` sits at four
+        # spaces and its body at eight, so a per-line rule that strips whichever it finds flattens the body onto
+        # the def and raises IndentationError -- every line must lose the SAME four spaces.
+        raw = block.splitlines()
+        pad = len(raw[0]) - len(raw[0].lstrip())
+        code = chr(10).join(l[pad:] if l[:pad].strip() == "" else l.lstrip() for l in raw)
+        for rel in RELS:
+            ns = {"relationship": relationship, "dated": dated, "SEX": "", "FLOOR": FLOOR, "CUT": CUT,
+                  "CEIL": CEIL, "rel": rel}
+            exec(compile(code, "scraper-body", "exec"), ns)
+            fn = ns[marker.split("(")[0].replace("def ", "").strip()]
+            out.append((label.format(rel=rel), lo0, hi0, fn))
     return out
 
 

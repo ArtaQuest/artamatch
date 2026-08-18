@@ -389,19 +389,24 @@ def sparql_sliced(select, body_fn, name, lo0, hi0, order=None):
                 print(f"  {name} {lo}-{hi}: {len(frames[-1]):,} rows (cached)", flush=True)
                 continue
         df = None
-        for round_ in range(4):
+        ROUNDS = int(os.environ.get("AQ_SLICE_ROUNDS", "12"))
+        for round_ in range(ROUNDS):
             try:
                 df = sparql(select, body_fn(lo, hi), f"{name} {lo}-{hi}", order=order)
                 break
             except Exception as e:
-                # BOTH ENDPOINTS EXHAUSTED ON ONE SLICE. That happened once at 2am when WDQS 5xx'd for twenty
-                # minutes straight, and it ended a build that had eight hours of fetching behind it. A slice is
-                # worth waiting for: sleep, and try the whole slice again, up to four rounds.
-                if round_ == 3:
+                # BOTH ENDPOINTS EXHAUSTED ON ONE SLICE. Four rounds of three minutes was enough for a twenty-
+                # minute blip and not for the outage that followed: WDQS answered nothing but 502/504/timeouts
+                # for over an hour, and the fourth round would have ended a build with a full test half already
+                # fetched. A build has to OUTLAST an outage rather than need a person at 2am, so this now sleeps
+                # longer each round -- 3, 6, 9 ... up to 15 minutes -- for twelve rounds, roughly two hours of
+                # patience. Every slice already fetched is cached, so nothing is lost by waiting.
+                if round_ == ROUNDS - 1:
                     raise
-                print(f"    {name} {lo}-{hi}: {type(e).__name__} after every retry — sleeping 3 min, then "
-                      f"round {round_ + 2} of 4", flush=True)
-                time.sleep(180)
+                wait = min(900, 180 * (round_ + 1))
+                print(f"    {name} {lo}-{hi}: {type(e).__name__} after every retry — sleeping {wait//60} min, "
+                      f"then round {round_ + 2} of {ROUNDS}", flush=True)
+                time.sleep(wait)
         df.to_csv(cache + ".tmp", index=False)
         os.replace(cache + ".tmp", cache)
         frames.append(df)

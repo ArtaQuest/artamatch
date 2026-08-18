@@ -29,6 +29,7 @@ import csv
 import gc
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -167,8 +168,32 @@ def main():
     # PASS 1 — SCREEN on a subsample of couples. Below the threshold this is the whole training half and the
     # two passes see identical data; above it, the screen ranks blocks on a seeded subsample drawn by PERSON
     # GROUP (core.py's own rule, so a couple is never split from its partner's other relationships).
-    SCREEN_COUPLES = int(os.environ.get("AQ_SCREEN_COUPLES") or 30000)
+    # HOW BIG THE SCREENING SUBSAMPLE CAN BE IS A PROPERTY OF THE MACHINE, not a number to hardcode. Pass 1
+    # holds every block at once, so its footprint is (total columns) x rows x 4 bytes: at a fixed 30,000 couples
+    # that is 6.4 GB, which is fine on the 30 GB of a Kaggle notebook and an OOM on a 16 GB laptop with a
+    # browser open. The column total is not known until the blocks are built, so it is estimated from the
+    # measured 57,132 and corrected by what pass 1 actually reports.
+    def screen_budget():
+        env = os.environ.get("AQ_SCREEN_COUPLES")
+        if env:
+            return int(env), "AQ_SCREEN_COUPLES"
+        try:
+            phys = int(subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True,
+                                      text=True).stdout or 0)
+        except Exception:
+            phys = 0
+        if not phys:                                    # not macOS, or sysctl unavailable
+            try:
+                phys = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+            except Exception:
+                phys = 8 * 2**30
+        n = int(phys * 0.30 / (57132 * 4))
+        return max(4000, min(30000, n)), f"30% of {phys/2**30:.0f} GB"
+
+    SCREEN_COUPLES, why = screen_budget()
     sub = SCREEN_COUPLES if len(tr) > SCREEN_COUPLES else 0
+    if sub:
+        log(f"  screening subsample capped at {SCREEN_COUPLES:,} couples ({why})")
     log(f"building features for the screening pass"
         + (f" ({SCREEN_COUPLES:,}-couple subsample of {len(tr):,})" if sub else f" (all {len(tr):,} rows)"))
     Es, Bs = build(tr, subsample=sub)

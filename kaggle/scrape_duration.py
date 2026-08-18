@@ -189,6 +189,15 @@ MAX_GAP_YEARS = 60
 # here reads a sex.
 RELS = {"P26": "marriage", "P451": "unmarried partnership",
         "P1327": "business or sport partnership", "P3342": "significant person (non-family)"}
+
+# THIRD EDITION, operator 2026-08-18: "clean up the dataset and only allow male x female marriages". AQ_RELS
+# restricts the relationship types built into the CSVs -- P26 alone for this edition -- without touching the
+# queries or the cache (each type is its own cached family). The male + female requirement is applied by
+# order_by_sex; the two together make this a dataset of marriages between a man and a woman, and nothing else.
+_ONLY = [r for r in os.environ.get("AQ_RELS", "").split(",") if r]
+if _ONLY:
+    RELS = {k: v for k, v in RELS.items() if k in _ONLY}
+    print(f"  AQ_RELS: this build keeps only {sorted(RELS)}", flush=True)
 JULIAN = "Q1985786"
 # TEN, BECAUSE THAT IS WHAT THE CACHE IS. The whole slice cache on disk was fetched in ten-year slices, and a
 # slice is looked up under `{tag}_{lo}_{hi}.csv`, so a run at any other width misses every file and starts

@@ -1,0 +1,119 @@
+{
+ "families": [
+  {
+   "family": "plain",
+   "n_features": 16,
+   "held": 0.6188846403279025,
+   "public": 0.630963440860215,
+   "private": 0.6134446727417469
+  },
+  {
+   "family": "vedic:pair (ashtakoota, transposition, dasa)",
+   "n_features": 51,
+   "held": 0.5645516727776425,
+   "public": 0.5636227956989247,
+   "private": 0.5650673519397753
+  },
+  {
+   "family": "vedic:vimsottari at the start",
+   "n_features": 6,
+   "held": 0.5231899526885677,
+   "public": 0.5450021505376345,
+   "private": 0.5138736673039084
+  },
+  {
+   "family": "vedic:D1 (lagna, grahas, houses, nakshatras)",
+   "n_features": 113,
+   "held": 0.5222005356357204,
+   "public": 0.5352012903225807,
+   "private": 0.5164379616905267
+  },
+  {
+   "family": "vedic:ashtakavarga",
+   "n_features": 38,
+   "held": 0.5181381211597246,
+   "public": 0.5195797849462366,
+   "private": 0.5173895357665421
+  },
+  {
+   "family": "vedic:vargas D2-D60",
+   "n_features": 494,
+   "held": 0.5109153689034449,
+   "public": 0.4954481720430107,
+   "private": 0.5176166682867728
+  },
+  {
+   "family": "vedic:doshas",
+   "n_features": 6,
+   "held": 0.5083135354086666,
+   "public": 0.5310825806451613,
+   "private": 0.4987112214901037
+  },
+  {
+   "family": "zwds:palaces",
+   "n_features": 504,
+   "held": 0.49695155733917756,
+   "public": 0.4880455913978495,
+   "private": 0.5006348592191343
+  },
+  {
+   "family": "zwds:pair (spouse x life palace, branches)",
+   "n_features": 37,
+   "held": 0.4968610699318077,
+   "public": 0.48368344086021503,
+   "private": 0.5024393715004914
+  },
+  {
+   "family": "vedic:panchanga",
+   "n_features": 16,
+   "held": 0.4945879283504468,
+   "public": 0.4969277419354839,
+   "private": 0.49362575612892484
+  },
+  {
+   "family": "zwds:major stars",
+   "n_features": 84,
+   "held": 0.4937230723229442,
+   "public": 0.49494150537634407,
+   "private": 0.493204131461126
+  },
+  {
+   "family": "zwds:astrolabe (soul, body, class)",
+   "n_features": 8,
+   "held": 0.49140727072728874,
+   "public": 0.49338150537634407,
+   "private": 0.4907357727683674
+  },
+  {
+   "family": "zwds:minor stars",
+   "n_features": 56,
+   "held": 0.4882121599845336,
+   "public": 0.4929961290322581,
+   "private": 0.48621075293000954
+  },
+  {
+   "family": "vedic:shad bala",
+   "n_features": 126,
+   "held": 0.48505827171460775,
+   "public": 0.4824322580645161,
+   "private": 0.48624251971605575
+  },
+  {
+   "family": "vedic:vivaha muhurta (the wedding day)",
+   "n_features": 34,
+   "held": 0.4615741281077898,
+   "public": 0.4504640860215054,
+   "private": 0.46635007887692975
+  }
+ ],
+ "members": {
+  "plain (ages at start, gap, start year)": 0.6188846403279025,
+  "all vedic": 0.5688234243729638,
+  "all zwds": 0.4963111908950941,
+  "vedic + plain": 0.6073963917242992,
+  "zwds + plain": 0.6115769177152819,
+  "everything": 0.6053410959536394
+ },
+ "ensemble": 0.609263835792669,
+ "n_features": 1589
+}

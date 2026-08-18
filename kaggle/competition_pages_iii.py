@@ -50,8 +50,8 @@ def pages(N):
     ABSTRACT = f"""# Let's end this loneliness epidemic with astrology.
 
 **The third ArtaMatch competition.** Two birth dates, two birthplaces, and the date the relationship began.
-Predict whether it lasted thirty years. Any relationship two people chose counts; everyone in the data is dead,
-so every relationship has ended. Scored **across time**: train on couples born 1600–1900, predict the ones born
+Predict whether the marriage lasted thirty years. Marriages between a man and a woman only; everyone in the data is
+dead, so every marriage has ended. Scored **across time**: train on couples born 1600–1900, predict the ones born
 after. Plain AUC.
 
 **What is new:** the birthplace. Nobody's birth time is recorded, so the Foundation casts every chart at
@@ -73,9 +73,9 @@ Three dates and two places. `dob_dad` and `dob_mom` are his and her births — t
 keeps only pairs of one man and one woman; `lat_*`/`lon_*` are the birthplaces; `start` is when the relationship
 began — the wedding date, for a marriage. Predict the probability that it lasted **thirty years or longer**.
 
-A relationship is anything two people chose: a marriage (`P26`), an unmarried partnership (`P451`), a business
-or sporting partnership (`P1327`), or Wikidata's "significant person" relation with every family pair excluded
-(`P3342`).
+**Marriages only, between a man and a woman.** This edition keeps Wikidata's `P26` (spouse) alone — the earlier
+editions also carried unmarried partnerships, business partnerships and "significant person" pairs — and only
+pairs of one man and one woman (from `P21`), because the columns are ordered dad-first / mom-second.
 
 ## The birth time is a convention: 09:00 local
 
@@ -206,7 +206,33 @@ Built by a public notebook that runs the SPARQL live against Wikidata. The datas
 
 
 P1.numbers, P1.pages = numbers, pages
+
+
+def main():
+    """competition_pages.main() minus its 'no man/woman' word gate, which belongs to the first edition (no sex
+    was read there); this edition is gendered by design and its pages say so."""
+    comp = sys.argv[1] if len(sys.argv) > 1 else "/tmp/aq3comp"
+    feat = sys.argv[2] if len(sys.argv) > 2 else "/tmp/aq3feat"
+    N = numbers(comp, feat); P = pages(N)
+    print(f"  numbers from the build: train {N['n_train']:,} · test {N['n_test']:,} · pool {N['ens']:.4f} · plain {N['plain']:.4f}")
+    for name, body in P:
+        assert "parent" not in body.lower() and "child" not in body.lower(), f"{name} still says parent/child"
+    if os.environ.get("AQ_DO_WRITE") != "1":
+        print("\n  DRY RUN — set AQ_DO_WRITE=1 to write the pages")
+        for name, body in P:
+            print(f"    would write {name:<18} {len(body):>6,} chars")
+        return
+    st, _ = P1.call("UpdateCompetitionSettings", {"competitionName": SLUG, "updateMask": "title,briefDescription",
+                                                    "settings": {"competitionName": SLUG, "title": TITLE, "briefDescription": BRIEF}})
+    print(f"  title + brief -> {st}")
+    for name, body in P:
+        st, b = P1.call("UpdateCompetitionPage", {"competitionName": SLUG, "pageName": name, "updateMask": "content,isPublished",
+                                                    "page": {"name": name, "content": body, "isPublished": True}})
+        if st and st >= 400:
+            st2, b = P1.call("CreateCompetitionPage", {"competitionName": SLUG, "page": {"name": name, "content": body, "isPublished": True}})
+            st = f"{st} then create {st2}"
+        print(f"  page {name:<18} {len(body):>6,} chars -> {st}")
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        sys.argv = [sys.argv[0], "/tmp/aq3comp", "/tmp/aq3feat"]
-    P1.main()
+    main()

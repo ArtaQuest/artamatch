@@ -41,13 +41,12 @@ Nothing about the data forces that on you.
 
 ## The rows
 
-**Any relationship two people chose**: a marriage, an unmarried partnership, a business or sporting
-partnership, or Wikidata's general "significant person" relation (`P26`, `P451`, `P1327`, `P3342`). **This edition orders the columns by sex — dad first, mom second, from Wikidata's P21 — so a pair that is
-not one man and one woman has no such order and is not in this edition** (the two-dates editions, which order
-by age and read no sex, keep every couple).
+**Marriages only, between a man and a woman** (operator, 2026-08-18: "only allow male x female marriages"):
+Wikidata's `P26` alone, and only pairs of one man and one woman from `P21`, ordered dad first / mom second. The
+earlier editions also carried unmarried, business and "significant person" pairs and every sex configuration.
 
 `lasted_30_years` is `(end − start) >= 30 years`, the end being a recorded end date or, failing that, the
-earlier of the two deaths. **A relationship ended by a death is not automatically a long one.**
+earlier of the two deaths. **A marriage ended by a death is not automatically a long one.**
 
 **Train** births 1600–1900, **test** births 1901 onward with both partners dead — a temporal split. The test rows
 are strict: both dates to the day, both birthplaces present, the start in or before 1996 (a later start cannot
@@ -66,8 +65,8 @@ own sidereal families scored alone on the held-out couples so that beating them 
 Built by a public notebook that runs the SPARQL live, so anyone can re-run it and contradict it. Earlier
 editions: `artamatch-astrology` (two dates), `artamatch-marriage-year` (two dates and the start).
 """
-json.dump({"title": "ArtaMatch: two births, two birthplaces, a start date", "id": ref,
+json.dump({"title": "ArtaMatch: births, birthplaces, wedding date", "id": ref,
            "licenses": [{"name": "CC0-1.0"}],
-           "subtitle": "His and her birth dates and places, and the date it began. Did the relationship last thirty years?",
+           "subtitle": "His and her births and birthplaces, and the wedding date. Thirty years?",
            "description": desc}, open(f"{d}/dataset-metadata.json", "w"), indent=1)
 print(f"  metadata written for {ref}: {len(tr):,} train / {len(te):,} test")

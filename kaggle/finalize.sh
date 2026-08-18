@@ -23,13 +23,20 @@ export KAGGLE_KEY="$($PY -c "import json;print(json.load(open('$HOME/.kaggle/kag
 # A copy is exactly how the old split assertion came to check a floor the data already cleared: the scraper moved
 # to a death-bounded window with a 1900 split and this file still said 1850/1900, which would have failed every
 # held-out couple born after 1900 -- that is now most of the test half.
-CUT=$($PY -c "import re,sys; s=open('$REPO/kaggle/scrape_duration.py').read(); print(re.search(r'^CUT = (\\d+)', s, re.M).group(1))")
-CEIL=$($PY -c "
-import re, time
-s = open('$REPO/kaggle/scrape_duration.py').read()
-m = re.search(r'^CEIL = int\\(os\\.environ\\.get\\("AQ_CEIL", str\\(time\\.gmtime\\(\\)\\.tm_year\\)\\)\\)', s, re.M)
-print(time.gmtime().tm_year if m else re.search(r'^CEIL = (\\d+)', s, re.M).group(1))
-")
+# READ THE CONSTANTS BY EXECUTING THEM, not by matching them. A regex for
+# `CEIL = int(os.environ.get("AQ_CEIL", str(time.gmtime().tm_year)))` did not survive this heredoc's escaping,
+# and the numeric fallback could never match a CEIL that is computed rather than written -- so the whole
+# finalize died on an AttributeError before it trained anything. Executing the two assignment lines cannot
+# disagree with the scraper about what they say.
+read -r CUT CEIL <<<"$($PY -c "
+import os, re, time
+src = open('$REPO/kaggle/scrape_duration.py').read()
+ns = {'os': os, 'time': time}
+for line in src.splitlines():
+    if re.match(r'^(CUT|CEIL|FLOOR) *=', line):
+        exec(line, ns)
+print(ns['CUT'], ns['CEIL'])
+")"
 echo "  boundary read from the scraper: train <= $CUT, held out $((CUT+1))-$CEIL"
 LABEL=lasted_30_years
 DATASET=artaquest-foundation/artamatch-astrology

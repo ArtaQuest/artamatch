@@ -539,11 +539,19 @@ for rel in RELS:
     # disjunction times out on WDQS (504). The two year ranges here are DISJOINT, which also means `?a` is
     # always the earlier-born partner and `?b` the later one, so each couple matches exactly once and no
     # `STR(?a) < STR(?b)` tiebreak is needed — adding one would in fact drop half of them.
+    #
+    # SLICE THE EXPENSIVE SIDE. This sliced ?b over one decade and left ?a ranging across the whole
+    # 1600-1900 at day precision, which is the larger set by far -- so the bounded variable was the cheap one
+    # and the query 502'd or 504'd every time. Measured on the same afternoon: sliced on ?b it fails after 27s;
+    # sliced on ?a it answers in 32s with 2,014 rows. Same result set, opposite cost.
+    #
+    # Slicing on ?a still partitions correctly: the two year ranges are disjoint, so a straddling couple's
+    # earlier-born partner is always ?a and falls in exactly one slice.
     def straddle(lo, hi, rel=rel):
         return (relationship(rel, dead=("a", "b")) + "\n"
-                + dated('a', FLOOR, CUT, 11) + dated('b', lo, hi, 11))
+                + dated('a', lo, hi, 11) + dated('b', CUT + 1, CEIL, 11))
     df = sparql_sliced(f"DISTINCT {PROJ}", straddle, f"test half straddling {CUT} ({rel})",
-                       CUT + 1, CEIL, order="?a ?b")
+                       FLOOR, CUT, order="?a ?b")
     df["rel"] = rel
     frames.append(df)
 raw_test = pd.concat(frames, ignore_index=True)

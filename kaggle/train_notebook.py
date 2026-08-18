@@ -15,7 +15,7 @@
 # | input | what it carries |
 # |---|---|
 # | `artaquest-foundation/artamatch-astrology` | `train.csv`, `test.csv`, `sample_submission.csv` |
-# | `ashranet/artamatch-astrology-couples` | `core.py`, the 21 `trad_*.py` modules, `sweshim.py`, the ephemeris |
+# | `artaquest-foundation/artamatch-ephemeris` | `core.py`, the 21 `trad_*.py` modules, `sweshim.py`, the ephemeris |
 #
 # The ephemeris asset spans **1598–2032** and is read through `sweshim.py`, a pure-numpy stand-in registered
 # under the name `swisseph` — the same shim the browser runs, so the model in the browser and the model here are
@@ -40,7 +40,7 @@ import pandas as pd
 
 T0 = time.time()
 DATA = "/kaggle/input/artamatch-astrology"
-CODE = "/kaggle/input/artamatch-astrology-couples"
+CODE = "/kaggle/input/artamatch-ephemeris"
 OUT = "/kaggle/working"
 for p in (DATA, CODE):
     if not os.path.isdir(p):

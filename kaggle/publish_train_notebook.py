@@ -73,7 +73,7 @@ def main():
         # public dataset, so the notebook cannot reach anything a re-runner would not also have; a fit that
         # needed the network could not be reproduced from the same two datasets.
         "enable_internet": False,
-        "dataset_sources": ["artaquest-foundation/artamatch-astrology", "ashranet/artamatch-astrology-couples"],
+        "dataset_sources": ["artaquest-foundation/artamatch-astrology", "artaquest-foundation/artamatch-ephemeris"],
         "competition_sources": [],
         "kernel_sources": [],
         "model_sources": [],

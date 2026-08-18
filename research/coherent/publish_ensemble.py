@@ -74,7 +74,12 @@ def main():
     json.dump({
         "id": f"{OWNER}/{SLUG}", "title": TITLE, "code_file": "ensemble_notebook.ipynb",
         "language": "python", "kernel_type": "notebook", "is_private": False,
-        "machine_shape": "NvidiaTeslaT4", "enable_gpu": True, "enable_tpu": False,
+        # AQ_CPU=1 pushes a CPU kernel. The corrected recipe is LightGBM / XGBoost / a logistic and finishes in
+        # about a minute on CPU, and Kaggle caps batch GPU sessions at two per account -- a stale GPU kernel
+        # blocked this entry for an hour with "Maximum batch GPU session count of 2 reached". A CPU kernel is
+        # not subject to that cap.
+        **({"enable_gpu": False, "enable_tpu": False} if os.environ.get("AQ_CPU") else
+           {"machine_shape": "NvidiaTeslaT4", "enable_gpu": True, "enable_tpu": False}),
         "enable_internet": False,
         "dataset_sources": ["artaquest-foundation/artamatch-astrology",
                             "artaquest-foundation/artamatch-ephemeris"],
@@ -84,7 +89,17 @@ def main():
     for attempt in range(5):
         try:
             r = api.kernels_push(STAGE)
-            print(f"  pushed -> {getattr(r, 'url', r)}")
+            # READ THE WHOLE RESPONSE. A push once "succeeded" with an empty url and Kaggle kept the previous
+            # version; the next kernel run then failed on a bug that had already been fixed locally, and an
+            # hour went to diagnosing a file that was not the one running. An empty url or a non-empty error
+            # is a failed push, whatever the HTTP status said.
+            url = getattr(r, "url", "") or ""
+            err = getattr(r, "error", None) or getattr(r, "errorMessage", None) or ""
+            ver = getattr(r, "versionNumber", None) or getattr(r, "version_number", None)
+            print(f"  response: url={url!r} version={ver} error={err!r}")
+            if err or not url:
+                raise RuntimeError(f"push did not take: error={err!r} url={url!r} — {r}")
+            print(f"  pushed -> {url}  (version {ver})")
             return
         except Exception as e:
             if attempt == 4:

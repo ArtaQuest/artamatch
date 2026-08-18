@@ -85,20 +85,23 @@ for r in te:
         assert r[c][:4] != "0000" and not r[c].endswith("-00"), f"test row is not day-precision: {r}"
 print("  every test date is day-precision and present")
 
-# THE START YEAR, the second edition's new input. An integer year in every row of both halves; never before a
-# known birth; and in the held-out half never so late that thirty years before the ceiling is impossible.
+# THE START, the second edition's new input: a YYYY-MM-DD date in every row of both halves (1 January where
+# Wikidata knows only the year); never before a known birth; and in the held-out half never so late that thirty
+# years before the ceiling is impossible.
+import re as _re
 for name, rows in (("train", tr), ("test", te)):
     for r in rows:
-        sy = r["start_year"]
-        assert sy.isdigit() and 1600 <= int(sy) <= ceil, f"{name}: start_year {sy!r} is not a year in range: {r}"
+        st = r["start"]
+        assert _re.match(r"^\d{4}-\d{2}-\d{2}$", st) and 1600 <= int(st[:4]) <= ceil, f"{name}: bad start {st!r}: {r}"
         for c in ("dob_older", "dob_younger"):
             if r[c][:4] != "0000":
-                assert int(sy) >= int(r[c][:4]), f"{name}: relationship starts before the {c} birth: {r}"
-assert max(int(r["start_year"]) for r in te) <= ceil - 30, \
+                assert int(st[:4]) >= int(r[c][:4]), f"{name}: relationship starts before the {c} birth: {r}"
+assert max(int(r["start"][:4]) for r in te) <= ceil - 30, \
     "a held-out relationship began too late for thirty years before the ceiling; its label is 0 by arithmetic"
-sy_te = [int(r["start_year"]) for r in te]; sy_tr = [int(r["start_year"]) for r in tr]
-print(f"  start_year present everywhere: train {min(sy_tr)}-{max(sy_tr)} · test {min(sy_te)}-{max(sy_te)} "
-      f"(<= {ceil-30}, so thirty years is always possible)")
+sy_te = [int(r["start"][:4]) for r in te]; sy_tr = [int(r["start"][:4]) for r in tr]
+j1 = sum(1 for r in te if r["start"][5:] == "01-01")
+print(f"  start present everywhere: train {min(sy_tr)}-{max(sy_tr)} · test {min(sy_te)}-{max(sy_te)} "
+      f"(<= {ceil-30}, so thirty years is always possible) · {j1:,} test starts are 1 January (year-only)")
 
 # The training half is deliberately mixed. Report the shape rather than demand one.
 one = sum(1 for r in tr if "0000-00-00" in (r["dob_older"], r["dob_younger"]))
@@ -161,13 +164,14 @@ print(f"  era rule (sum of the two birth years): AUC {max(a, 1-a):.4f}")
 # ordinary predictor in the problem (older partner's age alone: 0.6351 held out on the first build; boosted
 # trees on the two ages: 0.6486). That, and not the two-dates age gap, is what a leaderboard place must be read
 # against now, so it is what `baseline_auc` carries. Fitted on the training rows where both ages are known.
-if "start_year" in te.columns:
+if "start" in te.columns:
     from sklearn.ensemble import HistGradientBoostingClassifier
     trn = pd.read_csv(f"{C}/train.csv", dtype={"dob_older": str, "dob_younger": str})
     def ages(df):
         yo = pd.to_numeric(df.dob_older.str[:4], errors="coerce").where(df.dob_older != "0000-00-00")
         yy = pd.to_numeric(df.dob_younger.str[:4], errors="coerce").where(df.dob_younger != "0000-00-00")
-        return np.column_stack([df.start_year - yo, df.start_year - yy])
+        sy = df.start.str[:4].astype(int)
+        return np.column_stack([sy - yo, sy - yy])
     Atr, Ate = ages(trn), ages(te)
     okr = ~np.isnan(Atr).any(1)
     pb = np.zeros(len(te))
@@ -206,7 +210,7 @@ res["baseline_heldout_auc"] = float(gap_heldout)
 # training-half number would be lost. `setdefault` makes this step idempotent.
 res.setdefault("baseline_train_auc", float(res.get("baseline_auc", float("nan"))))
 res["baseline_auc"] = float(gap_heldout)       # what every page reads -- now on the model's own rows
-if "start_year" in te.columns:
+if "start" in te.columns:
     res["baseline_gap_auc"] = float(gap_heldout)
     res["baseline_auc"] = float(ages_auc)          # the second edition's reference: the two ages at the start
     res["baseline_older_age_auc"] = float(a_old)
@@ -249,16 +253,17 @@ Two birth dates and the year it began, one bit out: **did the relationship last 
 |---|---|
 | `dob_older` | the older partner's date of birth |
 | `dob_younger` | the younger partner's date of birth |
-| `start_year` | the year the relationship began — the wedding year for a marriage |
+| `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD`, 1 January where only the year is known |
 | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
 
 **Second edition.** The first edition of this dataset (`artamatch-astrology`) computed the label from the
-relationship's own dates and then discarded them. This one **keeps the start year as an input**. It is given as
-a year rather than a full date because Wikidata's `P580` qualifier is often year-precision and the build did not
-fetch its precision flag — a month and day would be placeholders for a large share of rows and could not be told
-from real ones. The year is exact at every precision. What it buys a model is real: each partner's **age at the
-start**, the **era** the relationship began in, and — for the held-out half — the ceiling on how long it could
-possibly have run.
+relationship's own dates and then discarded them. This one **keeps the start as an input**, as a full date.
+Read the day with care: Wikidata's `P580` qualifier is often year-precision, and a year-only start is published
+as **`YYYY-01-01`** — so a 1 January in this column is usually a year-only record and only sometimes a real New
+Year's Day wedding, and nothing in the value tells the two apart. About a quarter of training starts and nearly
+half of held-out starts are 1 January. The year is exact in every row. What the column buys a model: each
+partner's **age at the start**, the **era** the relationship began in, the wedding chart where the day is real,
+and — for the held-out half — the ceiling on how long it could possibly have run.
 
 **Any relationship two people chose**: a marriage, an unmarried partnership, a business or sporting
 partnership, or Wikidata's general "significant person" relation (`P26`, `P451`, `P1327`, `P3342`). Same-sex
@@ -284,7 +289,7 @@ half requires both partners to be dead. So the window runs to the present and th
 the historical couples, predict the modern ones.
 
 **Read this before you read the leaderboard.** That rule has a consequence you can now compute exactly, because
-the start year is a column: a held-out couple is dead by 2026, so a relationship that began in year *s* cannot
+the start is a column: a held-out couple is dead by 2026, so a relationship that began in year *s* cannot
 have lasted longer than *2026 − s*. Relationships that began after **1996** cannot reach thirty years at all —
 their label would be 0 by arithmetic — and they are **removed from the test set** rather than left in as free
 points. Nearer the boundary the effect is soft but real: the later the start, the more "both already dead"
@@ -296,18 +301,18 @@ come from the definition.
 ## The test set is strict; the training set is not
 
 **Test**: both partners known to the day, both dead, no placeholder dates, the couple's later birth after 1900,
-the start year at or before 1996.
+the start at or before 1996.
 
 **Train**: as inclusive as the data allows. A date may be known only to the month (`1809-11-00`) or only to the
 year (`1802-00-00`), and **one partner may be absent from Wikidata entirely** (`0000-00-00`, always in the
 second column, since a one-sided row has no age order). `00` means unknown; `0000-00-00` means absent. The start
-year is present in every row of both halves.
+is present in every row of both halves; where only its year is known it reads `YYYY-01-01`.
 
 ```
-dob_older,dob_younger,start_year,lasted_30_years
-1794-06-12,1801-03-27,1823,1     <- both known to the day; began 1823
-1802-00-00,1809-11-00,1831,0     <- one year only; the other year and month
-1777-04-30,0000-00-00,1799,1     <- the second partner is not in Wikidata at all
+dob_older,dob_younger,start,lasted_30_years
+1794-06-12,1801-03-27,1823-05-19,1     <- both known to the day; wed 19 May 1823
+1802-00-00,1809-11-00,1831-01-01,0     <- one year only; the other year and month; the start known to the year
+1777-04-30,0000-00-00,1799-09-02,1     <- the second partner is not in Wikidata at all
 ```
 
 That is not a rounding decision. Measured on Wikidata, requiring both partners to the day gives about a tenth of
@@ -338,9 +343,9 @@ century-correct date.
 
 Built by a public notebook that runs the SPARQL live, so anyone can re-run it and contradict it.
 """
-meta = {"title": "ArtaMatch: two birth dates and a start year",
+meta = {"title": "ArtaMatch: two birth dates and a start date",
         "id": ref, "licenses": [{"name": "CC0-1.0"}],
-        "subtitle": "Two birth dates, older first, and the year it began. Did the relationship last thirty years?",
+        "subtitle": "Two birth dates, older first, and the date it began. Did the relationship last thirty years?",
         "description": desc}
 json.dump(meta, open(sys.argv[2] + "/dataset-metadata.json", "w"), indent=1)
 print(f"  metadata written for {ref}")
@@ -350,7 +355,7 @@ import sys, time
 from kaggle.api.kaggle_api_extended import KaggleApi
 ref = sys.argv[1]
 api = KaggleApi(); api.authenticate()
-notes = "second edition: the START YEAR is a column; births 1600-1900 train / 1901+ dead test; test excludes starts after 1996"
+notes = "second edition: the START DATE is a column (1 January where only the year is known); births 1600-1900 train / 1901+ dead test; test excludes starts after 1996"
 for i in range(4):
     try:
         # A NEW dataset the first time, a new version after that. dataset_create_version on a slug that does

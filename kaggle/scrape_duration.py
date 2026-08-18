@@ -10,17 +10,18 @@
 # |---|---|
 # | `dob_older` | the older partner's date of birth |
 # | `dob_younger` | the younger partner's date of birth |
-# | `start_year` | the year the relationship began — the wedding year for a marriage |
+# | `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD` |
 # | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
 #
-# **The start year is an input now (operator, 2026-08-18: "start over and use marriage year").** The first
-# edition of this dataset computed the label from the relationship's own dates and then discarded them; this one
-# keeps the START. It is given as a year, not a date, for a reason that is data rather than taste: Wikidata's
-# `P580` qualifier is often year-precision, and the query that built this file did not fetch that qualifier's
-# precision flag, so a month and day would be placeholders for a large share of rows and could not be told from
-# real ones. The year is exact at every precision. What the start year buys a model is real and large — each
-# partner's AGE at the start, the era the relationship began in, and, for the held-out half, the ceiling on how
-# long it could possibly have run before 2026 (see the test filter below).
+# **The start is an input now (operator, 2026-08-18: "start over and use marriage year", then "use jan 1 for
+# all").** The first edition computed the label from the relationship's own dates and discarded them; this one
+# keeps the START, as a full date. Wikidata's `P580` qualifier is often year-precision and the query did not fetch
+# that qualifier's precision flag, so a year-only start comes back as `YYYY-01-01` -- and that is what is
+# published, on the operator's instruction. The consequence is stated rather than hidden: a start of `1 January`
+# in this file is USUALLY a year-only record and only sometimes a real New Year's Day wedding, and nothing in
+# the value tells the two apart. The year is exact in every row. What the column buys a model: each partner's
+# AGE at the start, the era the relationship began in, the wedding chart where the day is real, and -- for the
+# held-out half -- the ceiling on how long it could possibly have run before 2026 (see the test filter below).
 #
 # **Any relationship two people chose**: a marriage (`P26`), an unmarried or same-sex partnership (`P451`), a
 # business or sporting partnership (`P1327`), or Wikidata's general "significant person" relation (`P3342`, with
@@ -47,10 +48,10 @@
 # year, and **one partner may be missing from Wikidata entirely**. All three of these are real training rows:
 #
 # ```
-# dob_older,dob_younger,start_year,lasted_30_years
-# 1794-06-12,1801-03-27,1823,1     <- both known to the day; began 1823
-# 1802-00-00,1809-11-00,1831,0     <- one year only; the other's year and month
-# 1777-04-30,0000-00-00,1799,1     <- the partner is not in Wikidata at all, and the row is still worth learning from
+# dob_older,dob_younger,start,lasted_30_years
+# 1794-06-12,1801-03-27,1823-05-19,1     <- both known to the day; wed 19 May 1823
+# 1802-00-00,1809-11-00,1831-01-01,0     <- one year only; the other's year and month; the start known to the year
+# 1777-04-30,0000-00-00,1799-09-02,1     <- the partner is not in Wikidata at all, and the row is still worth learning from
 # ```
 #
 # `00` means unknown and `0000-00-00` means absent, so precision is visible in the value rather than hidden in a
@@ -761,6 +762,10 @@ def label(mar, tag):
         print(f"  {tag}: {int((~inwin).sum()):,} with a start year outside {FLOOR}-{CEIL} — dropped")
         mar = mar[inwin].reset_index(drop=True)
     mar["start_year"] = mar["start_year"].astype(int)
+    # THE COLUMN THAT SHIPS is the date itself, exactly as Wikidata's time value reads: the real day where the
+    # statement has one, `YYYY-01-01` where it is a year-only record. `start` is already the first ten characters
+    # of that value (see the top of this function).
+    assert mar["start"].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"{tag}: a malformed start date survived"
     return mar
 
 
@@ -1109,7 +1114,7 @@ for side in ("older", "younger"):
 # are the reason the two halves were built by separate queries rather than filtered out of one.
 
 #%%
-COLS = ["dob_older", "dob_younger", "start_year", "lasted_30_years"]
+COLS = ["dob_older", "dob_younger", "start", "lasted_30_years"]
 for col in ("dob_older", "dob_younger"):
     assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
@@ -1128,17 +1133,22 @@ assert (np.maximum(test["dob_older"].str[:4].astype(int),
 print(f"  checked: every test date is day-precision inside {FLOOR}-{CEIL}, never a placeholder, and every "
       f"held-out couple's LATER birth is after {CUT}")
 for name, frame in (("test", test), ("train", train)):
+    assert frame["start"].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"{name}.start malformed"
+    assert (frame["start"].str[:4].astype(int) == frame["start_year"]).all(), f"{name}: start and start_year disagree"
     sy = frame["start_year"]
-    assert sy.notna().all() and (sy == sy.astype(int)).all(), f"{name}.start_year is not an integer year"
-    assert sy.between(FLOOR, CEIL).all(), f"{name}.start_year outside {FLOOR}-{CEIL}"
+    assert sy.between(FLOOR, CEIL).all(), f"{name}.start outside {FLOOR}-{CEIL}"
     for col in ("dob_older", "dob_younger"):
         yr = pd.to_numeric(frame[col].str[:4], errors="coerce")
         known = frame[col] != ABSENT
         assert (sy[known] >= yr[known]).all(), f"{name}: a relationship starts before the {col} birth"
 assert (test["start_year"] <= CEIL - MIN_YEARS).all(), \
     f"a held-out couple began after {CEIL - MIN_YEARS}: its label is 0 by arithmetic and it must not be scored"
-print(f"  checked: every start_year is an integer inside {FLOOR}-{CEIL}, never before a known birth, and no "
+jan1 = {n: int((f["start"].str[5:] == "01-01").sum()) for n, f in (("train", train), ("test", test))}
+print(f"  checked: every start is a YYYY-MM-DD date inside {FLOOR}-{CEIL}, never before a known birth, and no "
       f"held-out relationship began too late for {MIN_YEARS} years before {CEIL}")
+print(f"  starts on 1 January (mostly year-only records, published as such): train {jan1['train']:,} of "
+      f"{len(train):,} ({100*jan1['train']/len(train):.1f}%) · test {jan1['test']:,} of {len(test):,} "
+      f"({100*jan1['test']/len(test):.1f}%)")
 for col in ("dob_older", "dob_younger"):
     assert train[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"train.{col} malformed"
 assert not ((train["dob_older"] == ABSENT) & (train["dob_younger"] == ABSENT)).any(), \
@@ -1149,7 +1159,7 @@ train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
 train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False)
 test["id"] = [f"m{i:06d}" for i in range(len(test))]
-test[["id", "dob_older", "dob_younger", "start_year"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
+test[["id", "dob_older", "dob_younger", "start"]].to_csv(os.path.join(OUT, "test.csv"), index=False)
 rng = np.random.default_rng(20260817)
 sol = test[["id", "lasted_30_years"]].copy()
 sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")

@@ -1,11 +1,11 @@
 """
-competition_pages_ii.py — the six pages of the SECOND-EDITION competition (start year as an input), with every
+competition_pages_ii.py — the six pages of the SECOND-EDITION competition (the start date as an input), with every
 number READ from the build and the model, never typed.
 
 Reuses competition_pages.py's plumbing (numbers, call, the page-writing loop) and replaces only what changed: the
 slug, the title and brief (both inside Kaggle's launch-checklist limits of 60 and 140 characters, which the API
 does not enforce and the first push of the creator exceeded), and the copy -- which now has to say that the
-start year IS a column, why it is a year and not a date, what it makes possible (age at the start), what it does
+start IS a column, why a year-only start reads 1 January, what it makes possible (age at the start), what it does
 to the held-out half (the 1996 ceiling), and that the bar has moved from the era rule to the two ages.
 
 Usage: AQ_DO_WRITE=1 python competition_pages_ii.py /tmp/aqmycomp /tmp/aqmymodel
@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import competition_pages as P1                                       # noqa: E402
 
 SLUG = os.environ.get("AQ_COMPETITION", "artamatch-marriage-year")
-TITLE = "ArtaMatch Astrology II: two dates and a start year"
-BRIEF = ("Two birth dates and the year it began: did the relationship last thirty years? "
+TITLE = "ArtaMatch Astrology II: two births and a wedding date"
+BRIEF = ("Two birth dates and the date it began: did the relationship last thirty years? "
          "Train on births 1600-1900, predict the couples born after.")
 assert len(TITLE) <= 60 and len(BRIEF) <= 140, (len(TITLE), len(BRIEF))
 P1.SLUG, P1.TITLE, P1.BRIEF = SLUG, TITLE, BRIEF
@@ -34,8 +34,10 @@ def numbers(comp, model):
     import csv
     te = list(csv.DictReader(open(os.path.join(comp, "test.csv"))))
     tr = list(csv.DictReader(open(os.path.join(comp, "train.csv"))))
-    N["sy_te"] = (min(int(r["start_year"]) for r in te), max(int(r["start_year"]) for r in te))
-    N["sy_tr"] = (min(int(r["start_year"]) for r in tr), max(int(r["start_year"]) for r in tr))
+    N["sy_te"] = (min(int(r["start"][:4]) for r in te), max(int(r["start"][:4]) for r in te))
+    N["sy_tr"] = (min(int(r["start"][:4]) for r in tr), max(int(r["start"][:4]) for r in tr))
+    N["j1_te"] = 100 * sum(1 for r in te if r["start"][5:] == "01-01") / len(te)
+    N["j1_tr"] = 100 * sum(1 for r in tr if r["start"][5:] == "01-01") / len(tr)
     return N
 
 
@@ -47,14 +49,14 @@ def pages(N):
     ABSTRACT = f"""# Let's end this loneliness epidemic with astrology.
 
 **The second ArtaMatch competition.** Two birth dates — the **older** partner's and the **younger**'s — and the
-**year the relationship began**. Predict whether it lasted thirty years. Any relationship two people chose
+**date the relationship began** (the wedding date; 1 January where only the year is known). Predict whether it lasted thirty years. Any relationship two people chose
 counts: a marriage, an unmarried or same-sex partnership, a business partnership. Everyone in the data is dead,
 so every relationship in it has ended.
 
 Scored **across time**: the training couples were born 1600–1900, the held-out couples after 1900. Plain AUC.
 
 The first edition (`artamatch-astrology`) gave two dates and nothing else, and its leaderboard was decided by
-the age gap. This edition adds the one thing that changes the question: with the start year known, each
+the age gap. This edition adds the one thing that changes the question: with the start known, each
 partner's **age at the start** is on the table, and it is a far stronger ordinary predictor than the gap. So the
 bar has moved: the number to beat is not chance and not the era rule but **{ages}** — boosted trees on the two
 ages at the start, published beside the Foundation's own nineteen-tradition astrology stack.
@@ -69,9 +71,9 @@ measuring it on people who really lived, against baselines that are not allowed 
 
 ## The question
 
-You are given two birth dates and a year. The first date is the **older** partner's, the second the
-**younger**'s — the order is computed from the dates, and nothing about anybody's sex is recorded or used. The
-year is when the relationship **began** — the wedding year, for a marriage. Predict the probability that it
+You are given three dates. The first is the **older** partner's birth, the second the **younger**'s — the
+order is computed from the dates, and nothing about anybody's sex is recorded or used. The third is when the
+relationship **began** — the wedding date, for a marriage. Predict the probability that it
 lasted **thirty years or longer**.
 
 A relationship is anything two people chose: a marriage (`P26` on Wikidata), an unmarried partnership (`P451`),
@@ -86,16 +88,18 @@ relationship ran from its start to that end. If not, it ran until somebody died,
 the two deaths. `{lab}` is `(end − start) ≥ 30 years`. **A relationship ended by a death is not automatically a
 long one**: twelve years is a 0, forty years is a 1.
 
-## What changed from the first edition, and why it is a year
+## What changed from the first edition, and how to read the third date
 
 The first edition computed the label from the relationship's own dates and then threw them away. This one keeps
-the **start year**. It is a year and not a full date for a reason that is data rather than taste: Wikidata's
-`P580` qualifier is often year-precision, and the build did not fetch its precision flag, so a month and day
-would be 1-January placeholders for a large share of rows, indistinguishable from real ones. The year is exact
-at every precision.
+the **start**, as a full date. Read its day with care: Wikidata's `P580` qualifier is often year-precision, and
+a year-only start is published as **`YYYY-01-01`** — so a 1 January in this column is usually a year-only record
+and only sometimes a real New Year's Day wedding, and nothing in the value tells the two apart. About
+{N['j1_tr']:.0f}% of training starts and {N['j1_te']:.0f}% of held-out starts are 1 January. The year is exact in
+every row.
 
-What it buys a model is real: each partner's **age at the start**, the **era** the relationship began in, and —
-for the held-out half — the ceiling on how long it could possibly have run.
+What it buys a model is real: each partner's **age at the start**, the **era** the relationship began in, a
+**wedding chart** for the rows whose day is real, and — for the held-out half — the ceiling on how long it could
+possibly have run.
 
 ## Why everyone is dead, why the split is by time, and the 1996 ceiling
 
@@ -104,7 +108,7 @@ dataset requires a datable end — a recorded end date or a partner's death — 
 partners dead. The split is **temporal**: you fit on couples born up to 1900 and are scored on couples born
 after. Learn from the historical couples and predict the modern ones.
 
-That rule now has a consequence you can compute exactly, because the start year is a column. A held-out couple
+That rule now has a consequence you can compute exactly, because the start is a column. A held-out couple
 is dead by 2026, so a relationship that began in year *s* cannot have lasted longer than *2026 − s*. Anything
 that began **after 1996 cannot reach thirty years** — its label would be 0 by arithmetic — and such rows are
 **removed from the test set** rather than left in as free points. Nearer the boundary the effect is soft but
@@ -187,33 +191,34 @@ began, and on a split by time they are what a model must beat to have read the c
 
 | file | rows | what |
 |---|---|---|
-| `train.csv` | {N['n_train']:,} | `dob_older`, `dob_younger`, `start_year`, `{lab}` |
-| `test.csv` | {N['n_test']:,} | `id`, `dob_older`, `dob_younger`, `start_year` |
+| `train.csv` | {N['n_train']:,} | `dob_older`, `dob_younger`, `start`, `{lab}` |
+| `test.csv` | {N['n_test']:,} | `id`, `dob_older`, `dob_younger`, `start` |
 | `sample_submission.csv` | {N['n_test']:,} | `id`, `{lab}` = 0.5 |
 
 ## The columns
 
 * `dob_older` — the older partner's date of birth, `YYYY-MM-DD`.
 * `dob_younger` — the younger partner's date of birth.
-* `start_year` — the year the relationship began; the wedding year for a marriage. An integer, present in
-  every row of both files.
+* `start` — the date the relationship began, `YYYY-MM-DD`; the wedding date for a marriage. Present in every
+  row of both files. **`YYYY-01-01` means the year is known and the day is not** (about {N['j1_tr']:.0f}% of
+  training rows, {N['j1_te']:.0f}% of test rows); a real 1 January cannot be told from it.
 * `{lab}` — 1 if the relationship lasted thirty years or longer, else 0.
 
 **The test rows are complete and day-precision.** Both dates known to the day, both partners dead, no
-placeholder dates, the couple's later birth after 1900, and the start year at or before 1996 (later starts
+placeholder dates, the couple's later birth after 1900, and the start in or before 1996 (later starts
 cannot reach thirty years before 2026 and are excluded).
 
 **The training rows are deliberately not.** A date may be known only to the month (`1809-11-00`) or only to the
 year (`1802-00-00`), and one partner may be absent from Wikidata entirely (`0000-00-00`, always in the second
 column, since a one-sided row has no age order). `00` means unknown; `0000-00-00` means absent. Of the
 {N['n_train']:,} training rows, {N['one_sided']:,} are one-sided and {N['coarse']:,} more have a coarse date.
-The start year is never missing.
+The start is never missing.
 
 ```
-dob_older,dob_younger,start_year,{lab}
-1794-06-12,1801-03-27,1823,1     <- both known to the day; began 1823
-1802-00-00,1809-11-00,1831,0     <- one year only; the other year and month
-1777-04-30,0000-00-00,1799,1     <- the second partner is not in Wikidata at all
+dob_older,dob_younger,start,{lab}
+1794-06-12,1801-03-27,1823-05-19,1     <- both known to the day; wed 19 May 1823
+1802-00-00,1809-11-00,1831-01-01,0     <- one year only; the other year and month; the start known to the year
+1777-04-30,0000-00-00,1799-09-02,1     <- the second partner is not in Wikidata at all
 ```
 
 A relationship's duration is known just as exactly when one partner's birthday is not, so those rows carry a real
@@ -259,11 +264,11 @@ extra rows. The ceiling that follows from "both dead by 2026" is derivable from 
 
 What is **not** fair is looking the answer up. The label comes from a public database, so for any given couple a
 determined person can find out how long the relationship lasted. Doing that is not modelling and it produces a
-leaderboard nobody learns anything from. Predict from the two dates and the year.
+leaderboard nobody learns anything from. Predict from the three dates.
 
 ## What this competition is about
 
-Finding the best astrology there is, by measuring it. How much do two birth dates and a start year carry about
+Finding the best astrology there is, by measuring it. How much do two birth dates and a wedding date carry about
 how long a relationship lasts, which method extracts the most of it, and how much of what looks like signal is
 age and era rather than the pairing.
 
@@ -276,7 +281,7 @@ Nothing here is advice about any real person, and no score means anything about 
         "a leaderboard\nthat tops out at the era rule",
         "a leaderboard\nthat tops out at the two ages at the start").replace(
         "how much two birth dates actually carry",
-        "how much two birth dates and a start year actually carry")
+        "how much two birth dates and a wedding date actually carry")
     return [("abstract", ABSTRACT), ("Description", DESCRIPTION), ("Evaluation", EVALUATION),
             ("data-description", DATA_DESCRIPTION), ("rules", RULES), ("Prizes", PRIZES)]
 

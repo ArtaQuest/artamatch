@@ -39,8 +39,8 @@ if U != "artafather":
 
 # LENGTH LIMITS THE API DOES NOT ENFORCE BUT THE LAUNCH CHECKLIST DOES: title <= 60 characters, brief <= 140.
 # The first values here were 61 and 389 and the settings page showed both in red; the API had answered 200.
-TITLE = "ArtaMatch Astrology II: two dates and a start year"
-BRIEF = ("Two birth dates and the year it began: did the relationship last thirty years? "
+TITLE = "ArtaMatch Astrology II: two births and a wedding date"
+BRIEF = ("Two birth dates and the date it began: did the relationship last thirty years? "
          "Train on births 1600-1900, predict the couples born after.")
 assert len(TITLE) <= 60 and len(BRIEF) <= 140, (len(TITLE), len(BRIEF))
 

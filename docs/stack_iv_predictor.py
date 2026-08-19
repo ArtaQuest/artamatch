@@ -169,3 +169,125 @@ def predict(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, start):
                           "AM_FIXED": {"logit": am_f, "rank": r_f + 0.5, "weight": w["w"][2], "stages": acc_f}, "bias": w["b"]},
             "phases_deg": {"partner_1": {b: (None if not np.isfinite(v) else float(v)) for b, v in zip(BODIES14, t1)}, "partner_2": {b: (None if not np.isfinite(v) else float(v)) for b, v in zip(BODIES14, t2)},
                            "start": {b: (None if not np.isfinite(v) else float(v)) for b, v in zip(BODIES14, tw)}}}
+
+
+# ── THE MATCH FINDER ─────────────────────────────────────────────────────────────────────────────────────────────
+# Operator 2026-08-19: "given someone's DOB and POB it should list the top 20 DOB+POB … search the capital of each
+# country for each day from the range of DOBs of people alive." The deployed stack is evaluated on EVERY (day,
+# capital) in the range — ~30,000 days × 197 capitals — by using its structure: the geography member depends on the
+# candidate only through the birth YEAR and the capital (one vectorised pass over years × capitals), and the two
+# ArtaModel members only through the candidate's outer-planet longitudes on the birth DAY (sampled weekly and
+# interpolated — Uranus moves under 0.06°/day, so the error is below 0.02°; the capital's longitude shifts the
+# 09:00 local instant by at most 12 h, under 0.006° for the bodies the model reads, and is ignored for the
+# candidate's phases). The candidate takes slot 2; both orders are scored and averaged as everywhere else.
+_CAPS = None
+
+
+def _flatten(tree):
+    feats, thr, left, right, dleft, leaf = [], [], [], [], [], []
+    def rec(node):
+        i = len(feats)
+        if "leaf_value" in node:
+            feats.append(-1); thr.append(0.0); left.append(-1); right.append(-1); dleft.append(True); leaf.append(float(node["leaf_value"])); return i
+        feats.append(int(node["split_feature"])); thr.append(float(node["threshold"])); left.append(-1); right.append(-1); dleft.append(bool(node.get("default_left", True))); leaf.append(0.0)
+        l = rec(node["left_child"]); r = rec(node["right_child"]); left[i] = l; right[i] = r; return i
+    rec(tree)
+    return np.array(feats), np.array(thr), np.array(left), np.array(right), np.array(dleft), np.array(leaf)
+
+
+def lgbm_predict_proba_batch(model, X):
+    """Vectorised evaluation of a LightGBM JSON dump over rows X (n, f) — identical to lgbm_predict_proba row by row."""
+    X = np.asarray(X, dtype=float); n = X.shape[0]; raw = np.zeros(n)
+    flat = model.get("_flat")
+    if flat is None:
+        flat = [_flatten(t["tree_structure"]) for t in model["tree_info"]]; model["_flat"] = flat
+    for feats, thr, left, right, dleft, leaf in flat:
+        node = np.zeros(n, dtype=int); active = feats[node] >= 0
+        while active.any():
+            idx = np.where(active)[0]; f = feats[node[idx]]; v = X[idx, f]; nanv = np.isnan(v)
+            go_left = np.where(nanv, dleft[node[idx]], v <= thr[node[idx]])
+            node[idx] = np.where(go_left, left[node[idx]], right[node[idx]]); active = feats[node] >= 0
+        raw += leaf[node]
+    return 1.0 / (1.0 + np.exp(-raw))
+
+
+def _jd(y, m, d, hour_ut):
+    return _SW.julday(int(y), int(m), int(d), float(hour_ut))
+
+
+def _outer_lon_by_day(jd_days):
+    """Sidereal (Lahiri) longitudes of Uranus, Neptune, Pluto on each JD (09:00 UT), sampled weekly and interpolated."""
+    jd0, jd1 = float(jd_days[0]), float(jd_days[-1]); samp = np.arange(jd0, jd1 + 7.0, 7.0)
+    out = {}
+    for name, code in (("uranus", _SW.URANUS), ("neptune", _SW.NEPTUNE), ("pluto", _SW.PLUTO)):
+        vals = np.array([(_SW.calc_ut(j, code)[0][0] - _SW.get_ayanamsa_ut(j)) % 360.0 for j in samp])
+        unwrapped = np.degrees(np.unwrap(np.radians(vals)))
+        out[name] = np.interp(jd_days, samp, unwrapped) % 360.0
+    return out
+
+
+def best_matches(dob, lat, lon, start=None, top=20, min_age=18, max_age=100, capitals=None):
+    """Top (birth day, capital) candidates for the person (dob, lat, lon) with a relationship beginning on `start`
+    (YYYY-MM-DD; default today), over everyone alive aged min_age..max_age at the start, in every country's capital."""
+    import datetime as dt
+    M = _M; labels = M["members"]["AM_GREEDY"]["labels"]; caps = capitals if capitals is not None else _CAPS
+    if caps is None:
+        raise RuntimeError("capitals not loaded — pass capitals=[{country, capital, lat, lon}, ...] or set stack_iv_predictor._CAPS")
+    today = dt.date.today(); start = start or today.isoformat(); jan1 = 1.0 if start[5:] == "01-01" else 0.0
+    sy, sm, sd = int(start[:4]), max(1, int(start[5:7])), max(1, int(start[8:10]))
+    # the candidate days: everyone aged min_age..max_age at the start
+    d_lo = dt.date(sy - max_age, sm, sd); d_hi = dt.date(sy - min_age, sm, sd); ndays = (d_hi - d_lo).days + 1
+    days = [d_lo + dt.timedelta(days=i) for i in range(ndays)]; jds = np.array([_jd(d.year, d.month, d.day, 9.0) for d in days])
+    yrs = np.array([d.year for d in days]); cand_years = np.arange(yrs.min(), yrs.max() + 1)
+    # the person's and the start's phases (exact), the candidates' outer planets per day
+    t1 = theta(dob, lat, lon); wed = start if jan1 == 0.0 else start[:4] + "-00-00"; tw = theta(wed, natal=False)
+    L = _outer_lon_by_day(jds); col = {b: j for j, b in enumerate(BODIES14)}
+    cand = np.full((ndays, len(BODIES14)), np.nan); cand[:, col["uranus"]] = L["uranus"]; cand[:, col["neptune"]] = L["neptune"]; cand[:, col["pluto"]] = L["pluto"]
+    # ArtaModel logits per day, both orders (person = slot 1 / slot 2), vectorised over the stages' phasors
+    def am_batch(model, T1, T2):
+        n = T2.shape[0] if T2.ndim == 2 else T1.shape[0]; F = np.full(n, model["F0"]); rad = np.pi / 180.0
+        for st in model["stages"]:
+            t, b = labels[st["phasor"]].split("_", 1); j = col[b]
+            a = T1[:, j] if T1.ndim == 2 else np.full(n, T1[j]); c = T2[:, j] if T2.ndim == 2 else np.full(n, T2[j])
+            if t == "a": P = absdiff(a, c)
+            elif t == "t1": P = absdiff(np.full(n, tw[j]), a)
+            elif t == "t2": P = absdiff(np.full(n, tw[j]), c)
+            elif t == "n1": P = a
+            elif t == "n2": P = c
+            else: P = np.full(n, tw[j])
+            ok = np.isfinite(P); C, S = np.where(ok, np.cos(P * rad), 0.0), np.where(ok, np.sin(P * rad), 0.0)
+            Zr = st["w_re"] * C - st["w_im"] * S + st["b_re"]; Zi = st["w_re"] * S + st["w_im"] * C + st["b_im"]
+            F = F + np.where(ok, st["step"] * (st["alpha"] * (Zr * Zr + Zi * Zi) + st["c"]), 0.0)
+        return F
+    am_g = 0.5 * (am_batch(M["members"]["AM_GREEDY"], t1, cand) + am_batch(M["members"]["AM_GREEDY"], cand, t1))
+    am_f = 0.5 * (am_batch(M["members"]["AM_FIXED"], t1, cand) + am_batch(M["members"]["AM_FIXED"], cand, t1))
+    # geography per (year, capital)
+    y1 = int(dob[:4]) if _prec(dob) else None; age1 = float(sy - y1) if y1 else float("nan")
+    rows = []
+    for yy in cand_years:
+        for cp in caps:
+            rows.append(_geo_x(age1, float(sy - yy), lat, lon, cp["lat"], cp["lon"], sy, jan1))
+    X = np.array(rows, dtype=float); geo = np.mean([lgbm_predict_proba_batch(m, X) for m in _GEO], axis=0).reshape(len(cand_years), len(caps))
+    # ranks and the stack, on the full day x capital grid
+    q = np.asarray(M["rank_reference"]["quantiles"]); rk = lambda v, key: np.interp(v, np.asarray(M["rank_reference"][key]), q)
+    iu = col["uranus"]; hasT = np.isfinite(tw[iu]) and np.isfinite(t1[iu]); hasA = np.isfinite(t1[iu])
+    group = "0" if hasT else ("1" if hasA else "2"); w = M["stacker"]["weights"].get(group) or M["stacker"]["weights"]["2"]
+    r_geo = rk(geo, "GEO") - 0.5                                   # (years, caps)
+    r_g = rk(am_g, "AM_GREEDY") - 0.5; r_f = rk(am_f, "AM_FIXED") - 0.5   # (days,)
+    yi = yrs - cand_years[0]
+    Z = w["w"][0] * r_geo[yi, :] + (w["w"][1] * r_g + w["w"][2] * r_f)[:, None] + w["b"]     # (days, caps)
+    # one entry per (year, capital): the best DAY of that year in that capital, then the top of those — so the list
+    # reads as `top` distinct matches rather than twenty consecutive days in one city
+    best_day = np.full((len(cand_years), len(caps)), -1, dtype=int); best_z = np.full((len(cand_years), len(caps)), -np.inf)
+    for y_i in range(len(cand_years)):
+        rows_y = np.where(yi == y_i)[0]
+        if rows_y.size == 0:
+            continue
+        sub = Z[rows_y, :]; am = np.argmax(sub, axis=0); best_day[y_i, :] = rows_y[am]; best_z[y_i, :] = sub[am, np.arange(len(caps))]
+    order = np.argsort(-best_z, axis=None)[:top]; out = []
+    for k in order:
+        y_i, ci = divmod(int(k), len(caps)); di = int(best_day[y_i, ci]); cp = caps[ci]
+        out.append({"dob": days[di].isoformat(), "country": cp["country"], "capital": cp["capital"], "lat": cp["lat"], "lon": cp["lon"],
+                    "probability": float(1 / (1 + np.exp(-Z[di, ci]))), "geo_probability": float(geo[y_i, ci]), "am_greedy_logit": float(am_g[di]), "am_fixed_logit": float(am_f[di])})
+    return {"start": start, "group": group, "n_candidates": int(ndays * len(caps)), "n_days": int(ndays), "n_capitals": len(caps), "matches": out,
+            "note": "the candidate's phases are the outer planets at 09:00 UT of the day (weekly samples interpolated); the capital enters through the geography member"}

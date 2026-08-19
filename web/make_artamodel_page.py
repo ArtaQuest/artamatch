@@ -59,7 +59,14 @@ td{{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}}td.
 </form>
 <div id=result class=result hidden><div class=big><span class=k>P(lasted thirty years)</span><span id=prob class=v>—</span></div><div id=detail class=detail></div></div>
 <pre id=status class=status>Pyodide not started</pre>
-<h2>The stack</h2>
+<h2>Find the best matches — every capital, every birthday</h2>
+<p>Give one person's birth date and birthplace (and the date the relationship would begin — today by default), and the stack is evaluated for <b>every day of birth in the range of people alive</b> (18 to 100 years old at the start) <b>in the capital of every country</b> — about six million candidates — and the twenty highest are listed. It is the same model as above, run on its structure: the geography member depends on the candidate only through the birth year and the capital, the ArtaModel members only through the outer planets on the birth day (weekly ephemeris samples, interpolated; the capital's local hour shifts those bodies by under 0.006° and is ignored for the candidate). One entry per capital per year, so the list reads as twenty distinct matches. What it prefers is what the stack prefers — mostly <em>where</em>, then <em>when</em> — and the <a href="#stack">section below</a> says why.</p>
+<form id=finder class=tryit onsubmit="return false">
+<fieldset><legend>The person</legend><label>Date of birth <input name=fdob value="1994-02-15" placeholder="YYYY-MM-DD"></label><label>Latitude <input name=flat value="35.6892"></label><label>Longitude <input name=flon value="51.389"></label></fieldset>
+<fieldset><legend>The search</legend><label>Start date <input name=fstart value="" placeholder="today"></label><label>Youngest age <input name=fmin value="18"></label><label>Oldest age <input name=fmax value="100"></label><label>How many <input name=ftop value="20"></label><button id=find type=button disabled>Loading…</button></fieldset>
+</form>
+<div id=fresult class=result hidden><div id=fsummary class=detail></div><div id=ftable class=detail></div></div>
+<h2 id=stack>The stack</h2>
 <p>Three members, each even in the swap of the two partners:</p>
 <div class=tblwrap><table><thead><tr><th>member</th><th>what it reads</th><th>held out alone</th></tr></thead><tbody>
 <tr><td><b>GEO</b> — plain + geography</td><td>the older and younger age at the start, their gap, the start year, <b>the two birthplaces</b> (older/younger), their great-circle distance, the order-free extremes of latitude and longitude, a same-place flag; three small gradient-boosted models averaged (larger ones overfit the era)</td><td class=num>{_held['geography alone']:.4f}</td></tr>
@@ -118,12 +125,14 @@ async function boot() {{
       fetch("sweshim.py").then(r => r.text()), fetch("stack_iv_predictor.py").then(r => r.text()), fetch("ephem4.bin").then(r => r.arrayBuffer()),
       fetch("tables.json").then(r => r.text()), fetch("stack_iv_deployed.json").then(r => r.text()),
       fetch("geo_lgbm_0.json").then(r => r.text()), fetch("geo_lgbm_1.json").then(r => r.text()), fetch("geo_lgbm_2.json").then(r => r.text())]);
+    const caps = await fetch("capitals.json").then(r => r.text()); py.FS.writeFile("/capitals.json", caps);
     py.FS.writeFile("/sweshim.py", shim); py.FS.writeFile("/stack_iv_predictor.py", pred); py.FS.writeFile("/asset.bin", new Uint8Array(asset));
     py.FS.writeFile("/tables.json", tables); py.FS.writeFile("/dep.json", dep); py.FS.writeFile("/g0.json", g0); py.FS.writeFile("/g1.json", g1); py.FS.writeFile("/g2.json", g2);
-    await py.runPythonAsync(`import sys; sys.path.insert(0, "/")
+    await py.runPythonAsync(`import sys, json; sys.path.insert(0, "/")
 import stack_iv_predictor as P
-P.init(open("/asset.bin","rb").read(), open("/tables.json").read(), open("/dep.json").read(), [open("/g0.json").read(), open("/g1.json").read(), open("/g2.json").read()])`);
-    status("ready — the model runs in this page"); $("#go").disabled = false; $("#go").textContent = "Predict"; run();
+P.init(open("/asset.bin","rb").read(), open("/tables.json").read(), open("/dep.json").read(), [open("/g0.json").read(), open("/g1.json").read(), open("/g2.json").read()])
+P._CAPS = json.load(open("/capitals.json"))`);
+    status("ready — the model runs in this page"); $("#go").disabled = false; $("#go").textContent = "Predict"; $("#find").disabled = false; $("#find").textContent = "Find the top matches"; run();
   }} catch (e) {{ status("could not start: " + e); }}
 }}
 async function run() {{
@@ -146,6 +155,22 @@ json.dumps(r)`);
   }} catch (e) {{ status("error: " + e); }}
 }}
 $("#go").addEventListener("click", run);
+async function find() {{
+  if (!py) return; const f = $("#finder"); const v = n => f.elements[n].value.trim(); $("#find").disabled = true; $("#find").textContent = "Searching…"; status("scoring every capital × every birthday…");
+  try {{
+    const t0 = performance.now();
+    const out = await py.runPythonAsync(`import json, stack_iv_predictor as P
+r = P.best_matches(${{JSON.stringify(v("fdob"))}}, float(${{JSON.stringify(v("flat"))}}), float(${{JSON.stringify(v("flon"))}}), start=(${{JSON.stringify(v("fstart"))}} or None), top=int(${{JSON.stringify(v("ftop") || "20")}}), min_age=int(${{JSON.stringify(v("fmin") || "18")}}), max_age=int(${{JSON.stringify(v("fmax") || "100")}}))
+json.dumps(r)`);
+    const r = JSON.parse(out); $("#fresult").hidden = false;
+    $("#fsummary").innerHTML = `<p>${{r.n_candidates.toLocaleString()}} candidates — ${{r.n_days.toLocaleString()}} birthdays × ${{r.n_capitals}} capitals — scored in ${{((performance.now() - t0) / 1000).toFixed(1)}} s for a relationship beginning ${{r.start}} (group ${{r.group}}).</p>`;
+    $("#ftable").innerHTML = `<div class=tblwrap><table><thead><tr><th>#</th><th>date of birth</th><th>capital</th><th>country</th><th>P(lasts thirty years)</th><th>geography p</th><th>ArtaModel logit</th></tr></thead><tbody>` +
+      r.matches.map((m, i) => `<tr><td class=num>${{i + 1}}</td><td class=num>${{m.dob}}</td><td>${{m.capital}}</td><td>${{m.country}}</td><td class=num>${{(100 * m.probability).toFixed(1)}}%</td><td class=num>${{m.geo_probability.toFixed(3)}}</td><td class=num>${{m.am_greedy_logit.toFixed(3)}}</td></tr>`).join("") + `</tbody></table></div>`;
+    status("ready");
+  }} catch (e) {{ status("error: " + e); }}
+  $("#find").disabled = false; $("#find").textContent = "Find the top matches";
+}}
+$("#find").addEventListener("click", find);
 $("#swap").addEventListener("click", () => {{ const f = $("#tryit"); for (const k of ["dob","lat","lon"]) {{ const a = f.elements[k+"1"].value; f.elements[k+"1"].value = f.elements[k+"2"].value; f.elements[k+"2"].value = a; }} run(); }});
 boot();
 </script>"""

@@ -116,7 +116,17 @@ def init(asset_bytes, tables_json, model_json, model_npz_bytes):
             "contract": _stack.h.get("contract"),
             "tradition_auc": _stack.h.get("tradition_auc"),
             "clean_auc": _stack.h.get("clean_auc"),
-            "benchmark": _stack.h.get("benchmark")}
+            "benchmark": _stack.h.get("benchmark"),
+            # THE FIELDS inject_benchmark.py WRITES FOR THE PAGE, which this projection silently dropped. The
+            # page read `i.train_window` and got undefined, so it kept a hardcoded fitted range and told a
+            # 1994 couple they were outside 1600-1850 while the model's own header said 1600-1900. It read
+            # `i.heldout` and got undefined, so it labelled the (correct) held-out headline as "in-training
+            # selection AUC -- optimistic" and put the age gap where the era rule belongs. Right numbers under
+            # the wrong words, from one dict not passing three keys through. Every key the page reads is here.
+            "train_window": _stack.h.get("train_window"),
+            "heldout": _stack.h.get("heldout"),
+            "auc_kind": _stack.h.get("auc_kind"),
+            "temporal": _stack.h.get("temporal")}
 
 
 def worked_examples(dob_a, dob_b):
@@ -224,7 +234,7 @@ def score_pair(dob_a, dob_b):
 # Refusing a 1994 birth outright was wrong — the charts are perfectly computable and the stack will score them.
 # What is true is that such a score is EXTRAPOLATION beyond the fitted years, and the honest response is to
 # answer and say so, not to decline. Both facts travel with the answer.
-YEAR_LO, YEAR_HI = 1800, 2032          # fallback; the shipped asset's own span wins
+YEAR_LO, YEAR_HI = 1600, 2032          # fallback; the shipped asset's own span wins
 MAX_GAP_YEARS = 60.0
 
 
@@ -249,7 +259,7 @@ def _year_range():
     """What can be COMPUTED — the INTERSECTION of two limits, because either one alone is wrong.
 
     The shipped ephemeris bounds it from outside: `_new_moon_before` searches backwards and needs about 65 days
-    of margin before the first requested date, which is why the asset starts in 1798 rather than 1800. Two years
+    of margin before the first requested date, which is why the asset starts in 1698 rather than 1700. Two years
     at each end covers that.
 
     `core.load` bounds it from inside, and does so SILENTLY: it drops a couple whose birth year falls outside its
@@ -265,7 +275,7 @@ def _year_range():
     if _core is not None:
         lo = max(lo, int(getattr(_core, "YEAR_FLOOR", lo)))
         hi = min(hi, int(getattr(_core, "YEAR_CEIL", hi)))
-    return max(1800, lo), hi
+    return max(1600, lo), hi
 
 
 def train_window():
@@ -275,7 +285,9 @@ def train_window():
     try:
         return int(tw["from"]), int(tw["to"])
     except (KeyError, TypeError, ValueError):
-        return 1800, 1950
+        # The TRAINING half's range, not the dataset's. The dataset spans 1600-1900; the model is fitted on
+        # 1600-1850 and the rest is held out, so a 1875 couple is inside the data and outside the fit.
+        return 1600, 1850
 
 
 def _extrapolating(dob_a, dob_b):

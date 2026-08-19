@@ -45,7 +45,7 @@ DOCS = os.path.join(ROOT, "docs")
 # every later check happily re-tests the previous build.
 ALLOWED_IMPORTS = {"numpy", "astropy", "erfa", "swisseph", "core"} | {
     f[:-3] for f in ["index.html", "sweshim.py", "predictor.py", "runner.py", "worked.py"] if f.endswith(".py")}
-PAGE_FILES = ["index.html", "sweshim.py", "predictor.py", "runner.py", "worked.py",
+PAGE_FILES = ["index.html", "artamodel.html", "sweshim.py", "predictor.py", "runner.py", "worked.py",
               "ephem4.bin", "ephem4.json", "tables.json", "model.json", "model.npz"]
 
 

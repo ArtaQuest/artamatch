@@ -1,4 +1,4 @@
-<title>ArtaMatch — astrology-only parenthood prediction from two birth dates</title>
+<title>ArtaMatch — astrology-only relationship-duration prediction from two birth dates</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23010C17'/%3E%3Ccircle cx='12' cy='16' r='7' fill='none' stroke='%23E8B923' stroke-width='2.5'/%3E%3Ccircle cx='20' cy='16' r='7' fill='none' stroke='%231746DC' stroke-width='2.5'/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
@@ -97,11 +97,13 @@
 
 <div class="wrap">
 <header>
-  <h1>Can two <em>birth dates</em> predict whether a couple has children?</h1>
-  <p class="sub">An astrology-only model, trained on couples <b>born 1800&ndash;1950</b> — a window chosen so
-  that every one of them has had a full reproductive life — and reported against the one baseline it is
-  allowed: a two-parameter logistic on the signed
-  subtraction of the two dates.</p>
+  <h1>Can two <em>birth dates</em> predict whether a relationship lasts thirty years?</h1>
+  <p class="sub">An astrology-only model, trained on couples <b>born 1600&ndash;1900</b> and tested on couples
+  <b>born after 1900</b> — a split by <b>time</b>, and only over people who have <b>died</b>, so every
+  relationship in it has ended and none was cut short by the records running out. Any relationship two people
+  chose counts: a marriage, an unmarried or same-sex partnership, a business partnership. The first date is
+  always the <b>older</b> partner's. Reported against the one baseline it is
+  allowed: a two-parameter logistic on the signed subtraction of the two dates.</p>
 </header>
 
 <div class="stats">
@@ -119,8 +121,8 @@
   <p class="lede">Two dates in, one probability out. Every planetary position is computed here, in your
   browser, when you press the button — there is no lookup table of answers and no cache.</p>
   <div class="grid">
-    <div><label>His birth date</label><span class="dpart" id="a-dob"></span></div>
-    <div><label>Her birth date</label><span class="dpart" id="b-dob"></span></div>
+    <div><label>Older partner's birth date</label><span class="dpart" id="a-dob"></span></div>
+    <div><label>Younger partner's birth date</label><span class="dpart" id="b-dob"></span></div>
     <p class="note" style="grid-column:1/-1;margin:2px 0 0">Leave the month or day on
       <b>&mdash;</b> when it is not known: a third of the training data is incomplete the same way, and the
       model is told the precision rather than left to guess it.</p>
@@ -136,11 +138,11 @@
   There is no city dimension: the model's only inputs are two dates.</p>
   <div class="grid">
     <div><label>One birth date</label><input id="f-self" type="date" value="1889-04-16"
-         min="1800-01-01" max="1950-12-31"></div>
+         min="1600-01-01" max="2032-12-31"></div>
     <div><label>Candidates from</label><input id="f-from" type="date" value="1893-01-01"
-         min="1800-01-01" max="1950-12-31"></div>
+         min="1600-01-01" max="2032-12-31"></div>
     <div><label>to</label><input id="f-to" type="date" value="1895-12-31"
-         min="1800-01-01" max="1950-12-31"></div>
+         min="1600-01-01" max="2032-12-31"></div>
     <div><label>Step (days)</label><select id="f-step">
       <option value="1">every day</option><option value="7" selected>every 7 days</option>
       <option value="14">every 14 days</option><option value="30">every 30 days</option></select></div>
@@ -166,21 +168,22 @@
   <p class="lede">Real birth data arrives to the day, to the month, to the year, or not at all. So each
   partner's date is degraded independently and the model is scored in every combination, on the same couples
   each time — the held-out fifth, split by person group so nobody in it appears in training. Reading across a
-  row shows what losing the woman's precision costs; reading down a column, the man's. The bottom-right cell is
+  row shows what losing the younger partner's precision costs; reading down a column, the older's. The bottom-right cell is
   blank because with neither date there is no input to rank on.</p>
   <div class="scroll"><table id="grid-tab"><thead></thead><tbody></tbody></table></div>
   <p class="note" id="grid-note"></p>
   <div class="scroll" style="margin-top:18px"><table id="grid-detail"><thead><tr>
-    <th>Man's date</th><th>Woman's date</th><th>Stack</th><th>Baseline</th><th>Lift</th>
+    <th>Older's date</th><th>Younger's date</th><th>Stack</th><th>Baseline</th><th>Lift</th>
     <th style="width:26%"></th></tr></thead><tbody></tbody></table></div>
 </div>
 
 <div class="card">
   <h2><span class="n">05</span>What this is, and what it is not</h2>
   <div class="warnbox">
-    <b>A score here is a model output, not a fact about anybody.</b> The label is whether two people with a
-    declared partnership have a recorded child together — which is a fact about what Wikidata records, not
-    about what happened. A couple whose child was never written down counts here as a couple without one.
+    <b>A score here is a model output, not a fact about anybody.</b> The label is whether Wikidata's record of
+    a relationship — a marriage, a partnership of any kind — spans thirty years or more, which is a fact about
+    what was written down, not about what happened. A relationship whose ending was never recorded is dated
+    from the earlier partner's death instead.
     Nothing on this page is advice.
   </div>
   <ul>
@@ -188,8 +191,8 @@
       divisional charts, calendars, heliacal risings. No cohort, exposure, nationality or sex variable is a
       feature.</li>
     <li><b>One baseline, and it is reported every time.</b> A two-parameter logistic on
-      <code>dob_woman − dob_man</code> in years, signed. Positive means the man is older. The signed gap is
-      not a nuisance to be removed; it is the number astrology has to beat.</li>
+      <code>dob_younger − dob_older</code> in years — the age gap, non-negative because the older partner is
+      always first. The gap is not a nuisance to be removed; it is the number astrology has to beat.</li>
     <li><b>The browser runs the training code.</b> Not a port of it — the same <code>core.py</code> and the
       same <code>trad_*.py</code> modules, with Swiss Ephemeris replaced by a pure-numpy shim because
       Pyodide has no pyswisseph. The shim is verified against the real library — longitudes to 0.005°,
@@ -203,15 +206,28 @@
     <li><b>Person-disjoint validation, five folds of 80/20.</b> A person appears in more than one
       partnership, so folds are split by person group, never by row. Every number in the grid is
       out-of-fold, and a degraded row is scored by the fold-model that never saw it.</li>
-    <li><b>The window is the experiment.</b> An earlier version of this model was trained on births from 1800
-      to 2026, and its dominant effect was not astrology but <i>exposure</i>: recorded parenthood ran about
-      58% for couples born in the 1800s and 2% for the 1990s, because a couple born in 1990 may not have
-      finished having children and any child they do have has not had time to become notable enough to record.
-      Any smooth function of two dates scores well on that by identifying the era. Restricting the parents to
-      <b>1800&ndash;1950</b> removes the cliff — the rate across decades now spans <b>0.385</b> against
-      roughly 0.56 before, falling from 0.738 for the 1800s and settling near 0.40 from 1900 onwards. That
-      residual is real and it is not zero, so read the per-tradition table below against it rather than
+    <li><b>The split is the experiment, and it is a split in TIME.</b> Couples born up to 1900 train; couples
+      born after it are held out. So the question is not &ldquo;rank couples drawn from the years you
+      learned from&rdquo; but &ldquo;learn from the earlier couples and predict the later ones&rdquo;, which is
+      the harder and the honest one. An earlier version of this project split at random and scored 0.6452
+      within its training era against 0.5159 out of it — a gap of 0.13 that was entirely the model
+      interpolating a calendar it had already seen.</li>
+    <li><b>Nothing here is censored, because everybody in it is dead.</b> A relationship still running cannot
+      be labelled, and one that has not yet had thirty years cannot reach thirty. Rather than cap the birth years
+      and infer it, the dataset requires a datable end — a recorded end date or a partner's death — and the
+      held-out half requires both partners dead. So it reaches into the twentieth century and stops on its own,
+      because there are almost no couples born after 1950 who are both dead with dated relationships.</li>
+    <li><b>That rule has a bias of its own, and it is measured rather than hoped about.</b> A couple born
+      recently who are <i>already</i> dead died young, and a relationship cannot outlive its shorter-lived partner —
+      so &ldquo;born late&rdquo; leans negative for a reason that has nothing to do with astrology. The build
+      prints the positive rate for every birth decade and names any decade where a thirty-year relationship is
+      arithmetically impossible. Read the per-tradition table below against the era rule reported beside it, not
       against chance.</li>
+    <li><b>The sharpest confound is which way the relationship ended.</b> Relationships with a recorded end
+      date reach thirty years far less often than ones that ran until a death (about 16% against 53% in the
+      marriage-only version of this dataset). That is
+      not an input — a model cannot see which case a couple is in — but it correlates with things that are, so
+      a case-only reference is reported alongside every score.</li>
     <li><b>A date can say &ldquo;I do not know&rdquo;.</b> A third of the training dates are incomplete, and
       an unknown component is written <code>00</code> — <code>1889-00-00</code> is a year,
       <code>1889-04-00</code> a month. Wikidata pads an unknown day with <code>01</code> instead, which would
@@ -225,6 +241,7 @@
 <footer>
   ArtaMatch · the model, the shim and the ephemeris builder are in this repository, and every figure on this
   page is read from the shipped <code>model.json</code> rather than written into the page.
+  <p><a href="artamodel.html">ArtaModel</a> — the third edition's deployed model, term by term: births, birthplaces and the wedding date, sidereal, and what it turns out to read. Weights and scorer on <a href="https://huggingface.co/artaquest/artamodel">Hugging Face</a>; competition <a href="https://www.kaggle.com/competitions/artamatch-sidereal">artamatch-sidereal</a>.</p>
 </footer>
 </div>
 
@@ -299,8 +316,11 @@ let redrawTraditions = () => {};
 // a birth date in the future is not a birth date. TRAIN is what the model was FITTED on. They are different
 // questions and the page needs both: a 1994 pair is answerable and is also extrapolation, and the useful thing
 // to do is give the number and say which side of the fitted range it came from. Refusing it was wrong.
-let WIN = { from: 1800, to: new Date().getFullYear(), maxGap: 60 };
-let TRAIN = { from: 1800, to: 1950 };
+let WIN = { from: 1600, to: new Date().getFullYear(), maxGap: 60 };
+// The years the model was FITTED on — the TRAINING half, births 1600-1900. The held-out half is everyone born
+// after, so a 1930 couple is inside the dataset and outside the fit. The runner overrides this from the model
+// header (train_window, written by inject_benchmark.py); this is only the pre-load default.
+let TRAIN = { from: 1600, to: 1900 };
 
 const clampYear = y => Math.min(WIN.to, Math.max(WIN.from, Math.trunc(Number(y) || WIN.from)));
 
@@ -355,9 +375,9 @@ function showPairValidity() {
     : outside.length
         ? [`Extrapolation.`, `${outside.length === 2 ? "Both years are" : "One year is"} outside `
            + `${TRAIN.from}–${TRAIN.to}, the range this model was fitted on. It will still be scored. The `
-           + `fitted years were chosen so every couple had a full reproductive life; a couple born in `
-           + `${Math.max(...outside)} may not have finished having children, and any child they have has not `
-           + `had time to be recorded.`]
+           + `model was fitted on births to ${TRAIN.to} and measured on couples born after who have since died, `
+           + `so every relationship it learned from had ended; a couple born in ${Math.max(...outside)} who `
+           + `are alive may still be together, and a relationship that has not yet had thirty years cannot reach thirty.`]
         : [`Inside the fitted range.`, `Both years fall in ${TRAIN.from}–${TRAIN.to}, the years this model was `
            + `measured on.`];
   note.innerHTML = `<b>${msg[0]}</b><span>${msg[1]}</span>`;
@@ -389,13 +409,30 @@ function render(i) {
   // dates. Those differ, and showing one under the other's caption is how a page ends up quietly overstating
   // its own robustness. Both are displayed, each with its own label.
   const bmk = (i.benchmark || {});
-  const head = bmk.benchmark15 != null ? bmk.benchmark15 : i.auc;
+  // THE HEADLINE PREFERS THE HELD-OUT NUMBER and says which one it is showing. The precision grid was retired
+  // when the test set became day-precision only, so `benchmark15` is now absent and this used to fall through
+  // to `i.auc` — which was the in-training selection AUC, an optimistic score, displayed under a label about a
+  // grid that no longer exists. Both halves of that were wrong.
+  const head = bmk.benchmark15 != null ? bmk.benchmark15
+             : (i.heldout ? i.heldout.auc : i.auc);
+  const headLabel = bmk.benchmark15 != null
+    ? "benchmark: row-count-weighted mean AUC over the precision grid"
+    : (i.heldout
+        ? `held-out AUC on ${Number(i.heldout.n || 0).toLocaleString()} couples born after the training years`
+        : "in-training selection AUC — optimistic, not a performance estimate");
+  const lab = document.querySelector("#s-auc + span");
+  if (lab) lab.textContent = headLabel;
   const base = bmk.reference15 != null ? bmk.reference15
-             : (i.baseline ? Object.values(i.baseline)[0] : null);
+             : (i.heldout && i.heldout.era_rule != null ? i.heldout.era_rule
+               : (i.baseline ? Object.values(i.baseline)[0] : null));
+  const baseLab = document.querySelector("#s-base + span");
+  if (baseLab && bmk.reference15 == null && i.heldout && i.heldout.era_rule != null) {
+    baseLab.textContent = "the era rule on the same held-out couples — the bar that matters";
+  }
   $("#s-auc").textContent = fmt(head);
   // Labelled "AUC when both dates are full", so it must be that grid cell — not the out-of-fold CV score,
   // which is a different measurement on a different half of the data and reads about 0.01 lower.
-  $("#s-clean").textContent = fmt((bmk.cells && bmk.cells["full|full"]) ? bmk.cells["full|full"].stack : i.auc);
+  $("#s-clean").textContent = fmt((bmk.cells && bmk.cells["full|full"]) ? bmk.cells["full|full"].stack : null);
   $("#s-base").textContent = fmt(base);
   $("#s-lift").textContent = (head != null && base != null)
     ? (head - base >= 0 ? "+" : "") + fmt(head - base) : "—";
@@ -409,7 +446,7 @@ function render(i) {
   // be checked against the rows below it rather than believed. The worked examples are computed in the browser
   // from the two dates on screen and land asynchronously, so the table keeps a redraw hook rather than being
   // built once and frozen.
-  const TRAD = {"harmonics": ["The geometry of the two charts, with no culture attached", "Not a tradition but the raw relationship between the two skies: contacts in ecliptic latitude, parallels of declination and out-of-bounds bodies, and each planet's speed — stationary, applying or separating."], "lunar_calendrical": ["Eclipse and lunation cycles", "The long repeating periods of the Sun–Moon–Earth system: the Saros and Inex eclipse cycles, the Metonic and Callippic calendar cycles, and the computus that fixes Easter. Plus the synodic phase of all 45 body pairs at each birth and the difference between them."], "uranian": ["The Hamburg School and its hypothetical planets", "Eight hypothetical bodies — Cupido, Hades, Zeus, Kronos, Apollon, Admetos, Vulkanus, Poseidon — placed on the 360°, 90°, 45° and 22.5° dials, with the cross-chart distances between them and the specific “planetary pictures” this school reads for marriage and children."], "babylonian_egyptian": ["Babylonian goal-years and the Egyptian civil calendar", "The goal-year periods Babylonian astronomers used to predict a planet's return, taken as circular phases; the schematic 360-day year beside the 365-day Egyptian civil calendar that drifts against it; and the 36 decans that divide the sky into ten-day segments."], "african": ["Heliacal risings of the southern year, and Sirius", "The first dawn appearance of Isilimela (the Pleiades) and Naka, which open the agricultural year across southern Africa; the Sothic rising of Sirius and its elongation from the Sun; and the Dogon sigui, a sixty-year ceremony, alongside the orbital phase of Sirius B."], "mesoamerican": ["The Maya Long Count and the Calendar Round", "Long Count components and the katun wheel, distance numbers — the intervals Maya inscriptions use to step between dates — and the 365-day Haab with the Calendar Round and its year bearer."], "indigenous_americas": ["Northern skywatching: the revolving pair, the morning star", "Diné Náhookǫs, the revolving pair turning about the north star, evaluated at midnight; the Pawnee morning and evening stars; and a Woodland moon count taken from the solstice."], "aboriginal_australian": ["Australian Aboriginal astronomies", "Visibility classes for named stars at each birth; the solar phase of the Emu in the Sky, the dark constellation whose changing orientation marks the season; and Barnumbirr, Venus as the morning star."], "modern_western": ["Twentieth-century relationship charts", "The Davison chart — one chart for the midpoint in time between two births — set against the composite of midpoints, including where the two methods disagree, plus aspect patterns in each chart."], "hellenistic": ["Greek astrology as Ptolemy left it", "Ptolemaic aspects at their classical orbs of 2°, 4°, 6° and 12°; essential dignity — whether a planet sits in its own sign, exile or fall; and the hermetic lots, taken circularly."], "persian_arabic": ["Reception, the lots, and al-Bīrūnī", "Reception and mutual reception, where two planets each occupy a sign the other rules; the Arabic lots with the dignities of their rulers; and al-Bīrūnī's distinction between an aspect applying and one separating."], "vedic_core": ["Jyotiṣa: nakṣatras, vargas, graha states", "The 27 nakṣatras and their 108 padas as circular quantities; the divisional charts D1, D2, D3, D12, D30 and D60; and graha states with avasthā, the conditions a planet is held to be in."], "vedic_ashtakavarga": ["Aṣṭakavarga and ṣaḍbala", "Bhinnāṣṭakavarga scores for seven grahas across twelve signs, and the six strengths: sthāna bala in five components, cheṣṭa bala, and the iṣṭa and kaṣṭa phala derived from them."], "vedic_match": ["The marriage-matching system itself", "Aṣṭakūṭa — the eight-fold kūṭa score used to judge a match — computed under a ±6° smear on the Moon to reflect an unknown birth time, the nakṣatra pair taken as a low-rank vector, and kuja doṣa."], "chinese": ["The sexagenary cycle and the five phases", "Stem-and-branch positions in the sixty-year cycle as circular quantities with the offsets between the two births; the generating and overcoming relations between each partner's elements, with nāyīn and the life-stage sequence; and the 28 xiù, measured as equal divisions from Spica."], "east_asian_deep": ["Korean saju and Mongolian zurkhai", "The ten gods (sipseong) read across the four pillars of saju, with gyeokguk structure and sin-gang strength; and Mongolian zurkhai's sixty-year jaran with the Tsagaan Sar year boundary."], "tibetan_seasia": ["Tibetan, Burmese and Javanese reckoning", "The Tibetan rabjung cycle as animal crossed with element; Burmese mahabote, built from the weekday of birth and a remainder of the birth year; and the Javanese pawukon, several week-cycles of different lengths running at once."], "polynesian": ["Māori maramataka and Hawaiian mahina", "The named nights of the lunar month. Neither calendar treats the cycle as smooth: the nights are sorted into classes with opposite reputations — Whiro and Mutuwhenua are the dark, unproductive nights, the Tangaroa nights the most productive — and the Hawaiian month is three ten-night anahulu with the ʻOle and Kāloa nights recurring inside them. Both traditions begin the year from the heliacal rising of the Pleiades, Matariki or Makaliʻi, with Puanga (Rigel) standing in where the Pleiades sit too low, so &ldquo;where in the year&rdquo; is anchored to a star rather than a solstice. The elongation these nights are counted from is not contributed here — it is already computed as the synodic phase and as tithi — so these blocks carry only the classes, the anahulu and the star anchor."]};
+  const TRAD = {"harmonics": ["The geometry of the two charts, with no culture attached", "Not a tradition but the raw relationship between the two skies: contacts in ecliptic latitude, parallels of declination and out-of-bounds bodies, and each planet's speed — stationary, applying or separating."], "lunar_calendrical": ["Eclipse and lunation cycles", "The long repeating periods of the Sun–Moon–Earth system: the Saros and Inex eclipse cycles, the Metonic and Callippic calendar cycles, and the computus that fixes Easter. Plus the synodic phase of all 45 body pairs at each birth and the difference between them."], "uranian": ["The Hamburg School and its hypothetical planets", "Eight hypothetical bodies — Cupido, Hades, Zeus, Kronos, Apollon, Admetos, Vulkanus, Poseidon — placed on the 360°, 90°, 45° and 22.5° dials, with the cross-chart distances between them and the specific “planetary pictures” this school reads for marriage and children."], "babylonian_egyptian": ["Babylonian goal-years and the Egyptian civil calendar", "The goal-year periods Babylonian astronomers used to predict a planet's return, taken as circular phases; the schematic 360-day year beside the 365-day Egyptian civil calendar that drifts against it; and the 36 decans that divide the sky into ten-day segments."], "african": ["Heliacal risings of the southern year, and Sirius", "The first dawn appearance of Isilimela (the Pleiades) and Naka, which open the agricultural year across southern Africa; the Sothic rising of Sirius and its elongation from the Sun; and the Dogon sigui, a sixty-year ceremony, alongside the orbital phase of Sirius B."], "mesoamerican": ["The Maya Long Count and the Calendar Round", "Long Count components and the katun wheel, distance numbers — the intervals Maya inscriptions use to step between dates — and the 365-day Haab with the Calendar Round and its year bearer."], "indigenous_americas": ["Northern skywatching: the revolving pair, the morning star", "Diné Náhookǫs, the revolving pair turning about the north star, evaluated at midnight; the Pawnee morning and evening stars; and a Woodland moon count taken from the solstice."], "aboriginal_australian": ["Australian Aboriginal astronomies", "Visibility classes for named stars at each birth; the solar phase of the Emu in the Sky, the dark constellation whose changing orientation marks the season; and Barnumbirr, Venus as the morning star."], "modern_western": ["Twentieth-century relationship charts", "The Davison chart — one chart for the midpoint in time between two births — set against the composite of midpoints, including where the two methods disagree, plus aspect patterns in each chart."], "hellenistic": ["Greek astrology as Ptolemy left it", "Ptolemaic aspects at their classical orbs of 2°, 4°, 6° and 12°; essential dignity — whether a planet sits in its own sign, exile or fall; and the hermetic lots, taken circularly."], "persian_arabic": ["Reception, the lots, and al-Bīrūnī", "Reception and mutual reception, where two planets each occupy a sign the other rules; the Arabic lots with the dignities of their rulers; and al-Bīrūnī's distinction between an aspect applying and one separating."], "vedic_core": ["Jyotiṣa: nakṣatras, vargas, graha states", "The 27 nakṣatras and their 108 padas as circular quantities; the divisional charts D1, D2, D3, D12, D30 and D60; and graha states with avasthā, the conditions a planet is held to be in."], "vedic_ashtakavarga": ["Aṣṭakavarga and ṣaḍbala", "Bhinnāṣṭakavarga scores for seven grahas across twelve signs, and the six strengths: sthāna bala in five components, cheṣṭa bala, and the iṣṭa and kaṣṭa phala derived from them."], "vedic_match": ["The marriage-matching system itself", "Aṣṭakūṭa — the eight-fold kūṭa score used to judge a match — computed under a ±6° smear on the Moon to reflect an unknown birth time, the nakṣatra pair taken as a low-rank vector, and kuja doṣa."], "chinese": ["The sexagenary cycle and the five phases", "Stem-and-branch positions in the sixty-year cycle as circular quantities with the offsets between the two births; the generating and overcoming relations between each partner's elements, with nāyīn and the life-stage sequence; and the 28 xiù, measured as equal divisions from Spica."], "east_asian_deep": ["Korean saju and Mongolian zurkhai", "The ten gods (sipseong) read across the four pillars of saju, with gyeokguk structure and sin-gang strength; and Mongolian zurkhai's sixty-year jaran with the Tsagaan Sar year boundary."], "tibetan_seasia": ["Tibetan, Burmese and Javanese reckoning", "The Tibetan rabjung cycle as animal crossed with element; Burmese mahabote, built from the weekday of birth and a remainder of the birth year; and the Javanese pawukon, several week-cycles of different lengths running at once."], "polynesian": ["Māori maramataka and Hawaiian mahina", "The named nights of the lunar month. Neither calendar treats the cycle as smooth: the nights are sorted into classes with opposite reputations — Whiro and Mutuwhenua are the dark, unproductive nights, the Tangaroa nights the most productive — and the Hawaiian month is three ten-night anahulu with the ʻOle and Kāloa nights recurring inside them. Both traditions begin the year from the heliacal rising of the Pleiades, Matariki or Makaliʻi, with Puanga (Rigel) standing in where the Pleiades sit too low, so &ldquo;where in the year&rdquo; is anchored to a star rather than a solstice. The elongation these nights are counted from is not contributed here — it is already computed as the synodic phase and as tithi — so these blocks carry only the classes, the anahulu and the star anchor."], "numerology": ["Numerology: Pythagorean and Chaldean", "The one tradition here that needs no sky. Every quantity is arithmetic on the digits of the date: the Life Path (the whole date reduced to a single figure, with 11, 22 and 33 kept as master numbers), the Birthday and Attitude numbers, each date component reduced on its own, and the same date under the Chaldean rule. For the pair: the ordered Life Path combination, whether the two fall in the same 1-5-7 / 2-4-8 / 3-6-9 compatibility group, the relationship number (both Life Paths summed and reduced again), and each partner's Personal Year in the other's birth year and at the Davison midpoint. Name numerology is absent, since there is no name in the data. It is worth having beside the astrological traditions because the digit-sum of a year is almost decorrelated from the year itself: 1899 and 1900 sit next to each other in time and have digit sums 27 and 10, so numerology cannot read the calendar the way a long-baseline cycle can."]};
 
   const ta = i.tradition_auc || {};
   // Fall back to the per-block scores the model always carries. `tradition_auc` was absent from a shipped
@@ -452,7 +489,7 @@ function render(i) {
   }
   // What can be computed comes from the asset the page actually loaded, capped at the present year.
   if (i.yearFrom && i.yearTo) {
-    WIN = { from: Math.max(1800, Number(i.yearFrom) + 2),
+    WIN = { from: Math.max(1600, Number(i.yearFrom) + 2),
             to: Math.min(Number(i.yearTo) - 2, new Date().getFullYear()),
             maxGap: WIN.maxGap };
   }
@@ -464,7 +501,7 @@ function render(i) {
         + "record a stacked per-tradition score. "
       : "Each figure is that tradition's own blocks stacked and scored alone. ")
     + "Absent by necessity, not by choice: electional astrology, Vedic vivaha muhurta and wedding-day transits "
-    + "all need the date of the marriage, which is not an input. Houses and astrocartography need a birthplace, "
+    + "all need the date the relationship began, which is not an input. Houses and astrocartography need a birthplace, "
     + "which is not an input either.";
 
   const bm = i.benchmark || {};
@@ -479,11 +516,11 @@ function render(i) {
       const t = (v - lo) / Math.max(1e-9, hi - lo);
       return `background:color-mix(in oklab, var(--blue) ${Math.round(12 + 62 * t)}%, var(--bg2))`;
     };
-    // The key is `man|woman` in that order, the same order as the dataset's columns and the metric's
+    // The key is `older|younger` in that order, the same order as the dataset's columns and the metric's
     // definition. Reading it the other way round transposes the whole matrix and still looks plausible, which
     // is precisely how a published dataset ended up claiming a column order it did not have.
     $("#grid-tab thead").innerHTML =
-      `<tr><th style="text-align:right">man \u2193 &nbsp; woman \u2192</th>`
+      `<tr><th style="text-align:right">older \u2193 &nbsp; younger \u2192</th>`
       + LV.map(w => `<th class="n">${LABEL[w]}</th>`).join("") + `</tr>`;
     $("#grid-tab tbody").innerHTML = LV.map(m =>
       `<tr><th style="text-align:right;color:var(--ink2)">${LABEL[m]}</th>` + LV.map(w => {
@@ -591,13 +628,13 @@ $("#go-pair").onclick = async () => {
   const mx = Math.max(...bt.map(x => x[1]));
   $("#pair-out").innerHTML = `
     <p style="margin:18px 0 4px"><span class="big">${pct(r.p)}</span></p>
-    <p class="note" style="margin:0 0 14px">the model's probability that these two become parents
-      together — against a training-set rate of ${pct(window.__rate)}</p>
+    <p class="note" style="margin:0 0 14px">the model's probability that a relationship between these two lasts
+      thirty years or longer — against a training-set rate of ${pct(window.__rate)}</p>
     ${r.extrapolating ? `<p class="note warn" style="margin:-8px 0 14px">This pair falls outside
       ${r.train_window[0]}–${r.train_window[1]}, the years the model was fitted on, so the number above is an
-      extrapolation. Recorded parenthood among people born after the fitted range is depressed for a reason
-      that has nothing to do with the couple: their children may not exist yet, and any that do have not had
-      time to be written down.</p>` : ""}
+      extrapolation. The model was fitted on births to ${r.train_window[1]} and measured on couples born after
+      who have since died, so every relationship it learned from had ended; for a living couple born later, a
+      relationship may still be running, and one that has not yet had thirty years cannot reach thirty.</p>` : ""}
     <div class="scroll"><table><thead><tr><th>Tradition says</th><th>Relative</th><th style="width:44%"></th>
       </tr></thead><tbody>${bt.map(([k, v]) =>
         `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${pct(v)}</td>

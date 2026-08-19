@@ -130,10 +130,10 @@ def egyptian_civil(jd):
     return doy, decan
 
 
-def examples(dob_man, dob_woman):
+def examples(dob_older, dob_younger):
     """Every tradition, worked for one couple. Keys are the model's own tradition slugs."""
-    jm, jw = jd_of(dob_man), jd_of(dob_woman)
-    ym, yw = int(dob_man[:4]), int(dob_woman[:4])
+    jm, jw = jd_of(dob_older), jd_of(dob_younger)
+    ym, yw = int(dob_older[:4]), int(dob_younger[:4])
     out = {}
 
     sm, em, bm, im = sexagenary(ym)
@@ -155,14 +155,14 @@ def examples(dob_man, dob_woman):
     lc_m, tz_m, hb_m = long_count(jm)
     lc_w, tz_w, hb_w = long_count(jw)
     out["mesoamerican"] = [
-        f"Long Count {lc_m} for the man, {lc_w} for the woman.",
+        f"Long Count {lc_m} for the older partner, {lc_w} for the younger.",
         f"Calendar Round: {tz_m}, {hb_m} and {tz_w}, {hb_w}.",
         f"The distance number between the two births is {int(abs(math.floor(jw) - math.floor(jm))):,} days.",
     ]
 
     pm, pw = moon_phase(jm), moon_phase(jw)
     out["lunar_calendrical"] = [
-        f"Sun–Moon elongation {pm:.1f}° at his birth ({_phase_name(pm)} Moon) and {pw:.1f}° at hers "
+        f"Sun–Moon elongation {pm:.1f}° at the older partner's birth ({_phase_name(pm)} Moon) and {pw:.1f}° at the younger's "
         f"({_phase_name(pw)}).",
         f"The two phases differ by {abs((pw - pm + 180) % 360 - 180):.1f}°.",
         f"Their births are {abs(jw - jm) / 29.530588:.1f} synodic months apart, "
@@ -170,8 +170,8 @@ def examples(dob_man, dob_woman):
     ]
 
     out["harmonics"] = [
-        f"The Moon's ecliptic latitude is {_lat(jm, swe.MOON):+.2f}° at his birth and "
-        f"{_lat(jw, swe.MOON):+.2f}° at hers.",
+        f"The Moon's ecliptic latitude is {_lat(jm, swe.MOON):+.2f}° at the older partner's birth and "
+        f"{_lat(jw, swe.MOON):+.2f}° at the younger's.",
         f"Venus sits at latitude {_lat(jm, swe.VENUS):+.2f}° and {_lat(jw, swe.VENUS):+.2f}° — a contact in "
         f"latitude is a closeness the ecliptic longitude alone cannot see.",
     ]
@@ -179,7 +179,7 @@ def examples(dob_man, dob_woman):
     nm_, pdm, lm = nakshatra_of(jm)
     nw_, pdw, lw = nakshatra_of(jw)
     out["vedic_core"] = [
-        f"His Moon stands in {nm_} pada {pdm} (sidereal {lm:.2f}°); hers in {nw_} pada {pdw} ({lw:.2f}°).",
+        f"The older partner's Moon stands in {nm_} pada {pdm} (sidereal {lm:.2f}°); the younger's in {nw_} pada {pdw} ({lw:.2f}°).",
         f"That places the Moons in sidereal {SIGNS[int(lm // 30)]} and {SIGNS[int(lw // 30)]}.",
     ]
     steps = (NAKSHATRA.index(nw_) - NAKSHATRA.index(nm_)) % 27
@@ -190,17 +190,17 @@ def examples(dob_man, dob_woman):
         f"{abs(int(lm // 30) - int(lw // 30))} signs apart — the rāśi kūṭa.",
     ]
     # A real tally rather than a description of one: aṣṭakavarga counts how many grahas fall in a given sign,
-    # so this counts his seven against her Moon's sign and hers against his. It is the shape of a bindu count,
+    # so this counts the older partner's seven against the younger's Moon's sign and the younger's against the older partner's. It is the shape of a bindu count,
     # not the bindu count itself, and it says so.
     GRAHAS = [swe.SUN, swe.MOON, swe.MERCURY, swe.VENUS, swe.MARS, swe.JUPITER, swe.SATURN]
     m_signs = [int(_lon(jm, g, True) // 30) for g in GRAHAS]
     w_signs = [int(_lon(jw, g, True) // 30) for g in GRAHAS]
     her_moon, his_moon = w_signs[1], m_signs[1]
     out["vedic_ashtakavarga"] = [
-        f"His seven grahas occupy sidereal signs {sorted(set(s + 1 for s in m_signs))} and hers "
+        f"The older partner's seven grahas occupy sidereal signs {sorted(set(s + 1 for s in m_signs))} and the younger's "
         f"{sorted(set(s + 1 for s in w_signs))}, counting Aries as 1.",
-        f"{sum(1 for s in m_signs if s == her_moon)} of his seven stand in her Moon's sign "
-        f"({SIGNS[her_moon]}), and {sum(1 for s in w_signs if s == his_moon)} of hers in his "
+        f"{sum(1 for s in m_signs if s == her_moon)} of the older partner's seven stand in the younger's Moon's sign "
+        f"({SIGNS[her_moon]}), and {sum(1 for s in w_signs if s == his_moon)} of the younger's in the older partner's "
         f"({SIGNS[his_moon]}) — the shape of a bindu tally, which aṣṭakavarga builds into 7 × 12 = 84 cells.",
         f"Ṣaḍbala then weighs the same seven planets six ways; sthāna bala alone runs over 5 components, "
         f"so the block carries {7 * 6} strength figures per chart before any pairing.",
@@ -208,15 +208,15 @@ def examples(dob_man, dob_woman):
 
     a_nm, a_d, a_off = aspect_between(_lon(jm, swe.SUN), _lon(jw, swe.SUN))
     out["hellenistic"] = [
-        f"His Sun is at {_lon(jm, swe.SUN):.2f}° ({SIGNS[int(_lon(jm, swe.SUN) // 30)]}), hers at "
+        f"The older partner's Sun is at {_lon(jm, swe.SUN):.2f}° ({SIGNS[int(_lon(jm, swe.SUN) // 30)]}), the younger's at "
         f"{_lon(jw, swe.SUN):.2f}° ({SIGNS[int(_lon(jw, swe.SUN) // 30)]}), {a_d:.2f}° apart.",
         (f"That is a {a_nm}, {a_off:.2f}° from exact." if a_nm
          else "No Ptolemaic aspect holds between the two Suns at classical orbs."),
     ]
     out["persian_arabic"] = [
         f"The Lot of Fortune needs an ascendant, so with no birth time this tradition works from the "
-        f"Sun–Moon arc instead: {(_lon(jm, swe.MOON) - _lon(jm, swe.SUN)) % 360:.2f}° for him, "
-        f"{(_lon(jw, swe.MOON) - _lon(jw, swe.SUN)) % 360:.2f}° for her.",
+        f"Sun–Moon arc instead: {(_lon(jm, swe.MOON) - _lon(jm, swe.SUN)) % 360:.2f}° for the older partner, "
+        f"{(_lon(jw, swe.MOON) - _lon(jw, swe.SUN)) % 360:.2f}° for the younger's.",
         f"Reception asks whether each Sun sits in a sign the other's ruler governs — "
         f"{SIGNS[int(_lon(jm, swe.SUN) // 30)]} and {SIGNS[int(_lon(jw, swe.SUN) // 30)]} here.",
     ]
@@ -235,9 +235,9 @@ def examples(dob_man, dob_woman):
     dm, decm = egyptian_civil(jm)
     dw, decw = egyptian_civil(jw)
     out["babylonian_egyptian"] = [
-        f"Day {dm} of the 365-day Egyptian civil year at his birth, day {dw} at hers — the calendar drifts "
+        f"Day {dm} of the 365-day Egyptian civil year at the older partner's birth, day {dw} at the younger's — the calendar drifts "
         f"a day every four years against the seasons, so the offset is a slow clock.",
-        f"The Sun stands in decan {decm} of 36 for him and decan {decw} for her.",
+        f"The Sun stands in decan {decm} of 36 for the older partner and decan {decw} for the younger's.",
         f"Jupiter's goal-year period is 83 years: their births are {abs(jw - jm) / (83 * 365.2425):.3f} of "
         f"one apart.",
     ]
@@ -245,23 +245,23 @@ def examples(dob_man, dob_woman):
     sir = 99.9
     out["african"] = [
         f"Sirius is the anchor of the Sothic year. Its elongation from the Sun is "
-        f"{_elong(jm, sir):.1f}° at his birth and {_elong(jw, sir):.1f}° at hers; a heliacal rising needs "
+        f"{_elong(jm, sir):.1f}° at the older partner's birth and {_elong(jw, sir):.1f}° at the younger's; a heliacal rising needs "
         f"roughly 10° or more.",
         f"The Dogon sigui runs on a 60-year ceremonial period: the births are "
         f"{abs(jw - jm) / (60 * 365.2425):.3f} of one apart.",
     ]
     out["aboriginal_australian"] = [
         f"The Emu in the Sky is a dark constellation, so what matters is where the Sun is on the year: "
-        f"{_lon(jm, swe.SUN):.1f}° of ecliptic longitude for him, {_lon(jw, swe.SUN):.1f}° for her.",
+        f"{_lon(jm, swe.SUN):.1f}° of ecliptic longitude for the older partner, {_lon(jw, swe.SUN):.1f}° for the younger's.",
         f"Barnumbirr is Venus as the morning star: {'a morning star' if _morning(jm) else 'an evening star'} "
-        f"at his birth, {'a morning star' if _morning(jw) else 'an evening star'} at hers.",
+        f"at the older partner's birth, {'a morning star' if _morning(jw) else 'an evening star'} at the younger's.",
     ]
     out["indigenous_americas"] = [
         f"Náhookǫs, the revolving pair, is read by its rotation about the pole at midnight. Local sidereal "
-        f"time stands in for that angle: {swe.sidtime(jm) * 15:.1f}° for him, {swe.sidtime(jw) * 15:.1f}° "
-        f"for her.",
+        f"time stands in for that angle: {swe.sidtime(jm) * 15:.1f}° for the older partner, {swe.sidtime(jw) * 15:.1f}° "
+        f"for the younger's.",
         f"The Pawnee morning and evening stars are Venus and Mars: Venus at "
-        f"{_lon(jm, swe.VENUS):.1f}° and Mars at {_lon(jm, swe.MARS):.1f}° at his birth.",
+        f"{_lon(jm, swe.VENUS):.1f}° and Mars at {_lon(jm, swe.MARS):.1f}° at the older partner's birth.",
     ]
 
     out["tibetan_seasia"] = [
@@ -269,15 +269,15 @@ def examples(dob_man, dob_woman):
         f"{RABJUNG_EL[(ym - 1027) % 5]}-{BRANCHES[(ym - 1027) % 12]} for {ym}, "
         f"{RABJUNG_EL[(yw - 1027) % 5]}-{BRANCHES[(yw - 1027) % 12]} for {yw}.",
         f"Burmese mahabote is built from the weekday of birth and a remainder of the year: "
-        f"{WEEKDAY[int(math.floor(jm + 0.5)) % 7]} and remainder {ym % 7} for him, "
-        f"{WEEKDAY[int(math.floor(jw + 0.5)) % 7]} and {yw % 7} for her.",
+        f"{WEEKDAY[int(math.floor(jm + 0.5)) % 7]} and remainder {ym % 7} for the older partner, "
+        f"{WEEKDAY[int(math.floor(jw + 0.5)) % 7]} and {yw % 7} for the younger's.",
         f"The Javanese pawukon runs several week-lengths at once; on the five-day pasaran they fall "
         f"{int(math.floor(jm + 0.5)) % 5} and {int(math.floor(jw + 0.5)) % 5}.",
     ]
     dm_i, dw_i = int(math.floor(jm + 0.5)), int(math.floor(jw + 0.5))
     out["east_asian_deep"] = [
-        f"Korean saju reads four pillars. The year pillar is {sm}-{bm} (index {im} of 60) for him and "
-        f"{sw}-{bw} (index {iw}) for her.",
+        f"Korean saju reads four pillars. The year pillar is {sm}-{bm} (index {im} of 60) for the older partner and "
+        f"{sw}-{bw} (index {iw}) for the younger's.",
         f"The day pillar comes from the day count itself: {STEMS[(dm_i + 9) % 10]}-"
         f"{BRANCHES[(dm_i + 1) % 12]} and {STEMS[(dw_i + 9) % 10]}-{BRANCHES[(dw_i + 1) % 12]}, "
         f"which are {(dw_i - dm_i) % 60} steps apart in the sixty-day cycle.",
@@ -317,24 +317,57 @@ def examples(dob_man, dob_woman):
     sepm = (_lon(jm, swe.SUN) - _pleiades(jm)) % 360.0
     sepw = (_lon(jw, swe.SUN) - _pleiades(jw)) % 360.0
     out["polynesian"] = [
-        f"His birth falls on night {nm + 1} of the lunar month — {NIGHTS_M[nm]} in the maramataka, "
+        f"The older partner's birth falls on night {nm + 1} of the lunar month — {NIGHTS_M[nm]} in the maramataka, "
         f"{NIGHTS_H[nm]} in the mahina — {_cls(nm)}.",
-        f"Hers on night {nw + 1}: {NIGHTS_M[nw]} / {NIGHTS_H[nw]}, {_cls(nw)}. "
-        f"That puts him in the {ANAHULU[(nm // 10) % 3]} anahulu and her in the "
+        f"The younger's on night {nw + 1}: {NIGHTS_M[nw]} / {NIGHTS_H[nw]}, {_cls(nw)}. "
+        f"That puts the older partner in the {ANAHULU[(nm // 10) % 3]} anahulu and the younger's in the "
         f"{ANAHULU[(nw // 10) % 3]}.",
-        f"Matariki sits at {_pleiades(jm):.2f}° of ecliptic longitude at his birth, with the Sun "
+        f"Matariki sits at {_pleiades(jm):.2f}° of ecliptic longitude at the older partner's birth, with the Sun "
         f"{min(sepm, 360 - sepm):.1f}° away — a heliacal rising needs roughly 12° or more — and "
-        f"{min(sepw, 360 - sepw):.1f}° away at hers.",
+        f"{min(sepw, 360 - sepw):.1f}° away at the younger's.",
     ]
 
     out["uranian"] = [
-        f"The Hamburg School works on a 90° dial, so every position is taken modulo 90: his Sun at "
-        f"{_lon(jm, swe.SUN) % 90:.2f}° and hers at {_lon(jw, swe.SUN) % 90:.2f}°, "
+        f"The Hamburg School works on a 90° dial, so every position is taken modulo 90: the older partner's Sun at "
+        f"{_lon(jm, swe.SUN) % 90:.2f}° and the younger's at {_lon(jw, swe.SUN) % 90:.2f}°, "
         f"{abs((_lon(jm, swe.SUN) % 90) - (_lon(jw, swe.SUN) % 90)):.2f}° apart on the dial.",
         f"On the 22.5° eighth-harmonic dial those become {_lon(jm, swe.SUN) % 22.5:.2f}° and "
         f"{_lon(jw, swe.SUN) % 22.5:.2f}°.",
         "The hypothetical bodies — Cupido through Poseidon — are added to the same dial, and a "
         "“picture” is any three of them summing to the same midpoint.",
+    ]
+
+    # NUMEROLOGY, the one tradition here that needs no sky. It was the nineteenth module added and the only one
+    # without a worked example, which the browser gate reported as "1 of 19 rows have none" — the tradition
+    # explained in prose but never worked. The arithmetic mirrors astro/trad_numerology.py exactly: Pythagorean
+    # reduction keeping 11/22/33 as master numbers, and the relationship number is the two Life Paths summed
+    # and reduced again without master numbers, as most schools do for a pair.
+    def _reduce(n, master=True):
+        while n > 9 and not (master and n in (11, 22, 33)):
+            n = sum(int(c) for c in str(n))
+        return n or 9
+
+    def _lp(d):
+        y, m, dd = int(d[:4]), int(d[5:7]), int(d[8:10])
+        raw = sum(int(c) for c in str(y)) + sum(int(c) for c in str(m)) + sum(int(c) for c in str(dd))
+        return raw, _reduce(raw)
+
+    raw_m, lp_m = _lp(dob_older)
+    raw_w, lp_w = _lp(dob_younger)
+    rel = _reduce(lp_m + lp_w, master=False)
+    group = {1: "1-5-7, the thinkers", 5: "1-5-7, the thinkers", 7: "1-5-7, the thinkers",
+             2: "2-4-8, the builders", 4: "2-4-8, the builders", 8: "2-4-8, the builders",
+             3: "3-6-9, the creatives", 6: "3-6-9, the creatives", 9: "3-6-9, the creatives",
+             11: "2-4-8, the builders", 22: "2-4-8, the builders", 33: "3-6-9, the creatives"}
+    out["numerology"] = [
+        f"The older partner's Life Path: the digits of {dob_older} sum to {raw_m}, which reduces to {lp_m}"
+        + (" — a master number, kept unreduced." if lp_m in (11, 22, 33) else "."),
+        f"The younger's: the digits of {dob_younger} sum to {raw_w}, reducing to {lp_w}"
+        + (" — a master number." if lp_w in (11, 22, 33) else "."),
+        f"The relationship number is {lp_m} + {lp_w} = {lp_m + lp_w}, reduced to {rel}. "
+        f"The older partner belongs to the {group[lp_m]} group and the younger to the {group[lp_w]} — "
+        + ("the same group, which numerologists read as compatible." if group[lp_m] == group[lp_w]
+           else "different groups, which they read as needing work."),
     ]
     return out
 

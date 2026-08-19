@@ -101,6 +101,23 @@ def main():
     pl_te = np.zeros(len(Xe))
     for sd in range(3):
         c = lgb.LGBMClassifier(random_state=sd, **prm); c.fit(X, y); pl_te += c.predict_proba(Xe)[:, 1] / 3
+    # ---- ADVERSARIAL-VALIDATION IMPORTANCE WEIGHTS (AQ_ADV=1): a classifier that tells train rows from test rows on the
+    # covariates (ages, |gap|, start year, birthplaces, availability) gives every train row a weight p/(1−p) — how much
+    # it resembles the test era — used as sample weights in the geography fit and the stacker. Clipped to [0.2, 5].
+    ADV = os.environ.get("AQ_ADV") == "1"; adv_w = np.ones(len(y))
+    if ADV:
+        SRC_a = os.environ.get("AQ_SRC", "/tmp/aq4"); tra = pd.read_csv(f"{SRC_a}/train.csv", dtype=str); tea = pd.read_csv(f"{SRC_a}/test.csv", dtype=str)
+        def cov(df, p):
+            a, b = p[:, ia], p[:, ib]; la = pd.to_numeric(df.lat_a, errors="coerce").to_numpy(); lo = pd.to_numeric(df.lon_a, errors="coerce").to_numpy(); lb = pd.to_numeric(df.lat_b, errors="coerce").to_numpy(); lob = pd.to_numeric(df.lon_b, errors="coerce").to_numpy()
+            return np.column_stack([np.fmax(a, b), np.fmin(a, b), np.abs(a - b), p[:, iy], np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), np.isnan(la).astype(float) + np.isnan(lb).astype(float), p[:, pn.index("start_is_jan1")]])
+        Xa = np.vstack([cov(tra, ptr), cov(tea, pte)]); ya = np.concatenate([np.zeros(len(y)), np.ones(len(pte))])
+        from sklearn.model_selection import StratifiedKFold
+        pa = np.zeros(len(Xa)); skf = StratifiedKFold(5, shuffle=True, random_state=0)
+        for fi, vi in skf.split(Xa, ya):
+            c = lgb.LGBMClassifier(n_estimators=200, learning_rate=0.05, num_leaves=15, min_child_samples=200, verbose=-1, random_state=0); c.fit(Xa[fi], ya[fi]); pa[vi] = c.predict_proba(Xa[vi])[:, 1]
+        from sklearn.metrics import roc_auc_score as _auc
+        pt = np.clip(pa[:len(y)], 1e-3, 1 - 1e-3); prior = len(pte) / len(Xa); adv_w = np.clip((pt / (1 - pt)) * ((1 - prior) / prior), 0.2, 5.0)
+        log(f"  adversarial validation: train-vs-test AUC {_auc(ya, pa):.3f}; importance weights on train rows: median {np.median(adv_w):.2f}, mean {adv_w.mean():.2f}, share at the 5.0 cap {np.mean(adv_w >= 5.0):.1%}")
     members_tr, members_te, names, meta = [pl_tr], [pl_te], ["PLAIN (older age, younger age, |gap|, start year)"], []
     def add(s_tr, s_te, n, name):
         members_tr.append(s_tr); members_te.append(s_te); names.append(name)
@@ -130,7 +147,9 @@ def main():
         lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
         d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
         j1_ = p[:, pn.index("start_is_jan1")]
-        return np.column_stack([plainX(p), lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), j1_, np.isnan(la).astype(float) + np.isnan(lb).astype(float)])
+        # + the start's WEEKDAY and MONTH (calendar facts; NaN for a year-only start) — forward OOF 0.6627 -> 0.6643
+        st_ = pd.to_datetime(df.start, errors="coerce"); wd_ = st_.dt.weekday.to_numpy(dtype=float); mo_ = st_.dt.month.to_numpy(dtype=float); jan_ = j1_ == 1.0; wd_[jan_] = np.nan; mo_[jan_] = np.nan
+        return np.column_stack([plainX(p), lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), j1_, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd_, mo_])
     Xg, Xge = geoX(trc, ptr), geoX(tec, pte)
     # three small capacities averaged (forward OOF 0.661–0.663 for all three; the larger models overfit the era)
     GEO_PRMS = [dict(n_estimators=200, learning_rate=0.05, num_leaves=7, min_child_samples=400, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=30.0, verbose=-1),
@@ -140,10 +159,10 @@ def main():
     for prm_g in GEO_PRMS:
         for k in range(1, len(cuts)):
             lo = cuts[k - 1]; blk = (later > lo) & ((later <= cuts[k]) if k < len(cuts) - 1 else True)
-            c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg[later <= lo], y[later <= lo]); pg_tr[blk] += c.predict_proba(Xg[blk])[:, 1]; cnt_tr[blk] += 1
-        c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg, y); pg_te += c.predict_proba(Xge)[:, 1] / len(GEO_PRMS)
+            c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg[later <= lo], y[later <= lo], sample_weight=adv_w[later <= lo]); pg_tr[blk] += c.predict_proba(Xg[blk])[:, 1]; cnt_tr[blk] += 1
+        c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg, y, sample_weight=adv_w); pg_te += c.predict_proba(Xge)[:, 1] / len(GEO_PRMS)
     pg_tr = np.where(cnt_tr > 0, pg_tr / np.maximum(cnt_tr, 1), np.nan)
-    add(pg_tr, pg_te, len(y), "PLAIN + GEOGRAPHY (birthplaces, distance)")
+    add(pg_tr, pg_te, len(y), "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month")
     # the 9-term boosted construction (midpoints c / mw / dw added, even mode)
     from artamodel import TERMS9 as _T9
     P9, l9 = phase_matrix(A, Bm, W, bodies, BODIES14, _T9, even=True); P9e, _ = phase_matrix(Ae, Be, We, bodies, BODIES14, _T9, even=True)
@@ -178,7 +197,7 @@ def main():
     S = np.column_stack([sym_train(S[:, j]) if np.isfinite(S[:, j]).any() else S[:, j] for j in range(S.shape[1])])
     chk = pd.DataFrame({"k": train_key, "v": S[:, 0]}).groupby("k")["v"].agg(lambda q: np.nanmax(q) - np.nanmin(q) if np.isfinite(q).any() else 0).max()
     assert chk < 1e-9, f"train-side symmetrisation failed ({chk})"; log("  train-side pair symmetry of every member asserted")
-    np.savez_compressed(os.path.join(OUT, "iv_members.npz"), S_train=S, S_test=T, names=np.array(names), y=y, yte=yte, later=later, ids=ids, cuts=np.array(cuts))
+    np.savez_compressed(os.path.join(OUT, f"iv_members{'_adv' if ADV else ''}.npz"), S_train=S, S_test=T, names=np.array(names), y=y, yte=yte, later=later, ids=ids, cuts=np.array(cuts))
     log(f"{S.shape[1]} members")
     # ---- stackers ----
     ix = {n_: i for i, n_ in enumerate(names)}; pl, gr, fx = 0, ix["ARTAMODEL IV greedy boosted (full-chart rows)"], ix["ARTAMODEL IV fixed-cycle boosted (stable)"]
@@ -189,7 +208,7 @@ def main():
     ages = pte[:, [ia, ib]]; cell = (np.floor(np.nan_to_num(np.fmax(ages[:, 0], ages[:, 1])) / 3) * 1000 + np.floor(np.nan_to_num(np.fmin(ages[:, 0], ages[:, 1])) / 3)).astype(int)
     per = [i for i, n_ in enumerate(names) if n_.startswith("phasor ")]; sums = [i for i, n_ in enumerate(names) if n_.startswith("SUM")]
     trad = [i for i, n_ in enumerate(names) if n_.startswith("TRADITION ")]; sid = [i for i, n_ in enumerate(names) if n_.startswith("SIDEREAL ")]
-    geo = ix["PLAIN + GEOGRAPHY (birthplaces, distance)"]
+    geo = ix["PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month"]
     top = sorted(per, key=lambda j: -meta[j - 1]["forward_oof"] if not np.isnan(meta[j - 1]["forward_oof"]) else 0)[:6]
     subsets = [("plain alone", [pl]), ("geography alone", [geo]), ("greedy alone", [gr]), ("fixed alone", [fx]), ("plain + greedy", [pl, gr]), ("geography + greedy + fixed", [geo, gr, fx]), ("plain + greedy + fixed", [pl, gr, fx]),
                ("plain + greedy + fixed + 6 best phasors", [pl, gr, fx] + top), ("per-phasor (84) + plain", per + [pl]), ("sums (8) + plain", sums + [pl])] \
@@ -205,7 +224,7 @@ def main():
                 mtr = gt == g; mte = gte == g
                 if mtr.sum() < 300:
                     continue
-                Ftr = rankfeat(S[oof][mtr][:, cols_]); Fte = rankfeat(T[mte][:, cols_]); sw = 1.0 + 3.0 * (lo_[mtr] - lo_.min()) / max(1, lo_.max() - lo_.min())
+                Ftr = rankfeat(S[oof][mtr][:, cols_]); Fte = rankfeat(T[mte][:, cols_]); sw = (1.0 + 3.0 * (lo_[mtr] - lo_.min()) / max(1, lo_.max() - lo_.min())) * adv_w[oof][mtr]
                 w, b = fit_nonneg(Ftr, yo[mtr], sw, lam); ztr[mtr] = Ftr @ w + b; zte[mte] = Fte @ w + b
             zte = symmetrise(ids, zte); a_fit = auc(yo, ztr); a_te = auc(yte, zte); ac = matched(yte, zte, cell)
             rows.append({"subset": nm, "k": len(cols_), "fit_auc": a_fit, "held": a_te, "age_cell": ac}); out[(fit_from, lam, nm)] = zte
@@ -235,7 +254,7 @@ def main():
             mtr = gt == g; mte = gte == g
             if mtr.sum() < 300:
                 continue
-            Ftr = rankfeat(S[oof][mtr][:, cols_]); Fte = rankfeat(T[mte][:, cols_]); sw = 1.0 + rec * (lo_[mtr] - lo_.min()) / max(1, lo_.max() - lo_.min())
+            Ftr = rankfeat(S[oof][mtr][:, cols_]); Fte = rankfeat(T[mte][:, cols_]); sw = (1.0 + rec * (lo_[mtr] - lo_.min()) / max(1, lo_.max() - lo_.min())) * adv_w[oof][mtr]
             w, b = fit_nonneg(Ftr, yo[mtr], sw, lam); ztr[mtr] = Ftr @ w + b; zte[mte] = Fte @ w + b
         return r01(symmetrise(ids, zte)), auc(yo, ztr)
     grid = [(cuts[-3], 1e-2, 3.0), (cuts[-3], 1e-3, 3.0), (cuts[-3], 3e-3, 1.0), (cuts[-2], 1e-2, 3.0), (cuts[0], 1e-2, 3.0), (cuts[0], 3e-3, 0.0)]
@@ -245,12 +264,12 @@ def main():
     R["bagged_stack_all"] = {"grid": [[float(a), b, c] for a, b, c in grid], "held": auc(yte, bag), "age_cell": matched(yte, bag, cell)}
     log(f"  BAGGED grouped non-negative stack, ALL members, {len(grid)} settings: HELD {auc(yte, bag):.4f}  age-cell {matched(yte, bag, cell):.4f}")
     out[("bag", "all")] = bag
-    pd.DataFrame({"id": ids, lab: r01(bag)}).to_csv(os.path.join(OUT, "submission_iv_stack_bagged.csv"), index=False)
+    pd.DataFrame({"id": ids, lab: r01(bag)}).to_csv(os.path.join(OUT, f"submission_iv_stack_bagged{'_adv' if ADV else ''}.csv"), index=False)
     # the submissions: the biggest non-negative stack (recent rows, lambda 1e-2) and the small pre-registered pool
-    pd.DataFrame({"id": ids, lab: r01(out[(cuts[-3], 1e-2, "ALL members")])}).to_csv(os.path.join(OUT, "submission_iv_stack_all.csv"), index=False)
+    pd.DataFrame({"id": ids, lab: r01(out[(cuts[-3], 1e-2, "ALL members")])}).to_csv(os.path.join(OUT, f"submission_iv_stack_all{'_adv' if ADV else ''}.csv"), index=False)
     pd.DataFrame({"id": ids, lab: r01(out[("pool", "plain + greedy + fixed")])}).to_csv(os.path.join(OUT, "submission_iv_pool3.csv"), index=False)
-    pd.DataFrame({"id": ids, lab: r01(out[("pool", "geography + greedy + fixed")])}).to_csv(os.path.join(OUT, "submission_iv_pool_geo3.csv"), index=False)
-    json.dump(R, open(os.path.join(OUT, "artamodel_iv_ensemble.json"), "w"), indent=1); log("wrote artamodel_iv_ensemble.json, submission_iv_stack_all.csv, submission_iv_pool3.csv")
+    pd.DataFrame({"id": ids, lab: r01(out[("pool", "geography + greedy + fixed")])}).to_csv(os.path.join(OUT, f"submission_iv_pool_geo3{'_adv' if ADV else ''}.csv"), index=False)
+    json.dump(R, open(os.path.join(OUT, f"artamodel_iv_ensemble{'_adv' if ADV else ''}.json"), "w"), indent=1); log("wrote artamodel_iv_ensemble.json, submission_iv_stack_all.csv, submission_iv_pool3.csv")
 
 
 if __name__ == "__main__":

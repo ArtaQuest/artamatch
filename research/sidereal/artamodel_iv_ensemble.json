@@ -8,10 +8,10 @@
    "n_test": 15262
   },
   {
-   "member": "PLAIN + GEOGRAPHY (birthplaces, distance)",
+   "member": "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month",
    "n_fit": 181596,
-   "forward_oof": 0.6636745262386262,
-   "held_on_its_rows": 0.6401586412464706,
+   "forward_oof": 0.6648711174551034,
+   "held_on_its_rows": 0.6411762232780402,
    "n_test": 15262
   },
   {
@@ -923,6 +923,69 @@
    "forward_oof": 0.5041273192588362,
    "held_on_its_rows": 0.49536459500453456,
    "n_test": 15262
+  },
+  {
+   "member": "CALENDAR + NUMEROLOGY (plain + date fine structure)",
+   "n_fit": 108580,
+   "forward_oof": 0.6567714040024638,
+   "held_on_its_rows": 0.6288991465958977,
+   "n_test": 15262
+  },
+  {
+   "member": "CALENDAR + NUMEROLOGY alone (no ages)",
+   "n_fit": 108580,
+   "forward_oof": 0.5405735152216545,
+   "held_on_its_rows": 0.5317929331306456,
+   "n_test": 15262
+  },
+  {
+   "member": "HARMONIC 2 synastry sum (14 bodies)",
+   "n_fit": 16658,
+   "forward_oof": 0.5845033487307391,
+   "held_on_its_rows": 0.5933454311239326,
+   "n_test": 15262
+  },
+  {
+   "member": "HARMONIC 3 synastry sum (14 bodies)",
+   "n_fit": 16658,
+   "forward_oof": 0.5788242715910249,
+   "held_on_its_rows": 0.5802883807547664,
+   "n_test": 15262
+  },
+  {
+   "member": "HARMONIC 4 synastry sum (14 bodies)",
+   "n_fit": 16658,
+   "forward_oof": 0.552924940868573,
+   "held_on_its_rows": 0.5644729538463749,
+   "n_test": 15262
+  },
+  {
+   "member": "HARMONIC 6 synastry sum (14 bodies)",
+   "n_fit": 16658,
+   "forward_oof": 0.5486822975912803,
+   "held_on_its_rows": 0.5747368385470313,
+   "n_test": 15262
+  },
+  {
+   "member": "FAST synastry sum (Sun..Mars)",
+   "n_fit": 14736,
+   "forward_oof": 0.4928763656240874,
+   "held_on_its_rows": 0.5115615403499674,
+   "n_test": 15262
+  },
+  {
+   "member": "PROGRESSED synastry + progressed-to-start (20 phasors)",
+   "n_fit": 74636,
+   "forward_oof": 0.5223365137190717,
+   "held_on_its_rows": 0.47468531468531466,
+   "n_test": 5374
+  },
+  {
+   "member": "PROGRESSED synastry only (10 phasors)",
+   "n_fit": 14430,
+   "forward_oof": 0.5218305865931662,
+   "held_on_its_rows": 0.47301698301698303,
+   "n_test": 5374
   }
  ],
  "runs": {
@@ -937,9 +1000,9 @@
    {
     "subset": "geography alone",
     "k": 1,
-    "fit_auc": 0.6610467155958527,
-    "held": 0.6304816294383077,
-    "age_cell": 0.5880263301207309
+    "fit_auc": 0.6618945263940359,
+    "held": 0.6305003268347146,
+    "age_cell": 0.5877596217488809
    },
    {
     "subset": "greedy alone",
@@ -965,9 +1028,9 @@
    {
     "subset": "geography + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.6601548305575614,
-    "held": 0.6407769581596635,
-    "age_cell": 0.5898388299461835
+    "fit_auc": 0.6607345169583286,
+    "held": 0.6403280093758816,
+    "age_cell": 0.5890736143033884
    },
    {
     "subset": "plain + greedy + fixed",
@@ -1006,10 +1069,10 @@
    },
    {
     "subset": "ArtaModel family (95) only",
-    "k": 98,
-    "fit_auc": 0.664195616666677,
-    "held": 0.6370108588562771,
-    "age_cell": 0.5778188002870955
+    "k": 107,
+    "fit_auc": 0.66492090919022,
+    "held": 0.6367946592066754,
+    "age_cell": 0.5775004258955676
    },
    {
     "subset": "sidereal families + plain",
@@ -1020,10 +1083,10 @@
    },
    {
     "subset": "ALL members",
-    "k": 133,
-    "fit_auc": 0.6656171757026371,
-    "held": 0.6362228921203186,
-    "age_cell": 0.5775674520832577
+    "k": 142,
+    "fit_auc": 0.6660966457435625,
+    "held": 0.6362662728969162,
+    "age_cell": 0.5780254643658066
    }
   ],
   "from1867_lam0.001": [
@@ -1037,9 +1100,9 @@
    {
     "subset": "geography alone",
     "k": 1,
-    "fit_auc": 0.666949458063752,
-    "held": 0.6406285761851649,
-    "age_cell": 0.5912128667938302
+    "fit_auc": 0.6677256052630378,
+    "held": 0.6408123458873263,
+    "age_cell": 0.5898709466611184
    },
    {
     "subset": "greedy alone",
@@ -1065,9 +1128,9 @@
    {
     "subset": "geography + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.6659993857888717,
-    "held": 0.6447924969284861,
-    "age_cell": 0.5916876356233016
+    "fit_auc": 0.6666974354403652,
+    "held": 0.6446883408106486,
+    "age_cell": 0.5908498082771756
    },
    {
     "subset": "plain + greedy + fixed",
@@ -1106,10 +1169,10 @@
    },
    {
     "subset": "ArtaModel family (95) only",
-    "k": 98,
-    "fit_auc": 0.6685756654080653,
-    "held": 0.6399508219741662,
-    "age_cell": 0.5888557791933957
+    "k": 107,
+    "fit_auc": 0.669075790847533,
+    "held": 0.6395891981302886,
+    "age_cell": 0.5880821852771393
    },
    {
     "subset": "sidereal families + plain",
@@ -1120,10 +1183,10 @@
    },
    {
     "subset": "ALL members",
-    "k": 133,
-    "fit_auc": 0.6699306271573378,
-    "held": 0.6387722169788134,
-    "age_cell": 0.5889674895062125
+    "k": 142,
+    "fit_auc": 0.670223485919145,
+    "held": 0.6387106669808487,
+    "age_cell": 0.5882441652307236
    }
   ],
   "from1823_lam0.01": [
@@ -1137,9 +1200,9 @@
    {
     "subset": "geography alone",
     "k": 1,
-    "fit_auc": 0.6591329863164618,
-    "held": 0.633571946384177,
-    "age_cell": 0.5886016382317375
+    "fit_auc": 0.6600613987360583,
+    "held": 0.6338667032680232,
+    "age_cell": 0.5883851995006549
    },
    {
     "subset": "greedy alone",
@@ -1165,9 +1228,9 @@
    {
     "subset": "geography + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.6560196131178359,
-    "held": 0.642525076694537,
-    "age_cell": 0.5898444154618244
+    "fit_auc": 0.656800822341186,
+    "held": 0.6422801443227732,
+    "age_cell": 0.5891797391005644
    },
    {
     "subset": "plain + greedy + fixed",
@@ -1206,10 +1269,10 @@
    },
    {
     "subset": "ArtaModel family (95) only",
-    "k": 98,
-    "fit_auc": 0.6589316159555942,
-    "held": 0.6330784196270408,
-    "age_cell": 0.5711832077057774
+    "k": 107,
+    "fit_auc": 0.6603962802454163,
+    "held": 0.6324665112376634,
+    "age_cell": 0.570077275608891
    },
    {
     "subset": "sidereal families + plain",
@@ -1220,10 +1283,10 @@
    },
    {
     "subset": "ALL members",
-    "k": 133,
-    "fit_auc": 0.6593203824735131,
-    "held": 0.6330563771220489,
-    "age_cell": 0.5706637547511793
+    "k": 142,
+    "fit_auc": 0.6606167675292315,
+    "held": 0.6326732037365497,
+    "age_cell": 0.5695131385291662
    }
   ]
  },
@@ -1244,9 +1307,9 @@
    "age_cell": 0.545745373098481
   },
   "plain + all members with fwd-OOF >= 0.60": {
-   "k": 9,
-   "held": 0.6338110336188343,
-   "age_cell": 0.5664117809695897
+   "k": 10,
+   "held": 0.6347323821581626,
+   "age_cell": 0.5705548371961828
   },
   "plain + greedy + fixed + traditions + sidereal families": {
    "k": 38,
@@ -1255,13 +1318,13 @@
   },
   "geography + greedy + fixed": {
    "k": 3,
-   "held": 0.6393392657014819,
-   "age_cell": 0.5884759641298185
+   "held": 0.6388933451212613,
+   "age_cell": 0.5874091306424181
   },
   "geography + plain + greedy + fixed": {
    "k": 4,
-   "held": 0.6391034883637405,
-   "age_cell": 0.5848747029203869
+   "held": 0.6389575712060941,
+   "age_cell": 0.5839028231988806
   }
  },
  "bagged_stack_all": {
@@ -1297,7 +1360,7 @@
     0.0
    ]
   ],
-  "held": 0.6368310680727485,
-  "age_cell": 0.5803630026614982
+  "held": 0.6367311725668983,
+  "age_cell": 0.5796801733744055
  }
 }

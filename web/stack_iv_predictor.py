@@ -302,3 +302,55 @@ def best_matches(dob, lat, lon, start=None, top=20, min_age=18, max_age=100, cap
                     "probability": float(1 / (1 + np.exp(-Z[di, ci]))), "geo_probability": float(geo[y_i, ci]), "am_greedy_logit": float(am_g[di]), "am_fixed_logit": float(am_f[di])})
     return {"start": start, "group": group, "n_candidates": int(ndays * len(caps)), "n_days": int(ndays), "n_capitals": len(caps), "matches": out,
             "note": "the candidate's phases are the outer planets at 09:00 UT of the day (weekly samples interpolated); the capital enters through the geography member"}
+
+
+# ── THE BEST START DAY (electional) ──────────────────────────────────────────────────────────────────────────────
+def best_start_days(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, from_date=None, years=5, top=20):
+    """For a given pair, the `top` start days in [from_date, from_date + years) by the deployed stack: the start
+    day enters through the two ages, the weekday and month (geography member) and the start-day outer planets
+    (the ArtaModel t1/t2 terms); both orders of the pair are averaged. Candidate start-day skies are sampled
+    weekly and interpolated (< 0.02°)."""
+    import datetime as dt
+    M = _M; labels = M["members"]["AM_GREEDY"]["labels"]; col = {b: j for j, b in enumerate(BODIES14)}
+    today = dt.date.today(); d0 = dt.date.fromisoformat(from_date) if from_date else today
+    ndays0 = int(round(365.2425 * years)); days = [d for d in (d0 + dt.timedelta(days=i) for i in range(ndays0)) if not (d.month == 1 and d.day == 1)]   # 1 January is the dataset's year-only placeholder: never a scorable day
+    ndays = len(days)
+    jds = np.array([_jd(d.year, d.month, d.day, 12.0) for d in days])
+    t1, t2 = theta(dob_1, lat_1, lon_1), theta(dob_2, lat_2, lon_2)
+    L = _outer_lon_by_day(jds); TW = np.full((ndays, len(BODIES14)), np.nan); TW[:, col["uranus"]] = L["uranus"]; TW[:, col["neptune"]] = L["neptune"]; TW[:, col["pluto"]] = L["pluto"]
+    def am_batch(model, A_, B_):
+        F = np.full(ndays, model["F0"]); rad = np.pi / 180.0
+        for st in model["stages"]:
+            t, b = labels[st["phasor"]].split("_", 1); j = col[b]
+            if t == "a": P = np.full(ndays, absdiff(A_[j], B_[j]))
+            elif t == "t1": P = absdiff(TW[:, j], np.full(ndays, A_[j]))
+            elif t == "t2": P = absdiff(TW[:, j], np.full(ndays, B_[j]))
+            elif t == "n1": P = np.full(ndays, A_[j])
+            elif t == "n2": P = np.full(ndays, B_[j])
+            else: P = TW[:, j]
+            ok = np.isfinite(P); C, S = np.where(ok, np.cos(P * rad), 0.0), np.where(ok, np.sin(P * rad), 0.0)
+            Zr = st["w_re"] * C - st["w_im"] * S + st["b_re"]; Zi = st["w_re"] * S + st["w_im"] * C + st["b_im"]
+            F = F + np.where(ok, st["step"] * (st["alpha"] * (Zr * Zr + Zi * Zi) + st["c"]), 0.0)
+        return F
+    am_g = 0.5 * (am_batch(M["members"]["AM_GREEDY"], t1, t2) + am_batch(M["members"]["AM_GREEDY"], t2, t1))
+    am_f = 0.5 * (am_batch(M["members"]["AM_FIXED"], t1, t2) + am_batch(M["members"]["AM_FIXED"], t2, t1))
+    y1 = int(dob_1[:4]) if _prec(dob_1) else None; y2 = int(dob_2[:4]) if _prec(dob_2) else None
+    rows = []
+    for d in days:
+        a1 = float(d.year - y1) if y1 else float("nan"); a2 = float(d.year - y2) if y2 else float("nan")
+        rows.append(_geo_x(a1, a2, lat_1, lon_1, lat_2, lon_2, d.year, 0.0, float(d.weekday()), float(d.month)))
+    geo = np.mean([lgbm_predict_proba_batch(m, np.array(rows, dtype=float)) for m in _GEO], axis=0)
+    q = np.asarray(M["rank_reference"]["quantiles"]); rk = lambda v, key: np.interp(v, np.asarray(M["rank_reference"][key]), q)
+    iu = col["uranus"]; hasA = np.isfinite(t1[iu]) and np.isfinite(t2[iu]); hasT = (np.isfinite(t1[iu]) or np.isfinite(t2[iu]))
+    group = "0" if hasT else ("1" if hasA else "2"); w = M["stacker"]["weights"].get(group) or M["stacker"]["weights"]["2"]
+    Z = w["w"][0] * (rk(geo, "GEO") - 0.5) + w["w"][1] * (rk(am_g, "AM_GREEDY") - 0.5) + w["w"][2] * (rk(am_f, "AM_FIXED") - 0.5) + w["b"]
+    order = np.argsort(-Z)[:top]
+    out = [{"start": days[i].isoformat(), "weekday": days[i].strftime("%A"), "probability": float(1 / (1 + np.exp(-Z[i]))), "geo_probability": float(geo[i]), "am_greedy_logit": float(am_g[i]), "am_fixed_logit": float(am_f[i])} for i in order]
+    # the month-by-month profile too, for the page: the best day of each calendar month in the horizon
+    by_month = {}
+    for i, d in enumerate(days):
+        k = d.strftime("%Y-%m")
+        if k not in by_month or Z[i] > by_month[k][1]:
+            by_month[k] = (d.isoformat(), float(Z[i]))
+    return {"from": d0.isoformat(), "years": years, "n_days": ndays, "group": group, "best_days": out, "note": "1 January is skipped (the dataset's year-only placeholder)",
+            "best_day_per_month": [{"month": k, "start": v[0], "probability": float(1 / (1 + np.exp(-v[1])))} for k, v in sorted(by_month.items())]}

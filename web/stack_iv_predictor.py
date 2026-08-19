@@ -344,13 +344,15 @@ def best_start_days(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, from_date=None, ye
     iu = col["uranus"]; hasA = np.isfinite(t1[iu]) and np.isfinite(t2[iu]); hasT = (np.isfinite(t1[iu]) or np.isfinite(t2[iu]))
     group = "0" if hasT else ("1" if hasA else "2"); w = M["stacker"]["weights"].get(group) or M["stacker"]["weights"]["2"]
     Z = w["w"][0] * (rk(geo, "GEO") - 0.5) + w["w"][1] * (rk(am_g, "AM_GREEDY") - 0.5) + w["w"][2] * (rk(am_f, "AM_FIXED") - 0.5) + w["b"]
-    order = np.argsort(-Z)[:top]
-    out = [{"start": days[i].isoformat(), "weekday": days[i].strftime("%A"), "probability": float(1 / (1 + np.exp(-Z[i]))), "geo_probability": float(geo[i]), "am_greedy_logit": float(am_g[i]), "am_fixed_logit": float(am_f[i])} for i in order]
-    # the month-by-month profile too, for the page: the best day of each calendar month in the horizon
-    by_month = {}
+    row = lambda i: {"start": days[i].isoformat(), "weekday": days[i].strftime("%A"), "probability": float(1 / (1 + np.exp(-Z[i]))), "geo_probability": float(geo[i]), "am_greedy_logit": float(am_g[i]), "am_fixed_logit": float(am_f[i])}
+    # TWENTY OPTIONS, not twenty copies of one week: the best day of each calendar month, ranked, `top` of them —
+    # consecutive Tuesdays of one month are one option, not twenty (operator 2026-08-19)
+    best_in_month = {}
     for i, d in enumerate(days):
         k = d.strftime("%Y-%m")
-        if k not in by_month or Z[i] > by_month[k][1]:
-            by_month[k] = (d.isoformat(), float(Z[i]))
-    return {"from": d0.isoformat(), "years": years, "n_days": ndays, "group": group, "best_days": out, "note": "1 January is skipped (the dataset's year-only placeholder)",
-            "best_day_per_month": [{"month": k, "start": v[0], "probability": float(1 / (1 + np.exp(-v[1])))} for k, v in sorted(by_month.items())]}
+        if k not in best_in_month or Z[i] > Z[best_in_month[k]]:
+            best_in_month[k] = i
+    options = [dict(row(i), month=k) for k, i in sorted(best_in_month.items(), key=lambda kv: -Z[kv[1]])][:top]
+    raw = [row(i) for i in np.argsort(-Z)[:top]]
+    return {"from": d0.isoformat(), "years": years, "n_days": ndays, "group": group, "best_days": options, "raw_top_days": raw, "note": "1 January is skipped (the dataset's year-only placeholder)",
+            "best_day_per_month": [dict(row(i), month=k) for k, i in sorted(best_in_month.items())]}

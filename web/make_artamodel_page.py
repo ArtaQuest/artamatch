@@ -68,7 +68,7 @@ td{{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}}td.
 </form>
 <div id=fresult class=result hidden><div id=fsummary class=detail></div><div id=ftable class=detail></div></div>
 <h2>Find the best start day</h2>
-<p>For a pair, every day from a date (today by default) over a horizon is scored — the start day enters through the two ages, its weekday and month, and the outer planets of that day against each natal chart — and the twenty best days are listed with the best day of every month. 1 January is skipped: the data reads it as "year only". What the model prefers is, again, what it learned: later starts (older ages), certain weekdays, and the slow sky of the day.</p>
+<p>For a pair, every day from a date (today by default) over a horizon is scored — the start day enters through the two ages, its weekday and month, and the outer planets of that day against each natal chart — and the twenty best <b>options</b> are listed: the best day of each month, ranked, so twenty consecutive Tuesdays count as one option, not twenty. 1 January is skipped: the data reads it as "year only". What the model prefers is, again, what it learned: later starts (older ages), certain weekdays, and the slow sky of the day.</p>
 <form id=bestday class=tryit onsubmit="return false">
 <fieldset><legend>Partner 1</legend><label>Date of birth <input name=bdob1 value="1994-02-15"></label><label>Latitude <input name=blat1 value="35.6892"></label><label>Longitude <input name=blon1 value="51.389"></label></fieldset>
 <fieldset><legend>Partner 2</legend><label>Date of birth <input name=bdob2 value="1997-02-06"></label><label>Latitude <input name=blat2 value="64.1466"></label><label>Longitude <input name=blon2 value="-21.9426"></label></fieldset>
@@ -197,9 +197,9 @@ r = P.best_start_days(${{JSON.stringify(v("bdob1"))}}, float(${{JSON.stringify(v
 json.dumps(r)`);
     const r = JSON.parse(out); $("#bresult").hidden = false;
     $("#bsummary").innerHTML = `<p>${{r.n_days.toLocaleString()}} days from ${{r.from}} over ${{r.years}} years, scored in ${{((performance.now() - t0) / 1000).toFixed(1)}} s (group ${{r.group}}; ${{r.note}}).</p>`;
-    $("#btable").innerHTML = `<div class=tblwrap><table><thead><tr><th>#</th><th>start day</th><th>weekday</th><th>P(lasts thirty years)</th><th>geography p</th><th>ArtaModel logit</th></tr></thead><tbody>` +
+    $("#btable").innerHTML = `<div class=tblwrap><table><thead><tr><th>#</th><th>best day of the month</th><th>weekday</th><th>P(lasts thirty years)</th><th>geography p</th><th>ArtaModel logit</th></tr></thead><tbody>` +
       r.best_days.map((m, i) => `<tr><td class=num>${{i + 1}}</td><td class=num>${{m.start}}</td><td>${{m.weekday}}</td><td class=num>${{(100 * m.probability).toFixed(1)}}%</td><td class=num>${{m.geo_probability.toFixed(3)}}</td><td class=num>${{m.am_greedy_logit.toFixed(3)}}</td></tr>`).join("") + `</tbody></table></div>` +
-      `<p><b>Best day of each month:</b> ` + r.best_day_per_month.map(m => `${{m.start}} (${{(100 * m.probability).toFixed(1)}}%)`).join(" · ") + `</p>`;
+      `<p><b>The raw top days</b> (mostly one month's mid-week days): ` + r.raw_top_days.map(m => `${{m.start}} ${{m.weekday.slice(0,3)}} (${{(100 * m.probability).toFixed(1)}}%)`).join(" · ") + `</p>`;
     status("ready");
   }} catch (e) {{ status("error: " + e); }}
   $("#bestgo").disabled = false; $("#bestgo").textContent = "Find the best days";

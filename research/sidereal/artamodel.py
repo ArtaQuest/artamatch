@@ -36,6 +36,9 @@ from coherent_fit import Coherent, auc                                    # noqa
 
 TERMS = ("a", "m", "d", "mn", "dn", "tn")
 TERMS8 = TERMS + ("c", "tc")
+# Arash, 2026-08-19: "add the midpoint of natals as another term. also midpoint with their wedding. overall 3 more
+# terms" -> c (midpoint of the two natals), mw (midpoint of mom's natal with the wedding), dw (dad's with the wedding)
+TERMS9 = TERMS + ("c", "mw", "dw")
 BODIES14 = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto",
             "true_node", "true_south_node", "chiron", "mean_lilith"]
 ANGLES = ["ascendant", "medium_coeli"]
@@ -66,6 +69,12 @@ def phase_matrix(D, M, W, all_bodies, bodies, terms, angles_in_natal=False):
             elif t == "tc":
                 if b in ANGLES: continue
                 P.append(W[:, j] - composite(D[:, j], M[:, j]))
+            elif t == "mw":
+                if b in ANGLES: continue
+                P.append(composite(M[:, j], W[:, j]))          # midpoint of mom's natal and the wedding sky
+            elif t == "dw":
+                if b in ANGLES: continue
+                P.append(composite(D[:, j], W[:, j]))          # midpoint of dad's natal and the wedding sky
             elif t == "m":
                 if b in ANGLES: continue
                 P.append(W[:, j] - M[:, j])

@@ -138,3 +138,59 @@ Splitting rescues the six-term formula (each absolute-phase term in its own sum 
 over the split sums reaches the reference but does not cross it; the age-cell-matched control stays at 0.50–0.52
 for every construction — better instruments for the same two quantities. Inner-selected picks: 3-term BOOST
 0.6318, 6-term BOOST-over-SPLIT-per-body 0.6293 (the top held-out numbers carry about +0.007 of optimism).
+
+## 8 · Midpoints, per-body models, sums, aspect grids — every model on every row it has (`artamodel_split_models.py`, `artamodel_full_stack.py`, `artamodel_blend.py`)
+
+Arash, 2026-08-19: three midpoint terms (the natal composite **c** = mid(θm, θd), **mw** = mid(θm, θt), **dw** =
+mid(θd, θt) → `TERMS9`); every model trained on the rows it has (the dad-natal model on almost everything, a
+day-missing row on the outer planets only — the precision-aware phases do this by themselves); per-body models
+|b + aᵢ e^{i(θmᵢ−θdᵢ)}|² **in addition to** the sum models; and the aspects. Marriages-only edition III:
+89,465 train rows, 7,249 test rows, most dates year-only. Every member is a coherent field with a logistic head,
+early-stopped on the inner temporal split of its **own** population; train scores are out-of-fold over two
+temporal halves; test scores from a fit on all its rows; the stacker is LightGBM over the member scores (NaN where
+a member has nothing for the couple).
+
+**Members (144).** 126 per-phasor models (9 terms × 14 bodies, each on its own rows); 9 per-term sums over the
+14 bodies — inside the square the cross terms cos(φᵢ−φⱼ) ARE the aspects between that term's phasors; the
+3-/6-/9-term whole-formula sums; three explicit inter-body aspect grids (synastry θmᵢ−θdⱼ, wedding→mom θtᵢ−θmⱼ,
+wedding→dad θtᵢ−θdⱼ, all i≠j, 182 phasors each); and three boosted split sums — the deployed construction on
+the 9,553 full-chart rows, and the 6- and 9-term constructions on all 75,852 rows with any phasor.
+
+| member (held out, on the rows it scores) | rows | AUC |
+|---|---|---|
+| phasor **d_neptune** (wedding→dad) | 16,622 | **0.6312** |
+| phasor d_pluto / d_uranus / a_uranus | 16,622 / 16,622 / 11,255 | 0.6231 / 0.6177 / 0.6031 |
+| SUM term d over 14 bodies | 16,622 | 0.6267 |
+| SUM 3-term (a+m+d) over all bodies | 22,426 | 0.6097 |
+| SUM term a / m | 11,255 / 8,787 | 0.5825 / 0.5924 |
+| SUM term c / mw / dw (the three midpoints) | 11,255 / 8,787 / 16,622 | 0.4763 / 0.4545 / 0.3938 |
+| SUM term mn / dn / tn (absolute phases) | 13,669 / 24,332 / 67,396 | 0.4851 / 0.5154 / 0.4713 |
+| SUM 6-term / 9-term over all bodies | 75,852 | 0.4821 / 0.5345 |
+| ASPECTS synastry / wedding→mom / wedding→dad grids | 11,255 / 8,787 / 16,622 | 0.5205 / 0.5044 / 0.5200 |
+| BOOST6 on full-chart rows (deployed construction) | 9,553 | 0.6235 |
+| BOOST6 / BOOST9 on every any-phasor row | 75,852 | 0.5665 / 0.5656 |
+
+| stack / blend (all 7,249 test rows) | held | age-cell-matched | board |
+|---|---|---|---|
+| REFERENCE plain columns alone | 0.5971 | 0.5078 | 0.61055 |
+| STACK 126 per-phasor only | 0.5880 | 0.5119 | |
+| STACK 12 sum models only / 3 aspect grids only | 0.5521 / 0.5195 | 0.4759 / 0.5257 | |
+| STACK all 144 members, no plain | 0.5812 | 0.5010 | |
+| STACK all 144 + plain (regularised / loose / tight) | 0.6059 / 0.6018 / 0.6100 | 0.5112 / 0.4977 / 0.5205 | **0.61149** (selector-picked: loose) |
+| RANK-BLEND top-3 members by train OOF (d_uranus, 3-term sum, a_uranus) | 0.6183 | 0.5558 | |
+| deployed 6-term boosted (train-only fit) | 0.6235 | 0.5701 | 0.63 |
+| 0.7·deployed + 0.3·stack | 0.6263 | 0.5592 | |
+
+**What it says.** (1) The new midpoint terms are below chance as sums (0.39–0.48) and add nothing in the stack:
+a midpoint of two slow clocks is a third clock with the information of neither. (2) The per-body models confirm the
+anatomy to the body: the strongest single model on the whole dataset is **Neptune at the wedding relative to
+Neptune at the groom's birth** — Neptune moves 2.2°/yr, so that phase IS the groom's age at the wedding, and
+Pluto/Uranus are the next-best clocks. (3) The explicit aspect grids (182 inter-body separations each) are
+0.50–0.52: the classical synastry and transit aspects carry nothing once each body's own clock is a separate
+term. (4) Fitting on every available row HURTS the boosted sum (0.5665 on 75,852 rows vs 0.6235 on 9,553 full
+charts): the year-only rows hand the field only the outer planets, and the stage picker then spends its stages
+on the clocks that least separate within a year. (5) **The train-OOF of every clock-reading member is below
+chance across temporal halves (BOOST6 0.47–0.53, held 0.62)** — a clock fitted on one era is anti-predictive on
+the next, and it scores on the leaderboard only because test shares train's eras. (6) Nothing here beats the
+deployed 6-term boosted split (0.631 on the board): the 144-member stack lands at 0.61149 beside the plain columns
+(0.61055), and every age-cell-matched read stays at 0.50–0.57. The deployed model and its explanation stand.

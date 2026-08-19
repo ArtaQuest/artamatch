@@ -140,10 +140,15 @@ def main():
     # else in the stack had read; forward OOF 0.659 vs 0.642 for the ages alone.
     SRC = os.environ.get("AQ_SRC", "/tmp/aq4")
     trc = pd.read_csv(f"{SRC}/train.csv", dtype=str); tec = pd.read_csv(f"{SRC}/test.csv", dtype=str)
-    def geoX(df, p):
-        a, b = p[:, ia], p[:, ib]; swap = b > a
+    def geoX(df, p, jitter=0.0, seed=0):
+        a, b = p[:, ia], p[:, ib]
         la, lo = pd.to_numeric(df.lat_a, errors="coerce").to_numpy(), pd.to_numeric(df.lon_a, errors="coerce").to_numpy()
         lb, lob = pd.to_numeric(df.lat_b, errors="coerce").to_numpy(), pd.to_numeric(df.lon_b, errors="coerce").to_numpy()
+        if jitter:
+            rg = np.random.default_rng(seed); la = la + rg.uniform(-jitter, jitter, len(la)); lo = lo + rg.uniform(-jitter, jitter, len(lo)); lb = lb + rg.uniform(-jitter, jitter, len(lb)); lob = lob + rg.uniform(-jitter, jitter, len(lob))
+        # SYMMETRIC tie-break: "older first" by age; when the ages are equal, by (lat, lon) — the same assignment from either order
+        tie = b == a; key_a = np.nan_to_num(la, nan=-999) * 1000 + np.nan_to_num(lo, nan=-999); key_b = np.nan_to_num(lb, nan=-999) * 1000 + np.nan_to_num(lob, nan=-999)
+        swap = (b > a) | (tie & (key_b < key_a))
         lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
         d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
         j1_ = p[:, pn.index("start_is_jan1")]
@@ -155,12 +160,16 @@ def main():
     GEO_PRMS = [dict(n_estimators=200, learning_rate=0.05, num_leaves=7, min_child_samples=400, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=30.0, verbose=-1),
                 dict(n_estimators=300, learning_rate=0.05, num_leaves=15, min_child_samples=200, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=20.0, verbose=-1),
                 dict(n_estimators=600, learning_rate=0.03, num_leaves=15, min_child_samples=200, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=20.0, verbose=-1)]
+    # NOISE ROBUSTNESS: the geography member is fitted on the rows PLUS a copy with the birthplaces jittered by ±0.3°
+    # (~30 km) — so no split can hang on a coordinate's third decimal; evaluation stays on the exact coordinates
+    JIT = float(os.environ.get("AQ_JITTER", "0.3")); Xg_aug = np.vstack([Xg, geoX(trc, ptr, jitter=JIT, seed=1)]) if JIT > 0 else Xg
+    y_aug = np.concatenate([y, y]) if JIT > 0 else y; w_aug = np.concatenate([adv_w, adv_w]) if JIT > 0 else adv_w; later_aug = np.concatenate([later, later]) if JIT > 0 else later
     pg_tr = np.zeros(len(y)); pg_te = np.zeros(len(Xge)); cnt_tr = np.zeros(len(y))
     for prm_g in GEO_PRMS:
         for k in range(1, len(cuts)):
             lo = cuts[k - 1]; blk = (later > lo) & ((later <= cuts[k]) if k < len(cuts) - 1 else True)
-            c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg[later <= lo], y[later <= lo], sample_weight=adv_w[later <= lo]); pg_tr[blk] += c.predict_proba(Xg[blk])[:, 1]; cnt_tr[blk] += 1
-        c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg, y, sample_weight=adv_w); pg_te += c.predict_proba(Xge)[:, 1] / len(GEO_PRMS)
+            c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg_aug[later_aug <= lo], y_aug[later_aug <= lo], sample_weight=w_aug[later_aug <= lo]); pg_tr[blk] += c.predict_proba(Xg[blk])[:, 1]; cnt_tr[blk] += 1
+        c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg_aug, y_aug, sample_weight=w_aug); pg_te += c.predict_proba(Xge)[:, 1] / len(GEO_PRMS)
     pg_tr = np.where(cnt_tr > 0, pg_tr / np.maximum(cnt_tr, 1), np.nan)
     add(pg_tr, pg_te, len(y), "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month")
     # the 9-term boosted construction (midpoints c / mw / dw added, even mode)
@@ -185,7 +194,21 @@ def main():
         for j, nm in enumerate(nx):
             add(Sx[:, j], Tx[:, j], int(np.isfinite(Sx[:, j]).sum()), nm)
     S = np.column_stack(members_tr); T = np.column_stack(members_te)
+    # SYMMETRY AUDIT: every member's raw asymmetry between the two orders of a pair (mean |rank_a − rank_b|) BEFORE it is
+    # averaged — the ArtaModel members (t1/t2 carry separate weights) and anything with an older/younger rule show it;
+    # after the averaging below every member is exactly even, which is asserted
+    pk = pair_key(ids); asym = {}
+    for j in range(T.shape[1]):
+        v = T[:, j]; f = np.isfinite(v)
+        if f.sum() < 100: continue
+        rk_ = np.full(len(v), np.nan); rk_[f] = r01(v[f]); d = pd.DataFrame({"k": pk, "r": rk_}).groupby("k")["r"].agg(lambda q: abs(q.max() - q.min()) if np.isfinite(q).all() and len(q) == 2 else np.nan)
+        asym[names[j]] = float(np.nanmean(d))
+    worst = sorted(asym.items(), key=lambda kv: -kv[1])[:6]
+    log("  raw pair asymmetry (mean |rank_a − rank_b|) — worst: " + "; ".join(f"{k[:34]} {v:.4f}" for k, v in worst) + f"; geography {asym.get(names[ix_geo_name], float('nan')):.4f}" if False else "  raw pair asymmetry (mean |rank_a − rank_b|) — worst: " + "; ".join(f"{k[:34]} {v:.4f}" for k, v in worst))
     T = np.column_stack([symmetrise(ids, T[:, j]) if np.isfinite(T[:, j]).any() else T[:, j] for j in range(T.shape[1])])   # every member even over the pair
+    chk_te = max(pd.DataFrame({"k": pk, "v": T[:, j]}).groupby("k")["v"].agg(lambda q: (np.nanmax(q) - np.nanmin(q)) if np.isfinite(q).any() else 0).max() for j in range(min(T.shape[1], 8)))
+    assert chk_te < 1e-9, f"test-side symmetrisation failed ({chk_te})"; log("  every member's test score is exactly even over the pair (asserted)")
+    R_asym = asym
     # THE TRAIN SIDE TOO (operator 2026-08-19: "ensure data augmentation is done properly to respect the symmetries"):
     # a pair's two rows share the forward block, so both carry an OOF score; average them so the stacker's features
     # are even in the swap exactly as the test features are. The pair key is the order-free (dob, lat, lon) x2 + start.
@@ -214,7 +237,7 @@ def main():
                ("plain + greedy + fixed + 6 best phasors", [pl, gr, fx] + top), ("per-phasor (84) + plain", per + [pl]), ("sums (8) + plain", sums + [pl])] \
               + ([("traditions + plain", trad + [pl]), ("ArtaModel family (95) only", [i for i in range(len(names)) if i not in trad + sid])] if trad else []) \
               + ([("sidereal families + plain", sid + [pl])] if sid else []) + [("ALL members", list(range(len(names))))]
-    R = {"members": meta, "runs": {}, "pools": {}}; out = {}
+    R = {"members": meta, "runs": {}, "pools": {}, "raw_pair_asymmetry": R_asym}; out = {}
     for fit_from, lam in ((cuts[-3], 1e-2), (cuts[-3], 1e-3), (cuts[0], 1e-2)):
         oof = later > fit_from; yo = y[oof]; lo_ = later[oof]; gt = gtr[oof]
         log(f"--- grouped non-negative stacker: weights on OOF rows later > {int(fit_from)} ({oof.sum():,}), lambda {lam:g} ---"); rows = []

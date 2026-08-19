@@ -130,8 +130,10 @@ def _rank(v, grid_key):
     return float(np.interp(v, g, q))
 
 
-def _geo_x(age1, age2, la, lo, lb, lob, start_year, jan1):
-    swap = age2 > age1
+def _geo_x(age1, age2, la, lo, lb, lob, start_year, jan1, wd=float("nan"), mo=float("nan")):
+    nan0 = lambda v: -999.0 if (v is None or (isinstance(v, float) and math.isnan(v))) else v
+    key1 = nan0(la) * 1000 + nan0(lo); key2 = nan0(lb) * 1000 + nan0(lob)
+    swap = (age2 > age1) or (age2 == age1 and key2 < key1)          # symmetric tie-break: equal ages -> by (lat, lon)
     lat_o, lon_o, lat_y, lon_y = (lb, lob, la, lo) if swap else (la, lo, lb, lob)
     nan = lambda v: v is None or (isinstance(v, float) and math.isnan(v))
     if any(nan(v) for v in (lat_o, lon_o, lat_y, lon_y)):
@@ -140,7 +142,7 @@ def _geo_x(age1, age2, la, lo, lb, lob, start_year, jan1):
         d = math.degrees(math.acos(max(-1.0, min(1.0, math.sin(math.radians(lat_o)) * math.sin(math.radians(lat_y)) + math.cos(math.radians(lat_o)) * math.cos(math.radians(lat_y)) * math.cos(math.radians(lon_o - lon_y)))))) * 111.0
     f = lambda a, b, fn: float("nan") if (nan(a) or nan(b)) else fn(a, b)
     return [max(age1, age2), min(age1, age2), abs(age1 - age2), float(start_year), lat_o, lon_o, lat_y, lon_y, d, f(la, lb, max), f(la, lb, min), f(lo, lob, max), f(lo, lob, min),
-            (1.0 if (not nan(d) and d < 1) else 0.0), float(jan1), float(nan(la)) + float(nan(lb))]
+            (1.0 if (not nan(d) and d < 1) else 0.0), float(jan1), float(nan(la)) + float(nan(lb)), wd, mo]
 
 
 def predict(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, start):
@@ -155,7 +157,12 @@ def predict(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, start):
     am_g, am_f = 0.5 * (g12 + g21), 0.5 * (f12 + f21); any_phasor = bool(np.isfinite(P12).any())
     y1, y2, ys = int(dob_1[:4]) if _prec(dob_1) else None, int(dob_2[:4]) if _prec(dob_2) else None, int(start[:4])
     age1 = float(ys - y1) if y1 else float("nan"); age2 = float(ys - y2) if y2 else float("nan")
-    x = _geo_x(age1, age2, lat_1, lon_1, lat_2, lon_2, ys, jan1)
+    import datetime as _dt
+    try:
+        _sd = _dt.date(ys, int(start[5:7]), int(start[8:10])); wd_, mo_ = (float(_sd.weekday()), float(_sd.month)) if jan1 == 0.0 else (float("nan"), float("nan"))
+    except Exception:
+        wd_, mo_ = float("nan"), float("nan")
+    x = _geo_x(age1, age2, lat_1, lon_1, lat_2, lon_2, ys, jan1, wd_, mo_)
     geo_p = float(np.mean([lgbm_predict_proba(mdl, x) for mdl in _GEO]))
     iu = {b: j for j, b in enumerate(BODIES14)}["uranus"]
     hasT = np.isfinite(tw[iu]) and (np.isfinite(t1[iu]) or np.isfinite(t2[iu])); hasA = np.isfinite(t1[iu]) and np.isfinite(t2[iu])
@@ -263,10 +270,14 @@ def best_matches(dob, lat, lon, start=None, top=20, min_age=18, max_age=100, cap
     am_f = 0.5 * (am_batch(M["members"]["AM_FIXED"], t1, cand) + am_batch(M["members"]["AM_FIXED"], cand, t1))
     # geography per (year, capital)
     y1 = int(dob[:4]) if _prec(dob) else None; age1 = float(sy - y1) if y1 else float("nan")
+    try:
+        _sd = dt.date(sy, sm, sd); wd_, mo_ = (float(_sd.weekday()), float(_sd.month)) if jan1 == 0.0 else (float("nan"), float("nan"))
+    except Exception:
+        wd_, mo_ = float("nan"), float("nan")
     rows = []
     for yy in cand_years:
         for cp in caps:
-            rows.append(_geo_x(age1, float(sy - yy), lat, lon, cp["lat"], cp["lon"], sy, jan1))
+            rows.append(_geo_x(age1, float(sy - yy), lat, lon, cp["lat"], cp["lon"], sy, jan1, wd_, mo_))
     X = np.array(rows, dtype=float); geo = np.mean([lgbm_predict_proba_batch(m, X) for m in _GEO], axis=0).reshape(len(cand_years), len(caps))
     # ranks and the stack, on the full day x capital grid
     q = np.asarray(M["rank_reference"]["quantiles"]); rk = lambda v, key: np.interp(v, np.asarray(M["rank_reference"][key]), q)

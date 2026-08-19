@@ -63,12 +63,22 @@ def boost_recorded_fixed(P, y, inner, order, rounds=6, nu=0.1, seed=0):
     return {"F0": F0, "stages": rec[:best_n] if inner.any() else rec, "inner_auc": best if inner.any() else None}
 
 
-def geo_features(ages_a, ages_b, la, lo, lb, lob, start_year, start_is_jan1):
+def geo_features(ages_a, ages_b, la, lo, lb, lob, start_year, start_is_jan1, wd, mo):
     """The geography member's 16 inputs, even in the swap: older/younger assignment by age, order-free extremes."""
-    swap = ages_b > ages_a
+    tie = ages_b == ages_a; key_a = np.nan_to_num(la, nan=-999) * 1000 + np.nan_to_num(lo, nan=-999); key_b = np.nan_to_num(lb, nan=-999) * 1000 + np.nan_to_num(lob, nan=-999)
+    swap = (ages_b > ages_a) | (tie & (key_b < key_a))          # symmetric tie-break: equal ages -> order by (lat, lon)
     lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
     d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
-    return np.column_stack([np.fmax(ages_a, ages_b), np.fmin(ages_a, ages_b), np.abs(ages_a - ages_b), start_year, lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), start_is_jan1, np.isnan(la).astype(float) + np.isnan(lb).astype(float)])
+    return np.column_stack([np.fmax(ages_a, ages_b), np.fmin(ages_a, ages_b), np.abs(ages_a - ages_b), start_year, lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), start_is_jan1, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd, mo])
+
+
+def geo_features_df(df, ages_a, ages_b, start_year, start_is_jan1, jitter=0.0, seed=0):
+    num = lambda c: pd.to_numeric(df[c], errors="coerce").to_numpy()
+    la, lo, lb, lob = num("lat_a"), num("lon_a"), num("lat_b"), num("lon_b")
+    if jitter:
+        rg = np.random.default_rng(seed); la = la + rg.uniform(-jitter, jitter, len(la)); lo = lo + rg.uniform(-jitter, jitter, len(lo)); lb = lb + rg.uniform(-jitter, jitter, len(lb)); lob = lob + rg.uniform(-jitter, jitter, len(lob))
+    st = pd.to_datetime(df.start, errors="coerce"); wd = st.dt.weekday.to_numpy(dtype=float); mo = st.dt.month.to_numpy(dtype=float); jan = start_is_jan1 == 1.0; wd[jan] = np.nan; mo[jan] = np.nan
+    return geo_features(ages_a, ages_b, la, lo, lb, lob, start_year, start_is_jan1, wd, mo)
 
 
 def main():
@@ -85,11 +95,11 @@ def main():
     tr = pd.read_csv(f"{SRC}/train.csv", dtype=str); te = pd.read_csv(f"{SRC}/test.csv", dtype=str)
     num = lambda df, c: pd.to_numeric(df[c], errors="coerce").to_numpy()
     ia, ib, iy, ij = pn.index(f"age_{s1}_at_start"), pn.index(f"age_{s2}_at_start"), pn.index("start_year"), pn.index("start_is_jan1")
-    Xg = geo_features(ptr[:, ia], ptr[:, ib], num(tr, "lat_a"), num(tr, "lon_a"), num(tr, "lat_b"), num(tr, "lon_b"), ptr[:, iy], ptr[:, ij])
-    Xge = geo_features(pte[:, ia], pte[:, ib], num(te, "lat_a"), num(te, "lon_a"), num(te, "lat_b"), num(te, "lon_b"), pte[:, iy], pte[:, ij])
+    Xg = geo_features_df(tr, ptr[:, ia], ptr[:, ib], ptr[:, iy], ptr[:, ij]); Xge = geo_features_df(te, pte[:, ia], pte[:, ib], pte[:, iy], pte[:, ij])
+    Xg_j = geo_features_df(tr, ptr[:, ia], ptr[:, ib], ptr[:, iy], ptr[:, ij], jitter=0.3, seed=1); Xge_j = geo_features_df(te, pte[:, ia], pte[:, ib], pte[:, iy], pte[:, ij], jitter=0.3, seed=2)
     # ---- the stacker weights: from the saved forward-OOF member matrix, exactly the submitted configuration ----
     M = np.load(MEM, allow_pickle=True); S, names, cuts = M["S_train"], list(M["names"]), list(M["cuts"]); ix = {n: i for i, n in enumerate(names)}
-    cols = [ix["PLAIN + GEOGRAPHY (birthplaces, distance)"], ix["ARTAMODEL IV greedy boosted (full-chart rows)"], ix["ARTAMODEL IV fixed-cycle boosted (stable)"]]
+    cols = [ix["PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month"], ix["ARTAMODEL IV greedy boosted (full-chart rows)"], ix["ARTAMODEL IV fixed-cycle boosted (stable)"]]
     hasT = np.isfinite(S[:, ix["phasor t1_uranus"]]) | np.isfinite(S[:, ix["phasor t2_uranus"]]); hasA = np.isfinite(S[:, ix["phasor a_uranus"]]); gtr = np.where(hasT, 0, np.where(hasA, 1, 2))
     oof = later > cuts[-3]; yo = y[oof]; lo_ = later[oof]; gt = gtr[oof]; weights = {}
     for g in (0, 1, 2):
@@ -100,7 +110,7 @@ def main():
         weights[str(g)] = {"w": [float(x) for x in w], "b": float(b), "n_fit": int(mtr.sum())}
         log(f"  group {g}: weights GEO {w[0]:.3f}  AM-greedy {w[1]:.3f}  AM-fixed {w[2]:.3f}  bias {b:+.3f}  ({mtr.sum():,} OOF rows)")
     # ---- members refitted on train + test ----
-    Xall = np.vstack([Xg, Xge]); yall_g = np.concatenate([y, yte]); geo_models = []
+    Xall = np.vstack([Xg, Xge, Xg_j, Xge_j]); yall_g = np.concatenate([y, yte, y, yte]); geo_models = []      # + jittered copies (±0.3°): noise robustness
     for k, prm in enumerate(GEO_PRMS):
         c = lgb.LGBMClassifier(random_state=0, **prm); c.fit(Xall, yall_g); c.booster_.save_model(os.path.join(OUT, f"geo_lgbm_{k}.txt")); geo_models.append(c)
     geo_te = np.mean([c.predict_proba(Xge)[:, 1] for c in geo_models], axis=0)
@@ -132,7 +142,7 @@ def main():
     log(f"  scorer path on the test rows (members fitted on train+test): held-out AUC {held:.4f}  (the submitted stack: 0.6448 held, 0.64303 public)")
     dep = {"edition": "IV — genderless, even", "model": "grouped non-negative stack of ranks: GEO + ArtaModel IV greedy + ArtaModel IV fixed-cycle",
            "members": {"GEO": {"what": "plain + geography: older age, younger age, |gap|, start year, birthplaces (older/younger), great-circle distance, order-free extremes, same-place flag, start-is-1-January, missing-place count",
-                               "files": [f"geo_lgbm_{k}.txt" for k in range(3)], "feature_names": ["age_older", "age_younger", "age_gap_abs", "start_year", "lat_older", "lon_older", "lat_younger", "lon_younger", "distance_km", "lat_max", "lat_min", "lon_max", "lon_min", "same_place", "start_is_jan1", "n_missing_places"], "fitted_on": f"train + test rows ({len(yall_g):,})"},
+                               "files": [f"geo_lgbm_{k}.txt" for k in range(3)], "feature_names": ["age_older", "age_younger", "age_gap_abs", "start_year", "lat_older", "lon_older", "lat_younger", "lon_younger", "distance_km", "lat_max", "lat_min", "lon_max", "lon_min", "same_place", "start_is_jan1", "n_missing_places", "start_weekday", "start_month"], "fitted_on": f"train + test rows + a ±0.3° jittered copy of each ({len(yall_g):,})", "symmetry": "older/younger by age, ties broken by (lat, lon) — identical from either order"},
                        "AM_GREEDY": {**g_dep, "labels": labels, "fitted_on": f"train + test full-chart rows ({len(yall):,})"},
                        "AM_FIXED": {**f_dep, "labels": labels, "order": list(DEPLOYED_PHASORS), "fitted_on": f"train + test full-chart rows ({len(yall):,})"}},
            "rank_reference": {"quantiles": [float(q) for q in qs], **ref}, "stacker": {"groups": {"0": "wedding-sky clocks exist (t1/t2 Uranus)", "1": "synastry only (a Uranus)", "2": "wedding sky only"}, "weights": weights, "note": "logit = Σ w·(rank − 0.5) + b per group; member absent → rank term 0; weights fitted on forward-chained train OOF (later > 1867, recency-weighted, L2 1e-3); the two orders of a pair are averaged"},

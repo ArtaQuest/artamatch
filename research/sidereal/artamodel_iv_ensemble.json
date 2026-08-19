@@ -10,8 +10,8 @@
   {
    "member": "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month",
    "n_fit": 181596,
-   "forward_oof": 0.6648711174551034,
-   "held_on_its_rows": 0.6411762232780402,
+   "forward_oof": 0.6631587260934814,
+   "held_on_its_rows": 0.6406299142285989,
    "n_test": 15262
   },
   {
@@ -1000,9 +1000,9 @@
    {
     "subset": "geography alone",
     "k": 1,
-    "fit_auc": 0.6618945263940359,
-    "held": 0.6305003268347146,
-    "age_cell": 0.5877596217488809
+    "fit_auc": 0.6601537544767918,
+    "held": 0.6305941659334423,
+    "age_cell": 0.5865070698664224
    },
    {
     "subset": "greedy alone",
@@ -1028,9 +1028,9 @@
    {
     "subset": "geography + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.6607345169583286,
-    "held": 0.6403280093758816,
-    "age_cell": 0.5890736143033884
+    "fit_auc": 0.6590240837580706,
+    "held": 0.6403255445590295,
+    "age_cell": 0.5878029094950973
    },
    {
     "subset": "plain + greedy + fixed",
@@ -1070,9 +1070,9 @@
    {
     "subset": "ArtaModel family (95) only",
     "k": 107,
-    "fit_auc": 0.66492090919022,
-    "held": 0.6367946592066754,
-    "age_cell": 0.5775004258955676
+    "fit_auc": 0.6644483055023728,
+    "held": 0.6366136008030514,
+    "age_cell": 0.5768301640186668
    },
    {
     "subset": "sidereal families + plain",
@@ -1084,9 +1084,9 @@
    {
     "subset": "ALL members",
     "k": 142,
-    "fit_auc": 0.6660966457435625,
-    "held": 0.6362662728969162,
-    "age_cell": 0.5780254643658066
+    "fit_auc": 0.6656905661013036,
+    "held": 0.6361247924096035,
+    "age_cell": 0.5779472671468349
    }
   ],
   "from1867_lam0.001": [
@@ -1100,9 +1100,9 @@
    {
     "subset": "geography alone",
     "k": 1,
-    "fit_auc": 0.6677256052630378,
-    "held": 0.6408123458873263,
-    "age_cell": 0.5898709466611184
+    "fit_auc": 0.6661116869301315,
+    "held": 0.6408068880785823,
+    "age_cell": 0.5892719001086383
    },
    {
     "subset": "greedy alone",
@@ -1128,9 +1128,9 @@
    {
     "subset": "geography + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.6666974354403652,
-    "held": 0.6446883408106486,
-    "age_cell": 0.5908498082771756
+    "fit_auc": 0.6649657059819443,
+    "held": 0.644602635607533,
+    "age_cell": 0.5898360371883631
    },
    {
     "subset": "plain + greedy + fixed",
@@ -1170,9 +1170,9 @@
    {
     "subset": "ArtaModel family (95) only",
     "k": 107,
-    "fit_auc": 0.669075790847533,
-    "held": 0.6395891981302886,
-    "age_cell": 0.5880821852771393
+    "fit_auc": 0.6684140082166372,
+    "held": 0.6393045469955362,
+    "age_cell": 0.5873951668533159
    },
    {
     "subset": "sidereal families + plain",
@@ -1184,9 +1184,9 @@
    {
     "subset": "ALL members",
     "k": 142,
-    "fit_auc": 0.670223485919145,
-    "held": 0.6387106669808487,
-    "age_cell": 0.5882441652307236
+    "fit_auc": 0.6696856413134338,
+    "held": 0.6384970729947764,
+    "age_cell": 0.587135440376017
    }
   ],
   "from1823_lam0.01": [
@@ -1200,9 +1200,9 @@
    {
     "subset": "geography alone",
     "k": 1,
-    "fit_auc": 0.6600613987360583,
-    "held": 0.6338667032680232,
-    "age_cell": 0.5883851995006549
+    "fit_auc": 0.6584110176276639,
+    "held": 0.6339489929392153,
+    "age_cell": 0.587375617548573
    },
    {
     "subset": "greedy alone",
@@ -1228,9 +1228,9 @@
    {
     "subset": "geography + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.656800822341186,
-    "held": 0.6422801443227732,
-    "age_cell": 0.5891797391005644
+    "fit_auc": 0.6552104663651592,
+    "held": 0.6421583823702778,
+    "age_cell": 0.5877023702135622
    },
    {
     "subset": "plain + greedy + fixed",
@@ -1270,9 +1270,9 @@
    {
     "subset": "ArtaModel family (95) only",
     "k": 107,
-    "fit_auc": 0.6603962802454163,
-    "held": 0.6324665112376634,
-    "age_cell": 0.570077275608891
+    "fit_auc": 0.6598614248777154,
+    "held": 0.6322374945404307,
+    "age_cell": 0.5692953034191734
    },
    {
     "subset": "sidereal families + plain",
@@ -1284,9 +1284,9 @@
    {
     "subset": "ALL members",
     "k": 142,
-    "fit_auc": 0.6606167675292315,
-    "held": 0.6326732037365497,
-    "age_cell": 0.5695131385291662
+    "fit_auc": 0.6601340998144183,
+    "held": 0.6324684830911451,
+    "age_cell": 0.5689769290276455
    }
   ]
  },
@@ -1308,8 +1308,8 @@
   },
   "plain + all members with fwd-OOF >= 0.60": {
    "k": 10,
-   "held": 0.6347323821581626,
-   "age_cell": 0.5705548371961828
+   "held": 0.6343944205560655,
+   "age_cell": 0.5690593153833479
   },
   "plain + greedy + fixed + traditions + sidereal families": {
    "k": 38,
@@ -1318,14 +1318,158 @@
   },
   "geography + greedy + fixed": {
    "k": 3,
-   "held": 0.6388933451212613,
-   "age_cell": 0.5874091306424181
+   "held": 0.6388683448360467,
+   "age_cell": 0.5860993272246411
   },
   "geography + plain + greedy + fixed": {
    "k": 4,
-   "held": 0.6389575712060941,
-   "age_cell": 0.5839028231988806
+   "held": 0.6387611605146482,
+   "age_cell": 0.5830580139582036
   }
+ },
+ "raw_pair_asymmetry": {
+  "PLAIN (older age, younger age, |gap|, start year)": 0.0,
+  "PLAIN + start-is-1-January flag": 0.0,
+  "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month": 0.0,
+  "ARTAMODEL 9-term greedy boosted (midpoints)": 0.0017632563508094181,
+  "ARTAMODEL IV greedy boosted (full-chart rows)": 0.006218895572088684,
+  "ARTAMODEL IV fixed-cycle boosted (stable)": 0.0011510631020762903,
+  "phasor a_sun": 1.0682082663674305e-05,
+  "phasor a_moon": 6.72352952223248e-06,
+  "phasor a_mercury": 1.1154361238032961e-05,
+  "phasor a_venus": 1.0948276041949189e-05,
+  "phasor a_mars": 9.763286164467866e-06,
+  "phasor a_jupiter": 8.535361871135739e-06,
+  "phasor a_saturn": 6.895267185635695e-06,
+  "phasor a_uranus": 2.71345508176933e-06,
+  "phasor a_neptune": 6.783637704423545e-07,
+  "phasor a_pluto": 8.586883170156346e-09,
+  "phasor a_true_node": 8.054496413606579e-06,
+  "phasor a_true_south_node": 3.1513861234472992e-06,
+  "phasor a_chiron": 4.75713327626661e-06,
+  "phasor a_mean_lilith": 8.183299661158954e-06,
+  "phasor t1_sun": 0.33176599894259645,
+  "phasor t1_moon": 0.3352346648264271,
+  "phasor t1_mercury": 0.3318481475455404,
+  "phasor t1_venus": 0.3225607839054679,
+  "phasor t1_mars": 0.32900466993335503,
+  "phasor t1_jupiter": 0.3248687024974491,
+  "phasor t1_saturn": 0.31208565952063866,
+  "phasor t1_uranus": 0.3054350859453784,
+  "phasor t1_neptune": 0.27162961979396216,
+  "phasor t1_pluto": 0.16974166342332067,
+  "phasor t1_true_node": 0.3258180522039826,
+  "phasor t1_true_south_node": 0.3258180522039826,
+  "phasor t1_chiron": 0.21527027548388541,
+  "phasor t1_mean_lilith": 0.33270745240904936,
+  "phasor t2_sun": 0.3317718172247612,
+  "phasor t2_moon": 0.33472293305699263,
+  "phasor t2_mercury": 0.33153631532762023,
+  "phasor t2_venus": 0.3228252386829044,
+  "phasor t2_mars": 0.32899871312066264,
+  "phasor t2_jupiter": 0.3249115084305177,
+  "phasor t2_saturn": 0.3120851053985278,
+  "phasor t2_uranus": 0.30507546069539143,
+  "phasor t2_neptune": 0.27084816908703746,
+  "phasor t2_pluto": 0.16982242672098727,
+  "phasor t2_true_node": 0.326067684214952,
+  "phasor t2_true_south_node": 0.326067684214952,
+  "phasor t2_chiron": 0.21520613584954643,
+  "phasor t2_mean_lilith": 0.3324502012190548,
+  "phasor n1_sun": 0.32786877827397654,
+  "phasor n1_moon": 0.33429292611448147,
+  "phasor n1_mercury": 0.3297890371966691,
+  "phasor n1_venus": 0.3288245413052308,
+  "phasor n1_mars": 0.33231183771141154,
+  "phasor n1_jupiter": 0.3248783189280211,
+  "phasor n1_saturn": 0.2824750103881966,
+  "phasor n1_uranus": 0.23154533044391584,
+  "phasor n1_neptune": 0.19591623979767725,
+  "phasor n1_pluto": 0.14734882858727283,
+  "phasor n1_true_node": 0.3138572089430224,
+  "phasor n1_true_south_node": 0.31323048668796544,
+  "phasor n1_chiron": 0.22771029102999332,
+  "phasor n1_mean_lilith": 0.3314897381035839,
+  "phasor n2_sun": 0.3278222545409606,
+  "phasor n2_moon": 0.3345346983970204,
+  "phasor n2_mercury": 0.32972995085357526,
+  "phasor n2_venus": 0.3288973065532147,
+  "phasor n2_mars": 0.3323439698282343,
+  "phasor n2_jupiter": 0.3254339847248451,
+  "phasor n2_saturn": 0.28400734827679414,
+  "phasor n2_uranus": 0.19652501546690862,
+  "phasor n2_neptune": 0.16875782603165326,
+  "phasor n2_pluto": 0.14734882858727283,
+  "phasor n2_true_node": 0.31349320237855627,
+  "phasor n2_true_south_node": 0.31299890703574945,
+  "phasor n2_chiron": 0.22748277297351682,
+  "phasor n2_mean_lilith": 0.33176019057591116,
+  "phasor tn_sun": 0.0,
+  "phasor tn_moon": 0.0,
+  "phasor tn_mercury": 0.0,
+  "phasor tn_venus": 0.0,
+  "phasor tn_mars": 0.0,
+  "phasor tn_jupiter": 0.0,
+  "phasor tn_saturn": 0.0,
+  "phasor tn_uranus": 0.0,
+  "phasor tn_neptune": 0.0,
+  "phasor tn_pluto": 0.0,
+  "phasor tn_true_node": 0.0,
+  "phasor tn_true_south_node": 0.0,
+  "phasor tn_chiron": 0.0,
+  "phasor tn_mean_lilith": 0.0,
+  "SUM term a": 2.9444422390466514e-05,
+  "SUM term t1": 0.24626170176025888,
+  "SUM term t2": 0.2447461777868931,
+  "SUM term n1": 0.23736013588090013,
+  "SUM term n2": 0.2424009540164592,
+  "SUM term tn": 4.834715417775878e-05,
+  "SUM 3-term (a+t1+t2)": 0.01179049471704464,
+  "SUM 6-term": 0.07257212898140822,
+  "TRADITION aboriginal_australian": 0.0,
+  "TRADITION african": 0.0,
+  "TRADITION astrocartography": 0.0,
+  "TRADITION babylonian_egyptian": 0.0,
+  "TRADITION chinese": 0.0,
+  "TRADITION east_asian_deep": 0.0,
+  "TRADITION harmonics": 0.0,
+  "TRADITION hellenistic": 0.0,
+  "TRADITION houses": 0.0,
+  "TRADITION indigenous_americas": 0.0,
+  "TRADITION lunar_calendrical": 0.0,
+  "TRADITION mesoamerican": 0.0,
+  "TRADITION modern_western": 0.0,
+  "TRADITION numerology": 0.0,
+  "TRADITION persian_arabic": 0.0,
+  "TRADITION polynesian": 0.0,
+  "TRADITION tibetan_seasia": 0.0,
+  "TRADITION uranian": 0.0,
+  "TRADITION vedic_ashtakavarga": 0.0,
+  "TRADITION vedic_core": 0.0,
+  "TRADITION vedic_match": 0.0,
+  "SIDEREAL vedic:D1 (lagna, grahas, houses, nakshatras)": 0.15156248085393392,
+  "SIDEREAL vedic:vargas D2-D60": 0.2150530431589064,
+  "SIDEREAL vedic:panchanga": 0.10344864892152227,
+  "SIDEREAL vedic:ashtakavarga": 0.13629927273200806,
+  "SIDEREAL vedic:vimsottari at the start": 0.0937353616159842,
+  "SIDEREAL vedic:doshas": 0.08363418157228915,
+  "SIDEREAL vedic:shad bala": 0.16333781351217339,
+  "SIDEREAL vedic:pair (ashtakoota, transposition, dasa)": 0.07240497671334437,
+  "SIDEREAL vedic:vivaha muhurta (the wedding day)": 0.014325200530279936,
+  "SIDEREAL zwds:astrolabe (soul, body, class)": 0.06194176511506754,
+  "SIDEREAL zwds:palaces": 0.15344321435339425,
+  "SIDEREAL zwds:major stars": 0.13931469167366262,
+  "SIDEREAL zwds:minor stars": 0.10580982418605729,
+  "SIDEREAL zwds:pair (spouse x life palace, branches)": 0.007118689298839858,
+  "CALENDAR + NUMEROLOGY (plain + date fine structure)": 0.0,
+  "CALENDAR + NUMEROLOGY alone (no ages)": 0.0,
+  "HARMONIC 2 synastry sum (14 bodies)": 3.743022373871148e-05,
+  "HARMONIC 3 synastry sum (14 bodies)": 3.814293504183468e-05,
+  "HARMONIC 4 synastry sum (14 bodies)": 3.5403719310554784e-05,
+  "HARMONIC 6 synastry sum (14 bodies)": 4.8000676921173996e-05,
+  "FAST synastry sum (Sun..Mars)": 3.1505274351303114e-05,
+  "PROGRESSED synastry + progressed-to-start (20 phasors)": 0.1293212260422708,
+  "PROGRESSED synastry only (10 phasors)": 0.20352621146504968
  },
  "bagged_stack_all": {
   "grid": [
@@ -1360,7 +1504,7 @@
     0.0
    ]
   ],
-  "held": 0.6367311725668983,
-  "age_cell": 0.5796801733744055
+  "held": 0.6364907825004764,
+  "age_cell": 0.5789275251418022
  }
 }

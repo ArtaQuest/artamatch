@@ -10,6 +10,7 @@ d = json.load(open(os.path.join(REPO, "research/sidereal/artamodel_iv_deployed.j
 R = json.load(open(os.path.join(REPO, "research/sidereal/artamodel_iv.json")))
 ST = json.load(open(os.path.join(REPO, "research/sidereal/stack_iv_deployed.json")))
 E = json.load(open(os.path.join(REPO, "research/sidereal/artamodel_iv_ensemble.json")))
+RB = json.load(open(os.path.join(REPO, "research/sidereal/robustness_audit.json")))
 _RUN = E["runs"]["from1867_lam0.001"]; _held = {r["subset"]: r["held"] for r in _RUN}
 used = d["explanation"]["used"]; unused = d["explanation"]["unused"]
 TT = {"a": ("a·e<sup>i|θ1−θ2|</sup>", "the absolute synastry angle between the two natal charts — even under the swap"),
@@ -78,6 +79,14 @@ td{{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}}td.
 {''.join(f"<tr><td>{g} — {ST['stacker']['groups'][g]}</td><td class=num>{w['w'][0]:.3f}</td><td class=num>{w['w'][1]:.3f}</td><td class=num>{w['w'][2]:.3f}</td><td class=num>{w['b']:+.3f}</td><td class=num>{w['n_fit']:,}</td></tr>" for g, w in sorted(ST['stacker']['weights'].items()))}
 </tbody></table></div>
 <p>Both orders of the pair are scored and the logits averaged, so the probability is exactly the same whichever partner is entered first — the data itself carries every pair in both orders.</p>
+<h2>Symmetry and robustness, measured</h2>
+<p>Every member is even by construction — the geography model reads the older and younger partner with the tie between equal ages broken by coordinates, the phase model reads |Δθ|, the training rows carry every pair in both orders, and the train-side out-of-fold scores the stacker learns from are pair-averaged like the test-side ones. Then the whole thing is audited on {1200:,} held-out pairs (<code>robustness_audit_iv.py</code>):</p>
+<div class=tblwrap><table><thead><tr><th>perturbation</th><th>mean |Δ probability|</th><th>AUC on the sample</th></tr></thead><tbody>
+<tr><td>swap the two partners</td><td class=num>{RB['symmetry_max_abs_diff']:.0e} (max)</td><td class=num>—</td></tr>
+<tr><td>none (clean)</td><td class=num>—</td><td class=num>{RB['clean_auc']:.4f}</td></tr>
+{''.join(f"<tr><td>{k}</td><td class=num>{v['mean_abs_dp']:.4f}</td><td class=num>{v['auc']:.4f}</td></tr>" for k, v in RB.items() if isinstance(v, dict))}
+</tbody></table></div>
+<p>The geography member is fitted on the rows plus a copy with every birthplace jittered by ±0.3° (about 30 km), so no split hangs on a coordinate's third decimal; the phase members read the outer planets only, so the unknown birth <em>hour</em> — the thing no record carries — changes nothing. (The AUC in this table is on a sample the deployed members were fitted on; the honest held-out number is the {ST['scores']['held_out_submitted']:.4f} above.)</p>
 <h2>What the stack scores — honestly</h2>
 <div class=tiles>
 <div class=tile><div class=k>public leaderboard</div><div class=v>{ST['scores']['public_board']:.5f}</div><div class=n>artamatch-genderless, 4,614 rows</div></div>

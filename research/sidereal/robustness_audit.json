@@ -1,0 +1,24 @@
+{
+ "clean_auc": 0.7171690799911635,
+ "symmetry_max_abs_diff": 0.0,
+ "birthplaces \u00b10.5\u00b0": {
+  "mean_abs_dp": 0.004690631825491763,
+  "auc": 0.7143517017595704
+ },
+ "birthplaces \u00b12\u00b0": {
+  "mean_abs_dp": 0.014921327591220633,
+  "auc": 0.7095202710650665
+ },
+ "birth dates \u00b11 day": {
+  "mean_abs_dp": 2.8881377048944913e-05,
+  "auc": 0.7171805560735731
+ },
+ "birth dates \u00b17 days": {
+  "mean_abs_dp": 0.0001771272949104829,
+  "auc": 0.7170858783936928
+ },
+ "birth hour anywhere": {
+  "mean_abs_dp": 9.283346337892138e-06,
+  "auc": 0.7171834250941755
+ }
+}

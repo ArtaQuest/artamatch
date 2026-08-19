@@ -194,3 +194,16 @@ chance across temporal halves (BOOST6 0.47–0.53, held 0.62)** — a clock fitt
 the next, and it scores on the leaderboard only because test shares train's eras. (6) Nothing here beats the
 deployed 6-term boosted split (0.631 on the board): the 144-member stack lands at 0.61149 beside the plain columns
 (0.61055), and every age-cell-matched read stays at 0.50–0.57. The deployed model and its explanation stand.
+
+**Correction (2026-08-19, `artamodel_stack_forward.py`).** The OOF above was built over two temporal halves,
+which includes the BACKWARDS direction (fit late, score early); clock members are anti-predictive that way
+(d_neptune 0.66 forward, 0.51 mixed), so the stacker was taught its best members were noise. Rebuilt with
+forward-chaining OOF (fit on all rows before a cut, score the next block; cuts 1823/1847/1867/1883), member OOF
+now tracks held-out (d_neptune 0.658→0.631, SUM 3-term 0.663→0.610). Fitted stackers still land at 0.60–0.62
+held because the last train block (1883–1900) ranks models differently from the test era (SUM 3-term 0.681 there /
+0.610 held; the deployed member 0.509 / 0.624) — internal temporal CV does not rank for the test era. The
+selection-free read, equal-weight rank averages of fixed pools: deployed+plain 0.6323; + the six strongest
+forward members 0.6283; existing ensemble + those members 0.6260–0.6294; existing ensemble alone 0.6299. The
+decisive fact: on the 2,627 test rows where d_neptune exists the existing ensemble already scores **0.6425**
+(deployed 0.6410) against d_neptune's 0.6312 on the same rows — the per-body members are a weaker reading of the
+same two ages, not added information, so an equal-weight blend with them adds noise. No leaderboard gain exists here.

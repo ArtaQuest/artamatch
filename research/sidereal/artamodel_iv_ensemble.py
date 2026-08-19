@@ -108,6 +108,46 @@ def main():
         oof = auc(y[f], s_tr[f]) if f.sum() > 200 and len(np.unique(y[f])) > 1 else float("nan"); held = auc(yte[g], symmetrise(ids, s_te)[g]) if g.sum() > 200 else float("nan")
         meta.append({"member": name, "n_fit": n, "forward_oof": oof, "held_on_its_rows": held, "n_test": int(g.sum())})
         log(f"  {name:<40} fit {n:>6,}  fwd-OOF {oof:.4f}  held(its rows) {held:.4f} on {g.sum():,}")
+    # plain + calendar: the start's month and day-of-year (a calendar fact, not astrology; 1-January placeholders flagged)
+    import datetime as _dt
+    def calX(p, Wm):
+        j1_ = p[:, pn.index("start_is_jan1")]; doy = np.full(len(p), np.nan); mon = np.full(len(p), np.nan)
+        return np.column_stack([plainX(p), j1_])
+    Xc, Xce = calX(ptr, W), calX(pte, We); pc_tr = np.full(len(y), np.nan)
+    for k in range(1, len(cuts)):
+        lo = cuts[k - 1]; blk = (later > lo) & ((later <= cuts[k]) if k < len(cuts) - 1 else True)
+        c = lgb.LGBMClassifier(random_state=0, **prm); c.fit(Xc[later <= lo], y[later <= lo]); pc_tr[blk] = c.predict_proba(Xc[blk])[:, 1]
+    c = lgb.LGBMClassifier(random_state=0, **prm); c.fit(Xc, y); add(pc_tr, c.predict_proba(Xce)[:, 1], len(y), "PLAIN + start-is-1-January flag")
+    # PLAIN + GEOGRAPHY: the two birthplaces (older/younger assignment, so even), their great-circle distance, and
+    # the order-free extremes. Not astrology — a fact about where the two were born — and the one input nothing
+    # else in the stack had read; forward OOF 0.659 vs 0.642 for the ages alone.
+    SRC = os.environ.get("AQ_SRC", "/tmp/aq4")
+    trc = pd.read_csv(f"{SRC}/train.csv", dtype=str); tec = pd.read_csv(f"{SRC}/test.csv", dtype=str)
+    def geoX(df, p):
+        a, b = p[:, ia], p[:, ib]; swap = b > a
+        la, lo = pd.to_numeric(df.lat_a, errors="coerce").to_numpy(), pd.to_numeric(df.lon_a, errors="coerce").to_numpy()
+        lb, lob = pd.to_numeric(df.lat_b, errors="coerce").to_numpy(), pd.to_numeric(df.lon_b, errors="coerce").to_numpy()
+        lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
+        d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
+        j1_ = p[:, pn.index("start_is_jan1")]
+        return np.column_stack([plainX(p), lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), j1_, np.isnan(la).astype(float) + np.isnan(lb).astype(float)])
+    Xg, Xge = geoX(trc, ptr), geoX(tec, pte)
+    # three small capacities averaged (forward OOF 0.661–0.663 for all three; the larger models overfit the era)
+    GEO_PRMS = [dict(n_estimators=200, learning_rate=0.05, num_leaves=7, min_child_samples=400, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=30.0, verbose=-1),
+                dict(n_estimators=300, learning_rate=0.05, num_leaves=15, min_child_samples=200, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=20.0, verbose=-1),
+                dict(n_estimators=600, learning_rate=0.03, num_leaves=15, min_child_samples=200, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=20.0, verbose=-1)]
+    pg_tr = np.zeros(len(y)); pg_te = np.zeros(len(Xge)); cnt_tr = np.zeros(len(y))
+    for prm_g in GEO_PRMS:
+        for k in range(1, len(cuts)):
+            lo = cuts[k - 1]; blk = (later > lo) & ((later <= cuts[k]) if k < len(cuts) - 1 else True)
+            c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg[later <= lo], y[later <= lo]); pg_tr[blk] += c.predict_proba(Xg[blk])[:, 1]; cnt_tr[blk] += 1
+        c = lgb.LGBMClassifier(random_state=0, **prm_g); c.fit(Xg, y); pg_te += c.predict_proba(Xge)[:, 1] / len(GEO_PRMS)
+    pg_tr = np.where(cnt_tr > 0, pg_tr / np.maximum(cnt_tr, 1), np.nan)
+    add(pg_tr, pg_te, len(y), "PLAIN + GEOGRAPHY (birthplaces, distance)")
+    # the 9-term boosted construction (midpoints c / mw / dw added, even mode)
+    from artamodel import TERMS9 as _T9
+    P9, l9 = phase_matrix(A, Bm, W, bodies, BODIES14, _T9, even=True); P9e, _ = phase_matrix(Ae, Be, We, bodies, BODIES14, _T9, even=True)
+    s_tr, s_te, n = forward(P9, y, later, P9e, cuts, "greedy", rows=charts); add(s_tr, s_te, n, "ARTAMODEL 9-term greedy boosted (midpoints)")
     c6 = list(range(len(labels))); order = [labels.index(l) for l in ("a_uranus", "t1_neptune", "t2_neptune", "t1_pluto", "t2_pluto", "t1_uranus", "t2_uranus")]
     s_tr, s_te, n = forward(P, y, later, Pe, cuts, "greedy", rows=charts); add(s_tr, s_te, n, "ARTAMODEL IV greedy boosted (full-chart rows)")
     s_tr, s_te, n = forward(P, y, later, Pe, cuts, "fixed", rows=charts, order=order); add(s_tr, s_te, n, "ARTAMODEL IV fixed-cycle boosted (stable)")
@@ -117,8 +157,27 @@ def main():
         cc = [j for j, l in enumerate(labels) if l.split("_", 1)[0] == t]; s_tr, s_te, n = forward(P[:, cc], y, later, Pe[:, cc], cuts, "field"); add(s_tr, s_te, n, f"SUM term {t}")
     cc = [j for j, l in enumerate(labels) if l.split("_", 1)[0] in ("a", "t1", "t2")]; s_tr, s_te, n = forward(P[:, cc], y, later, Pe[:, cc], cuts, "field"); add(s_tr, s_te, n, "SUM 3-term (a+t1+t2)")
     s_tr, s_te, n = forward(P, y, later, Pe, cuts, "field"); add(s_tr, s_te, n, "SUM 6-term")
+    # EXTRA MEMBER FILES (AQ_EXTRA=a.npz,b.npz): every other astrology and numerology — tradition_members.py (the
+    # nineteen tropical traditions incl. numerology) and sidereal_members.py (the PyJHora / iztro families) — each
+    # an (rows x members) S_train / S_test aligned to the edition-IV files, forward-OOF like everything here
+    for extra in [e for e in os.environ.get("AQ_EXTRA", "").split(",") if e]:
+        M = np.load(extra, allow_pickle=True); Sx, Tx, nx = M["S_train"].astype(float), M["S_test"].astype(float), list(M["names"])
+        assert Sx.shape[0] == len(y) and Tx.shape[0] == len(ids), (extra, Sx.shape, Tx.shape)
+        for j, nm in enumerate(nx):
+            add(Sx[:, j], Tx[:, j], int(np.isfinite(Sx[:, j]).sum()), nm)
     S = np.column_stack(members_tr); T = np.column_stack(members_te)
     T = np.column_stack([symmetrise(ids, T[:, j]) if np.isfinite(T[:, j]).any() else T[:, j] for j in range(T.shape[1])])   # every member even over the pair
+    # THE TRAIN SIDE TOO (operator 2026-08-19: "ensure data augmentation is done properly to respect the symmetries"):
+    # a pair's two rows share the forward block, so both carry an OOF score; average them so the stacker's features
+    # are even in the swap exactly as the test features are. The pair key is the order-free (dob, lat, lon) x2 + start.
+    SRC_ = os.environ.get("AQ_SRC", "/tmp/aq4"); trk = pd.read_csv(f"{SRC_}/train.csv", dtype=str)
+    ka = trk["dob_a"] + "|" + trk["lat_a"].fillna("") + "|" + trk["lon_a"].fillna(""); kb = trk["dob_b"] + "|" + trk["lat_b"].fillna("") + "|" + trk["lon_b"].fillna("")
+    train_key = np.where(ka <= kb, ka + "||" + kb, kb + "||" + ka) + "||" + trk["start"]
+    def sym_train(v):
+        f = np.isfinite(v); d = pd.DataFrame({"k": train_key, "v": v}); m = d.groupby("k")["v"].transform("mean").to_numpy(); return np.where(f, m, v)
+    S = np.column_stack([sym_train(S[:, j]) if np.isfinite(S[:, j]).any() else S[:, j] for j in range(S.shape[1])])
+    chk = pd.DataFrame({"k": train_key, "v": S[:, 0]}).groupby("k")["v"].agg(lambda q: np.nanmax(q) - np.nanmin(q) if np.isfinite(q).any() else 0).max()
+    assert chk < 1e-9, f"train-side symmetrisation failed ({chk})"; log("  train-side pair symmetry of every member asserted")
     np.savez_compressed(os.path.join(OUT, "iv_members.npz"), S_train=S, S_test=T, names=np.array(names), y=y, yte=yte, later=later, ids=ids, cuts=np.array(cuts))
     log(f"{S.shape[1]} members")
     # ---- stackers ----
@@ -129,9 +188,13 @@ def main():
     log(f"  groups train/test: sky-clocks {np.mean(gtr==0):.0%}/{np.mean(gte==0):.0%}  synastry-only {np.mean(gtr==1):.0%}/{np.mean(gte==1):.0%}  sky-only {np.mean(gtr==2):.0%}/{np.mean(gte==2):.0%}")
     ages = pte[:, [ia, ib]]; cell = (np.floor(np.nan_to_num(np.fmax(ages[:, 0], ages[:, 1])) / 3) * 1000 + np.floor(np.nan_to_num(np.fmin(ages[:, 0], ages[:, 1])) / 3)).astype(int)
     per = [i for i, n_ in enumerate(names) if n_.startswith("phasor ")]; sums = [i for i, n_ in enumerate(names) if n_.startswith("SUM")]
+    trad = [i for i, n_ in enumerate(names) if n_.startswith("TRADITION ")]; sid = [i for i, n_ in enumerate(names) if n_.startswith("SIDEREAL ")]
+    geo = ix["PLAIN + GEOGRAPHY (birthplaces, distance)"]
     top = sorted(per, key=lambda j: -meta[j - 1]["forward_oof"] if not np.isnan(meta[j - 1]["forward_oof"]) else 0)[:6]
-    subsets = [("plain alone", [pl]), ("greedy alone", [gr]), ("fixed alone", [fx]), ("plain + greedy", [pl, gr]), ("plain + greedy + fixed", [pl, gr, fx]),
-               ("plain + greedy + fixed + 6 best phasors", [pl, gr, fx] + top), ("per-phasor (84) + plain", per + [pl]), ("sums (8) + plain", sums + [pl]), ("ALL members", list(range(len(names))))]
+    subsets = [("plain alone", [pl]), ("geography alone", [geo]), ("greedy alone", [gr]), ("fixed alone", [fx]), ("plain + greedy", [pl, gr]), ("geography + greedy + fixed", [geo, gr, fx]), ("plain + greedy + fixed", [pl, gr, fx]),
+               ("plain + greedy + fixed + 6 best phasors", [pl, gr, fx] + top), ("per-phasor (84) + plain", per + [pl]), ("sums (8) + plain", sums + [pl])] \
+              + ([("traditions + plain", trad + [pl]), ("ArtaModel family (95) only", [i for i in range(len(names)) if i not in trad + sid])] if trad else []) \
+              + ([("sidereal families + plain", sid + [pl])] if sid else []) + [("ALL members", list(range(len(names))))]
     R = {"members": meta, "runs": {}, "pools": {}}; out = {}
     for fit_from, lam in ((cuts[-3], 1e-2), (cuts[-3], 1e-3), (cuts[0], 1e-2)):
         oof = later > fit_from; yo = y[oof]; lo_ = later[oof]; gt = gtr[oof]
@@ -160,12 +223,33 @@ def main():
             if f.sum() > 1:
                 acc[f] += r01(v[f]); cnt[f] += 1
         return np.where(cnt > 0, acc / np.maximum(cnt, 1), 0.5)
-    for nm, cols_ in (("plain + greedy", [pl, gr]), ("plain + greedy + fixed", [pl, gr, fx]), ("plain + greedy + fixed + 6 best phasors", [pl, gr, fx] + top), ("plain + all members with fwd-OOF >= 0.60", [pl] + [j for j in range(1, len(names)) if (meta[j - 1]["forward_oof"] or 0) >= 0.60])):
+    for nm, cols_ in (("plain + greedy", [pl, gr]), ("plain + greedy + fixed", [pl, gr, fx]), ("plain + greedy + fixed + 6 best phasors", [pl, gr, fx] + top), ("plain + all members with fwd-OOF >= 0.60", [pl] + [j for j in range(1, len(names)) if (meta[j - 1]["forward_oof"] or 0) >= 0.60]),
+                      ("plain + greedy + fixed + traditions + sidereal families", [pl, gr, fx] + trad + sid), ("geography + greedy + fixed", [geo, gr, fx]), ("geography + plain + greedy + fixed", [geo, pl, gr, fx])):
         pb = blend(cols_); R["pools"][nm] = {"k": len(cols_), "held": auc(yte, pb), "age_cell": matched(yte, pb, cell)}; out[("pool", nm)] = pb
         log(f"  POOL equal-weight {nm:<42} k={len(cols_):>3}  HELD {auc(yte, pb):.4f}  age-cell {matched(yte, pb, cell):.4f}")
+    # ---- BAGGED stacker: the ALL-members grouped non-negative stack averaged over a grid of (fit window, lambda,
+    # recency weight) — every setting is a legitimate stacker, averaging them removes the choice. Reported like the rest.
+    def one_stack(cols_, fit_from, lam, rec):
+        oof = later > fit_from; yo = y[oof]; lo_ = later[oof]; gt = gtr[oof]; zte = np.zeros(len(T)); ztr = np.zeros(int(oof.sum()))
+        for g in (0, 1, 2):
+            mtr = gt == g; mte = gte == g
+            if mtr.sum() < 300:
+                continue
+            Ftr = rankfeat(S[oof][mtr][:, cols_]); Fte = rankfeat(T[mte][:, cols_]); sw = 1.0 + rec * (lo_[mtr] - lo_.min()) / max(1, lo_.max() - lo_.min())
+            w, b = fit_nonneg(Ftr, yo[mtr], sw, lam); ztr[mtr] = Ftr @ w + b; zte[mte] = Fte @ w + b
+        return r01(symmetrise(ids, zte)), auc(yo, ztr)
+    grid = [(cuts[-3], 1e-2, 3.0), (cuts[-3], 1e-3, 3.0), (cuts[-3], 3e-3, 1.0), (cuts[-2], 1e-2, 3.0), (cuts[0], 1e-2, 3.0), (cuts[0], 3e-3, 0.0)]
+    allc = list(range(len(names))); bag = np.zeros(len(T)); bag_fit = []
+    for fit_from, lam, rec in grid:
+        z, af = one_stack(allc, fit_from, lam, rec); bag += z / len(grid); bag_fit.append(af)
+    R["bagged_stack_all"] = {"grid": [[float(a), b, c] for a, b, c in grid], "held": auc(yte, bag), "age_cell": matched(yte, bag, cell)}
+    log(f"  BAGGED grouped non-negative stack, ALL members, {len(grid)} settings: HELD {auc(yte, bag):.4f}  age-cell {matched(yte, bag, cell):.4f}")
+    out[("bag", "all")] = bag
+    pd.DataFrame({"id": ids, lab: r01(bag)}).to_csv(os.path.join(OUT, "submission_iv_stack_bagged.csv"), index=False)
     # the submissions: the biggest non-negative stack (recent rows, lambda 1e-2) and the small pre-registered pool
     pd.DataFrame({"id": ids, lab: r01(out[(cuts[-3], 1e-2, "ALL members")])}).to_csv(os.path.join(OUT, "submission_iv_stack_all.csv"), index=False)
     pd.DataFrame({"id": ids, lab: r01(out[("pool", "plain + greedy + fixed")])}).to_csv(os.path.join(OUT, "submission_iv_pool3.csv"), index=False)
+    pd.DataFrame({"id": ids, lab: r01(out[("pool", "geography + greedy + fixed")])}).to_csv(os.path.join(OUT, "submission_iv_pool_geo3.csv"), index=False)
     json.dump(R, open(os.path.join(OUT, "artamodel_iv_ensemble.json"), "w"), indent=1); log("wrote artamodel_iv_ensemble.json, submission_iv_stack_all.csv, submission_iv_pool3.csv")
 
 

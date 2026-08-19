@@ -1,6 +1,27 @@
 {
  "members": [
   {
+   "member": "PLAIN + start-is-1-January flag",
+   "n_fit": 181596,
+   "forward_oof": 0.65085556638781,
+   "held_on_its_rows": 0.6267520446360022,
+   "n_test": 15262
+  },
+  {
+   "member": "PLAIN + GEOGRAPHY (birthplaces, distance)",
+   "n_fit": 181596,
+   "forward_oof": 0.6636745262386262,
+   "held_on_its_rows": 0.6401586412464706,
+   "n_test": 15262
+  },
+  {
+   "member": "ARTAMODEL 9-term greedy boosted (midpoints)",
+   "n_fit": 20632,
+   "forward_oof": 0.53188409493571,
+   "held_on_its_rows": 0.6250955820763588,
+   "n_test": 15262
+  },
+  {
    "member": "ARTAMODEL IV greedy boosted (full-chart rows)",
    "n_fit": 20632,
    "forward_oof": 0.5363685089108006,
@@ -657,6 +678,251 @@
    "forward_oof": 0.5675967485245377,
    "held_on_its_rows": 0.4999971830664547,
    "n_test": 15262
+  },
+  {
+   "member": "TRADITION aboriginal_australian",
+   "n_fit": 108580,
+   "forward_oof": 0.5372246933291335,
+   "held_on_its_rows": 0.5214828155081769,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION african",
+   "n_fit": 108580,
+   "forward_oof": 0.5623312706759882,
+   "held_on_its_rows": 0.5894913730705942,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION astrocartography",
+   "n_fit": 108580,
+   "forward_oof": 0.5201433788190115,
+   "held_on_its_rows": 0.5,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION babylonian_egyptian",
+   "n_fit": 108580,
+   "forward_oof": 0.5555722596475834,
+   "held_on_its_rows": 0.5820825209414361,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION chinese",
+   "n_fit": 108580,
+   "forward_oof": 0.5587824382108415,
+   "held_on_its_rows": 0.5865465155306702,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION east_asian_deep",
+   "n_fit": 108580,
+   "forward_oof": 0.5548288987701618,
+   "held_on_its_rows": 0.5809318387998511,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION harmonics",
+   "n_fit": 108580,
+   "forward_oof": 0.5422654371809488,
+   "held_on_its_rows": 0.5891770032869389,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION hellenistic",
+   "n_fit": 108580,
+   "forward_oof": 0.5484485683703377,
+   "held_on_its_rows": 0.5747834235855367,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION houses",
+   "n_fit": 108580,
+   "forward_oof": 0.5201433788190115,
+   "held_on_its_rows": 0.5,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION indigenous_americas",
+   "n_fit": 108580,
+   "forward_oof": 0.5235301340442263,
+   "held_on_its_rows": 0.511171324630605,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION lunar_calendrical",
+   "n_fit": 108580,
+   "forward_oof": 0.5371570295863161,
+   "held_on_its_rows": 0.5674845374996532,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION mesoamerican",
+   "n_fit": 108580,
+   "forward_oof": 0.5589072008217298,
+   "held_on_its_rows": 0.5872889535782028,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION modern_western",
+   "n_fit": 108580,
+   "forward_oof": 0.5552051297402245,
+   "held_on_its_rows": 0.59293359543961,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION numerology",
+   "n_fit": 108580,
+   "forward_oof": 0.5172614103040488,
+   "held_on_its_rows": 0.5244046798280375,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION persian_arabic",
+   "n_fit": 108580,
+   "forward_oof": 0.5578015189280674,
+   "held_on_its_rows": 0.5908911425609221,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION polynesian",
+   "n_fit": 108580,
+   "forward_oof": 0.5127075767063618,
+   "held_on_its_rows": 0.49906016533428055,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION tibetan_seasia",
+   "n_fit": 108580,
+   "forward_oof": 0.5459726265053971,
+   "held_on_its_rows": 0.5330011511398933,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION uranian",
+   "n_fit": 108580,
+   "forward_oof": 0.554479534496185,
+   "held_on_its_rows": 0.5943296677046598,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION vedic_ashtakavarga",
+   "n_fit": 108580,
+   "forward_oof": 0.515343121676528,
+   "held_on_its_rows": 0.5178564361086373,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION vedic_core",
+   "n_fit": 108580,
+   "forward_oof": 0.5583482088727858,
+   "held_on_its_rows": 0.582026956927255,
+   "n_test": 15262
+  },
+  {
+   "member": "TRADITION vedic_match",
+   "n_fit": 108580,
+   "forward_oof": 0.511943774812192,
+   "held_on_its_rows": 0.5008915594670869,
+   "n_test": 15262
+  },
+  {
+   "member": "SIDEREAL vedic:D1 (lagna, grahas, houses, nakshatras)",
+   "n_fit": 33962,
+   "forward_oof": 0.5160827623046991,
+   "held_on_its_rows": 0.5068710995153607,
+   "n_test": 15262
+  },
+  {
+   "member": "SIDEREAL vedic:vargas D2-D60",
+   "n_fit": 32356,
+   "forward_oof": 0.5210246438549613,
+   "held_on_its_rows": 0.5030051016545286,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:panchanga",
+   "n_fit": 32356,
+   "forward_oof": 0.5227849762784051,
+   "held_on_its_rows": 0.49469236946629563,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:ashtakavarga",
+   "n_fit": 32356,
+   "forward_oof": 0.5236847143120676,
+   "held_on_its_rows": 0.5100651764651838,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:vimsottari at the start",
+   "n_fit": 32348,
+   "forward_oof": 0.527771540469894,
+   "held_on_its_rows": 0.5209603536421208,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:doshas",
+   "n_fit": 32356,
+   "forward_oof": 0.5266060068059442,
+   "held_on_its_rows": 0.49447232144705394,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:shad bala",
+   "n_fit": 32356,
+   "forward_oof": 0.5209972362320495,
+   "held_on_its_rows": 0.4942852380956432,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:pair (ashtakoota, transposition, dasa)",
+   "n_fit": 16598,
+   "forward_oof": 0.5571568849951978,
+   "held_on_its_rows": 0.5630757296959623,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL vedic:vivaha muhurta (the wedding day)",
+   "n_fit": 108508,
+   "forward_oof": 0.5152006857173164,
+   "held_on_its_rows": 0.4585577766416192,
+   "n_test": 15214
+  },
+  {
+   "member": "SIDEREAL zwds:astrolabe (soul, body, class)",
+   "n_fit": 95178,
+   "forward_oof": 0.5178185779655072,
+   "held_on_its_rows": 0.4966123909300937,
+   "n_test": 15262
+  },
+  {
+   "member": "SIDEREAL zwds:palaces",
+   "n_fit": 95178,
+   "forward_oof": 0.5181202707385036,
+   "held_on_its_rows": 0.5024682323840596,
+   "n_test": 15262
+  },
+  {
+   "member": "SIDEREAL zwds:major stars",
+   "n_fit": 95178,
+   "forward_oof": 0.5189754891992912,
+   "held_on_its_rows": 0.4987877326487809,
+   "n_test": 15262
+  },
+  {
+   "member": "SIDEREAL zwds:minor stars",
+   "n_fit": 95178,
+   "forward_oof": 0.5153095841871936,
+   "held_on_its_rows": 0.4878137342130241,
+   "n_test": 15262
+  },
+  {
+   "member": "SIDEREAL zwds:pair (spouse x life palace, branches)",
+   "n_fit": 36224,
+   "forward_oof": 0.5041273192588362,
+   "held_on_its_rows": 0.49536459500453456,
+   "n_test": 15262
   }
  ],
  "runs": {
@@ -664,195 +930,300 @@
    {
     "subset": "plain alone",
     "k": 1,
-    "fit_auc": 0.6526161833420782,
+    "fit_auc": 0.6526161805251127,
     "held": 0.6148460637367835,
     "age_cell": 0.555897047775708
    },
    {
+    "subset": "geography alone",
+    "k": 1,
+    "fit_auc": 0.6610467155958527,
+    "held": 0.6304816294383077,
+    "age_cell": 0.5880263301207309
+   },
+   {
     "subset": "greedy alone",
     "k": 1,
-    "fit_auc": 0.546764311043231,
+    "fit_auc": 0.5467871467729661,
     "held": 0.5960753918460197,
     "age_cell": 0.5665556079973413
    },
    {
     "subset": "fixed alone",
     "k": 1,
-    "fit_auc": 0.5550544837722231,
-    "held": 0.5973603360827074,
+    "fit_auc": 0.5552461134751397,
+    "held": 0.5974747035846465,
     "age_cell": 0.5653072452516135
    },
    {
     "subset": "plain + greedy",
     "k": 2,
-    "fit_auc": 0.6516683787243169,
-    "held": 0.6226344976611705,
-    "age_cell": 0.5608835168640681
+    "fit_auc": 0.6516581897605901,
+    "held": 0.622680202407943,
+    "age_cell": 0.5608974806531702
+   },
+   {
+    "subset": "geography + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6601548305575614,
+    "held": 0.6407769581596635,
+    "age_cell": 0.5898388299461835
    },
    {
     "subset": "plain + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.650384521406317,
-    "held": 0.6259214365685017,
-    "age_cell": 0.5622044913131268
+    "fit_auc": 0.6503628814783795,
+    "held": 0.6259817189463711,
+    "age_cell": 0.5621933202818451
    },
    {
     "subset": "plain + greedy + fixed + 6 best phasors",
     "k": 9,
-    "fit_auc": 0.6527970212506796,
-    "held": 0.6318372787069825,
-    "age_cell": 0.5610315330285504
+    "fit_auc": 0.6529454499727515,
+    "held": 0.6316651640673647,
+    "age_cell": 0.5608807241062477
    },
    {
     "subset": "per-phasor (84) + plain",
     "k": 85,
-    "fit_auc": 0.6551568283493986,
-    "held": 0.6258800276453859,
-    "age_cell": 0.558316972427102
+    "fit_auc": 0.6553733529837326,
+    "held": 0.6251805126227497,
+    "age_cell": 0.5578924732383982
    },
    {
     "subset": "sums (8) + plain",
     "k": 9,
-    "fit_auc": 0.6547988293762388,
-    "held": 0.6314205838122942,
-    "age_cell": 0.5662986742778626
+    "fit_auc": 0.6548163713238109,
+    "held": 0.6312967795829784,
+    "age_cell": 0.565795977870187
+   },
+   {
+    "subset": "traditions + plain",
+    "k": 22,
+    "fit_auc": 0.6503851777592472,
+    "held": 0.6238383846350923,
+    "age_cell": 0.5555605204583474
+   },
+   {
+    "subset": "ArtaModel family (95) only",
+    "k": 98,
+    "fit_auc": 0.664195616666677,
+    "held": 0.6370108588562771,
+    "age_cell": 0.5778188002870955
+   },
+   {
+    "subset": "sidereal families + plain",
+    "k": 15,
+    "fit_auc": 0.6541400320243891,
+    "held": 0.6148603948861951,
+    "age_cell": 0.5584621958337639
    },
    {
     "subset": "ALL members",
-    "k": 95,
-    "fit_auc": 0.6550597155811482,
-    "held": 0.6290205564317002,
-    "age_cell": 0.5616291832021203
+    "k": 133,
+    "fit_auc": 0.6656171757026371,
+    "held": 0.6362228921203186,
+    "age_cell": 0.5775674520832577
    }
   ],
   "from1867_lam0.001": [
    {
     "subset": "plain alone",
     "k": 1,
-    "fit_auc": 0.6587998448640834,
+    "fit_auc": 0.6587998251453259,
     "held": 0.6250642084789981,
     "age_cell": 0.555810472283275
    },
    {
+    "subset": "geography alone",
+    "k": 1,
+    "fit_auc": 0.666949458063752,
+    "held": 0.6406285761851649,
+    "age_cell": 0.5912128667938302
+   },
+   {
     "subset": "greedy alone",
     "k": 1,
-    "fit_auc": 0.5480819465929283,
-    "held": 0.6070774187705522,
-    "age_cell": 0.5664829962940103
+    "fit_auc": 0.5482357768460884,
+    "held": 0.6072817168759249,
+    "age_cell": 0.5664718252627287
    },
    {
     "subset": "fixed alone",
     "k": 1,
-    "fit_auc": 0.556724403376595,
-    "held": 0.6183619137063394,
-    "age_cell": 0.5647710357500929
+    "fit_auc": 0.5568181491669923,
+    "held": 0.6185123379576584,
+    "age_cell": 0.5647347298984274
    },
    {
     "subset": "plain + greedy",
     "k": 2,
-    "fit_auc": 0.6584548666090841,
-    "held": 0.6280020941083976,
-    "age_cell": 0.5583197651849224
+    "fit_auc": 0.6584428001379412,
+    "held": 0.628028643707062,
+    "age_cell": 0.558316972427102
+   },
+   {
+    "subset": "geography + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6659993857888717,
+    "held": 0.6447924969284861,
+    "age_cell": 0.5916876356233016
    },
    {
     "subset": "plain + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.6574677568735786,
-    "held": 0.6287909059244197,
-    "age_cell": 0.5582918376067183
+    "fit_auc": 0.6574416168434697,
+    "held": 0.6288390754880443,
+    "age_cell": 0.5582862520910774
    },
    {
     "subset": "plain + greedy + fixed + 6 best phasors",
     "k": 9,
-    "fit_auc": 0.6589139643564865,
-    "held": 0.6309690997883215,
-    "age_cell": 0.5587414716158059
+    "fit_auc": 0.6588372499386888,
+    "held": 0.6309832548793867,
+    "age_cell": 0.5578924732383982
    },
    {
     "subset": "per-phasor (84) + plain",
     "k": 85,
-    "fit_auc": 0.661399937699994,
-    "held": 0.6266682760746989,
-    "age_cell": 0.5658518330265955
+    "fit_auc": 0.6616664183981191,
+    "held": 0.6292816861713493,
+    "age_cell": 0.566094802956972
    },
    {
     "subset": "sums (8) + plain",
     "k": 9,
-    "fit_auc": 0.6607474024621517,
-    "held": 0.6306012082673056,
-    "age_cell": 0.5655111165725042
+    "fit_auc": 0.6608972460050783,
+    "held": 0.6299592995356708,
+    "age_cell": 0.5638075343020479
+   },
+   {
+    "subset": "traditions + plain",
+    "k": 22,
+    "fit_auc": 0.6586684362467498,
+    "held": 0.6293415460091869,
+    "age_cell": 0.5584733668650456
+   },
+   {
+    "subset": "ArtaModel family (95) only",
+    "k": 98,
+    "fit_auc": 0.6685756654080653,
+    "held": 0.6399508219741662,
+    "age_cell": 0.5888557791933957
+   },
+   {
+    "subset": "sidereal families + plain",
+    "k": 15,
+    "fit_auc": 0.6603449165634577,
+    "held": 0.6245860692213531,
+    "age_cell": 0.5599535285098682
    },
    {
     "subset": "ALL members",
-    "k": 95,
-    "fit_auc": 0.6628749416113504,
-    "held": 0.6288487939087756,
-    "age_cell": 0.5660026419488982
+    "k": 133,
+    "fit_auc": 0.6699306271573378,
+    "held": 0.6387722169788134,
+    "age_cell": 0.5889674895062125
    }
   ],
   "from1823_lam0.01": [
    {
     "subset": "plain alone",
     "k": 1,
-    "fit_auc": 0.6484577484367385,
+    "fit_auc": 0.6484577749526093,
     "held": 0.6176151798351502,
     "age_cell": 0.5558998405335285
    },
    {
+    "subset": "geography alone",
+    "k": 1,
+    "fit_auc": 0.6591329863164618,
+    "held": 0.633571946384177,
+    "age_cell": 0.5886016382317375
+   },
+   {
     "subset": "greedy alone",
     "k": 1,
-    "fit_auc": 0.5461334279240109,
-    "held": 0.596246802252251,
+    "fit_auc": 0.5463320314557529,
+    "held": 0.596316943897529,
     "age_cell": 0.5665556079973413
    },
    {
     "subset": "fixed alone",
     "k": 1,
-    "fit_auc": 0.5557088949095599,
+    "fit_auc": 0.5557098776965117,
     "held": 0.5961015189046522,
     "age_cell": 0.5653072452516135
    },
    {
     "subset": "plain + greedy",
     "k": 2,
-    "fit_auc": 0.6468476898089789,
-    "held": 0.6256088977916509,
-    "age_cell": 0.5591994838983548
+    "fit_auc": 0.6468384663653333,
+    "held": 0.6256641096891387,
+    "age_cell": 0.5592106549296365
+   },
+   {
+    "subset": "geography + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6560196131178359,
+    "held": 0.642525076694537,
+    "age_cell": 0.5898444154618244
    },
    {
     "subset": "plain + greedy + fixed",
     "k": 3,
-    "fit_auc": 0.645669528822387,
-    "held": 0.6278611065844554,
-    "age_cell": 0.5591575925310485
+    "fit_auc": 0.645658527795562,
+    "held": 0.6279200509188908,
+    "age_cell": 0.5591799345936118
    },
    {
     "subset": "plain + greedy + fixed + 6 best phasors",
     "k": 9,
-    "fit_auc": 0.6440036049944391,
-    "held": 0.6334979314552743,
-    "age_cell": 0.5622212478600493
+    "fit_auc": 0.6441058797673278,
+    "held": 0.6334324377503462,
+    "age_cell": 0.5622491754382535
    },
    {
     "subset": "per-phasor (84) + plain",
     "k": 85,
-    "fit_auc": 0.6497872892091622,
-    "held": 0.6219351234852116,
-    "age_cell": 0.5532676662877826
+    "fit_auc": 0.6498396774308156,
+    "held": 0.6207062362260752,
+    "age_cell": 0.5519718266591076
    },
    {
     "subset": "sums (8) + plain",
     "k": 9,
-    "fit_auc": 0.6502811957437693,
-    "held": 0.6290564723344026,
-    "age_cell": 0.5614392756703317
+    "fit_auc": 0.6502482890382857,
+    "held": 0.6286665383083948,
+    "age_cell": 0.5611236940366242
+   },
+   {
+    "subset": "traditions + plain",
+    "k": 22,
+    "fit_auc": 0.6438076153156452,
+    "held": 0.6261755239742876,
+    "age_cell": 0.5541836908528803
+   },
+   {
+    "subset": "ArtaModel family (95) only",
+    "k": 98,
+    "fit_auc": 0.6589316159555942,
+    "held": 0.6330784196270408,
+    "age_cell": 0.5711832077057774
+   },
+   {
+    "subset": "sidereal families + plain",
+    "k": 15,
+    "fit_auc": 0.6477859668123772,
+    "held": 0.6196976331701812,
+    "age_cell": 0.5563285288589629
    },
    {
     "subset": "ALL members",
-    "k": 95,
-    "fit_auc": 0.649486535155182,
-    "held": 0.6250419899156596,
-    "age_cell": 0.5531531632171452
+    "k": 133,
+    "fit_auc": 0.6593203824735131,
+    "held": 0.6330563771220489,
+    "age_cell": 0.5706637547511793
    }
   ]
  },
@@ -873,9 +1244,60 @@
    "age_cell": 0.545745373098481
   },
   "plain + all members with fwd-OOF >= 0.60": {
-   "k": 7,
-   "held": 0.625260055783735,
-   "age_cell": 0.5400704892073874
+   "k": 9,
+   "held": 0.6338110336188343,
+   "age_cell": 0.5664117809695897
+  },
+  "plain + greedy + fixed + traditions + sidereal families": {
+   "k": 38,
+   "held": 0.5913134361110317,
+   "age_cell": 0.5071759912195695
+  },
+  "geography + greedy + fixed": {
+   "k": 3,
+   "held": 0.6393392657014819,
+   "age_cell": 0.5884759641298185
+  },
+  "geography + plain + greedy + fixed": {
+   "k": 4,
+   "held": 0.6391034883637405,
+   "age_cell": 0.5848747029203869
   }
+ },
+ "bagged_stack_all": {
+  "grid": [
+   [
+    1867.0,
+    0.01,
+    3.0
+   ],
+   [
+    1867.0,
+    0.001,
+    3.0
+   ],
+   [
+    1867.0,
+    0.003,
+    1.0
+   ],
+   [
+    1884.0,
+    0.01,
+    3.0
+   ],
+   [
+    1823.0,
+    0.01,
+    3.0
+   ],
+   [
+    1823.0,
+    0.003,
+    0.0
+   ]
+  ],
+  "held": 0.6368310680727485,
+  "age_cell": 0.5803630026614982
  }
 }

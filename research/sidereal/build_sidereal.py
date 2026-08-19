@@ -101,6 +101,13 @@ def main():
     if LIMIT:
         tr, te = tr.head(LIMIT), te.head(max(200, LIMIT // 4))
         log(f"AQ_LIMIT={LIMIT}: DRY RUN")
+    # SHARDS (Kaggle, 2026-08-19): AQ_SHARD="k/N" builds rows k, k+N, k+2N, ... of each half and writes
+    # sidereal_k_of_N.npz with the row indices; build_sidereal.py --merge N reassembles them into sidereal.npz.
+    shard = os.environ.get("AQ_SHARD", "")
+    if shard:
+        k, N = (int(x) for x in shard.split("/")); itr, ite = np.arange(k, len(tr), N), np.arange(k, len(te), N)
+        tr, te = tr.iloc[itr].reset_index(drop=True), te.iloc[ite].reset_index(drop=True)
+        log(f"shard {k}/{N}: train rows {len(tr):,} · test rows {len(te):,}")
     log(f"train {len(tr):,} · test {len(te):,}")
     ntr, Xtr = build(tr, "train")
     nte, Xte = build(te, "test")
@@ -115,6 +122,10 @@ def main():
         return out
     Xtr, Xte = align(ntr, Xtr), align(nte, Xte)
     fam = ["plain" if n.startswith("plain_") else n.split("::")[0] for n in names]
+    if shard:
+        np.savez_compressed(f"{OUT}/sidereal_{k}_of_{N}.npz", X_train=Xtr, X_test=Xte, names=np.array(names, dtype=object), idx_train=itr, idx_test=ite)
+        log(f"wrote {OUT}/sidereal_{k}_of_{N}.npz: {Xtr.shape[1]:,} features · train {Xtr.shape[0]:,} · test {Xte.shape[0]:,}")
+        return
     np.savez_compressed(f"{OUT}/sidereal.npz", X_train=Xtr, X_test=Xte, y_train=tr[LABEL].to_numpy().astype(np.int8),
                         names=np.array(names, dtype=object), family=np.array(fam, dtype=object),
                         id_test=te.id.to_numpy() if "id" in te else np.arange(len(te)),
@@ -125,5 +136,29 @@ def main():
         f"NaN share train {np.isnan(Xtr).mean()*100:.1f}%")
 
 
+def merge(N):
+    """Reassemble sidereal.npz from N shard files in OUT (columns united by name, rows by the saved indices)."""
+    tr = pd.read_csv(f"{SRC}/train.csv", dtype={"dob_dad": str, "dob_mom": str, "start": str}); te = pd.read_csv(f"{SRC}/test.csv", dtype={"dob_dad": str, "dob_mom": str, "start": str})
+    LABEL = [c for c in tr.columns if c not in {"id", "dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"}][0]
+    parts = [np.load(f"{OUT}/sidereal_{k}_of_{N}.npz", allow_pickle=True) for k in range(N)]
+    names = []
+    for P in parts:
+        for n in P["names"]:
+            if n not in names:
+                names.append(n)
+    Xtr = np.full((len(tr), len(names)), np.nan, np.float32); Xte = np.full((len(te), len(names)), np.nan, np.float32); col = {n: j for j, n in enumerate(names)}
+    for P in parts:
+        js = [col[n] for n in P["names"]]; Xtr[np.ix_(P["idx_train"], js)] = P["X_train"]; Xte[np.ix_(P["idx_test"], js)] = P["X_test"]
+    fam = ["plain" if n.startswith("plain_") else n.split("::")[0] for n in names]
+    np.savez_compressed(f"{OUT}/sidereal.npz", X_train=Xtr, X_test=Xte, y_train=tr[LABEL].to_numpy().astype(np.int8), names=np.array(names, dtype=object), family=np.array(fam, dtype=object),
+                        id_test=te.id.to_numpy() if "id" in te else np.arange(len(te)),
+                        yr_train=np.column_stack([pd.to_numeric(tr.dob_dad.str[:4], errors="coerce").fillna(0), pd.to_numeric(tr.dob_mom.str[:4], errors="coerce").fillna(0)]).astype(np.int16),
+                        yr_test=np.column_stack([te.dob_dad.str[:4].astype(int), te.dob_mom.str[:4].astype(int)]).astype(np.int16))
+    log(f"merged {N} shards -> {OUT}/sidereal.npz: {len(names):,} features · train {len(tr):,} · test {len(te):,} · NaN share train {np.isnan(Xtr).mean()*100:.1f}%")
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 2 and sys.argv[1] == "--merge":
+        merge(int(sys.argv[2]))
+    else:
+        main()

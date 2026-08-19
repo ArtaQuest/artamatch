@@ -207,3 +207,19 @@ forward members 0.6283; existing ensemble + those members 0.6260–0.6294; exist
 decisive fact: on the 2,627 test rows where d_neptune exists the existing ensemble already scores **0.6425**
 (deployed 0.6410) against d_neptune's 0.6312 on the same rows — the per-body members are a weaker reading of the
 same two ages, not added information, so an equal-weight blend with them adds noise. No leaderboard gain exists here.
+
+**The monotone ensemble (2026-08-19, `artamodel_nonneg_stack.py`, `artamodel_nonneg_final.py`).** Arash: "a bigger
+ensemble must always be better than its subset of members." With NON-NEGATIVE weights over rank-transformed member
+scores and a convex loss, every subset is a feasible point of the full problem, so on the data the weights are fitted
+on the full pool cannot lose to a subset — monotone by construction (asserted in the subset table). Three defects
+had to go first: (1) the backwards OOF direction (above); (2) the train OOF was 76% wedding-sky-only rows and the
+test has NONE (test = post-1900 couples, all with both charts), so one weight vector was tuned to a group absent
+from the test — weights are now fitted per availability group (dad+wedding clocks / synastry only / sky only);
+(3) the greedy boosted member changes its phasor set between folds (≤1823 picks only d_neptune), so a fixed-cycle
+twin of the deployed six phasors was added (BOOST6-FIXED, held 0.6217). Result on the board: the ALL-147 grouped
+stack **0.62263** (was 0.61149 broken), plain 0.61055, the small equal-weight ensemble 0.63068. Held-out on all
+7,249: full 0.6202 vs its best subset 0.6262 — half a standard error; the public board is 2,180 rows (SE ±0.012).
+What remains is the era itself: inside the dad+wedding group the 1867–1900 train block has plain 0.670 vs the
+clocks 0.618, the test era has the clocks 0.641 vs plain 0.632 — a reversal no train-fitted weight can anticipate,
+the same fact the ensemble competition recorded. Equal weights over a small strong pool land well on this test by
+luck, not by a rule a stacker could learn.

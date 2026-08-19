@@ -8,6 +8,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 d = json.load(open(os.path.join(REPO, "research/sidereal/artamodel_iv_deployed.json")))
 R = json.load(open(os.path.join(REPO, "research/sidereal/artamodel_iv.json")))
+ST = json.load(open(os.path.join(REPO, "research/sidereal/stack_iv_deployed.json")))
+E = json.load(open(os.path.join(REPO, "research/sidereal/artamodel_iv_ensemble.json")))
+_RUN = E["runs"]["from1867_lam0.001"]; _held = {r["subset"]: r["held"] for r in _RUN}
 used = d["explanation"]["used"]; unused = d["explanation"]["unused"]
 TT = {"a": ("a·e<sup>i|θ1−θ2|</sup>", "the absolute synastry angle between the two natal charts — even under the swap"),
       "t1": ("t1·e<sup>i|θt−θ1|</sup>", "the wedding sky to partner 1's natal longitude"),
@@ -20,7 +23,7 @@ for lab in unused:
 rows = "".join(f"<tr><td><code>{r['phasor']}</code></td><td>{r['body']}</td><td>{TT[r['term']][0]}</td><td class=num>{r['stages']}</td>"
                f"<td class=num>{r['contribution']:.3f}</td><td class=num>{r['phase_deg']:.0f}°</td><td class=meaning>{html.escape(r['meaning'])}</td></tr>" for r in used)
 terms_html = "".join(f"<tr><td><b>{t}</b></td><td>{TT[t][0]}</td><td>{TT[t][1]}</td><td class=num>{14-len(by_term.get(t, []))}/14</td></tr>" for t in d["terms"])
-page = f"""<title>ArtaModel IV</title>
+page = f"""<meta charset="utf-8"><title>ArtaModel IV</title>
 <style>
 :root{{--bg:#FBF9F4;--panel:#fff;--line:#DED7C8;--soft:#EAE4D6;--ink:#171A22;--ink2:#4A4F5C;--ink3:#7C8291;--gold:#9A6B0E;--blue:#1746DC}}
 @media (prefers-color-scheme:dark){{:root:not([data-theme="light"]){{--bg:#080D18;--panel:#0E1524;--line:#222C42;--soft:#18202F;--ink:#EEF0F5;--ink2:#A6AEC0;--ink3:#6D7689;--gold:#E8B923;--blue:#7B9BFF}}}}
@@ -38,10 +41,46 @@ td{{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}}td.
 .hi{{color:var(--gold);font-weight:600}}a{{color:var(--blue)}}code{{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:var(--soft);padding:1px 5px}}
 .tiles{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--soft);border:1px solid var(--soft);margin:24px 0}}
 .tile{{background:var(--panel);padding:16px 18px}}.tile .k{{font:10.5px ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}}.tile .v{{font-size:26px;font-variant-numeric:tabular-nums}}.tile .n{{font-size:12.5px;color:var(--ink3);margin-top:4px}}
+.tryit{{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:14px 0}}.tryit fieldset{{border:1px solid var(--line);background:var(--panel);padding:12px 14px;margin:0;display:flex;flex-direction:column;gap:8px}}.tryit legend{{font:11.5px ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:0 6px}}
+.tryit label{{display:flex;justify-content:space-between;gap:10px;font-size:14px;color:var(--ink2)}}.tryit input{{width:150px;font:14px ui-monospace,Menlo,monospace;padding:4px 6px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}}
+.tryit button{{font:14px/1.2 inherit;padding:8px 12px;border:1px solid var(--blue);background:var(--blue);color:#fff;cursor:pointer}}.tryit button:disabled{{opacity:.55;cursor:wait}}.tryit button#swap{{background:transparent;color:var(--blue)}}
+.result{{border:1px solid var(--line);background:var(--panel);padding:14px 18px;margin:12px 0}}.result .big{{display:flex;align-items:baseline;gap:16px}}.result .big .k{{font:11.5px ui-monospace,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3)}}.result .big .v{{font-size:34px;font-variant-numeric:tabular-nums;color:var(--gold)}}
+.result .detail{{font-size:14px;color:var(--ink2);margin-top:8px}}.result .detail table{{min-width:0}}.status{{font-size:12.5px;color:var(--ink3);border:none;background:transparent;padding:4px 0}}
 </style><div class=wrap>
-<p class=eyebrow>ArtaMatch · the deployed model · fourth edition · genderless · fitted on {d['n_rows']:,} rows</p>
-<h1>ArtaModel IV, term by term</h1>
-<p class=lede>A genderless sidereal phase model of a long-term relationship: two births and birthplaces — in no order — and the date it began, one probability out. Every term is written out below, with the weight the fitted model gave it — and with what the model turns out to be reading.</p>
+<p class=eyebrow>ArtaMatch · the deployed model · fourth edition · genderless · public leaderboard {ST['scores']['public_board']:.5f}</p>
+<h1>ArtaModel IV and the stack it sits in</h1>
+<p class=lede>The model that leads the public board is a <b>stack of three members</b> — a plain-plus-geography model and two ArtaModel IV constructions — combined by non-negative weights on their ranks, fitted per availability group, and scored in both orders of the pair so the answer is exactly symmetric. It runs <b>in this page</b>: enter two births and a start date below. Every piece is explained underneath, with what it turns out to read.</p>
+<h2>Try it — runs in your browser</h2>
+<p>Nothing leaves the page: the ephemeris, the three geography boosters and the ArtaModel stages load into Pyodide and are evaluated here. Births are cast at 09:00 local mean time at the birthplace (the fit used the zone clock; for the outer planets the model reads, the difference is under 0.01°). Dates may be day (<code>1936-08-04</code>), month (<code>1936-08-00</code>) or year (<code>1936-00-00</code>) precision; a start given as 1 January is read as year-only.</p>
+<form id=tryit class=tryit onsubmit="return false">
+<fieldset><legend>Partner 1</legend><label>Date of birth <input name=dob1 value="1936-08-04" placeholder="YYYY-MM-DD"></label><label>Latitude <input name=lat1 value="37.943"></label><label>Longitude <input name=lon1 value="23.647"></label></fieldset>
+<fieldset><legend>Partner 2</legend><label>Date of birth <input name=dob2 value="1924-05-14" placeholder="YYYY-MM-DD"></label><label>Latitude <input name=lat2 value="37.727"></label><label>Longitude <input name=lon2 value="26.909"></label></fieldset>
+<fieldset><legend>The relationship</legend><label>Start date <input name=start value="1968-06-15" placeholder="YYYY-MM-DD"></label><button id=go type=button disabled>Loading the model…</button><button id=swap type=button title="exchange the two partners — the answer must not change">Swap partners</button></fieldset>
+</form>
+<div id=result class=result hidden><div class=big><span class=k>P(lasted thirty years)</span><span id=prob class=v>—</span></div><div id=detail class=detail></div></div>
+<pre id=status class=status>Pyodide not started</pre>
+<h2>The stack</h2>
+<p>Three members, each even in the swap of the two partners:</p>
+<div class=tblwrap><table><thead><tr><th>member</th><th>what it reads</th><th>held out alone</th></tr></thead><tbody>
+<tr><td><b>GEO</b> — plain + geography</td><td>the older and younger age at the start, their gap, the start year, <b>the two birthplaces</b> (older/younger), their great-circle distance, the order-free extremes of latitude and longitude, a same-place flag; three small gradient-boosted models averaged (larger ones overfit the era)</td><td class=num>{_held['geography alone']:.4f}</td></tr>
+<tr><td><b>AM-G</b> — ArtaModel IV, greedy</td><td>the sidereal phase model below, boosted over split single-phasor fields, each stage's phasor chosen greedily</td><td class=num>{_held['greedy alone']:.4f}</td></tr>
+<tr><td><b>AM-F</b> — ArtaModel IV, fixed cycle</td><td>the same construction with the phasors in a fixed cycle (a_uranus, t1/t2 Neptune, Pluto, Uranus) — the stable twin, the same model in every fold</td><td class=num>{_held['fixed alone']:.4f}</td></tr>
+</tbody></table></div>
+<p>Each member's score is turned into its <b>rank</b> among the rows it scores (a member that cannot speak for a pair casts no vote), and the ranks are combined with <b>non-negative weights and a bias per availability group</b> — group 0 when the wedding-sky clocks exist, 1 when only the synastry does, 2 when only the wedding sky is known — because the mix of groups in the training eras is not the mix in the test era. Non-negative weights make the stack <b>monotone by construction</b>: any subset of members is a feasible point of the full fit, so on the data the weights are fitted on the full pool can never lose to a subset. The weights were fitted on <b>forward-chained</b> out-of-fold scores (fit on every row before a cut, score the block after it; the test is the next era), recency-weighted, with a small ridge:</p>
+<div class=tblwrap><table><thead><tr><th>group</th><th>GEO</th><th>AM-G</th><th>AM-F</th><th>bias</th><th>OOF rows</th></tr></thead><tbody>
+{''.join(f"<tr><td>{g} — {ST['stacker']['groups'][g]}</td><td class=num>{w['w'][0]:.3f}</td><td class=num>{w['w'][1]:.3f}</td><td class=num>{w['w'][2]:.3f}</td><td class=num>{w['b']:+.3f}</td><td class=num>{w['n_fit']:,}</td></tr>" for g, w in sorted(ST['stacker']['weights'].items()))}
+</tbody></table></div>
+<p>Both orders of the pair are scored and the logits averaged, so the probability is exactly the same whichever partner is entered first — the data itself carries every pair in both orders.</p>
+<h2>What the stack scores — honestly</h2>
+<div class=tiles>
+<div class=tile><div class=k>public leaderboard</div><div class=v>{ST['scores']['public_board']:.5f}</div><div class=n>artamatch-genderless, 4,614 rows</div></div>
+<div class=tile><div class=k>held out, all test pairs</div><div class=v>{ST['scores']['held_out_submitted']:.4f}</div><div class=n>7,631 pairs, both orders</div></div>
+<div class=tile><div class=k>the plain ages alone</div><div class=v>{R['plain']['held']:.4f}</div><div class=n>older, younger, |gap|, start year</div></div>
+<div class=tile><div class=k>what geography added</div><div class=v>+{_held['geography alone']-R['plain']['held']:.3f}</div><div class=n>held out; +0.013 on the board</div></div>
+</div>
+<p><b>Read plainly:</b> the gain over the plain ages comes from <b>where the two were born</b> — a fact about people and eras, not about the sky. The astrology inside the stack (ArtaModel IV, below) reads the same two ages through the outer planets; every other tradition tried (twenty-one tropical traditions including numerology, fourteen Jyotiṣa and Zǐ Wēi Dǒu Shù families) scored 0.50–0.59 alone and added nothing beside geography. We say so because we measured it; the study is <a href="https://huggingface.co/artaquest/artamodel/blob/main/ARTAMODEL.md">ARTAMODEL.md</a>.</p>
+<h2>ArtaModel IV, term by term</h2>
+<p>The astrological member, a genderless sidereal phase model: two births and birthplaces — in no order — and the date it began, one logit out. Every term is written out below, with the weight the fitted model gave it — and with what the model turns out to be reading.</p>
 <h2>The formula</h2>
 <pre>y = | b + Σᵢ  aᵢ ·e^{{i|θ1ᵢ − θ2ᵢ|}}     the absolute synastry angle          (even under the swap)
              + t1ᵢ·e^{{i|θtᵢ − θ1ᵢ|}}     the wedding sky to partner 1's chart
@@ -65,6 +104,50 @@ td{{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}}td.
 <p>What ArtaModel IV reads is the two partners' ages at the start and the absolute gap between their births, through the outer planets as clocks — the same finding as every edition before it, now without a sex in the model: it is exactly invariant to the ayanāṁśa (a constant offset cancels in a phase difference), to the birth hour and to the birthplace, and its gain over the plain ages is small and mostly the ages read twice. The age-cell-matched figure is what is left once the two ages are held flat. We say so because we measured it — the study is <a href="https://huggingface.co/artaquest/artamodel/blob/main/ARTAMODEL.md">ARTAMODEL.md</a>.</p>
 <h2>Use it</h2>
 <p>The deployed weights, the scorer (<code>predict(dob_1, lat, lon, dob_2, lat, lon, start)</code> → probability + the stage-by-stage account of both orders; symmetric by construction), the code and the study: <a href="https://huggingface.co/artaquest/artamodel">huggingface.co/artaquest/artamodel</a>. The data: <a href="https://www.kaggle.com/datasets/artaquest-foundation/artamatch-genderless">artamatch-genderless</a>; the competition: <a href="https://www.kaggle.com/competitions/artamatch-genderless">artamatch-genderless</a>. CC0.</p>
-</div>"""
+</div>
+<script type=module>
+const $ = s => document.querySelector(s); const status = m => {{ $("#status").textContent = m; }};
+let py = null;
+async function boot() {{
+  try {{
+    status("loading Pyodide…");
+    const {{ loadPyodide }} = await import("https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.mjs");
+    py = await loadPyodide({{ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/" }});
+    await py.loadPackage("numpy"); status("loading the ephemeris and the model…");
+    const [shim, pred, asset, tables, dep, g0, g1, g2] = await Promise.all([
+      fetch("sweshim.py").then(r => r.text()), fetch("stack_iv_predictor.py").then(r => r.text()), fetch("ephem4.bin").then(r => r.arrayBuffer()),
+      fetch("tables.json").then(r => r.text()), fetch("stack_iv_deployed.json").then(r => r.text()),
+      fetch("geo_lgbm_0.json").then(r => r.text()), fetch("geo_lgbm_1.json").then(r => r.text()), fetch("geo_lgbm_2.json").then(r => r.text())]);
+    py.FS.writeFile("/sweshim.py", shim); py.FS.writeFile("/stack_iv_predictor.py", pred); py.FS.writeFile("/asset.bin", new Uint8Array(asset));
+    py.FS.writeFile("/tables.json", tables); py.FS.writeFile("/dep.json", dep); py.FS.writeFile("/g0.json", g0); py.FS.writeFile("/g1.json", g1); py.FS.writeFile("/g2.json", g2);
+    await py.runPythonAsync(`import sys; sys.path.insert(0, "/")
+import stack_iv_predictor as P
+P.init(open("/asset.bin","rb").read(), open("/tables.json").read(), open("/dep.json").read(), [open("/g0.json").read(), open("/g1.json").read(), open("/g2.json").read()])`);
+    status("ready — the model runs in this page"); $("#go").disabled = false; $("#go").textContent = "Predict"; run();
+  }} catch (e) {{ status("could not start: " + e); }}
+}}
+async function run() {{
+  if (!py) return; const f = $("#tryit"); const v = n => f.elements[n].value.trim();
+  try {{
+    const out = await py.runPythonAsync(`import json, stack_iv_predictor as P
+r = P.predict(${{JSON.stringify(v("dob1"))}}, float(${{JSON.stringify(v("lat1"))}}), float(${{JSON.stringify(v("lon1"))}}), ${{JSON.stringify(v("dob2"))}}, float(${{JSON.stringify(v("lat2"))}}), float(${{JSON.stringify(v("lon2"))}}), ${{JSON.stringify(v("start"))}})
+json.dumps(r)`);
+    const r = JSON.parse(out); $("#result").hidden = false; $("#prob").textContent = (100 * r.probability).toFixed(1) + "%";
+    const b = r.breakdown; const st = s => s.filter(x => x.phase_deg !== undefined).map(x => `${{x.phasor}} φ=${{x.phase_deg.toFixed(1)}}° ${{x.contribution >= 0 ? "+" : ""}}${{x.contribution.toFixed(3)}}`).join(" · ") || "no phasor available";
+    const dist = (typeof b.GEO.inputs.distance_km === "number" && isFinite(b.GEO.inputs.distance_km)) ? b.GEO.inputs.distance_km.toFixed(0) + " km" : "—";
+    $("#detail").innerHTML = `<div class=tblwrap><table><thead><tr><th>member</th><th>its score</th><th>rank among scored rows</th><th>weight</th></tr></thead><tbody>
+<tr><td>GEO — plain + geography</td><td class=num>p = ${{b.GEO.probability.toFixed(3)}}</td><td class=num>${{b.GEO.rank.toFixed(3)}}</td><td class=num>${{b.GEO.weight.toFixed(3)}}</td></tr>
+<tr><td>AM-G — ArtaModel IV greedy</td><td class=num>logit ${{b.AM_GREEDY.logit.toFixed(3)}}</td><td class=num>${{b.AM_GREEDY.rank.toFixed(3)}}</td><td class=num>${{b.AM_GREEDY.weight.toFixed(3)}}</td></tr>
+<tr><td>AM-F — ArtaModel IV fixed</td><td class=num>logit ${{b.AM_FIXED.logit.toFixed(3)}}</td><td class=num>${{b.AM_FIXED.rank.toFixed(3)}}</td><td class=num>${{b.AM_FIXED.weight.toFixed(3)}}</td></tr>
+</tbody></table></div><p>group ${{r.group}} — ${{r.group_meaning}}; bias ${{b.bias.toFixed(3)}}; stack logit ${{r.logit.toFixed(3)}}. Scored in both orders and averaged — press <i>Swap partners</i> to see the same number.</p>
+<p><b>ArtaModel IV greedy, stage by stage:</b> ${{st(b.AM_GREEDY.stages)}}</p><p><b>Fixed cycle:</b> ${{st(b.AM_FIXED.stages)}}</p>
+<p><b>Geography inputs:</b> older ${{b.GEO.inputs.age_older}}, younger ${{b.GEO.inputs.age_younger}}, gap ${{b.GEO.inputs.age_gap_abs}}, start ${{b.GEO.inputs.start_year}}, distance ${{dist}}</p>`;
+    status("ready");
+  }} catch (e) {{ status("error: " + e); }}
+}}
+$("#go").addEventListener("click", run);
+$("#swap").addEventListener("click", () => {{ const f = $("#tryit"); for (const k of ["dob","lat","lon"]) {{ const a = f.elements[k+"1"].value; f.elements[k+"1"].value = f.elements[k+"2"].value; f.elements[k+"2"].value = a; }} run(); }});
+boot();
+</script>"""
 open(os.path.join(HERE, "artamodel.html"), "w").write(page)
 print(f"  web/artamodel.html written ({len(page):,} chars, {len(used)} used phasors)")

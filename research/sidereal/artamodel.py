@@ -54,21 +54,40 @@ def composite(D, M):
     return (D + diff / 2.0) % 360.0
 
 
-def phase_matrix(D, M, W, all_bodies, bodies, terms, angles_in_natal=False):
-    """(n, K) phases in degrees (NaN = the term does not exist for that row) and K labels."""
+# FOURTH EDITION — GENDERLESS (operator 2026-08-19): "I want a genderless model from now on ... (a, b, 1) should
+# also mean (b, a, 1) ... for each subtractive term add abs to ensure each term is an even function." The two
+# natal charts are slot 1 and slot 2 with no meaning attached; the files carry every pair in BOTH orders; and
+# every phase DIFFERENCE enters as its wrapped absolute value |Δθ| in [0°, 180°], so a term's value is unchanged
+# when the partners swap (and the wedding-sky terms are even in the same sense: |θt − θ|). Term names for this
+# edition: a (synastry |θ1 − θ2|), t1/t2 (the wedding sky to each partner, |θt − θ|), n1/n2 (each natal phase),
+# tn (the wedding sky's own phase). They map onto the earlier a/m/d/mn/dn/tn computations with `even=True`.
+TERMS_IV = ("a", "t1", "t2", "n1", "n2", "tn")
+_IV_TO_III = {"t1": "d", "t2": "m", "n1": "dn", "n2": "mn"}
+
+
+def absdiff(x, y):
+    """The wrapped absolute phase difference |x − y| in [0, 180] degrees — even in (x, y)."""
+    return np.abs((x - y + 180.0) % 360.0 - 180.0)
+
+
+def phase_matrix(D, M, W, all_bodies, bodies, terms, angles_in_natal=False, even=False):
+    """(n, K) phases in degrees (NaN = the term does not exist for that row) and K labels.
+    even=True: every subtractive term is the wrapped absolute difference (the genderless edition)."""
     col = {b: j for j, b in enumerate(all_bodies)}
     P, lab = [], []
     use = list(bodies) + (ANGLES if angles_in_natal else [])
-    for t in terms:
+    diff = absdiff if even else (lambda x, y: x - y)
+    for t0 in terms:
+        t = _IV_TO_III.get(t0, t0)
         for b in use:
             j = col[b]
             if t == "a":
-                P.append(M[:, j] - D[:, j])
+                P.append(diff(M[:, j], D[:, j]))
             elif t == "c":
                 P.append(composite(D[:, j], M[:, j]))
             elif t == "tc":
                 if b in ANGLES: continue
-                P.append(W[:, j] - composite(D[:, j], M[:, j]))
+                P.append(diff(W[:, j], composite(D[:, j], M[:, j])))
             elif t == "mw":
                 if b in ANGLES: continue
                 P.append(composite(M[:, j], W[:, j]))          # midpoint of mom's natal and the wedding sky
@@ -77,10 +96,10 @@ def phase_matrix(D, M, W, all_bodies, bodies, terms, angles_in_natal=False):
                 P.append(composite(D[:, j], W[:, j]))          # midpoint of dad's natal and the wedding sky
             elif t == "m":
                 if b in ANGLES: continue
-                P.append(W[:, j] - M[:, j])
+                P.append(diff(W[:, j], M[:, j]))
             elif t == "d":
                 if b in ANGLES: continue
-                P.append(W[:, j] - D[:, j])
+                P.append(diff(W[:, j], D[:, j]))
             elif t == "mn":
                 P.append(M[:, j])
             elif t == "dn":
@@ -90,7 +109,7 @@ def phase_matrix(D, M, W, all_bodies, bodies, terms, angles_in_natal=False):
                 P.append(W[:, j])
             else:
                 raise ValueError(t)
-            lab.append(f"{t}_{b}")
+            lab.append(f"{t0}_{b}")
     return (np.column_stack(P) if P else np.zeros((len(D), 0))), lab
 
 

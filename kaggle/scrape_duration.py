@@ -933,8 +933,33 @@ def order_by_sex(m, tag):
 
 
 
-test_c = order_by_sex(test_l, "test half")
-train_c = order_by_sex(train_l, "train half")
+def order_genderless(m, tag):
+    """FOURTH EDITION (operator 2026-08-19: "I want a genderless model from now on"): no sex is read and no order
+    is claimed. Slot one / slot two are `a` / `b` -- the query's own order, which is the Q-id string order and
+    carries nothing -- except on a one-sided row, where the KNOWN partner takes slot one (the only order that
+    invents nothing). Every pair is kept: male-female, male-male, female-female, sex unrecorded. The files then
+    carry every pair in BOTH orders (see section 8), so (a, b, y) and (b, a, y) are both rows and a model is
+    symmetric by the data rather than by a column convention. The internal column names stay dad/mom until the
+    write-out only so the checks below need no second copy; they are renamed to _a/_b in the files.
+    """
+    m = m.copy()
+    a_known = m["adob"].fillna("").astype(str).str[:4].str.isdigit().to_numpy()
+    b_known = m["bdob"].fillna("").astype(str).str[:4].str.isdigit().to_numpy()
+    a_first = ~(~a_known & b_known)
+    print(f"  {tag}: {len(m):,} rows, all kept (no sex read); {int((~a_first).sum()):,} one-sided rows put the "
+          f"known partner first")
+    m["dob_dad"] = np.where(a_first, m["adob"], m["bdob"]); m["dob_mom"] = np.where(a_first, m["bdob"], m["adob"])
+    m["prec_dad"] = np.where(a_first, m["aprec"], m["bprec"]); m["prec_mom"] = np.where(a_first, m["bprec"], m["aprec"])
+    for q in ("lat", "lon"):
+        m[f"{q}_dad"] = np.where(a_first, m[f"a{q}"], m[f"b{q}"]); m[f"{q}_mom"] = np.where(a_first, m[f"b{q}"], m[f"a{q}"])
+    m["dad"] = np.where(a_first, m["a"], m["b"]); m["mom"] = np.where(a_first, m["b"], m["a"])
+    return m
+
+
+GENDERLESS = os.environ.get("AQ_ORDER", "") == "none"
+_order = order_genderless if GENDERLESS else order_by_sex
+test_c = _order(test_l, "test half")
+train_c = _order(train_l, "train half")
 
 #%% [markdown]
 # ## 6. `00` for unknown, `0000-00-00` for absent
@@ -1215,13 +1240,39 @@ print("  checked: every training row is well-formed and carries at least one dat
 
 train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
-train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
-test["id"] = [f"m{i:06d}" for i in range(len(test))]
-test[["id", "dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"]]\
-    .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
-rng = np.random.default_rng(20260817)
-sol = test[["id", "lasted_30_years"]].copy()
-sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")
+if GENDERLESS:
+    # FOURTH EDITION: every pair in BOTH orders. (a, b, y) and (b, a, y) are both rows of train; every test pair
+    # is two rows, `p<n>a` and `p<n>b`, scored together and on the same Public/Private side, so a submission
+    # that is not symmetric in its two partners is penalised by the metric itself rather than by a rule.
+    REN = {"dob_dad": "dob_a", "dob_mom": "dob_b", "lat_dad": "lat_a", "lon_dad": "lon_a", "lat_mom": "lat_b", "lon_mom": "lon_b"}
+    SWAP = {"dob_a": "dob_b", "dob_b": "dob_a", "lat_a": "lat_b", "lat_b": "lat_a", "lon_a": "lon_b", "lon_b": "lon_a"}
+
+    def both_orders(frame):
+        f1 = frame.rename(columns=REN); f2 = f1.rename(columns=SWAP)[f1.columns]
+        f1 = f1.copy(); f2 = f2.copy(); f1["_ord"] = "a"; f2["_ord"] = "b"; f1["_pairno"] = np.arange(len(f1)); f2["_pairno"] = np.arange(len(f2))
+        return pd.concat([f1, f2], ignore_index=True)
+    COLS = [REN.get(c, c) for c in COLS]
+    train = both_orders(train).sample(frac=1.0, random_state=20260819).reset_index(drop=True)
+    test = both_orders(test)
+    test["id"] = [f"p{n:06d}{o}" for n, o in zip(test["_pairno"], test["_ord"])]
+    test = test.sample(frac=1.0, random_state=20260819).reset_index(drop=True)
+    rng = np.random.default_rng(20260817)
+    side_of_pair = np.where(rng.random(test["_pairno"].max() + 1) < 0.30, "Public", "Private")
+    print(f"  GENDERLESS: every pair written in both orders -- train {len(train):,} rows ({len(train)//2:,} pairs), "
+          f"test {len(test):,} rows ({len(test)//2:,} pairs); the two rows of a pair share a Public/Private side")
+    train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
+    test[["id", "dob_a", "dob_b", "lat_a", "lon_a", "lat_b", "lon_b", "start"]]\
+        .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
+    sol = test[["id", "lasted_30_years"]].copy()
+    sol["Usage"] = side_of_pair[test["_pairno"].to_numpy()]
+else:
+    train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
+    test["id"] = [f"m{i:06d}" for i in range(len(test))]
+    test[["id", "dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"]]\
+        .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
+    rng = np.random.default_rng(20260817)
+    sol = test[["id", "lasted_30_years"]].copy()
+    sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")
 sol.to_csv(os.path.join(OUT, "solution.csv"), index=False)
 samp = test[["id"]].copy()
 samp["lasted_30_years"] = 0.5
@@ -1233,8 +1284,9 @@ for side in ("Public", "Private"):
 
 print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
 print("\n  training rows, showing the three shapes it can take:")
-ex = pd.concat([train[(train.dob_mom != ABSENT) & (train.dob_dad.str[5:] != "00-00")].head(2),
-                train[train.dob_dad.str[5:] == "00-00"].head(2),
-                train[train.dob_mom == ABSENT].head(2)])
+_c1, _c2 = ("dob_a", "dob_b") if GENDERLESS else ("dob_dad", "dob_mom")
+ex = pd.concat([train[(train[_c2] != ABSENT) & (train[_c1].str[5:] != "00-00")].head(2),
+                train[train[_c1].str[5:] == "00-00"].head(2),
+                train[train[_c2] == ABSENT].head(2)])
 print(ex[COLS].to_string(index=False))
 print(f"\n  total build time {(time.time()-T0)/60:.1f} min")

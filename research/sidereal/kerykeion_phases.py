@@ -100,8 +100,16 @@ def _work(args):
     return i, theta(dd, latd, lond, 9, True), theta(dm, latm, lonm, 9, True), theta(wed, None, None, 12, False)
 
 
+def slots(df):
+    """FOURTH EDITION (genderless, 2026-08-19): the files carry `dob_a/dob_b`; the earlier editions `dob_dad/dob_mom`.
+    The extractor reads whichever it is given and names its outputs by the same slot names."""
+    return ("a", "b") if "dob_a" in df.columns else ("dad", "mom")
+
+
 def build(df):
-    jobs = [(i, r.dob_dad, r.lat_dad, r.lon_dad, r.dob_mom, r.lat_mom, r.lon_mom, r.start)
+    s1, s2 = slots(df)
+    jobs = [(i, getattr(r, f"dob_{s1}"), getattr(r, f"lat_{s1}"), getattr(r, f"lon_{s1}"), getattr(r, f"dob_{s2}"),
+             getattr(r, f"lat_{s2}"), getattr(r, f"lon_{s2}"), r.start)
             for i, r in enumerate(df.itertuples(index=False))]
     with mp.Pool(max(1, mp.cpu_count() - 1)) as pool:
         res = pool.map(_work, jobs, chunksize=256)
@@ -112,27 +120,31 @@ def build(df):
 
 
 def main():
-    tr = pd.read_csv(f"{SRC}/train.csv", dtype={"dob_dad": str, "dob_mom": str, "start": str})
-    te = pd.read_csv(f"{SRC}/test.csv", dtype={"dob_dad": str, "dob_mom": str, "start": str})
-    LABEL = [c for c in tr.columns if c not in {"id", "dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"}][0]
+    tr = pd.read_csv(f"{SRC}/train.csv", dtype=str); te = pd.read_csv(f"{SRC}/test.csv", dtype=str)
+    s1, s2 = slots(tr)
+    for df in (tr, te):
+        for c in (f"lat_{s1}", f"lon_{s1}", f"lat_{s2}", f"lon_{s2}"):
+            df[c] = pd.to_numeric(df[c], errors="coerce")
+    LABEL = [c for c in tr.columns if c not in {"id", f"dob_{s1}", f"dob_{s2}", f"lat_{s1}", f"lon_{s1}", f"lat_{s2}", f"lon_{s2}", "start"}][0]
+    d1, d2 = tr[f"dob_{s1}"], tr[f"dob_{s2}"]
     if LIMIT:
         tr, te = tr.head(LIMIT), te.head(max(200, LIMIT // 4)); log(f"AQ_LIMIT={LIMIT}: DRY RUN")
     log(f"train {len(tr):,} · test {len(te):,}")
     Dtr, Mtr, Wtr = build(tr); log("train phases")
     Dte, Mte, Wte = build(te); log("test phases")
     def plain(df):
-        yd = pd.to_numeric(df.dob_dad.str[:4], errors="coerce").where(df.dob_dad != "0000-00-00")
-        ym = pd.to_numeric(df.dob_mom.str[:4], errors="coerce").where(df.dob_mom != "0000-00-00")
+        yd = pd.to_numeric(df[f"dob_{s1}"].str[:4], errors="coerce").where(df[f"dob_{s1}"] != "0000-00-00")
+        ym = pd.to_numeric(df[f"dob_{s2}"].str[:4], errors="coerce").where(df[f"dob_{s2}"] != "0000-00-00")
         sy = df.start.str[:4].astype(float)
         return np.column_stack([sy - yd, sy - ym, ym - yd, sy, (df.start.str[5:] == "01-01").astype(float)])
     os.makedirs(OUT, exist_ok=True)
-    np.savez_compressed(f"{OUT}/phases.npz", theta_dad_train=Dtr, theta_mom_train=Mtr, theta_wed_train=Wtr,
-                        theta_dad_test=Dte, theta_mom_test=Mte, theta_wed_test=Wte, bodies=np.array(BODIES, dtype=object),
+    np.savez_compressed(f"{OUT}/phases.npz", **{f"theta_{s1}_train": Dtr, f"theta_{s2}_train": Mtr, "theta_wed_train": Wtr,
+                        f"theta_{s1}_test": Dte, f"theta_{s2}_test": Mte, "theta_wed_test": Wte}, bodies=np.array(BODIES, dtype=object), slots=np.array([s1, s2], dtype=object),
                         y_train=tr[LABEL].to_numpy().astype(np.int8), id_test=te.id.to_numpy() if "id" in te else np.arange(len(te)),
                         plain_train=plain(tr), plain_test=plain(te),
-                        plain_names=np.array(["age_dad_at_start", "age_mom_at_start", "age_gap", "start_year", "start_is_jan1"], dtype=object),
-                        yr_train=np.column_stack([pd.to_numeric(tr.dob_dad.str[:4], errors="coerce").fillna(0),
-                                                  pd.to_numeric(tr.dob_mom.str[:4], errors="coerce").fillna(0)]).astype(np.int16))
+                        plain_names=np.array([f"age_{s1}_at_start", f"age_{s2}_at_start", "age_gap", "start_year", "start_is_jan1"], dtype=object),
+                        yr_train=np.column_stack([pd.to_numeric(d1.str[:4], errors="coerce").fillna(0),
+                                                  pd.to_numeric(d2.str[:4], errors="coerce").fillna(0)]).astype(np.int16))
     full = np.isfinite(Dtr).all(1) & np.isfinite(Mtr).all(1)
     log(f"wrote {OUT}/phases.npz · {len(BODIES)} bodies · train rows with BOTH natal charts complete: {full.sum():,} · "
         f"wedding sky complete: {np.isfinite(Wtr[:, :10]).all(1).sum():,}")

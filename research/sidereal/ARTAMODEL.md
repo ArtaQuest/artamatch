@@ -223,3 +223,20 @@ What remains is the era itself: inside the dad+wedding group the 1867–1900 tra
 clocks 0.618, the test era has the clocks 0.641 vs plain 0.632 — a reversal no train-fitted weight can anticipate,
 the same fact the ensemble competition recorded. Equal weights over a small strong pool land well on this test by
 luck, not by a rule a stacker could learn.
+
+## 9 · Edition IV — genderless (2026-08-19)
+
+Operator: "I want a genderless model from now on. so duplicate all the train and test data. (a, b, 1) should also
+mean (b, a, 1) and add any longterm relationship to the dataset (including gay marriages and business
+partnerships). also for each subtractive terms add abs to ensure each term is an even function. then start over the
+competition." Done as: the scraper's `AQ_ORDER=none` (no P21 read; every relationship type P26/P451/P1327/P3342;
+every pair written in BOTH orders, test ids `p<n>a`/`p<n>b` on one Public/Private side); `phase_matrix(...,
+even=True)` — every phase difference is the wrapped absolute value |Δθ| ∈ [0°, 180°] — with the genderless term
+names `TERMS_IV = (a, t1, t2, n1, n2, tn)`; `artamodel_iv.py` fits plain / ArtaModel IV / the equal-weight ensemble
+and symmetrises every submission over the two orders of a pair; `artamodel_score_iv.py` scores both orders and
+averages (identical under swap, asserted). Data: train 181,596 rows (90,798 pairs), test 15,262 rows (7,631 pairs);
+20,632 full-chart training rows. Held out (all test rows): plain 0.6114 (age-cell 0.5236) · ArtaModel IV 0.6252
+(age-cell 0.5659; raw pair asymmetry of its ranks 0.006 before symmetrising) · ensemble 0.6289. Public board
+(4,614 rows): sample 0.50000 · plain 0.60002 · ArtaModel IV 0.61010 · ensemble 0.61440. The deployed fit (35,894
+train+test full-chart rows, 8 stages) keeps `a_uranus, t1_neptune, t2_neptune` — the two partners' age clocks
+chosen as a pair. Competition `artamatch-genderless` launched; `artamatch-sidereal` retitled [SUPERSEDED].

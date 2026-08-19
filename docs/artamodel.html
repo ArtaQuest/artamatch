@@ -35,10 +35,10 @@ td{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}td.nu
 <div id=result class=result hidden><div class=big><span class=k>P(lasted thirty years)</span><span id=prob class=v>—</span></div><div id=detail class=detail></div></div>
 <pre id=status class=status>Pyodide not started</pre>
 <h2>Find the best matches — every capital, every birthday</h2>
-<p>Give one person's birth date and birthplace (and the date the relationship would begin — today by default), and the stack is evaluated for <b>every day of birth in the range of people alive</b> (18 to 100 years old at the start) <b>in the capital of every country</b> — about six million candidates — and the twenty highest are listed. It is the same model as above, run on its structure: the geography member depends on the candidate only through the birth year and the capital, the ArtaModel members only through the outer planets on the birth day (weekly ephemeris samples, interpolated; the capital's local hour shifts those bodies by under 0.006° and is ignored for the candidate). One entry per capital per year, so the list reads as twenty distinct matches. What it prefers is what the stack prefers — mostly <em>where</em>, then <em>when</em> — and the <a href="#stack">section below</a> says why.</p>
+<p>Give one person's birth date and birthplace and the date the relationship would begin (<b>today by default</b> — the candidates' ages are counted from it), and the stack is evaluated for <b>every day of birth in the range of people alive</b> (18 to 100 years old at the start) <b>in the capital of every country</b> — about six million candidates — and the twenty highest are listed. It is the same model as above, run on its structure: the geography member depends on the candidate only through the birth year and the capital, the ArtaModel members only through the outer planets on the birth day (weekly ephemeris samples, interpolated; the capital's local hour shifts those bodies by under 0.006° and is ignored for the candidate). One entry per capital per year, so the list reads as twenty distinct matches. What it prefers is what the stack prefers — mostly <em>where</em>, then <em>when</em> — and the <a href="#stack">section below</a> says why.</p>
 <form id=finder class=tryit onsubmit="return false">
 <fieldset><legend>The person</legend><label>Date of birth <input name=fdob value="1994-02-15" placeholder="YYYY-MM-DD"></label><label>Latitude <input name=flat value="35.6892"></label><label>Longitude <input name=flon value="51.389"></label></fieldset>
-<fieldset><legend>The search</legend><label>Start date <input name=fstart value="" placeholder="today"></label><label>Youngest age <input name=fmin value="18"></label><label>Oldest age <input name=fmax value="100"></label><label>How many <input name=ftop value="20"></label><button id=find type=button disabled>Loading…</button></fieldset>
+<fieldset><legend>The search</legend><label>Start date (default today) <input name=fstart value="" placeholder="YYYY-MM-DD"></label><label>Youngest age <input name=fmin value="18"></label><label>Oldest age <input name=fmax value="100"></label><label>How many <input name=ftop value="20"></label><button id=find type=button disabled>Loading…</button></fieldset>
 </form>
 <div id=fresult class=result hidden><div id=fsummary class=detail></div><div id=ftable class=detail></div></div>
 <h2 id=stack>The stack</h2>
@@ -146,6 +146,7 @@ json.dumps(r)`);
   $("#find").disabled = false; $("#find").textContent = "Find the top matches";
 }
 $("#find").addEventListener("click", find);
+{ const f = $("#finder"); if (!f.elements.fstart.value) f.elements.fstart.value = new Date().toISOString().slice(0, 10); }   // the start date defaults to TODAY, shown
 $("#swap").addEventListener("click", () => { const f = $("#tryit"); for (const k of ["dob","lat","lon"]) { const a = f.elements[k+"1"].value; f.elements[k+"1"].value = f.elements[k+"2"].value; f.elements[k+"2"].value = a; } run(); });
 boot();
 </script>

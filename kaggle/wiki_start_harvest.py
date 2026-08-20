@@ -177,6 +177,24 @@ def _find_dates(lang, text, spouse_names):
     if m:
         yr = re.search(YEAR, m.group(0))
         return yr.group(0) + "-00-00", 9, m.group(0)[:160]
+    # 4. PROSE (the wikis that keep marriage in running text — dewiki rejects person infoboxes altogether):
+    #    "heiratete [am 9. März] 1902 [[Alma]]" / "épousa [[Alma]] en 1902" / "женился на [[Альме]] в 1902" —
+    #    a marriage VERB, the spouse and a year within one clause, either order; the plausibility gate downstream
+    #    still rejects any year that cannot be a wedding
+    VERB = {"de": r"heiratete|ehelichte|verm[äa]hlte|schloss.{0,20}Ehe", "fr": r"épous[ae]|se mari[ae]|mariage avec", "es": r"se cas[óo]|contrajo matrimonio",
+            "it": r"spos[òo]", "pt": r"casou(?:-se)?", "ru": r"женился|вышла замуж|вступил[аи]? в брак|обвенчал", "uk": r"одружився|вийшла заміж",
+            "pl": r"poślubił|ożenił|wyszła za", "nl": r"trouwde|huwde", "sv": r"gifte sig", "da": r"giftede sig", "fi": r"avioitui|meni naimisiin",
+            "cs": r"oženil se|vdala se|vzal si", "hu": r"feleségül vette|házasságot kötött", "tr": r"evlendi", "ja": r"結婚", "zh": r"结婚|結婚",
+            "fa": r"ازدواج کرد", "ar": r"تزوج", "hy": r"ամուսնացավ|ամուսնացել", "en": r"married"}
+    verb = VERB.get(lang)
+    if verb:
+        win = r"[^\n;]{0,90}"          # periods allowed: German ordinal dates ("9. März 1902") sit inside the clause
+        for pat in (r"(?:" + verb + r")" + win + name_re + win + YEAR, r"(?:" + verb + r")" + win + YEAR + win + name_re,
+                    name_re + win + r"(?:" + verb + r")" + win + YEAR, YEAR + win + r"(?:" + verb + r")" + win + name_re):
+            m = re.search(pat, text, re.I)
+            if m:
+                yr = re.search(YEAR, m.group(0))
+                return yr.group(0) + "-00-00", 9, m.group(0)[:160]
     return None
 
 

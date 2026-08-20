@@ -443,9 +443,34 @@ COPARENT_BODY = f"""
 {one_sex('a')}{one_sex('b')}  }}
   ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
 {dated('a', 'b')}"""
-cop = sparql_sliced("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex",
-                    lambda lo, hi: COPARENT_BODY.replace(dated('a', 'b'), dated('a', 'b', lo, hi)),
-                    "co-parent pairs (P22/P25 or P40)", order="?a ?b")
+# THE UNION IS SPLIT INTO ITS TWO BRANCHES and each is fetched on its own. As one query the union 504'd the
+# Wikidata Query Service on its very first ten-year slice, seven times over — the P40 branch joins two parents to
+# one child and, unioned with the P22/P25 branch, is heavier than either alone. Fetched separately, each branch is
+# a plain query that fits in the limit, and their concatenation is the same set (deduplication downstream removes
+# a pair that both branches find).
+def coparent_child_side(lo, hi):
+    return f"""
+  ?child wdt:P22 ?a ; wdt:P25 ?b .
+  FILTER(?a != ?b)
+  BIND(wd:{MALE} AS ?asex) BIND(wd:{FEMALE} AS ?bsex)
+  ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
+{dated('a', 'b', lo, hi)}"""
+
+
+def coparent_parent_side(lo, hi):
+    return f"""
+  ?a wdt:P40 ?child . ?b wdt:P40 ?child .
+  FILTER(STR(?a) < STR(?b))
+{one_sex('a')}{one_sex('b')}  ?a wdt:P31 wd:Q5 . ?b wdt:P31 wd:Q5 .
+{dated('a', 'b', lo, hi)}"""
+
+
+cop = pd.concat([
+    sparql_sliced("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", coparent_child_side,
+                  "co-parent pairs, child names both (P22/P25)", order="?a ?b"),
+    sparql_sliced("DISTINCT ?a ?b ?adob ?bdob ?aprec ?bprec ?asex ?bsex", coparent_parent_side,
+                  "co-parent pairs, both parents name the child (P40)", order="?a ?b"),
+], ignore_index=True)
 for c in ("a", "b", "asex", "bsex"):
     cop[c] = cop[c].map(qid)
 cop["adob"] = [stamp(v, p) for v, p in zip(cop["adob"], cop["aprec"])]

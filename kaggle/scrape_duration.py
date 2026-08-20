@@ -802,11 +802,42 @@ def label(mar, tag):
         print(f"  {tag}: {int((~inwin).sum()):,} with a start year outside {FLOOR}-{CEIL} — dropped")
         mar = mar[inwin].reset_index(drop=True)
     mar["start_year"] = mar["start_year"].astype(int)
-    # THE COLUMN THAT SHIPS is the date itself, exactly as Wikidata's time value reads: the real day where the
-    # statement has one, `YYYY-01-01` where it is a year-only record. `start` is already the first ten characters
-    # of that value (see the top of this function).
+    # THE COLUMN THAT SHIPS is the date itself AT ITS PRECISION (operator 2026-08-19: "ensure that YYYY-01-01 is not
+    # same as YYYY-00-00"). Wikidata's time value spells a year-only start as YYYY-01-01 and a month-only one as
+    # YYYY-MM-01; the qualifier's timePrecision (9 year · 10 month · 11 day), fetched by kaggle/start_precision.py
+    # for every start on the 1st of a month, turns those into YYYY-00-00 and YYYY-MM-00 -- the same spelling the
+    # births have always had -- so a real 1 January is a real 1 January. A start the lookup could not answer keeps
+    # the literal and is counted aloud.
+    sp = _start_prec_table()
+    if sp:
+        keyed = [sp.get((a, b, st)) or sp.get((b, a, st)) for a, b, st in zip(mar["a"], mar["b"], mar["start"])]
+        day1 = mar["start"].str[8:10] == "01"
+        n_year = sum(1 for k, d in zip(keyed, day1) if d and k == 9); n_month = sum(1 for k, d in zip(keyed, day1) if d and k == 10)
+        n_unk = sum(1 for k, d in zip(keyed, day1) if d and k is None)
+        mar["start"] = [s[:4] + "-00-00" if (d and k == 9) else (s[:7] + "-00" if (d and k == 10) else s) for s, k, d in zip(mar["start"], keyed, day1)]
+        print(f"  {tag}: starts on the 1st of a month -> {n_year:,} year-only (YYYY-00-00), {n_month:,} month-only (YYYY-MM-00), "
+              f"{int(day1.sum()) - n_year - n_month - n_unk:,} real days, {n_unk:,} without a precision answer (kept as written)")
     assert mar["start"].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"{tag}: a malformed start date survived"
     return mar
+
+
+_SP = None
+
+
+def _start_prec_table():
+    """(a, b, start10) -> precision, from the lookup kaggle/start_precision.py writes; empty when absent."""
+    global _SP
+    if _SP is None:
+        path = os.environ.get("AQ_START_PREC", "/tmp/aqdur/_startprec.csv"); _SP = {}
+        if os.path.exists(path):
+            import csv as _csv
+            for r in _csv.reader(open(path)):
+                if len(r) == 4 and r[3]:
+                    _SP[(r[0], r[1], r[2])] = int(r[3])
+            print(f"  start precision: {len(_SP):,} answers read from {path}", flush=True)
+        else:
+            print(f"  start precision: {path} absent -- starts keep Wikidata's literal spelling", flush=True)
+    return _SP
 
 
 test_l = label(raw_test, "test half")
@@ -1226,10 +1257,10 @@ for side in ("dad", "mom"):
 np_ = {n: int((f["lat_dad"].notna() & f["lat_mom"].notna()).sum()) for n, f in (("train", train), ("test", test))}
 print(f"  checked: every held-out partner has a birthplace inside the world; training rows may leave it empty — "
       f"both places known in {np_['train']:,} of {len(train):,} training rows and all {np_['test']:,} test rows")
-jan1 = {n: int((f["start"].str[5:] == "01-01").sum()) for n, f in (("train", train), ("test", test))}
+jan1 = {n: int((f["start"].str[5:] == "00-00").sum()) for n, f in (("train", train), ("test", test))}
 print(f"  checked: every start is a YYYY-MM-DD date inside {FLOOR}-{CEIL}, never before a known birth, and no "
       f"held-out relationship began too late for {MIN_YEARS} years before {CEIL}")
-print(f"  starts on 1 January (mostly year-only records, published as such): train {jan1['train']:,} of "
+print(f"  starts known to the YEAR only (YYYY-00-00): train {jan1['train']:,} of "
       f"{len(train):,} ({100*jan1['train']/len(train):.1f}%) · test {jan1['test']:,} of {len(test):,} "
       f"({100*jan1['test']/len(test):.1f}%)")
 for col in ("dob_dad", "dob_mom"):

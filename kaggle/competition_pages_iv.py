@@ -30,8 +30,8 @@ def numbers(comp, sub):
             "pub_pos": 100 * sum(pub) / len(pub), "prv_pos": 100 * sum(prv) / len(prv),
             "one_sided": sum(1 for r in tr if "0000-00-00" in (r["dob_a"], r["dob_b"])),
             "both_places": sum(1 for r in tr if r["lat_a"] not in ("", "nan") and r["lat_b"] not in ("", "nan")),
-            "jan1_tr": 100 * sum(1 for r in tr if r["start"][5:] == "01-01") / len(tr),
-            "jan1_te": 100 * sum(1 for r in te if r["start"][5:] == "01-01") / len(te),
+            "jan1_tr": 100 * sum(1 for r in tr if r["start"].endswith("-00-00")) / len(tr),
+            "jan1_te": 100 * sum(1 for r in te if r["start"].endswith("-00-00")) / len(te),
             "plain": R["plain"]["held"], "arta": R["artamodel"]["held"], "arta_cell": R["artamodel"]["age_cell_matched"],
             "plain_cell": R["plain"]["age_cell_matched"], "ens": R["ensemble"]["held"], "phasors": R["artamodel"]["phasors_used"],
             "n_full": R["n_full_chart_train_rows"], "sample_id": sol[0]["id"], "era": float("nan"), "gap": float("nan")}
@@ -97,9 +97,9 @@ automatically a long one.**
 
 **Temporal**: fit on pairs born up to 1900, score on pairs born after, nobody in both. Every held-out pair is
 dead by 2026, so a relationship begun after 1996 cannot reach thirty years — such rows are removed from the test
-set rather than left as free points. `start` reads `YYYY-01-01` where only its year is known —
-{N['jan1_tr']:.0f}% of training starts, {N['jan1_te']:.0f}% of test starts — and a real 1 January cannot be told
-from it. A birthplace may be empty in the training half ({N['both_places']:,} of {N['n_train']:,} rows have both);
+set rather than left as free points. `start` carries its own precision like the births: `YYYY-00-00` where only
+the year is known — {N['jan1_tr']:.0f}% of training starts, {N['jan1_te']:.0f}% of test starts — and `YYYY-MM-00`
+to the month; a real 1 January reads `YYYY-01-01` and is one. A birthplace may be empty in the training half ({N['both_places']:,} of {N['n_train']:,} rows have both);
 it is never empty in the test half.
 
 ## The Foundation's own entry: ArtaModel IV, term by term
@@ -161,7 +161,7 @@ relationship began.
   entirely (`0000-00-00`, in either column). {N['one_sided']:,} training rows are one-sided.
 * `lat_a`, `lon_a`, `lat_b`, `lon_b` — birthplaces in decimal degrees, from Wikidata's place-of-birth item;
   empty in the training half when unknown, always present in the test half.
-* `start` — the date the relationship began; `YYYY-01-01` when only the year is known.
+* `start` — the date the relationship began; `YYYY-MM-00` when known to the month, `YYYY-00-00` to the year.
 * `{lab}` — 1 if the relationship lasted thirty years or longer, else 0.
 
 **The test rows are strict**: both dates to the day, both places present, both partners dead, later birth after

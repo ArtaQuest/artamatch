@@ -63,7 +63,7 @@ def main():
     S, T, names, y, yte, later, ids = M["S_train"].astype(float), M["S_test"].astype(float), list(M["names"]), M["y"], M["yte"], M["later"], M["ids"]
     cuts = list(M["cuts"]); Z = np.load(PH, allow_pickle=True); ptr, pte, pn = Z["plain_train"], Z["plain_test"], list(Z["plain_names"])
     bodies = list(Z["bodies"]); Dtr, Mtr, Wtr = Z["theta_dad_train"], Z["theta_mom_train"], Z["theta_wed_train"]; Dte, Mte, Wte = Z["theta_dad_test"], Z["theta_mom_test"], Z["theta_wed_test"]
-    j1 = ptr[:, pn.index("start_is_jan1")] == 1.0; j1e = pte[:, pn.index("start_is_jan1")] == 1.0; Wtr = Wtr.copy(); Wte = Wte.copy(); Wtr[j1] = np.nan; Wte[j1e] = np.nan
+    j1 = ptr[:, pn.index("start_year_only")] == 1.0; j1e = pte[:, pn.index("start_year_only")] == 1.0; Wtr = Wtr.copy(); Wte = Wte.copy(); Wtr[j1] = np.nan; Wte[j1e] = np.nan
     P, labels = phase_matrix(Dtr, Mtr, Wtr, bodies, BODIES14, TERMS); Pe, _ = phase_matrix(Dte, Mte, Wte, bodies, BODIES14, TERMS)
     order = [labels.index(l) for l in DEPLOYED_PHASORS]; B = [bodies.index(b) for b in BODIES14]
     charts = np.isfinite(Dtr[:, B]).all(1) & np.isfinite(Mtr[:, B]).all(1); has = np.isfinite(P).any(1); has_te = np.isfinite(Pe).any(1)

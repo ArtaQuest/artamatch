@@ -111,7 +111,7 @@ def main():
     later = Z["yr_train"].astype(int).max(1)
     sol = pd.read_csv(SOL).set_index("id"); lab = [c for c in sol.columns if c != "Usage"][0]
     yte = sol.loc[ids, lab].to_numpy().astype(int)
-    j1 = ptr[:, pn.index("start_is_jan1")] == 1.0; j1e = pte[:, pn.index("start_is_jan1")] == 1.0
+    j1 = ptr[:, pn.index("start_year_only")] == 1.0; j1e = pte[:, pn.index("start_year_only")] == 1.0
     Wtr = Wtr.copy(); Wte = Wte.copy(); Wtr[j1] = np.nan; Wte[j1e] = np.nan
     P, labels = phase_matrix(Dtr, Mtr, Wtr, bodies, BODIES14, TERMS9); Pe, _ = phase_matrix(Dte, Mte, Wte, bodies, BODIES14, TERMS9)
     log(f"{len(labels)} phasors (9 terms x 14 bodies) · train {len(y):,} · held out {len(yte):,}")

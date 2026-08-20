@@ -85,7 +85,7 @@ def main():
     A, Bm, W = Z[f"theta_{s1}_train"], Z[f"theta_{s2}_train"], Z["theta_wed_train"]; Ae, Be, We = Z[f"theta_{s1}_test"], Z[f"theta_{s2}_test"], Z["theta_wed_test"]
     ptr, pte, pn = Z["plain_train"], Z["plain_test"], list(Z["plain_names"]); later = Z["yr_train"].astype(int).max(1)
     sol = pd.read_csv(SOL).set_index("id"); lab = [c for c in sol.columns if c != "Usage"][0]; yte = sol.loc[ids, lab].to_numpy().astype(int)
-    j1 = ptr[:, pn.index("start_is_jan1")] == 1.0; j1e = pte[:, pn.index("start_is_jan1")] == 1.0; W = W.copy(); We = We.copy(); W[j1] = np.nan; We[j1e] = np.nan
+    j1 = ptr[:, pn.index("start_year_only")] == 1.0; j1e = pte[:, pn.index("start_year_only")] == 1.0; W = W.copy(); We = We.copy(); W[j1] = np.nan; We[j1e] = np.nan
     cuts = [np.quantile(later, q) for q in QS]; log(f"cuts {[int(c) for c in cuts]}; train {len(y):,} · test {len(ids):,}")
     B = [bodies.index(b) for b in BODIES14]; charts = np.isfinite(A[:, B]).all(1) & np.isfinite(Bm[:, B]).all(1)
     P, labels = phase_matrix(A, Bm, W, bodies, BODIES14, TERMS_IV, even=True); Pe, _ = phase_matrix(Ae, Be, We, bodies, BODIES14, TERMS_IV, even=True)
@@ -109,7 +109,7 @@ def main():
         SRC_a = os.environ.get("AQ_SRC", "/tmp/aq4"); tra = pd.read_csv(f"{SRC_a}/train.csv", dtype=str); tea = pd.read_csv(f"{SRC_a}/test.csv", dtype=str)
         def cov(df, p):
             a, b = p[:, ia], p[:, ib]; la = pd.to_numeric(df.lat_a, errors="coerce").to_numpy(); lo = pd.to_numeric(df.lon_a, errors="coerce").to_numpy(); lb = pd.to_numeric(df.lat_b, errors="coerce").to_numpy(); lob = pd.to_numeric(df.lon_b, errors="coerce").to_numpy()
-            return np.column_stack([np.fmax(a, b), np.fmin(a, b), np.abs(a - b), p[:, iy], np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), np.isnan(la).astype(float) + np.isnan(lb).astype(float), p[:, pn.index("start_is_jan1")]])
+            return np.column_stack([np.fmax(a, b), np.fmin(a, b), np.abs(a - b), p[:, iy], np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), np.isnan(la).astype(float) + np.isnan(lb).astype(float), p[:, pn.index("start_year_only")]])
         Xa = np.vstack([cov(tra, ptr), cov(tea, pte)]); ya = np.concatenate([np.zeros(len(y)), np.ones(len(pte))])
         from sklearn.model_selection import StratifiedKFold
         pa = np.zeros(len(Xa)); skf = StratifiedKFold(5, shuffle=True, random_state=0)
@@ -128,7 +128,7 @@ def main():
     # plain + calendar: the start's month and day-of-year (a calendar fact, not astrology; 1-January placeholders flagged)
     import datetime as _dt
     def calX(p, Wm):
-        j1_ = p[:, pn.index("start_is_jan1")]; doy = np.full(len(p), np.nan); mon = np.full(len(p), np.nan)
+        j1_ = p[:, pn.index("start_year_only")]; doy = np.full(len(p), np.nan); mon = np.full(len(p), np.nan)
         return np.column_stack([plainX(p), j1_])
     Xc, Xce = calX(ptr, W), calX(pte, We); pc_tr = np.full(len(y), np.nan)
     for k in range(1, len(cuts)):
@@ -151,9 +151,10 @@ def main():
         swap = (b > a) | (tie & (key_b < key_a))
         lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
         d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
-        j1_ = p[:, pn.index("start_is_jan1")]
+        j1_ = p[:, pn.index("start_year_only")]
         # + the start's WEEKDAY and MONTH (calendar facts; NaN for a year-only start) — forward OOF 0.6627 -> 0.6643
-        st_ = pd.to_datetime(df.start, errors="coerce"); wd_ = st_.dt.weekday.to_numpy(dtype=float); mo_ = st_.dt.month.to_numpy(dtype=float); jan_ = j1_ == 1.0; wd_[jan_] = np.nan; mo_[jan_] = np.nan
+        st_ = pd.to_datetime(df.start, errors="coerce"); wd_ = st_.dt.weekday.astype('float64').to_numpy().copy(); mo_ = st_.dt.month.astype('float64').to_numpy().copy()
+        noday_ = df.start.str.endswith("-00").to_numpy(); wd_[noday_] = np.nan; mo_[(df.start.str.endswith("-00-00")).to_numpy()] = np.nan; mo_[noday_ & ~df.start.str.endswith("-00-00").to_numpy()] = pd.to_numeric(df.start.str[5:7], errors="coerce").to_numpy()[noday_ & ~df.start.str.endswith("-00-00").to_numpy()]
         return np.column_stack([plainX(p), lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), j1_, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd_, mo_])
     Xg, Xge = geoX(trc, ptr), geoX(tec, pte)
     # three small capacities averaged (forward OOF 0.661–0.663 for all three; the larger models overfit the era)

@@ -49,7 +49,7 @@ def plain(df):
     sy = df.start.str[:4].astype(float)
     return pd.DataFrame({"plain_age_dad_at_start": sy - yo, "plain_age_mom_at_start": sy - yy,
                          "plain_age_gap": yy - yo, "plain_start_year": sy, "plain_room": 2026 - sy,
-                         "plain_start_is_jan1": (df.start.str[5:] == "01-01").astype(float),
+                         "plain_start_year_only": df.start.str.endswith("-00-00").astype(float),
                          "plain_lat_dad": df.lat_dad, "plain_lon_dad": df.lon_dad,
                          "plain_lat_mom": df.lat_mom, "plain_lon_mom": df.lon_mom})
 

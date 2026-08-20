@@ -61,7 +61,7 @@ def main():
     Z = np.load(PH, allow_pickle=True); ptr, pte, pn = Z["plain_train"], Z["plain_test"], list(Z["plain_names"])
     bodies = list(Z["bodies"]); Dtr, Mtr, Wtr = Z["theta_dad_train"], Z["theta_mom_train"], Z["theta_wed_train"]
     Dte, Mte, Wte = Z["theta_dad_test"], Z["theta_mom_test"], Z["theta_wed_test"]
-    j1 = ptr[:, pn.index("start_is_jan1")] == 1.0; j1e = pte[:, pn.index("start_is_jan1")] == 1.0
+    j1 = ptr[:, pn.index("start_year_only")] == 1.0; j1e = pte[:, pn.index("start_year_only")] == 1.0
     Wtr = Wtr.copy(); Wte = Wte.copy(); Wtr[j1] = np.nan; Wte[j1e] = np.nan
     P, labels = phase_matrix(Dtr, Mtr, Wtr, bodies, BODIES14, TERMS); Pe, _ = phase_matrix(Dte, Mte, Wte, bodies, BODIES14, TERMS)
     dcols = [labels.index(l) for l in DEPLOYED_PHASORS]

@@ -47,7 +47,7 @@ def progressed(df, later_col_unused=None):
     out = {"a": np.full((n, 5), np.nan), "b": np.full((n, 5), np.nan)}
     cache = {}
     for i, r in enumerate(df.itertuples(index=False)):
-        if r.start[5:] == "01-01":
+        if r.start.endswith("-00"):
             continue
         try:
             sy, sm, sd = int(r.start[:4]), int(r.start[5:7]), int(r.start[8:10])
@@ -78,7 +78,7 @@ def main():
     Z = np.load(PH, allow_pickle=True); s1, s2 = list(Z["slots"]); bodies = list(Z["bodies"]); y = Z["y_train"].astype(np.int64); ids = Z["id_test"]
     A, B, W = Z[f"theta_{s1}_train"], Z[f"theta_{s2}_train"], Z["theta_wed_train"]; Ae, Be, We = Z[f"theta_{s1}_test"], Z[f"theta_{s2}_test"], Z["theta_wed_test"]
     ptr, pte, pn = Z["plain_train"], Z["plain_test"], list(Z["plain_names"]); later = Z["yr_train"].astype(int).max(1); cuts = [np.quantile(later, q) for q in QS]
-    j1 = ptr[:, pn.index("start_is_jan1")] == 1.0; j1e = pte[:, pn.index("start_is_jan1")] == 1.0; W = W.copy(); We = We.copy(); W[j1] = np.nan; We[j1e] = np.nan
+    j1 = ptr[:, pn.index("start_year_only")] == 1.0; j1e = pte[:, pn.index("start_year_only")] == 1.0; W = W.copy(); We = We.copy(); W[j1] = np.nan; We[j1e] = np.nan
     tr = pd.read_csv(f"{SRC}/train.csv", dtype=str); te = pd.read_csv(f"{SRC}/test.csv", dtype=str)
     members_tr, members_te, names, meta = [], [], [], []
     def add(s_tr, s_te, name, nfit):
@@ -87,8 +87,9 @@ def main():
         log(f"  {name:<44} fit {nfit:>7,}  fwd-OOF {o:.4f}")
     # ---- CALENDAR + NUMEROLOGY (LightGBM) ----
     def cal(df, p):
-        st = pd.to_datetime(df.start, errors="coerce"); m = st.dt.month.to_numpy(dtype=float); wd = st.dt.weekday.to_numpy(dtype=float); doy = st.dt.dayofyear.to_numpy(dtype=float)
-        jan = (df.start.str[5:] == "01-01").to_numpy(); m[jan] = np.nan; wd[jan] = np.nan; doy[jan] = np.nan
+        st = pd.to_datetime(df.start, errors="coerce"); m = st.dt.month.astype('float64').to_numpy().copy(); wd = st.dt.weekday.astype('float64').to_numpy().copy(); doy = st.dt.dayofyear.astype('float64').to_numpy().copy()
+        noday = df.start.str.endswith("-00").to_numpy(); yearonly = df.start.str.endswith("-00-00").to_numpy(); wd[noday] = np.nan; doy[noday] = np.nan; m[yearonly] = np.nan
+        m[noday & ~yearonly] = pd.to_numeric(df.start.str[5:7], errors="coerce").to_numpy()[noday & ~yearonly]
         ma = pd.to_numeric(df.dob_a.str[5:7], errors="coerce").replace(0, np.nan).to_numpy(); mb = pd.to_numeric(df.dob_b.str[5:7], errors="coerce").replace(0, np.nan).to_numpy()
         lpa = np.array([lifepath(d) for d in df.dob_a]); lpb = np.array([lifepath(d) for d in df.dob_b]); lps = np.array([lifepath(d) for d in df.start])
         dm = np.abs(ma - mb); dm = np.fmin(dm, 12 - dm)

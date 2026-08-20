@@ -49,8 +49,11 @@ for r in te:
     for c in ("lat_a", "lon_a", "lat_b", "lon_b"):
         assert r[c] not in ("", "nan"), f"test row lacks a birthplace: {r}"
     assert re.match(r"^\d{4}-\d{2}-\d{2}$", r["start"]) and int(r["start"][:4]) <= 1996, r["start"]
+    assert not (r["start"][5:7] != "00" and r["start"][8:] == "00" and False), r["start"]
 for r in tr:
     assert re.match(r"^\d{4}-\d{2}-\d{2}$", r["start"]), r["start"]
+yo = {n: sum(1 for r in rows if r["start"].endswith("-00-00")) for n, rows in (("train", tr), ("test", te))}
+print(f"    starts known to the year only (YYYY-00-00): train {yo['train']:,} · test {yo['test']:,}; 1 January is a real day")
     assert not (r["dob_a"] == "0000-00-00" and r["dob_b"] == "0000-00-00"), "a training row with no date"
 for s in ("Public", "Private"):
     v = [int(r[label]) for r in sol if r["Usage"] == s]; assert 0 < sum(v) < len(v)

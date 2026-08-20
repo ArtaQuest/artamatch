@@ -330,7 +330,7 @@ def couple(dob_o, lat_o, lon_o, dob_y, lat_y, lon_y, start=None):
     if start:
         try:
             P = _panchanga_at(start)
-            real_day = start[5:] != "01-01"
+            real_day = not start.endswith("-00")
             for g, lon in P.get("lon", {}).items():
                 # the wedding sky, sidereal, noon UT: every graha on a real day; on a year-only start (published
                 # as 1 January) only the bodies that move slowly enough for the year to place them

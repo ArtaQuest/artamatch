@@ -96,7 +96,7 @@ def theta(dob, lat, lon, hour, natal):
 
 def _work(args):
     i, dd, latd, lond, dm, latm, lonm, start = args
-    wed = start if start[5:] != "01-01" else start[:4] + "-00-00"       # a 1 January start is a year-only record
+    wed = start                                                          # precision is in the string: YYYY-00-00 year, YYYY-MM-00 month
     return i, theta(dd, latd, lond, 9, True), theta(dm, latm, lonm, 9, True), theta(wed, None, None, 12, False)
 
 
@@ -136,13 +136,13 @@ def main():
         yd = pd.to_numeric(df[f"dob_{s1}"].str[:4], errors="coerce").where(df[f"dob_{s1}"] != "0000-00-00")
         ym = pd.to_numeric(df[f"dob_{s2}"].str[:4], errors="coerce").where(df[f"dob_{s2}"] != "0000-00-00")
         sy = df.start.str[:4].astype(float)
-        return np.column_stack([sy - yd, sy - ym, ym - yd, sy, (df.start.str[5:] == "01-01").astype(float)])
+        return np.column_stack([sy - yd, sy - ym, ym - yd, sy, df.start.str.endswith("-00-00").astype(float)])
     os.makedirs(OUT, exist_ok=True)
     np.savez_compressed(f"{OUT}/phases.npz", **{f"theta_{s1}_train": Dtr, f"theta_{s2}_train": Mtr, "theta_wed_train": Wtr,
                         f"theta_{s1}_test": Dte, f"theta_{s2}_test": Mte, "theta_wed_test": Wte}, bodies=np.array(BODIES, dtype=object), slots=np.array([s1, s2], dtype=object),
                         y_train=tr[LABEL].to_numpy().astype(np.int8), id_test=te.id.to_numpy() if "id" in te else np.arange(len(te)),
                         plain_train=plain(tr), plain_test=plain(te),
-                        plain_names=np.array([f"age_{s1}_at_start", f"age_{s2}_at_start", "age_gap", "start_year", "start_is_jan1"], dtype=object),
+                        plain_names=np.array([f"age_{s1}_at_start", f"age_{s2}_at_start", "age_gap", "start_year", "start_year_only"], dtype=object),
                         yr_train=np.column_stack([pd.to_numeric(d1.str[:4], errors="coerce").fillna(0),
                                                   pd.to_numeric(d2.str[:4], errors="coerce").fillna(0)]).astype(np.int16))
     full = np.isfinite(Dtr).all(1) & np.isfinite(Mtr).all(1)

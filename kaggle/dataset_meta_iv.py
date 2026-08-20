@@ -8,7 +8,7 @@ ref, d, src = sys.argv[1], sys.argv[2], sys.argv[3]
 tr = list(csv.DictReader(open(f"{src}/train.csv"))); te = list(csv.DictReader(open(f"{src}/test.csv")))
 both = sum(1 for r in tr if r["lat_a"] not in ("", "nan") and r["lat_b"] not in ("", "nan"))
 one = sum(1 for r in tr if "0000-00-00" in (r["dob_a"], r["dob_b"]))
-jan1_tr = sum(1 for r in tr if r["start"][5:] == "01-01"); jan1_te = sum(1 for r in te if r["start"][5:] == "01-01")
+jan1_tr = sum(1 for r in tr if r["start"].endswith("-00-00")); jan1_te = sum(1 for r in te if r["start"].endswith("-00-00"))
 desc = f"""# Let's end this loneliness epidemic with astrology.
 
 **Fourth edition — genderless.** Two people's birth dates and birthplaces and the date their relationship began.
@@ -23,7 +23,7 @@ excluded.
 |---|---|
 | `dob_a`, `dob_b` | the two partners' dates of birth, `YYYY-MM-DD` (no meaning attaches to which is which) |
 | `lat_a`, `lon_a`, `lat_b`, `lon_b` | their birthplaces, decimal degrees (empty when Wikidata has none) |
-| `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD`, 1 January where only the year is known |
+| `start` | the date the relationship began — the wedding date for a marriage — `YYYY-MM-DD`; `YYYY-MM-00` when known to the month, `YYYY-00-00` to the year (Wikidata's precision, so a real 1 January is a real 1 January) |
 | `lasted_30_years` | 1 if the relationship lasted thirty years or longer, else 0 |
 
 ## Both orders, on purpose
@@ -58,8 +58,9 @@ are strict: both dates to the day, both birthplaces present, the start in or bef
 reach thirty years before 2026 and is removed rather than left as a free point). The training rows are
 inclusive: {one:,} of {len(tr):,} have one partner absent from Wikidata (`0000-00-00`, in either column), dates
 may be coarse (`1809-11-00`, `1802-00-00`), and a birthplace may be empty; both places are known in {both:,}
-training rows. The start reads `YYYY-01-01` where only its year is known — {100*jan1_tr/len(tr):.0f}% of
-training starts, {100*jan1_te/len(te):.0f}% of test starts — and a real 1 January cannot be told from it.
+training rows. The start carries its own precision like the births: `YYYY-00-00` where only the year is known —
+{100*jan1_tr/len(tr):.0f}% of training starts, {100*jan1_te/len(te):.0f}% of test starts — and `YYYY-MM-00` to the
+month; a real 1 January reads `YYYY-01-01` and is one.
 
 ## The bar
 

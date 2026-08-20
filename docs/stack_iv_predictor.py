@@ -148,8 +148,8 @@ def _geo_x(age1, age2, la, lo, lb, lob, start_year, jan1, wd=float("nan"), mo=fl
 def predict(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, start):
     """Probability that the relationship lasted thirty years, with every member's part. Exactly symmetric in the pair."""
     M = _M; labels = M["members"]["AM_GREEDY"]["labels"]
-    jan1 = 1.0 if start[5:] == "01-01" else 0.0
-    wed = start if jan1 == 0.0 else start[:4] + "-00-00"
+    jan1 = 1.0 if start.endswith("-00-00") else 0.0                       # "year only" is spelled YYYY-00-00; a 1 January is a day
+    wed = start
     t1, t2, tw = theta(dob_1, lat_1, lon_1), theta(dob_2, lat_2, lon_2), theta(wed, natal=False)
     P12, P21 = phases(t1, t2, tw, labels), phases(t2, t1, tw, labels)
     g12, acc_g = am_logit(M["members"]["AM_GREEDY"], P12); g21, _ = am_logit(M["members"]["AM_GREEDY"], P21)
@@ -159,7 +159,9 @@ def predict(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, start):
     age1 = float(ys - y1) if y1 else float("nan"); age2 = float(ys - y2) if y2 else float("nan")
     import datetime as _dt
     try:
-        _sd = _dt.date(ys, int(start[5:7]), int(start[8:10])); wd_, mo_ = (float(_sd.weekday()), float(_sd.month)) if jan1 == 0.0 else (float("nan"), float("nan"))
+        if start.endswith("-00-00"): wd_, mo_ = float("nan"), float("nan")
+        elif start.endswith("-00"): wd_, mo_ = float("nan"), float(int(start[5:7]))
+        else: _sd = _dt.date(ys, int(start[5:7]), int(start[8:10])); wd_, mo_ = float(_sd.weekday()), float(_sd.month)
     except Exception:
         wd_, mo_ = float("nan"), float("nan")
     x = _geo_x(age1, age2, lat_1, lon_1, lat_2, lon_2, ys, jan1, wd_, mo_)
@@ -240,14 +242,14 @@ def best_matches(dob, lat, lon, start=None, top=20, min_age=18, max_age=100, cap
     M = _M; labels = M["members"]["AM_GREEDY"]["labels"]; caps = capitals if capitals is not None else _CAPS
     if caps is None:
         raise RuntimeError("capitals not loaded — pass capitals=[{country, capital, lat, lon}, ...] or set stack_iv_predictor._CAPS")
-    today = dt.date.today(); start = start or today.isoformat(); jan1 = 1.0 if start[5:] == "01-01" else 0.0
+    today = dt.date.today(); start = start or today.isoformat(); jan1 = 1.0 if start.endswith("-00-00") else 0.0
     sy, sm, sd = int(start[:4]), max(1, int(start[5:7])), max(1, int(start[8:10]))
     # the candidate days: everyone aged min_age..max_age at the start
     d_lo = dt.date(sy - max_age, sm, sd); d_hi = dt.date(sy - min_age, sm, sd); ndays = (d_hi - d_lo).days + 1
     days = [d_lo + dt.timedelta(days=i) for i in range(ndays)]; jds = np.array([_jd(d.year, d.month, d.day, 9.0) for d in days])
     yrs = np.array([d.year for d in days]); cand_years = np.arange(yrs.min(), yrs.max() + 1)
     # the person's and the start's phases (exact), the candidates' outer planets per day
-    t1 = theta(dob, lat, lon); wed = start if jan1 == 0.0 else start[:4] + "-00-00"; tw = theta(wed, natal=False)
+    t1 = theta(dob, lat, lon); tw = theta(start, natal=False)
     L = _outer_lon_by_day(jds); col = {b: j for j, b in enumerate(BODIES14)}
     cand = np.full((ndays, len(BODIES14)), np.nan); cand[:, col["uranus"]] = L["uranus"]; cand[:, col["neptune"]] = L["neptune"]; cand[:, col["pluto"]] = L["pluto"]
     # ArtaModel logits per day, both orders (person = slot 1 / slot 2), vectorised over the stages' phasors
@@ -271,7 +273,9 @@ def best_matches(dob, lat, lon, start=None, top=20, min_age=18, max_age=100, cap
     # geography per (year, capital)
     y1 = int(dob[:4]) if _prec(dob) else None; age1 = float(sy - y1) if y1 else float("nan")
     try:
-        _sd = dt.date(sy, sm, sd); wd_, mo_ = (float(_sd.weekday()), float(_sd.month)) if jan1 == 0.0 else (float("nan"), float("nan"))
+        if start.endswith("-00-00"): wd_, mo_ = float("nan"), float("nan")
+        elif start.endswith("-00"): wd_, mo_ = float("nan"), float(sm)
+        else: _sd = dt.date(sy, sm, sd); wd_, mo_ = float(_sd.weekday()), float(_sd.month)
     except Exception:
         wd_, mo_ = float("nan"), float("nan")
     rows = []
@@ -301,7 +305,7 @@ def best_matches(dob, lat, lon, start=None, top=20, min_age=18, max_age=100, cap
         out.append({"dob": days[di].isoformat(), "country": cp["country"], "capital": cp["capital"], "lat": cp["lat"], "lon": cp["lon"],
                     "probability": float(1 / (1 + np.exp(-Z[di, ci]))), "geo_probability": float(geo[y_i, ci]), "am_greedy_logit": float(am_g[di]), "am_fixed_logit": float(am_f[di])})
     return {"start": start, "group": group, "n_candidates": int(ndays * len(caps)), "n_days": int(ndays), "n_capitals": len(caps), "matches": out,
-            "note": "the candidate's phases are the outer planets at 09:00 UT of the day (weekly samples interpolated); the capital enters through the geography member"}
+            "note": "the candidate's phases are the outer planets at 09:00 UT of the day (weekly samples interpolated); the capital enters through the geography member; a year-only start is spelled YYYY-00-00"}
 
 
 # ── THE BEST START DAY (electional) ──────────────────────────────────────────────────────────────────────────────
@@ -313,8 +317,7 @@ def best_start_days(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, from_date=None, ye
     import datetime as dt
     M = _M; labels = M["members"]["AM_GREEDY"]["labels"]; col = {b: j for j, b in enumerate(BODIES14)}
     today = dt.date.today(); d0 = dt.date.fromisoformat(from_date) if from_date else today
-    ndays0 = int(round(365.2425 * years)); days = [d for d in (d0 + dt.timedelta(days=i) for i in range(ndays0)) if not (d.month == 1 and d.day == 1)]   # 1 January is the dataset's year-only placeholder: never a scorable day
-    ndays = len(days)
+    ndays = int(round(365.2425 * years)); days = [d0 + dt.timedelta(days=i) for i in range(ndays)]          # every day, 1 January included: "year only" is spelled YYYY-00-00
     jds = np.array([_jd(d.year, d.month, d.day, 12.0) for d in days])
     t1, t2 = theta(dob_1, lat_1, lon_1), theta(dob_2, lat_2, lon_2)
     L = _outer_lon_by_day(jds); TW = np.full((ndays, len(BODIES14)), np.nan); TW[:, col["uranus"]] = L["uranus"]; TW[:, col["neptune"]] = L["neptune"]; TW[:, col["pluto"]] = L["pluto"]
@@ -354,5 +357,5 @@ def best_start_days(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, from_date=None, ye
             best_in_month[k] = i
     options = [dict(row(i), month=k) for k, i in sorted(best_in_month.items(), key=lambda kv: -Z[kv[1]])][:top]
     raw = [row(i) for i in np.argsort(-Z)[:top]]
-    return {"from": d0.isoformat(), "years": years, "n_days": ndays, "group": group, "best_days": options, "raw_top_days": raw, "note": "1 January is skipped (the dataset's year-only placeholder)",
+    return {"from": d0.isoformat(), "years": years, "n_days": ndays, "group": group, "best_days": options, "raw_top_days": raw, "note": "every calendar day scored; a year-only start is spelled YYYY-00-00",
             "best_day_per_month": [dict(row(i), month=k) for k, i in sorted(best_in_month.items())]}

@@ -837,8 +837,47 @@ def _start_prec_table():
             print(f"  start precision: {len(_SP):,} answers read from {path}", flush=True)
         else:
             print(f"  start precision: {path} absent -- starts keep Wikidata's literal spelling", flush=True)
+        try:
+            _SP.update(_extra_prec)
+        except NameError:
+            pass
     return _SP
 
+
+# ── THE WIKI-HARVEST ROWS (operator 2026-08-20: dates recovered from 21 language Wikipedias) ─────────────────────
+# kaggle/wiki_start_harvest.py + merge_wiki_starts.py date the P26 marriages Wikidata knows but carries no P580
+# for; AQ_WIKI_STARTS points at the trust-merged file and AQ_WIKI_POOL at the candidate pool. Every row flows
+# through the SAME label(), filters, dedup and split as the queried rows; its start precision rides the same
+# _start_prec_table the P580 spellings use, so a year-only harvested start ships as YYYY-00-00 like every other.
+_WIKI_STARTS = os.environ.get("AQ_WIKI_STARTS", "")
+if _WIKI_STARTS and os.path.exists(_WIKI_STARTS):
+    _wpool = pd.read_csv(os.environ.get("AQ_WIKI_POOL", "/tmp/aqwiki/pool.csv"), dtype=str, keep_default_na=False)
+    _wpool = _wpool[_wpool["a"] != "#slice"].drop_duplicates(["a", "b"])
+    _wst = pd.read_csv(_WIKI_STARTS, dtype=str, keep_default_na=False)
+    _w = _wst.merge(_wpool, on=["a", "b"], how="inner")
+    # the label needs day-parseable dates: a year-only harvested start reads YYYY-01-01 here (Wikidata's own
+    # spelling convention) and is re-encoded to YYYY-00-00 at write-out through the precision table below
+    _w["start_lit"] = _w["start"].str.replace(r"-00-00$", "-01-01", regex=True).str.replace(r"-00$", "-01", regex=True)
+    _w["end_lit"] = np.where(_w["end"] != "", _w["end"], np.where(_w.get("end_year", pd.Series([""] * len(_w))).fillna("") != "", _w.get("end_year", pd.Series([""] * len(_w))).fillna("") + "-01-01", ""))
+    frame = pd.DataFrame({"a": "http://www.wikidata.org/entity/" + _w["a"], "b": "http://www.wikidata.org/entity/" + _w["b"],
+                          "adob": _w["adob"], "aprec": _w["aprec"], "bdob": _w["bdob"], "bprec": _w["bprec"],
+                          "start": _w["start_lit"], "end": _w["end_lit"], "cause": "", "adeath": _w["adeath"], "bdeath": _w["bdeath"],
+                          "apob": np.where((_w["alat"] != "") & (_w["alon"] != ""), "Point(" + _w["alon"] + " " + _w["alat"] + ")", ""),
+                          "bpob": np.where((_w["blat"] != "") & (_w["blon"] != ""), "Point(" + _w["blon"] + " " + _w["blat"] + ")", ""),
+                          "rel": "P26wiki"})
+    ya = pd.to_numeric(frame["adob"].str[:4], errors="coerce").fillna(0); yb = pd.to_numeric(frame["bdob"].str[:4], errors="coerce").fillna(0)
+    later_w = np.maximum(ya, yb)
+    is_test = (later_w > CUT) & (pd.to_numeric(_w["aprec"], errors="coerce") >= 11) & (pd.to_numeric(_w["bprec"], errors="coerce") >= 11)
+    wiki_test = frame[is_test.to_numpy()]; wiki_train = frame[(later_w <= CUT).to_numpy()]
+    n_lost = int(((later_w > CUT) & ~is_test).sum())
+    print(f"  wiki harvest: {len(frame):,} dated couples joined the pipeline — {len(wiki_train):,} to the training half, "
+          f"{len(wiki_test):,} to the held-out half, {n_lost:,} post-{CUT} couples too coarse for the test's day-precision rule (dropped)")
+    raw_test = pd.concat([raw_test, wiki_test], ignore_index=True)
+    raw_train = pd.concat([raw_train, wiki_train], ignore_index=True)
+    # the harvested precisions ride the same start-precision table as Wikidata's own
+    _extra_prec = {(r["a"], r["b"], r["start_lit"][:10]): (11 if not r["start"].endswith("-00") else (10 if not r["start"].endswith("-00-00") else 9)) for _, r in _w.iterrows()}
+else:
+    _extra_prec = {}
 
 test_l = label(raw_test, "test half")
 train_l = label(raw_train, "train half")

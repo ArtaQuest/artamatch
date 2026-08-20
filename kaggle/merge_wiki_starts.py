@@ -43,12 +43,13 @@ def main():
         if len(r) < 7:
             continue
         a, b, st, prec, lang = r[0], r[1], r[2], int(r[3]), r[4]
-        hits[(a, b)].append((st, prec, lang))
+        endy = r[7] if len(r) > 7 and r[7] else ""
+        hits[(a, b)].append((st, prec, lang, endy))
     out = os.path.join(DIR, "_wikistarts.csv"); n_tier0 = n_conflict = 0
     with open(out, "w", newline="") as f:
-        w = csv.writer(f); w.writerow(["a", "b", "start", "prec", "lang", "tier"])
+        w = csv.writer(f); w.writerow(["a", "b", "start", "prec", "lang", "tier", "end_year"])
         for k, hs in hits.items():
-            scored = sorted(((0 if lang in own[k] else 1, -prec, LANGS.index(lang) if lang in LANGS else 99, st, prec, lang) for st, prec, lang in hs))
+            scored = sorted(((0 if lang in own[k] else 1, -prec, LANGS.index(lang) if lang in LANGS else 99, st, prec, lang, endy) for st, prec, lang, endy in hs))
             tier0 = [h for h in scored if h[0] == 0]
             cand = tier0 if tier0 else scored
             years = collections.Counter(h[3][:4] for h in cand)
@@ -57,7 +58,8 @@ def main():
                 best_year = max(years.items(), key=lambda kv: (kv[1], -min(h[2] for h in cand if h[3][:4] == kv[0])))[0]
                 cand = [h for h in cand if h[3][:4] == best_year]
             top = cand[0]; n_tier0 += top[0] == 0
-            w.writerow([k[0], k[1], top[3], top[4], top[5], top[0]])
+            endy = next((h[6] for h in cand if h[6]), "")
+            w.writerow([k[0], k[1], top[3], top[4], top[5], top[0], endy])
     print(f"  {len(hits):,} couples dated · {n_tier0:,} from a partner's own language (tier 0) · {n_conflict:,} cross-language year disagreements resolved by tier/majority · wrote {out}")
 
 

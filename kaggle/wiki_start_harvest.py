@@ -36,7 +36,7 @@ import concurrent.futures as cf
 
 DIR = os.environ.get("AQ_DIR", "/tmp/aqwiki"); os.makedirs(DIR, exist_ok=True)
 UA = "ArtaMatch/5.0 (https://www.artaquest.com; arash@artaquest.org) wedding-date harvest"
-LANGS = [l for l in os.environ.get("AQ_LANGS", "en,de,fr,es,it,ru,ja,pt,pl,nl,sv,zh,uk,cs,fa,ar,tr,hu,fi,da").split(",") if l]
+LANGS = [l for l in os.environ.get("AQ_LANGS", "en,de,fr,es,it,ru,ja,pt,pl,nl,sv,zh,uk,cs,fa,ar,tr,hu,fi,da,hy").split(",") if l]   # 20 + Armenian (operator 2026-08-20)
 FLOOR, CEIL = 1600, 2026
 T0 = time.time(); log = lambda *a: print(f"[{time.time()-T0:7.0f}s]", *a, flush=True)
 
@@ -46,7 +46,7 @@ SPOUSE_PARAMS = {"en": ["spouse", "wife", "husband", "partner"], "de": ["ehepart
                  "es": ["cónyuge", "pareja"], "it": ["coniuge", "consorte"], "ru": ["супруг", "супруга"], "ja": ["配偶者"], "pt": ["cônjuge"],
                  "pl": ["małżonek", "małżonka", "żona", "mąż"], "nl": ["echtgenoot", "echtgenote", "partner"], "sv": ["make", "maka", "partner"],
                  "zh": ["配偶"], "uk": ["дружина", "чоловік", "у шлюбі з"], "cs": ["choť", "manžel", "manželka", "partner"], "fa": ["همسر"],
-                 "ar": ["الزوج", "الزوجة", "زوجة", "زوج"], "tr": ["evlilik", "eş"], "hu": ["házastárs"], "fi": ["puoliso"], "da": ["ægtefælle"]}
+                 "ar": ["الزوج", "الزوجة", "زوجة", "زوج"], "tr": ["evlilik", "eş"], "hu": ["házastárs"], "fi": ["puoliso"], "da": ["ægtefælle"], "hy": ["ամուսին", "կին", "ամուսնացած"]}
 YEAR = r"(1[6-9]\d\d|20[0-2]\d)"
 
 
@@ -151,19 +151,29 @@ def _find_dates(lang, text, spouse_names):
             body = m.group(1)
             if not re.search(name_re, body, re.I):
                 continue
-            full = re.search(r"(\d{1,2})\s+(\w+)\s+" + YEAR + r"|" + YEAR + r"-(\d\d)-(\d\d)", body)
+            iso = re.search(YEAR + r"-(\d\d)-(\d\d)", body)
+            if iso:
+                return iso.group(0), 11, body[:160]
+            MONTHS_EN = {m: i + 1 for i, m in enumerate(("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"))}
+            d1 = re.search(r"(\d{1,2})\s+([A-Za-z]+)\s+" + YEAR, body) or re.search(r"([A-Za-z]+)\s+(\d{1,2}),\s*" + YEAR, body)
+            if d1:
+                g = d1.groups(); mon = MONTHS_EN.get((g[1] if g[0].isdigit() else g[0]).lower()); day = int(g[0] if g[0].isdigit() else g[1]); yr4 = g[2]
+                if mon:
+                    return f"{yr4}-{mon:02d}-{day:02d}", 11, body[:160]
             yr = re.search(YEAR, body)
             if yr:
                 return yr.group(0) + "-00-00", 9, body[:160]
     # 2. the spouse parameter's value line: |spouse = [[Name]] (m. 1903; div 1919) / ⚭ 1903 / с 1903
     for par in SPOUSE_PARAMS.get(lang, []) + SPOUSE_PARAMS.get("en", []):
-        for m in re.finditer(r"\|\s*" + re.escape(par) + r"\s*=([^\n|]*" + name_re + r"[^\n]*)", text, re.I):
+        for m in re.finditer(r"\|\s*" + re.escape(par) + r"\s*=([^\n]*?" + name_re + r"[^\n]*)", text, re.I):
             line = m.group(1)
             yr = re.search(YEAR, line)
             if yr:
                 return yr.group(0) + "-00-00", 9, line[:160]
-    # 3. a parenthetical right after the spouse's name anywhere: Name (m. 1903), Name (⚭ 1903), Name (с 1903 года)
-    m = re.search(name_re + r"[^\n(]{0,40}\((?:[^)]{0,30}?)" + YEAR + r"[^)]*\)", text, re.I)
+    # 3. a parenthetical right after the spouse's name, REQUIRING a marriage marker — "(1848–1919)" is a lifespan
+    MARK = {"en": r"m\.|marr", "de": r"⚭|verh", "fr": r"mari|ép", "es": r"matr|casad", "it": r"spos", "ru": r"брак|с\s", "uk": r"шлюб|з\s", "pl": r"ślub|od\s", "pt": r"casad", "nl": r"getr", "sv": r"gift", "da": r"gift", "fi": r"avio", "cs": r"sňat|od\s", "hu": r"házas", "tr": r"evl", "fa": r"ازدواج", "ar": r"تزوج|زواج", "ja": r"結婚", "zh": r"结婚|結婚", "hy": r"ամուսն"}
+    mark = MARK.get(lang, r"⚭|m\.")
+    m = re.search(name_re + r"[^\n(]{0,40}\((?:[^)]{0,40}?(?:" + mark + r")[^)]{0,40}?)" + YEAR + r"[^)]*\)", text, re.I)
     if m:
         yr = re.search(YEAR, m.group(0))
         return yr.group(0) + "-00-00", 9, m.group(0)[:160]
@@ -207,7 +217,14 @@ def harvest(langs=None):
                     continue
                 hit = _find_dates(lang, text, names)
                 if hit:
-                    st, prec, snip = hit
+                    st, prec, snip = hit; sy = int(st[:4])
+                    by = [int(r[k][:4]) for k in ("adob", "bdob") if r[k][:4].isdigit()]
+                    ey = [int(r[k][:4]) for k in ("end", "adeath", "bdeath") if r[k][:4].isdigit()]
+                    # a wedding before either 14th birthday, or after the marriage's own end, is a misread — dropped
+                    if by and sy < max(by) + 14:
+                        continue
+                    if ey and sy > min(ey):
+                        continue
                     w.writerow([r["a"], r["b"], st, prec, lang, subj, snip.replace("\n", " ")]); got += 1
             if i % 400 == 0 and i:
                 f.flush(); log(f"  {lang}: {i:,}/{len(jobs):,} read · {got:,} dates found")

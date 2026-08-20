@@ -179,7 +179,11 @@ T0 = time.time()
 FLOOR = 1600
 CEIL = int(os.environ.get("AQ_CEIL", str(time.gmtime().tm_year)))
 CUT = 1900                        # couples whose later known birth is after this are held out
-MIN_YEARS = 30                    # the label's threshold
+MIN_YEARS = int(os.environ.get("AQ_MIN_YEARS", "30"))     # the label's threshold (EDITION V, operator 2026-08-20: 50 — the sweep showed AUC rising with the cut while 50 keeps an 11% positive class)
+LABEL = f"lasted_{MIN_YEARS}_years"
+# DATA-ERROR CEILING: one train "marriage" read 173 years (a wrong-century end date). Nothing real outlasts the
+# test half's own maximum (91), so anything past 85 is a recording error, dropped and counted — never labelled.
+MAX_DUR_YEARS = float(os.environ.get("AQ_MAX_DUR_YEARS", "85"))
 MAX_GAP_YEARS = 60
 # THE RELATIONSHIPS. Any partnership two people chose: marriage, an unmarried partnership, a business or sporting
 # partnership, and Wikidata's general "significant person" relation. Family relations (sibling, relative,
@@ -785,7 +789,11 @@ def label(mar, tag):
     if bad.any():
         print(f"  {tag}: {int(bad.sum()):,} ended BEFORE they started — dropped as data errors")
         mar = mar[~bad].reset_index(drop=True)
-    mar["lasted_30_years"] = (mar["_dur"] >= MIN_YEARS).astype(int)
+    bad_dur = mar["_dur"] > MAX_DUR_YEARS
+    if bad_dur.any():
+        print(f"  {tag}: {int(bad_dur.sum()):,} rows with an impossible duration (> {MAX_DUR_YEARS:.0f} years) — data errors, dropped")
+        mar = mar[~bad_dur].reset_index(drop=True)
+    mar[LABEL] = (mar["_dur"] >= MIN_YEARS).astype(int)
     # THE START YEAR, kept. It is exact at every precision of the underlying date, which is why it and not the
     # full date is the column (see the header). Two sanity rules, both data errors when violated: a start must
     # not precede either KNOWN birth, and it must sit inside the window the whole file lives in.
@@ -911,10 +919,10 @@ test_l = scope_partners(test_l, "test half")
 train_l = scope_partners(train_l, "train half")
 
 for tag, m in (("test", test_l), ("train", train_l)):
-    print(f"\n  {tag}: {len(m):,} labellable · {100*m['lasted_30_years'].mean():.1f}% reached {MIN_YEARS} years "
+    print(f"\n  {tag}: {len(m):,} labellable · {100*m[LABEL].mean():.1f}% reached {MIN_YEARS} years "
           f"· median duration {m['_dur'].median():.1f}")
     for src, g in m.groupby("_source"):
-        print(f"      {src:<18} {len(g):>7,}  {100*g['lasted_30_years'].mean():5.1f}% reach {MIN_YEARS}")
+        print(f"      {src:<18} {len(g):>7,}  {100*g[LABEL].mean():5.1f}% reach {MIN_YEARS}")
 
 print("\n  THE CONFOUND, printed rather than described: those two rates differ enormously, and a model cannot")
 print("  see which case a couple is in — it is not a column. It can see things that correlate with it, so the")
@@ -935,7 +943,7 @@ for k, v in named.most_common():
 print("\n  by relationship type (labellable rows, before dedup):")
 for tag, m in (("test", test_l), ("train", train_l)):
     for rel, g in m.groupby("rel"):
-        print(f"      {tag:<5} {RELS.get(rel, rel):<30} {len(g):>8,}  {100*g['lasted_30_years'].mean():5.1f}% "
+        print(f"      {tag:<5} {RELS.get(rel, rel):<30} {len(g):>8,}  {100*g[LABEL].mean():5.1f}% "
               f"reach {MIN_YEARS} years")
 
 #%% [markdown]
@@ -1172,8 +1180,8 @@ assert not (tp & sp), f"{len(tp & sp)} people on both sides"
 print(f"  train {len(train):,} couples (later known birth {train['_later'].min()}-{train['_later'].max()}) · "
       f"test {len(test):,} ({test['_later'].min()}-{test['_later'].max()})")
 print(f"  checked: the split is temporal at {CUT}, and no person appears on both sides")
-print(f"  positive rate: train {100*train['lasted_30_years'].mean():.2f}% · "
-      f"test {100*test['lasted_30_years'].mean():.2f}%")
+print(f"  positive rate: train {100*train[LABEL].mean():.2f}% · "
+      f"test {100*test[LABEL].mean():.2f}%")
 print("  those differ, and they should: earlier-born couples died younger and their records are thinner, so")
 print("  fewer of their marriages reach thirty years.")
 
@@ -1195,7 +1203,7 @@ print("  fewer of their marriages reach thirty years.")
 print("\n  positive rate by the couple's LATER birth decade:")
 for name, frame in (("train", train), ("test", test)):
     y = frame["_later"] // 10 * 10
-    tab = frame.groupby(y)["lasted_30_years"].agg(["mean", "size"])
+    tab = frame.groupby(y)[LABEL].agg(["mean", "size"])
     tab = tab[tab["size"] >= 25]
     if tab.empty:
         continue
@@ -1213,7 +1221,7 @@ for name, frame in (("train", train), ("test", test)):
 
 print("\n  positive rate by the START decade (the wedding decade for a marriage):")
 for name, frame in (("train", train), ("test", test)):
-    tab = frame.groupby(frame["start_year"] // 10 * 10)["lasted_30_years"].agg(["mean", "size"])
+    tab = frame.groupby(frame["start_year"] // 10 * 10)[LABEL].agg(["mean", "size"])
     tab = tab[tab["size"] >= 25]
     print(f"    {name}:")
     for dec, row in tab.iterrows():
@@ -1224,7 +1232,7 @@ for name, frame in (("train", train), ("test", test)):
     age = (frame["start_year"] - yo)
     ok = yo.notna()
     tab = frame[ok].groupby(pd.cut(age[ok], [0, 20, 25, 30, 35, 40, 50, 60, 200], right=False),
-                            observed=True)["lasted_30_years"].agg(["mean", "size"])
+                            observed=True)[LABEL].agg(["mean", "size"])
     tab = tab[tab["size"] >= 25]
     print(f"    {name}:")
     if tab.empty:
@@ -1251,7 +1259,7 @@ for side in ("dad", "mom"):
 
 #%%
 COLS = ["dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start",
-        "lasted_30_years"]
+        LABEL]
 for col in ("dob_dad", "dob_mom"):
     assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
@@ -1310,6 +1318,14 @@ print("  checked: every training row is well-formed and carries at least one dat
 
 train = train.sample(frac=1.0, random_state=20260817).reset_index(drop=True)
 test = test.sample(frac=1.0, random_state=20260818).reset_index(drop=True)
+# AQ_DUMP_DUR: the raw duration in years beside each written row (an INTERNAL side file, never published) — for
+# threshold sweeps ("which survival cut is most predictable"). Aligned to the PRE-both-orders frames; the pair
+# key joins it to either order.
+if os.environ.get("AQ_DUMP_DUR"):
+    for _nm, _fr in (("train", train), ("test", test)):
+        pd.DataFrame({"dob_dad": _fr["dob_dad"], "dob_mom": _fr["dob_mom"], "start": _fr["start"], "dur_years": _fr["_dur"].round(3)}).to_csv(
+            os.environ["AQ_DUMP_DUR"].replace(".csv", f"_{_nm}.csv"), index=False)
+    print(f"  durations dumped beside the rows -> {os.environ['AQ_DUMP_DUR']}")
 if GENDERLESS:
     # FOURTH EDITION: every pair in BOTH orders. (a, b, y) and (b, a, y) are both rows of train; every test pair
     # is two rows, `p<n>a` and `p<n>b`, scored together and on the same Public/Private side, so a submission
@@ -1333,7 +1349,7 @@ if GENDERLESS:
     train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
     test[["id", "dob_a", "dob_b", "lat_a", "lon_a", "lat_b", "lon_b", "start"]]\
         .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
-    sol = test[["id", "lasted_30_years"]].copy()
+    sol = test[["id", LABEL]].copy()
     sol["Usage"] = side_of_pair[test["_pairno"].to_numpy()]
 else:
     train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
@@ -1341,16 +1357,16 @@ else:
     test[["id", "dob_dad", "dob_mom", "lat_dad", "lon_dad", "lat_mom", "lon_mom", "start"]]\
         .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
     rng = np.random.default_rng(20260817)
-    sol = test[["id", "lasted_30_years"]].copy()
+    sol = test[["id", LABEL]].copy()
     sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")
 sol.to_csv(os.path.join(OUT, "solution.csv"), index=False)
 samp = test[["id"]].copy()
-samp["lasted_30_years"] = 0.5
+samp[LABEL] = 0.5
 samp.to_csv(os.path.join(OUT, "sample_submission.csv"), index=False)
 for side in ("Public", "Private"):
     s = sol[sol["Usage"] == side]
-    assert 0 < s["lasted_30_years"].sum() < len(s), f"the {side} half has one class only"
-    print(f"    {side:<8} {len(s):>6,} rows, {100*s['lasted_30_years'].mean():5.2f}% positive")
+    assert 0 < s[LABEL].sum() < len(s), f"the {side} half has one class only"
+    print(f"    {side:<8} {len(s):>6,} rows, {100*s[LABEL].mean():5.2f}% positive")
 
 print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
 print("\n  training rows, showing the three shapes it can take:")

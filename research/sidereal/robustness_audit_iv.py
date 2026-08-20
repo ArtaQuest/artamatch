@@ -22,7 +22,7 @@ DEP = os.environ.get("AQ_DEPLOY", "/tmp/aq4sub/deploy"); N = int(sys.argv[1]) if
 def main():
     SP.init(open(os.path.join(ROOT, "web", "ephem4.bin"), "rb").read(), open(os.path.join(ROOT, "web", "tables.json")).read(), open(f"{DEP}/stack_iv_deployed.json").read(), [open(f"{DEP}/geo_lgbm_{k}.json").read() for k in range(3)], sweshim_module=sweshim)
     te = pd.read_csv("/tmp/aq4/test.csv", dtype=str); sol = pd.read_csv("/tmp/aq4comp/solution.csv").set_index("id")
-    te = te[te.id.str.endswith("a")].head(N).reset_index(drop=True); yte = sol.loc[te.id, "lasted_30_years"].to_numpy()
+    te = te[te.id.str.endswith("a")].head(N).reset_index(drop=True); yte = sol.loc[te.id, [c for c in sol.columns if c != "Usage"][0]].to_numpy()
     rng = np.random.default_rng(0)
     def score(rows, hour=None):
         out = {"p": [], "geo": [], "g": [], "f": [], "g12": [], "g21": [], "f12": [], "f21": [], "geo_sw": [], "p_sw": []}

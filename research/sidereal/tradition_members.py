@@ -47,14 +47,15 @@ def main():
     utr = pd.Series(np.arange(len(tr))).groupby(ktr).first(); ute = pd.Series(np.arange(len(te))).groupby(kte).first()
     rows_tr = tr.iloc[utr.to_numpy()].reset_index(drop=True); rows_te = te.iloc[ute.to_numpy()].reset_index(drop=True)
     log(f"train {len(tr):,} rows -> {len(rows_tr):,} pairs · test {len(te):,} rows -> {len(rows_te):,} pairs")
-    y_pair = rows_tr["lasted_30_years"].astype(int).to_numpy()
+    _lab = [c for c in rows_tr.columns if c.startswith("lasted_")][0]
+    y_pair = rows_tr[_lab].astype(int).to_numpy()
     yrs = lambda df: np.fmax(pd.to_numeric(df.dob_a.str[:4], errors="coerce").fillna(0), pd.to_numeric(df.dob_b.str[:4], errors="coerce").fillna(0)).astype(int).to_numpy()
     later_pair = yrs(rows_tr)
     Z = np.load(PH, allow_pickle=True); later_rows = Z["yr_train"].astype(int).max(1); cuts = [np.quantile(later_rows, q) for q in QS]
     # core's couples file: train pairs then test pairs, one record each
     recs = []
     for i, r in enumerate(pd.concat([rows_tr, rows_te], ignore_index=True).itertuples(index=False)):
-        rec = D.couple_record(i, r.dob_a, r.dob_b, int(getattr(r, "lasted_30_years", 0) or 0) if i < len(rows_tr) else 0)
+        rec = D.couple_record(i, r.dob_a, r.dob_b, int(getattr(r, _lab, 0) or 0) if i < len(rows_tr) else 0)
         recs.append({k: v for k, v in rec.items() if not k.startswith("_")})
     cand = os.path.join(OUT, "couples_iv.json"); json.dump(recs, open(cand, "w"))
     os.environ.update({"AQ_COUPLES": cand, "AQ_NO_PLACE": "1", "AQ_KEEP_ALL_COLS": "1", "AQ_NO_EPHEM_CACHE": "1", "AQ_EPHEM_CACHE": "/nonexistent.npz"})

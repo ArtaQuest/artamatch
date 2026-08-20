@@ -46,10 +46,10 @@ def t_at_pob(lat, lon, month):
     if _T2M is None:
         path = os.environ.get("AQ_T2M", "/tmp/aq4sub/t2m_normals.json"); _T2M = json.load(open(path)) if os.path.exists(path) else {}
     if lat != lat or lon != lon:
-        return float("nan"), float("nan")
+        return float("nan"), float("nan"), float("nan")
     rec = _T2M.get(f"{round(lat * 2) / 2},{round(lon * 2) / 2}")
     if not rec:
-        return float("nan"), float("nan")
+        return float("nan"), float("nan"), float("nan")
     v = rec.get(MONTHS[month - 1]) if month else rec.get("ANN")
     if v is None or v == -999.0:
         v = rec.get("ANN")

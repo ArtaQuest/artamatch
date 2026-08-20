@@ -226,6 +226,12 @@ def _find_dates(lang, text, spouse_names):
     if m:
         yr = re.search(YEAR, m.group(0))
         return yr.group(0) + "-00-00", 9, m.group(0)[:160], _end_year(m.group(0), int(yr.group(0)))
+    # 3b. the genealogy signs need no parenthetical: "[[Alma]] ⚭ 1902" / "∞ 1902 [[Alma]]"
+    for pat in (name_re + r"[^\n]{0,15}[⚭∞][^\n]{0,15}" + YEAR, r"[⚭∞][^\n]{0,15}" + YEAR + r"[^\n]{0,25}" + name_re, YEAR + r"[^\n]{0,15}[⚭∞][^\n]{0,25}" + name_re):
+        m = re.search(pat, text, re.I)
+        if m:
+            yr = re.search(YEAR, m.group(0))
+            return yr.group(0) + "-00-00", 9, m.group(0)[:160], _end_year(m.group(0), int(yr.group(0)))
     # 4. PROSE (the wikis that keep marriage in running text — dewiki rejects person infoboxes altogether):
     #    "heiratete [am 9. März] 1902 [[Alma]]" / "épousa [[Alma]] en 1902" / "женился на [[Альме]] в 1902" —
     #    a marriage VERB, the spouse and a year within one clause, either order; the plausibility gate downstream

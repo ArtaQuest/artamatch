@@ -280,10 +280,14 @@ def harvest(langs=None):
                     continue
                 names = [SL.get(sp, {}).get("sl", {}).get(lang, ""), SL.get(sp, {}).get("lb", {}).get(lang, ""), SL.get(sp, {}).get("lb", {}).get("en", "")]
                 jobs.append((r, subj, t, [n for n in names if n]))
-        log(f"  {lang}: {len(jobs):,} article reads queued")
+        shard = os.environ.get("AQ_JOB_SHARD", "")
+        if shard:
+            k, n = (int(x) for x in shard.split("/")); jobs = jobs[k::n]
+        log(f"  {lang}: {len(jobs):,} article reads queued" + (f" (shard {shard})" if shard else ""))
         got = 0
-        for i in range(0, len(jobs), 20):
-            chunk = jobs[i:i + 20]; titles = "|".join(dict.fromkeys(j[2] for j in chunk))
+        BATCH = int(os.environ.get("AQ_TITLES_PER_REQ", "50"))
+        for i in range(0, len(jobs), BATCH):
+            chunk = jobs[i:i + BATCH]; titles = "|".join(dict.fromkeys(j[2] for j in chunk))
             resp = http(api + "?" + urllib.parse.urlencode({"action": "query", "prop": "revisions", "rvprop": "content", "rvslots": "main", "titles": titles, "format": "json", "redirects": 1, "maxlag": 5}))
             if not resp:
                 time.sleep(15); continue
@@ -304,9 +308,9 @@ def harvest(langs=None):
                     if ey and sy > min(ey):
                         continue
                     w.writerow([r["a"], r["b"], st, prec, lang, subj, snip.replace("\n", " "), endy if endy is not None else ""]); got += 1
-            if i % 400 == 0 and i:
+            if i % (BATCH * 20) == 0 and i:
                 f.flush(); log(f"  {lang}: {i:,}/{len(jobs):,} read · {got:,} dates found")
-            time.sleep(0.6)
+            time.sleep(float(os.environ.get("AQ_READ_SLEEP", "0.25")))
         log(f"  {lang}: DONE — {got:,} wedding dates found")
         return got
     langs = langs or LANGS

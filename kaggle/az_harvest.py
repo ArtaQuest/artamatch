@@ -26,16 +26,22 @@ HF = "https://huggingface.co/artaquest/artamodel/resolve/main/wikiharvest"
 WORKER = r'''
 import base64, gzip, os, subprocess, sys, urllib.request
 os.makedirs("/tmp/aqwiki", exist_ok=True)
-HF = sys.argv[1]; LANGS = sys.argv[2]
-for f in ("pool.csv.gz", "sitelinks.jsonl.gz", "wiki_start_harvest.py"):
+HF = sys.argv[1]; LANGS = sys.argv[2]; JSH = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != "none" else ""
+for f in ("pool.csv.gz", "sitelinks.jsonl.gz", "found.csv.gz", "wiki_start_harvest.py"):
     with urllib.request.urlopen(HF + "/" + f, timeout=300) as r:
         data = r.read()
     p = "/tmp/aqwiki/" + f.replace(".gz", "")
     open(p, "wb").write(gzip.decompress(data) if f.endswith(".gz") else data)
+    if f == "found.csv.gz":
+        open("/tmp/aqwiki/found.seed", "wb").write(gzip.decompress(data))
     print("got", f, flush=True)
 env = dict(os.environ, AQ_DIR="/tmp/aqwiki", AQ_LANGS=LANGS)
+if JSH:
+    env["AQ_JOB_SHARD"] = JSH
 r = subprocess.run([sys.executable, "-u", "/tmp/aqwiki/wiki_start_harvest.py", "harvest"], env=env)
-blob = base64.b64encode(gzip.compress(open("/tmp/aqwiki/found.csv", "rb").read() if os.path.exists("/tmp/aqwiki/found.csv") else b"")).decode()
+seed = open("/tmp/aqwiki/found.seed", "rb").read() if os.path.exists("/tmp/aqwiki/found.seed") else b""
+data = open("/tmp/aqwiki/found.csv", "rb").read() if os.path.exists("/tmp/aqwiki/found.csv") else b""
+blob = base64.b64encode(gzip.compress(data[len(seed):])).decode()
 print("###ROWS###", flush=True)
 for i in range(0, len(blob), 100000):
     print(blob[i:i + 100000], flush=True)
@@ -46,28 +52,31 @@ print("###DONE###", flush=True)
 def upload():
     from huggingface_hub import HfApi, CommitOperationAdd
     tok = open(os.path.expanduser("~/.artaquest-dev/hf_token_pro")).read().strip(); api = HfApi(token=tok)
-    for src, dst in ((os.path.join(DIR, "pool.csv"), "pool.csv.gz"), (os.path.join(DIR, "sitelinks.jsonl"), "sitelinks.jsonl.gz")):
+    for src, dst in ((os.path.join(DIR, "pool.csv"), "pool.csv.gz"), (os.path.join(DIR, "sitelinks.jsonl"), "sitelinks.jsonl.gz"), (os.path.join(DIR, "found.csv"), "found.csv.gz")):
         open(f"/tmp/{dst}", "wb").write(gzip.compress(open(src, "rb").read()))
     ops = [CommitOperationAdd("wikiharvest/pool.csv.gz", "/tmp/pool.csv.gz"), CommitOperationAdd("wikiharvest/sitelinks.jsonl.gz", "/tmp/sitelinks.jsonl.gz"),
-           CommitOperationAdd("wikiharvest/wiki_start_harvest.py", os.path.join(HERE, "wiki_start_harvest.py"))]
+           CommitOperationAdd("wikiharvest/found.csv.gz", "/tmp/found.csv.gz"), CommitOperationAdd("wikiharvest/wiki_start_harvest.py", os.path.join(HERE, "wiki_start_harvest.py"))]
     api.create_commit("artaquest/artamodel", ops, commit_message="wikiharvest bundle for the Azure containers (public inputs: the undated-marriage pool + sitelinks)")
     print("  bundle uploaded to HF", flush=True)
 
 
 def run():
-    shards = [LANGS[i:i + PER] for i in range(0, len(LANGS), PER)]
+    # intra-wiki sharding: en in six slices, the other big wikis in two, the rest 3 languages per container
+    SPLIT = {"en": 6, "de": 2, "fr": 2, "ru": 2, "ar": 2, "sv": 2, "es": 2, "ja": 2}
+    rest = [l for l in LANGS if l not in SPLIT]
+    shards = [([l], f"{k}/{n}") for l, n in SPLIT.items() if l in LANGS for k in range(n)] + [(rest[i:i + PER], "") for i in range(0, len(rest), PER)]
     print(f"  {len(LANGS)} languages -> {len(shards)} containers ({PER}/container)", flush=True)
     if os.environ.get("AQ_DO_FETCH") != "1":
         print("  PLAN ONLY — AQ_DO_FETCH=1 to upload the bundle and create the containers"); return
     upload()
     w64 = base64.b64encode(WORKER.encode()).decode(); names = []
-    for i, sh in enumerate(shards):
+    for i, (sh, jsh) in enumerate(shards):
         cname = f"aqwiki{i}"
-        cmd = f"/bin/sh -c \"echo {w64} | base64 -d > /w.py && python /w.py {HF} {','.join(sh)}\""
+        cmd = f"/bin/sh -c \"echo {w64} | base64 -d > /w.py && python /w.py {HF} {','.join(sh)} {jsh or 'none'}\""
         assert len(cmd) < 100_000
         subprocess.run(["az", "container", "create", "-g", RG, "-n", cname, "--image", IMAGE, "--os-type", "Linux", "--cpu", "1", "--memory", "1.5",
                         "--restart-policy", "Never", "--location", LOC, "--command-line", cmd, "-o", "none"], check=False)
-        names.append((cname, sh)); print(f"    started {cname}: {','.join(sh)}", flush=True)
+        names.append((cname, sh)); print(f"    started {cname}: {','.join(sh)} {jsh}", flush=True)
     out = os.path.join(DIR, "found.csv"); have = set()
     if os.path.exists(out):
         for r in open(out):

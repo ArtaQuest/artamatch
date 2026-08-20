@@ -139,6 +139,45 @@ def sitelinks():
 
 
 # ── phase C: the wikitext harvest ────────────────────────────────────────────────────────────────────────────────
+MONTHS = {
+    "en": "january february march april may june july august september october november december",
+    "de": "januar februar märz april mai juni juli august september oktober november dezember",
+    "fr": "janvier février mars avril mai juin juillet août septembre octobre novembre décembre",
+    "es": "enero febrero marzo abril mayo junio julio agosto septiembre octubre noviembre diciembre",
+    "it": "gennaio febbraio marzo aprile maggio giugno luglio agosto settembre ottobre novembre dicembre",
+    "pt": "janeiro fevereiro março abril maio junho julho agosto setembro outubro novembro dezembro",
+    "nl": "januari februari maart april mei juni juli augustus september oktober november december",
+    "sv": "januari februari mars april maj juni juli augusti september oktober november december",
+    "da": "januar februar marts april maj juni juli august september oktober november december",
+    "fi": "tammikuuta helmikuuta maaliskuuta huhtikuuta toukokuuta kesäkuuta heinäkuuta elokuuta syyskuuta lokakuuta marraskuuta joulukuuta",
+    "pl": "stycznia lutego marca kwietnia maja czerwca lipca sierpnia września października listopada grudnia",
+    "cs": "ledna února března dubna května června července srpna září října listopadu prosince",
+    "ru": "января февраля марта апреля мая июня июля августа сентября октября ноября декабря",
+    "uk": "січня лютого березня квітня травня червня липня серпня вересня жовтня листопада грудня",
+}
+_MTAB = {lang: {m: i + 1 for i, m in enumerate(v.split())} for lang, v in MONTHS.items()}
+
+
+def _full_date(lang, snippet):
+    """A day-precision ISO date inside the snippet, or None: ISO, '11 March 1902' (15 languages' month names,
+    prefix-matched), 'March 11, 1902', ja/zh 1902年3月11日."""
+    iso = re.search(YEAR + r"-(\d\d)-(\d\d)", snippet)
+    if iso:
+        return iso.group(0)
+    m = re.search(YEAR + r"年(\d{1,2})月(\d{1,2})日", snippet)
+    if m:
+        return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+    tab = _MTAB.get(lang, {}); tab_en = _MTAB["en"]
+    m = re.search(r"(\d{1,2})\.?\s+([^\W\d_]+),?\s+" + YEAR, snippet, re.U) or re.search(r"([^\W\d_]+)\s+(\d{1,2}),?\s+" + YEAR, snippet, re.U)
+    if m:
+        g = m.groups(); word = (g[1] if g[0].isdigit() else g[0]).lower(); day = int(g[0] if g[0].isdigit() else g[1]); yr = g[2]
+        for t in (tab, tab_en):
+            for name, mon in t.items():
+                if word.startswith(name[:4]) and 1 <= day <= 31:
+                    return f"{yr}-{mon:02d}-{day:02d}"
+    return None
+
+
 def _end_year(snippet, start_year):
     """The marriage's END year inside the same construct: any later year in the snippet (a {{marriage}} second
     argument, 'div. 1911', 'ended 1911'); None when the construct names none."""
@@ -159,15 +198,9 @@ def _find_dates(lang, text, spouse_names):
             body = m.group(1)
             if not re.search(name_re, body, re.I):
                 continue
-            iso = re.search(YEAR + r"-(\d\d)-(\d\d)", body)
-            if iso:
-                return iso.group(0), 11, body[:160], _end_year(body, int(iso.group(0)[:4]))
-            MONTHS_EN = {m: i + 1 for i, m in enumerate(("january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"))}
-            d1 = re.search(r"(\d{1,2})\s+([A-Za-z]+)\s+" + YEAR, body) or re.search(r"([A-Za-z]+)\s+(\d{1,2}),\s*" + YEAR, body)
-            if d1:
-                g = d1.groups(); mon = MONTHS_EN.get((g[1] if g[0].isdigit() else g[0]).lower()); day = int(g[0] if g[0].isdigit() else g[1]); yr4 = g[2]
-                if mon:
-                    return f"{yr4}-{mon:02d}-{day:02d}", 11, body[:160], _end_year(body, int(yr4))
+            fd = _full_date(lang, body)
+            if fd:
+                return fd, 11, body[:160], _end_year(body, int(fd[:4]))
             yr = re.search(YEAR, body)
             if yr:
                 return yr.group(0) + "-00-00", 9, body[:160], _end_year(body, int(yr.group(0)))
@@ -175,12 +208,20 @@ def _find_dates(lang, text, spouse_names):
     for par in SPOUSE_PARAMS.get(lang, []) + SPOUSE_PARAMS.get("en", []):
         for m in re.finditer(r"\|\s*" + re.escape(par) + r"\s*=([^\n]*?" + name_re + r"[^\n]*)", text, re.I):
             line = m.group(1)
-            yr = re.search(YEAR, line)
-            if yr:
-                return yr.group(0) + "-00-00", 9, line[:160], _end_year(line, int(yr.group(0)))
+            # a line can list several spouses -- "A (1890-1900); B (1902-1911)" -- the year must come from OUR
+            # spouse's SEGMENT, never the first year in the line
+            for seg in re.split(r"(?<=\))\s*;|<br\s*/?>|\}\}\s*\{\{", line):   # a spouse separator is ");" — semicolons INSIDE a parenthetical stay
+                if not re.search(name_re, seg, re.I):
+                    continue
+                fd = _full_date(lang, seg)
+                if fd:
+                    return fd, 11, seg[:160], _end_year(seg, int(fd[:4]))
+                yr = re.search(YEAR, seg)
+                if yr:
+                    return yr.group(0) + "-00-00", 9, seg[:160], _end_year(seg, int(yr.group(0)))
     # 3. a parenthetical right after the spouse's name, REQUIRING a marriage marker — "(1848–1919)" is a lifespan
-    MARK = {"en": r"m\.|marr", "de": r"⚭|verh", "fr": r"mari|ép", "es": r"matr|casad", "it": r"spos", "ru": r"брак|с\s", "uk": r"шлюб|з\s", "pl": r"ślub|od\s", "pt": r"casad", "nl": r"getr", "sv": r"gift", "da": r"gift", "fi": r"avio", "cs": r"sňat|od\s", "hu": r"házas", "tr": r"evl", "fa": r"ازدواج", "ar": r"تزوج|زواج", "ja": r"結婚", "zh": r"结婚|結婚", "hy": r"ամուսն"}
-    mark = MARK.get(lang, r"⚭|m\.")
+    MARK = {"en": r"m\.|marr", "de": r"⚭|∞|verh", "fr": r"mari|ép", "es": r"matr|casad", "it": r"spos", "ru": r"брак|с\s", "uk": r"шлюб|з\s", "pl": r"ślub|od\s", "pt": r"casad", "nl": r"getr", "sv": r"gift", "da": r"gift", "fi": r"avio", "cs": r"sňat|od\s", "hu": r"házas", "tr": r"evl", "fa": r"ازدواج", "ar": r"تزوج|زواج", "ja": r"結婚", "zh": r"结婚|結婚", "hy": r"ամուսն"}
+    mark = MARK.get(lang, r"⚭|∞|m\.")
     m = re.search(name_re + r"[^\n(]{0,40}\((?:[^)]{0,40}?(?:" + mark + r")[^)]{0,40}?)" + YEAR + r"[^)]*\)", text, re.I)
     if m:
         yr = re.search(YEAR, m.group(0))
@@ -202,6 +243,9 @@ def _find_dates(lang, text, spouse_names):
                     YEAR + win + V + win + name_re, name_re + win + YEAR + win + V, YEAR + win + name_re + win + V):   # all six orders
             m = re.search(pat, text, re.I)
             if m:
+                fd = _full_date(lang, m.group(0))
+                if fd:
+                    return fd, 11, m.group(0)[:160], _end_year(m.group(0), int(fd[:4]))
                 yr = re.search(YEAR, m.group(0))
                 return yr.group(0) + "-00-00", 9, m.group(0)[:160], _end_year(m.group(0), int(yr.group(0)))
     return None

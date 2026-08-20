@@ -20,13 +20,15 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__)); DIR = os.environ.get("AQ_DIR", "/tmp/aqwiki")
 RG = os.environ.get("AQ_AZ_RG", "artaquest-relay"); LOC = os.environ.get("AQ_AZ_LOC", "swedencentral"); IMAGE = "python:3.12-slim"
+SINK = (open("/tmp/aqwiki/blob_base.txt").read().strip() + "?" + open("/tmp/aqwiki/sas.txt").read().strip()) if os.path.exists("/tmp/aqwiki/sas.txt") else ""
 LANGS = [l for l in os.environ.get("AQ_LANGS", "en,de,fr,es,it,ru,ja,pt,pl,nl,sv,zh,uk,cs,fa,ar,tr,hu,fi,da,hy").split(",") if l]
 PER = int(os.environ.get("AQ_LANGS_PER_CONTAINER", "2"))
 HF = "https://huggingface.co/artaquest/artamodel/resolve/main/wikiharvest"
 WORKER = r'''
-import base64, gzip, os, subprocess, sys, urllib.request
+import base64, gzip, os, subprocess, sys, urllib.request  # noqa
 os.makedirs("/tmp/aqwiki", exist_ok=True)
 HF = sys.argv[1]; LANGS = sys.argv[2]; JSH = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] != "none" else ""
+SINK = sys.argv[4]; SHARD_ID = sys.argv[5]
 for f in ("pool.csv.gz", "sitelinks.jsonl.gz", "found.csv.gz", "wiki_start_harvest.py"):
     with urllib.request.urlopen(HF + "/" + f, timeout=300) as r:
         data = r.read()
@@ -38,14 +40,22 @@ for f in ("pool.csv.gz", "sitelinks.jsonl.gz", "found.csv.gz", "wiki_start_harve
 env = dict(os.environ, AQ_DIR="/tmp/aqwiki", AQ_LANGS=LANGS)
 if JSH:
     env["AQ_JOB_SHARD"] = JSH
-r = subprocess.run([sys.executable, "-u", "/tmp/aqwiki/wiki_start_harvest.py", "harvest"], env=env)
+lg = open("/tmp/run.log", "w")
+r = subprocess.run([sys.executable, "-u", "/tmp/aqwiki/wiki_start_harvest.py", "harvest"], env=env, stdout=lg, stderr=subprocess.STDOUT)
+lg.close()
 seed = open("/tmp/aqwiki/found.seed", "rb").read() if os.path.exists("/tmp/aqwiki/found.seed") else b""
 data = open("/tmp/aqwiki/found.csv", "rb").read() if os.path.exists("/tmp/aqwiki/found.csv") else b""
-blob = base64.b64encode(gzip.compress(data[len(seed):])).decode()
-print("###ROWS###", flush=True)
-for i in range(0, len(blob), 100000):
-    print(blob[i:i + 100000], flush=True)
-print("###DONE###", flush=True)
+def put(name, payload):
+    req = urllib.request.Request(SINK.split("?")[0] + "/" + name + "?" + SINK.split("?", 1)[1], data=payload, method="PUT", headers={"x-ms-blob-type": "BlockBlob"})
+    for i in range(6):
+        try:
+            urllib.request.urlopen(req, timeout=120); return True
+        except Exception:
+            import time; time.sleep(10 * (i + 1))
+    return False
+ok = put("found_" + SHARD_ID + ".csv.gz", gzip.compress(data[len(seed):]))
+put("log_" + SHARD_ID + ".txt", open("/tmp/run.log", "rb").read()[-200000:])
+print("###DONE### upload=" + str(ok) + " exit=" + str(r.returncode), flush=True)
 '''
 
 
@@ -72,37 +82,38 @@ def run():
     w64 = base64.b64encode(WORKER.encode()).decode(); names = []
     for i, (sh, jsh) in enumerate(shards):
         cname = f"aqwiki{i}"
-        cmd = f"/bin/sh -c \"echo {w64} | base64 -d > /w.py && python /w.py {HF} {','.join(sh)} {jsh or 'none'}\""
+        sid = f"{'_'.join(sh)}_{(jsh or 'all').replace('/', 'of')}"
+        cmd = f"/bin/sh -c \"echo {w64} | base64 -d > /w.py && python /w.py {HF} {','.join(sh)} {jsh or 'none'} '{SINK}' {sid}\""
         assert len(cmd) < 100_000
         subprocess.run(["az", "container", "create", "-g", RG, "-n", cname, "--image", IMAGE, "--os-type", "Linux", "--cpu", "1", "--memory", "1.5",
                         "--restart-policy", "Never", "--location", LOC, "--command-line", cmd, "-o", "none"], check=False)
-        names.append((cname, sh)); print(f"    started {cname}: {','.join(sh)} {jsh}", flush=True)
+        names.append((cname, sh, jsh)); print(f"    started {cname}: {','.join(sh)} {jsh}", flush=True)
+    import urllib.request as _ur
     out = os.path.join(DIR, "found.csv"); have = set()
     if os.path.exists(out):
         for r in open(out):
             have.add(r.split(",")[0] + r)
+    sids = {f"{'_'.join(sh)}_{(jsh or 'all').replace('/', 'of')}": (cname, sh) for cname, sh, jsh in names}
     done = set(); t0 = time.time()
     with open(out, "a") as f:
-        while len(done) < len(names) and time.time() - t0 < 4 * 3600:
-            time.sleep(60)
-            for cname, sh in names:
-                if cname in done:
+        while len(done) < len(sids) and time.time() - t0 < 3 * 3600:
+            time.sleep(45)
+            for sid, (cname, sh) in sids.items():
+                if sid in done:
                     continue
-                logs = subprocess.run(["az", "container", "logs", "-g", RG, "-n", cname], capture_output=True, text=True).stdout or ""
-                if "###DONE###" in logs:
-                    blob = "".join(logs.split("###ROWS###", 1)[1].split("###DONE###", 1)[0].split())
-                    try:
-                        rows = gzip.decompress(base64.b64decode(blob)).decode()
-                    except Exception as e:
-                        print(f"    {cname}: log decode failed ({e}) — leave for the local resume", flush=True); done.add(cname); continue
-                    n = 0
-                    for line in rows.splitlines():
-                        key = line.split(",")[0] + line
-                        if line and key not in have:
-                            f.write(line + "\n"); have.add(key); n += 1
-                    f.flush(); done.add(cname); print(f"    {cname} ({','.join(sh)}): {n:,} rows merged", flush=True)
-                    subprocess.run(["az", "container", "delete", "-g", RG, "-n", cname, "--yes", "-o", "none"], check=False)
-    print(f"  {len(done)}/{len(names)} containers harvested -> {out}; anything missing resumes locally via `wiki_start_harvest.py harvest`", flush=True)
+                try:
+                    with _ur.urlopen(SINK.split("?")[0] + f"/found_{sid}.csv.gz?" + SINK.split("?", 1)[1], timeout=60) as r_:
+                        rows = gzip.decompress(r_.read()).decode()
+                except Exception:
+                    continue
+                n = 0
+                for line in rows.splitlines():
+                    key = line.split(",")[0] + line
+                    if line and key not in have:
+                        f.write(line + "\n"); have.add(key); n += 1
+                f.flush(); done.add(sid); print(f"    {sid} ({cname}): {n:,} rows merged", flush=True)
+                subprocess.run(["az", "container", "delete", "-g", RG, "-n", cname, "--yes", "-o", "none"], check=False)
+    print(f"  {len(done)}/{len(sids)} shards harvested -> {out}; anything missing resumes locally via `wiki_start_harvest.py harvest`", flush=True)
 
 
 if __name__ == "__main__":

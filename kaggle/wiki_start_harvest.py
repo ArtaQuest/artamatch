@@ -189,8 +189,9 @@ def _find_dates(lang, text, spouse_names):
     verb = VERB.get(lang)
     if verb:
         win = r"[^\n;]{0,90}"          # periods allowed: German ordinal dates ("9. März 1902") sit inside the clause
-        for pat in (r"(?:" + verb + r")" + win + name_re + win + YEAR, r"(?:" + verb + r")" + win + YEAR + win + name_re,
-                    name_re + win + r"(?:" + verb + r")" + win + YEAR, YEAR + win + r"(?:" + verb + r")" + win + name_re):
+        V = r"(?:" + verb + r")"
+        for pat in (V + win + name_re + win + YEAR, V + win + YEAR + win + name_re, name_re + win + V + win + YEAR,
+                    YEAR + win + V + win + name_re, name_re + win + YEAR + win + V, YEAR + win + name_re + win + V):   # all six orders
             m = re.search(pat, text, re.I)
             if m:
                 yr = re.search(YEAR, m.group(0))

@@ -78,7 +78,7 @@ FLG_HC = swe.FLG_SWIEPH | swe.FLG_HELCTR
 # because training uses real Swiss Ephemeris, which has no such edge; it appeared the moment the same code
 # ran on the shipped asset, which is what a browser runs. Two years either side covers a synodic lookback
 # with room to spare, and costs under 2% of the file.
-Y0, Y1 = 1598, 2032
+Y0, Y1 = 1598, 2199        # 2199: the deployed model must be computable for ANY future query (operator 2026-08-20); the .se1 files reach 2400
 YEAR_ACCEPTED = (1600, 2026)     # what core.py will actually accept; the span above brackets it
 QUANT = 360.0 / 65535.0          # 0.005493 deg — the storage step for an angle, and so the error budget
 
@@ -111,13 +111,13 @@ STRIDE = {"Moon": 1, "Mercury": 2, "TrueNode": 2, "MeanNode": 2, "Venus": 4}
 STRIDE_DEFAULT = 8
 
 # PER-BODY SPAN, because one body needs nine centuries and the rest need two. trad_african builds its
-# heliacal-rising criterion on a fixed precession ladder, `_EPOCHS = arange(1180, 2081, 20)`, and asks for
+# heliacal-rising criterion on a fixed precession ladder, `_EPOCHS = arange(1180, 2221, 20)`, and asks for
 # the Sun's apparent place on every day of each of those 46 years — 137,258 calls outside 1800-2030. That was
 # measured by tracing every calc_ut the nineteen modules make: the Sun spans 1180-2081 and EVERY OTHER BODY
 # stays inside 1808-1991, the couples' own dates. So the Sun gets the long span and nobody else pays for it —
 # at stride 8 those nine extra centuries cost 411 kB. Guessing a uniform span would have cost 30 MB or
 # silently dropped the two best blocks in the project.
-SPAN = {"Sun": (1180, 2083)}
+SPAN = {"Sun": (1180, 2221)}   # the Sun ladder must reach past Y1 too
 SPAN_DEFAULT = (Y0, Y1)
 
 AYANAMSAS = [

@@ -120,13 +120,15 @@ def build(df, SW, codes, cache):
                 cache[key] = instant_features(SW, codes, y, m, dd, 12.0)
             F["phi_s"][i], F["tau_s"][i] = cache[key][0], cache[key][1]
     # the features: per partner Φ/T, pair sums and |diffs| (even), start-sky Φ, τ, day lengths, altitudes
-    # DETERMINISTIC ASTRONOMY ONLY (operator 2026-08-20: "forget about temp and elevation and unpredictable
-    # signals") — the ephemeris quantities of the two births and the start, nothing environmental
+    # DETERMINISTIC quantities only (operator 2026-08-20, twice refined): gravitational potentials Φ and tides τ,
+    # the start-sky Φ/τ, day length, the Sun's altitude, and ELEVATION above sea level (a fixed property of the
+    # birthplace) — temperature and humidity stay out
     X = np.column_stack([F["phi_a"] + F["phi_b"], np.abs(F["phi_a"] - F["phi_b"]), F["tau_a"] + F["tau_b"], np.abs(F["tau_a"] - F["tau_b"]),
-                         F["phi_s"], F["tau_s"], np.fmax(day_a[:, 0], day_b[:, 0]), np.fmin(day_a[:, 0], day_b[:, 0]), np.fmax(day_a[:, 1], day_b[:, 1]), np.fmin(day_a[:, 1], day_b[:, 1])])
+                         F["phi_s"], F["tau_s"], np.fmax(day_a[:, 0], day_b[:, 0]), np.fmin(day_a[:, 0], day_b[:, 0]), np.fmax(day_a[:, 1], day_b[:, 1]), np.fmin(day_a[:, 1], day_b[:, 1]),
+                         np.fmax(El_a, El_b), np.fmin(El_a, El_b), np.abs(El_a - El_b)])
     names = ([f"phi_sum_{b}" for b in BODIES] + [f"phi_absdiff_{b}" for b in BODIES] + [f"tau_sum_{b}" for b in BODIES] + [f"tau_absdiff_{b}" for b in BODIES]
              + [f"phi_start_{b}" for b in BODIES] + [f"tau_start_{b}" for b in BODIES]
-             + ["daylen_max", "daylen_min", "sunalt_max", "sunalt_min"])
+             + ["daylen_max", "daylen_min", "sunalt_max", "sunalt_min", "elev_max", "elev_min", "elev_absdiff"])
     return X.astype(np.float32), names
 
 
@@ -153,7 +155,7 @@ def main():
         c = lgb.LGBMClassifier(random_state=0, **prm); c.fit(Xa, y); s_te = c.predict_proba(Xb)[:, 1]
         f = np.isfinite(s_tr) & (later > cuts[0]); o = auc(y[f], s_tr[f]); members_tr.append(s_tr); members_te.append(s_te); mnames.append(name); meta.append({"member": name, "forward_oof": o, "n_features": int(Xa.shape[1])})
         log(f"  {name:<46} {Xa.shape[1]:>3} features  fwd-OOF {o:.4f}")
-    member(Xtr, Xte, "PHYSICS (Φ, τ, day length, Sun altitude; no ages)")
+    member(Xtr, Xte, "PHYSICS (Φ, τ, day length, Sun altitude, elevation; no ages)")
     member(np.column_stack([plain(ptr), Xtr]), np.column_stack([plain(pte), Xte]), "PLAIN + PHYSICS")
     np.savez_compressed(os.path.join(OUT, "physics_members.npz"), S_train=np.column_stack(members_tr), S_test=np.column_stack(members_te), names=np.array(mnames), meta=json.dumps(meta), feature_names=np.array(names))
     log(f"wrote {OUT}/physics_members.npz")

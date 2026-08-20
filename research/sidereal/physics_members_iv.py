@@ -53,7 +53,10 @@ def t_at_pob(lat, lon, month):
     v = rec.get(MONTHS[month - 1]) if month else rec.get("ANN")
     if v is None or v == -999.0:
         v = rec.get("ANN")
-    return (float(v) + 273.15 if v is not None and v != -999.0 else float("nan")), (float(rec["elev"]) if rec.get("elev") is not None else float("nan"))
+    rh = rec.get("RH_" + (MONTHS[month - 1] if month else "ANN"), rec.get("RH_ANN"))
+    if rh is None or rh == -999.0:
+        rh = rec.get("RH_ANN")
+    return (float(v) + 273.15 if v is not None and v != -999.0 else float("nan")), (float(rec["elev"]) if rec.get("elev") is not None else float("nan")), (float(rh) if rh is not None and rh != -999.0 else float("nan"))
 
 
 def temperature_proxy(lat, doy):
@@ -93,8 +96,9 @@ def build(df, SW, codes, cache):
     n = len(df); F = {k: np.full((n, len(BODIES)), np.nan) for k in ("phi_a", "phi_b", "phi_s", "tau_a", "tau_b", "tau_s")}
     Ta = np.full(n, np.nan); Tb = np.full(n, np.nan); day_a = np.full((n, 2), np.nan); day_b = np.full((n, 2), np.nan)
     El_a = np.full(n, np.nan); El_b = np.full(n, np.nan); Tproxy_a = np.zeros(n); Tproxy_b = np.zeros(n)
+    RH_a = np.full(n, np.nan); RH_b = np.full(n, np.nan)
     for i, r in enumerate(df.itertuples(index=False)):
-        for slot, key_phi, key_tau, Tarr, darr, Elarr, Tpx in (("a", "phi_a", "tau_a", Ta, day_a, El_a, Tproxy_a), ("b", "phi_b", "tau_b", Tb, day_b, El_b, Tproxy_b)):
+        for slot, key_phi, key_tau, Tarr, darr, Elarr, Tpx, RHarr in (("a", "phi_a", "tau_a", Ta, day_a, El_a, Tproxy_a, RH_a), ("b", "phi_b", "tau_b", Tb, day_b, El_b, Tproxy_b, RH_b)):
             d = getattr(r, f"dob_{slot}"); lat = getattr(r, f"lat_{slot}"); lon = getattr(r, f"lon_{slot}")
             if not isinstance(d, str) or d == "0000-00-00" or d.endswith("-00"):
                 continue
@@ -104,7 +108,7 @@ def build(df, SW, codes, cache):
                 cache[key] = instant_features(SW, codes, y, m, dd, hour_ut, lat if lat == lat else None, lon)
             phi, tau, extra = cache[key]; F[key_phi][i] = phi; F[key_tau][i] = tau; darr[i] = extra
             if lat == lat:
-                tk, el = t_at_pob(lat, lon, m); Elarr[i] = el
+                tk, el, rh = t_at_pob(lat, lon, m); Elarr[i] = el; RHarr[i] = rh
                 if tk == tk:
                     Tarr[i] = tk
                 else:
@@ -120,10 +124,11 @@ def build(df, SW, codes, cache):
     X = np.column_stack([F["phi_a"] + F["phi_b"], np.abs(F["phi_a"] - F["phi_b"]), F["tau_a"] + F["tau_b"], np.abs(F["tau_a"] - F["tau_b"]),
                          phiT_a + phiT_b, np.abs(phiT_a - phiT_b), np.nansum(phiT_a, 1) + np.nansum(phiT_b, 1), np.abs(np.nansum(phiT_a, 1) - np.nansum(phiT_b, 1)),
                          np.fmax(Ta, Tb), np.fmin(Ta, Tb), F["phi_s"], F["tau_s"], np.fmax(day_a[:, 0], day_b[:, 0]), np.fmin(day_a[:, 0], day_b[:, 0]), np.fmax(day_a[:, 1], day_b[:, 1]), np.fmin(day_a[:, 1], day_b[:, 1]),
-                         np.fmax(El_a, El_b), np.fmin(El_a, El_b), Tproxy_a + Tproxy_b])
+                         np.fmax(El_a, El_b), np.fmin(El_a, El_b), np.abs(El_a - El_b), Tproxy_a + Tproxy_b,
+                         np.fmax(RH_a, RH_b), np.fmin(RH_a, RH_b), np.abs(RH_a - RH_b)])
     names = ([f"phi_sum_{b}" for b in BODIES] + [f"phi_absdiff_{b}" for b in BODIES] + [f"tau_sum_{b}" for b in BODIES] + [f"tau_absdiff_{b}" for b in BODIES]
              + [f"phiT_sum_{b}" for b in BODIES] + [f"phiT_absdiff_{b}" for b in BODIES] + ["phiT_total_sum", "phiT_total_absdiff", "T_max", "T_min"] + [f"phi_start_{b}" for b in BODIES] + [f"tau_start_{b}" for b in BODIES]
-             + ["daylen_max", "daylen_min", "sunalt_max", "sunalt_min", "elev_max", "elev_min", "n_T_proxy"])
+             + ["daylen_max", "daylen_min", "sunalt_max", "sunalt_min", "elev_max", "elev_min", "elev_absdiff", "n_T_proxy", "RH_max", "RH_min", "RH_absdiff"])
     return X.astype(np.float32), names
 
 

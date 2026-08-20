@@ -243,9 +243,10 @@ def _find_dates(lang, text, spouse_names):
                     YEAR + win + V + win + name_re, name_re + win + YEAR + win + V, YEAR + win + name_re + win + V):   # all six orders
             m = re.search(pat, text, re.I)
             if m:
-                fd = _full_date(lang, m.group(0))
+                clause = text[max(0, m.start() - 24):m.end()]        # a day often precedes the matched year ("9 марта 1902 ...")
+                fd = _full_date(lang, clause)
                 if fd:
-                    return fd, 11, m.group(0)[:160], _end_year(m.group(0), int(fd[:4]))
+                    return fd, 11, clause[:160], _end_year(clause, int(fd[:4]))
                 yr = re.search(YEAR, m.group(0))
                 return yr.group(0) + "-00-00", 9, m.group(0)[:160], _end_year(m.group(0), int(yr.group(0)))
     return None

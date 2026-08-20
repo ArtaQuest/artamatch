@@ -62,7 +62,8 @@ def main():
     bodies = list(Z["bodies"]); s1, s2 = list(Z["slots"]); ptr, pte, pn = Z["plain_train"], Z["plain_test"], list(Z["plain_names"])
     A, B, W = Z[f"theta_{s1}_train"], Z[f"theta_{s2}_train"], Z["theta_wed_train"]; Ae, Be, We = Z[f"theta_{s1}_test"], Z[f"theta_{s2}_test"], Z["theta_wed_test"]
     ysA = Z["yr_train"][:, 0].astype(int); ysB = Z["yr_train"][:, 1].astype(int)
-    ysAe = pd.read_csv("/tmp/aq4/test.csv", dtype=str).dob_a.str[:4].astype(int).to_numpy(); ysBe = pd.read_csv("/tmp/aq4/test.csv", dtype=str).dob_b.str[:4].astype(int).to_numpy()
+    _te = pd.read_csv(os.environ.get("AQ_SRC", "/tmp/aq4") + "/test.csv", dtype=str)
+    ysAe = _te.dob_a.str[:4].astype(int).to_numpy(); ysBe = _te.dob_b.str[:4].astype(int).to_numpy()
     yrs = sorted(set(ysA[ysA > 0]) | set(ysB[ysB > 0]) | set(ysAe) | set(ysBe) | set(ptr[:, pn.index("start_year")].astype(int)) | set(pte[:, pn.index("start_year")].astype(int)))
     D = aya_diff_tables(SW, yrs); log(f"ayanāṁśa tables for {len(yrs)} years, {len(SYSTEMS)} systems")
     i_sun, i_moon, i_ven = bodies.index("sun"), bodies.index("moon"), bodies.index("venus")

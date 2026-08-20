@@ -68,11 +68,11 @@ td{padding:9px 12px;border-bottom:1px solid var(--soft);vertical-align:top}td.nu
 <tr><td>none (clean)</td><td class=num>—</td><td class=num>0.7218</td></tr>
 <tr><td>birthplaces ±0.5°</td><td class=num>0.0046</td><td class=num>0.7187</td></tr><tr><td>birthplaces ±2°</td><td class=num>0.0157</td><td class=num>0.7162</td></tr><tr><td>birth dates ±1 day</td><td class=num>0.0001</td><td class=num>0.7216</td></tr><tr><td>birth dates ±7 days</td><td class=num>0.0002</td><td class=num>0.7215</td></tr><tr><td>birth hour anywhere</td><td class=num>0.0000</td><td class=num>0.7218</td></tr>
 </tbody></table></div>
-<p>The geography member is fitted on the rows plus a copy with every birthplace jittered by ±0.3° (about 30 km), so no split hangs on a coordinate's third decimal; the phase members read the outer planets only, so the unknown birth <em>hour</em> — the thing no record carries — changes nothing. (The AUC in this table is on a sample the deployed members were fitted on; the honest held-out number is the 0.6448 above.)</p>
+<p>The geography member is fitted on the rows plus a copy with every birthplace jittered by ±0.3° (about 30 km), so no split hangs on a coordinate's third decimal; the phase members read the outer planets only, so the unknown birth <em>hour</em> — the thing no record carries — changes nothing. (The AUC in this table is on a sample the deployed members were fitted on; the honest held-out number is the 0.6456 above.)</p>
 <h2>What the stack scores — honestly</h2>
 <div class=tiles>
 <div class=tile><div class=k>public leaderboard</div><div class=v>0.64303</div><div class=n>artamatch-genderless, 4,614 rows</div></div>
-<div class=tile><div class=k>held out, all test pairs</div><div class=v>0.6448</div><div class=n>7,631 pairs, both orders</div></div>
+<div class=tile><div class=k>held out, all test pairs</div><div class=v>0.6456</div><div class=n>7,631 pairs, both orders</div></div>
 <div class=tile><div class=k>the plain ages alone</div><div class=v>0.6114</div><div class=n>older, younger, |gap|, start year</div></div>
 <div class=tile><div class=k>what geography added</div><div class=v>+0.030</div><div class=n>held out; +0.013 on the board</div></div>
 </div>

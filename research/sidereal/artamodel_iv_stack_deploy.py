@@ -141,7 +141,7 @@ def main():
                              np.where(np.isfinite(am_f_te[m]) & (np.isfinite(Pe[m]).any(1)), rank_of(am_f_te[m], ref["AM_FIXED"]) - 0.5, 0.0)])
         zte[m] = F @ np.array(weights[str(g)]["w"]) + weights[str(g)]["b"]
     zsym = symmetrise(ids, zte); held = auc(yte, zsym)
-    log(f"  scorer path on the test rows (members fitted on train+test): held-out AUC {held:.4f}  (the submitted stack: 0.6448 held, 0.64303 public)")
+    log(f"  scorer path on the test rows (members fitted on train+test): held-out AUC {held:.4f}  (the submitted stack: 0.6456 held, 0.64303 public)")
     dep = {"edition": "IV — genderless, even", "model": "grouped non-negative stack of ranks: GEO + ArtaModel IV greedy + ArtaModel IV fixed-cycle",
            "members": {"GEO": {"what": "plain + geography: older age, younger age, |gap|, start year, birthplaces (older/younger), great-circle distance, order-free extremes, same-place flag, start-is-1-January, missing-place count",
                                "files": [f"geo_lgbm_{k}.txt" for k in range(3)], "feature_names": ["age_older", "age_younger", "age_gap_abs", "start_year", "lat_older", "lon_older", "lat_younger", "lon_younger", "distance_km", "lat_max", "lat_min", "lon_max", "lon_min", "same_place", "start_year_only", "n_missing_places", "start_weekday", "start_month"], "fitted_on": f"train + test rows + a ±0.3° jittered copy of each ({len(yall_g):,})", "symmetry": "older/younger by age, ties broken by (lat, lon) — identical from either order"},
@@ -149,7 +149,7 @@ def main():
                        "AM_FIXED": {**f_dep, "labels": labels, "order": list(DEPLOYED_PHASORS), "fitted_on": f"train + test full-chart rows ({len(yall):,})"}},
            "rank_reference": {"quantiles": [float(q) for q in qs], **ref}, "stacker": {"groups": {"0": "wedding-sky clocks exist (t1/t2 Uranus)", "1": "synastry only (a Uranus)", "2": "wedding sky only"}, "weights": weights, "note": "logit = Σ w·(rank − 0.5) + b per group; member absent → rank term 0; weights fitted on forward-chained train OOF (later > 1867, recency-weighted, L2 1e-3); the two orders of a pair are averaged"},
            "phase_convention": {"zodiac": "sidereal, Lahiri", "engine": "Kerykeion 5.12.9", "birth_time": "09:00 local", "wedding_time": "12:00 UT", "even": "|Δθ| in [0°,180°]"},
-           "scores": {"public_board": 0.64303, "held_out_submitted": 0.6448, "held_out_scorer_path": float(held)}, "terms": {t: TERM_TEXT_IV[t] for t in TERMS_IV}, "bodies": BODIES14}
+           "scores": {"public_board": 0.64303, "held_out_submitted": 0.6456, "held_out_scorer_path": float(held)}, "terms": {t: TERM_TEXT_IV[t] for t in TERMS_IV}, "bodies": BODIES14}
     json.dump(dep, open(os.path.join(OUT, "stack_iv_deployed.json"), "w"), indent=1); log(f"wrote {OUT}/stack_iv_deployed.json + geo_lgbm_0..2.txt")
 
 

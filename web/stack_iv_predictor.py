@@ -130,6 +130,19 @@ def _rank(v, grid_key):
     return float(np.interp(v, g, q))
 
 
+_ELEV = None
+
+
+def _elev(lat, lon):
+    global _ELEV
+    if _ELEV is None:
+        try: _ELEV = json.loads(open("/elevations.json").read()) if __import__("os").path.exists("/elevations.json") else json.loads(open(__import__("os").path.join(__import__("os").path.dirname(__import__("os").path.abspath(__file__)), "elevations.json")).read())
+        except Exception: _ELEV = {}
+    if lat is None or lon is None or (isinstance(lat, float) and math.isnan(lat)):
+        return float("nan")
+    return float(_ELEV.get(f"{round(lat * 2) / 2},{round(lon * 2) / 2}", float("nan")))
+
+
 def _geo_x(age1, age2, la, lo, lb, lob, start_year, jan1, wd=float("nan"), mo=float("nan")):
     nan0 = lambda v: -999.0 if (v is None or (isinstance(v, float) and math.isnan(v))) else v
     key1 = nan0(la) * 1000 + nan0(lo); key2 = nan0(lb) * 1000 + nan0(lob)
@@ -142,7 +155,41 @@ def _geo_x(age1, age2, la, lo, lb, lob, start_year, jan1, wd=float("nan"), mo=fl
         d = math.degrees(math.acos(max(-1.0, min(1.0, math.sin(math.radians(lat_o)) * math.sin(math.radians(lat_y)) + math.cos(math.radians(lat_o)) * math.cos(math.radians(lat_y)) * math.cos(math.radians(lon_o - lon_y)))))) * 111.0
     f = lambda a, b, fn: float("nan") if (nan(a) or nan(b)) else fn(a, b)
     return [max(age1, age2), min(age1, age2), abs(age1 - age2), float(start_year), lat_o, lon_o, lat_y, lon_y, d, f(la, lb, max), f(la, lb, min), f(lo, lob, max), f(lo, lob, min),
-            (1.0 if (not nan(d) and d < 1) else 0.0), float(jan1), float(nan(la)) + float(nan(lb)), wd, mo]
+            (1.0 if (not nan(d) and d < 1) else 0.0), float(jan1), float(nan(la)) + float(nan(lb)), wd, mo,
+            max(_elev(la, lo), _elev(lb, lob)) if not (nan(la) or nan(lb)) else float("nan"),
+            min(_elev(la, lo), _elev(lb, lob)) if not (nan(la) or nan(lb)) else float("nan"),
+            abs(_elev(la, lo) - _elev(lb, lob)) if not (nan(la) or nan(lb)) else float("nan")] + _nation_cols(la, lo, lb, lob)
+
+
+_CCMAP = None; _NPROPS = None
+
+
+def _cc(lat, lon):
+    global _CCMAP
+    if _CCMAP is None:
+        import os as _o
+        pth = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), "cc_cells.json")
+        _CCMAP = json.loads(open(pth).read()) if _o.path.exists(pth) else {}
+    if lat is None or lon is None or (isinstance(lat, float) and math.isnan(lat)):
+        return None
+    return _CCMAP.get(f"{round(lat * 2) / 2},{round(lon * 2) / 2}")
+
+
+def _nation_cols(la, lo, lb, lob):
+    global _NPROPS
+    if _NPROPS is None:
+        import os as _o
+        pth = _o.path.join(_o.path.dirname(_o.path.abspath(__file__)), "nation_props.json")
+        _NPROPS = json.loads(open(pth).read()) if _o.path.exists(pth) else {}
+    ca, cb = _cc(la, lo), _cc(lb, lob)
+    pa = _NPROPS.get(ca) if ca else None; pb = _NPROPS.get(cb) if cb else None
+    nanrow = [float("nan")] * 6
+    A = pa if pa else nanrow; B = pb if pb else nanrow
+    mx = [max(x, y) if (x == x and y == y) else float("nan") for x, y in zip(A, B)]
+    mn = [min(x, y) if (x == x and y == y) else float("nan") for x, y in zip(A, B)]
+    same = [(1.0 if x == y else 0.0) if (x == x and y == y) else float("nan") for x, y in zip(A, B)]
+    scc = (1.0 if ca == cb else 0.0) if (ca and cb) else float("nan")
+    return mx + mn + same + [scc]
 
 
 def predict(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, start):
@@ -359,3 +406,94 @@ def best_start_days(dob_1, lat_1, lon_1, dob_2, lat_2, lon_2, from_date=None, ye
     raw = [row(i) for i in np.argsort(-Z)[:top]]
     return {"from": d0.isoformat(), "years": years, "n_days": ndays, "group": group, "best_days": options, "raw_top_days": raw, "note": "every calendar day scored; a year-only start is spelled YYYY-00-00",
             "best_day_per_month": [dict(row(i), month=k) for k, i in sorted(best_in_month.items())]}
+
+
+# ── MAX-PROBABILITY MATCH: joint optimum over (partner birthday × capital × future wedding day) ─────────────────
+def best_matches_max(dob, lat, lon, horizon_years=10, top=20, min_age=18, max_age=100, capitals=None, dob_lo=None, dob_hi=None):
+    """For the person (dob, lat, lon): the `top` (partner birthday, capital) candidates ranked by the MAXIMUM
+    probability achievable over any wedding day in the next `horizon_years` — each with that argmax day. The
+    wedding-day grid is the best weekday of each month (the model's weekday/month preference is coarse), the
+    candidate grid is every birthday of people aged min_age..max_age at each wedding day, in every capital."""
+    import datetime as dt
+    M = _M; labels = M["members"]["AM_GREEDY"]["labels"]; col = {b: j for j, b in enumerate(BODIES14)}
+    caps = capitals if capitals is not None else _CAPS
+    today = dt.date.today()
+    # EVERY day of the horizon (operator 2026-08-20: "search every day for the next 6 years"). The geography member
+    # reads the wedding day only through (year, month, weekday), so its batch is CACHED per that triple — 2,191
+    # days cost ~504 geography evaluations; the daily start-sky terms are cheap vector ops.
+    wdays = [today + dt.timedelta(days=i) for i in range(int(round(365.2425 * horizon_years)))]
+    _geo_cache = {}
+    best_Z = None; best_day_idx = None
+    t1 = theta(dob, lat, lon)
+    # candidate day range must cover ages at EVERY wedding day: use the widest window, then mask per wedding day
+    if dob_lo and dob_hi:                                      # an explicit partner-birthday window (e.g. "younger by up to 12 years")
+        d_lo = dt.date.fromisoformat(dob_lo); d_hi = dt.date.fromisoformat(dob_hi)
+    else:
+        d_lo = dt.date(today.year + 0 - max_age, 1, 1); d_hi = dt.date(today.year + horizon_years - min_age, 12, 31)
+    ndays = (d_hi - d_lo).days + 1; days = [d_lo + dt.timedelta(days=i) for i in range(ndays)]
+    jds = np.array([_jd(d.year, d.month, d.day, 9.0) for d in days]); yrs = np.array([d.year for d in days])
+    L = _outer_lon_by_day(jds); cand = np.full((ndays, len(BODIES14)), np.nan)
+    for b in ("uranus", "neptune", "pluto"):
+        cand[:, col[b]] = L[b]
+    q = np.asarray(M["rank_reference"]["quantiles"]); rk = lambda v, key: np.interp(v, np.asarray(M["rank_reference"][key]), q)
+    iu = col["uranus"]
+    y1 = int(dob[:4]) if _prec(dob) else None
+    for di, wday in enumerate(wdays):
+        tw = theta(wday.isoformat(), natal=False)
+        def am_batch(model, T1, T2, tww):
+            n = T2.shape[0]; F = np.full(n, model["F0"]); rad = np.pi / 180.0
+            for st in model["stages"]:
+                t, b = labels[st["phasor"]].split("_", 1); j = col[b]
+                if t == "a": P = absdiff(np.full(n, T1[j]), T2[:, j])
+                elif t == "t1": P = np.full(n, absdiff(tww[j], T1[j]))
+                elif t == "t2": P = absdiff(np.full(n, tww[j]), T2[:, j])
+                elif t == "n1": P = np.full(n, T1[j])
+                elif t == "n2": P = T2[:, j]
+                else: P = np.full(n, tww[j])
+                ok = np.isfinite(P); C, S = np.where(ok, np.cos(P * rad), 0.0), np.where(ok, np.sin(P * rad), 0.0)
+                Zr = st["w_re"] * C - st["w_im"] * S + st["b_re"]; Zi = st["w_re"] * S + st["w_im"] * C + st["b_im"]
+                F = F + np.where(ok, st["step"] * (st["alpha"] * (Zr * Zr + Zi * Zi) + st["c"]), 0.0)
+            return F
+        am_g = 0.5 * (am_batch(M["members"]["AM_GREEDY"], t1, cand, tw) + am_batch(M["members"]["AM_GREEDY"], t1, cand, tw))
+        am_f = 0.5 * (am_batch(M["members"]["AM_FIXED"], t1, cand, tw) + am_batch(M["members"]["AM_FIXED"], t1, cand, tw))
+        sy = wday.year; age1 = float(sy - y1) if y1 else float("nan")
+        cand_years = np.arange(yrs.min(), yrs.max() + 1)
+        gkey = (sy, wday.month, wday.weekday())
+        if gkey not in _geo_cache:
+            rows = [_geo_x(age1, float(sy - yy), lat, lon, cp["lat"], cp["lon"], sy, 0.0, float(wday.weekday()), float(wday.month)) for yy in cand_years for cp in caps]
+            _geo_cache[gkey] = np.mean([lgbm_predict_proba_batch(m_, np.array(rows, dtype=float)) for m_ in _GEO], axis=0).reshape(len(cand_years), len(caps))
+        geo = _geo_cache[gkey]
+        hasT = np.isfinite(tw[iu]) and np.isfinite(t1[iu]); group = "0" if hasT else ("1" if np.isfinite(t1[iu]) else "2")
+        w = M["stacker"]["weights"].get(group) or M["stacker"]["weights"]["2"]
+        yi = yrs - cand_years[0]
+        # age validity at THIS wedding day
+        age2 = sy - yrs
+        valid = (age2 >= min_age) & (age2 <= max_age)
+        Z = w["w"][0] * (rk(geo, "GEO") - 0.5)[yi, :] + (w["w"][1] * (rk(am_g, "AM_GREEDY") - 0.5) + w["w"][2] * (rk(am_f, "AM_FIXED") - 0.5))[:, None] + w["b"]
+        Z[~valid, :] = -np.inf
+        if best_Z is None:
+            best_Z = Z.copy(); best_day_idx = np.zeros(Z.shape, dtype=int)
+        else:
+            upd = Z > best_Z; best_Z[upd] = Z[upd]; best_day_idx[upd] = di
+    # one best (day, wedding) per (year, capital)
+    ycap_best = {}
+    for r in range(best_Z.shape[0]):
+        for_ = None
+    yrs_u = np.unique(yrs)
+    out = []
+    flat_best = {}
+    for yv in yrs_u:
+        rowsel = np.where(yrs == yv)[0]
+        sub = best_Z[rowsel, :]
+        am = np.argmax(sub, axis=0)
+        for ci in range(len(caps)):
+            ri = rowsel[am[ci]]
+            flat_best[(yv, ci)] = (best_Z[ri, ci], ri, ci)
+    ranked = sorted(flat_best.values(), key=lambda t: -t[0])[:top]
+    for z, ri, ci in ranked:
+        cp = caps[ci]; wd = wdays[best_day_idx[ri, ci]]
+        out.append({"dob": days[ri].isoformat(), "country": cp["country"], "capital": cp["capital"],
+                    "best_wedding_day": wd.isoformat(), "wedding_weekday": wd.strftime("%A"),
+                    "probability": float(1 / (1 + np.exp(-z)))})
+    return {"horizon_years": horizon_years, "n_wedding_days": len(wdays), "n_candidates": ndays * len(caps), "matches": out,
+            "note": "max over every (partner birthday × capital × wedding day); one wedding day per (weekday, month, year) — the resolution the model reads"}

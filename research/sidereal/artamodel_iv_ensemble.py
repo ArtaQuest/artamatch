@@ -152,10 +152,36 @@ def main():
         lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
         d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
         j1_ = p[:, pn.index("start_year_only")]
+        import json as _json
+        _EL = _json.load(open(os.environ.get("AQ_ELEV_JSON", "/Users/arash/Studio/artamatch/web/elevations.json")))
+        elv = lambda lt, ln: np.array([_EL.get(f"{round(x*2)/2},{round(z*2)/2}", np.nan) if x == x and z == z else np.nan for x, z in zip(lt, ln)], dtype=float)
+        ea, eb = elv(la, lo), elv(lb, lob)
+        # + TIME-INVARIANT NATION PROPERTIES of each birthplace's country (operator 2026-08-21): landlocked, island,
+        # legal family, language family, religion group, civilizational cluster — from kaggle/nation_props.PROPS,
+        # cc via offline GeoNames per 0.5° cell (cached); order-free as code_max/code_min + same-flags
+        import reverse_geocoder as _rg, sys as _sys, os as _os
+        _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))), "artamatch", "kaggle")) if False else None
+        _sys.path.insert(0, "/Users/arash/Studio/artamatch/kaggle")
+        from nation_props import PROPS as _NP
+        global _CC_CACHE
+        try: _CC_CACHE
+        except NameError: _CC_CACHE = {}
+        def ccs(lt, ln):
+            keys = [f"{round(x*2)/2},{round(z*2)/2}" if x == x and z == z else None for x, z in zip(lt, ln)]
+            miss = [(k, x, z) for k, x, z in zip(keys, lt, ln) if k is not None and k not in _CC_CACHE]
+            if miss:
+                for (k, _, _), r_ in zip(miss, _rg.search([(x, z) for _, x, z in miss], mode=1)):
+                    _CC_CACHE[k] = r_["cc"]
+            return [(_CC_CACHE.get(k) if k else None) for k in keys]
+        cca, ccb = ccs(la, lo), ccs(lb, lob)
+        DEF = (np.nan,) * 6
+        pa = np.array([_NP.get(c, DEF) if c else DEF for c in cca], dtype=float); pb = np.array([_NP.get(c, DEF) if c else DEF for c in ccb], dtype=float)
+        nat = np.column_stack([np.fmax(pa, pb), np.fmin(pa, pb), (pa == pb).astype(float) * np.where(np.isfinite(pa + pb), 1.0, np.nan),
+                               np.array([1.0 if (x and y and x == y) else (0.0 if (x and y) else np.nan) for x, y in zip(cca, ccb)])])
         # + the start's WEEKDAY and MONTH (calendar facts; NaN for a year-only start) — forward OOF 0.6627 -> 0.6643
         st_ = pd.to_datetime(df.start, errors="coerce"); wd_ = st_.dt.weekday.astype('float64').to_numpy().copy(); mo_ = st_.dt.month.astype('float64').to_numpy().copy()
         noday_ = df.start.str.endswith("-00").to_numpy(); wd_[noday_] = np.nan; mo_[(df.start.str.endswith("-00-00")).to_numpy()] = np.nan; mo_[noday_ & ~df.start.str.endswith("-00-00").to_numpy()] = pd.to_numeric(df.start.str[5:7], errors="coerce").to_numpy()[noday_ & ~df.start.str.endswith("-00-00").to_numpy()]
-        return np.column_stack([plainX(p), lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), j1_, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd_, mo_])
+        return np.column_stack([plainX(p), lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), j1_, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd_, mo_, np.fmax(ea, eb), np.fmin(ea, eb), np.abs(ea - eb), nat])
     Xg, Xge = geoX(trc, ptr), geoX(tec, pte)
     # three small capacities averaged (forward OOF 0.661–0.663 for all three; the larger models overfit the era)
     GEO_PRMS = [dict(n_estimators=200, learning_rate=0.05, num_leaves=7, min_child_samples=400, colsample_bytree=0.8, subsample=0.8, subsample_freq=1, reg_lambda=30.0, verbose=-1),

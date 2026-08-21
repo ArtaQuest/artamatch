@@ -69,7 +69,28 @@ def geo_features(ages_a, ages_b, la, lo, lb, lob, start_year, start_is_jan1, wd,
     swap = (ages_b > ages_a) | (tie & (key_b < key_a))          # symmetric tie-break: equal ages -> order by (lat, lon)
     lat_o, lon_o, lat_y, lon_y = np.where(swap, lb, la), np.where(swap, lob, lo), np.where(swap, la, lb), np.where(swap, lo, lob)
     d = np.degrees(np.arccos(np.clip(np.sin(np.radians(lat_o)) * np.sin(np.radians(lat_y)) + np.cos(np.radians(lat_o)) * np.cos(np.radians(lat_y)) * np.cos(np.radians(lon_o - lon_y)), -1, 1))) * 111.0
-    return np.column_stack([np.fmax(ages_a, ages_b), np.fmin(ages_a, ages_b), np.abs(ages_a - ages_b), start_year, lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), start_is_jan1, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd, mo])
+    import json as _json, os as _os
+    _EL = _json.load(open(_os.environ.get("AQ_ELEV_JSON", "/Users/arash/Studio/artamatch/web/elevations.json")))
+    elv = lambda lt, ln: np.array([_EL.get(f"{round(x*2)/2},{round(z*2)/2}", np.nan) if x == x and z == z else np.nan for x, z in zip(lt, ln)], dtype=float)
+    ea, eb = elv(la, lo), elv(lb, lob)
+    import reverse_geocoder as _rg, sys as _sys
+    _sys.path.insert(0, "/Users/arash/Studio/artamatch/kaggle")
+    from nation_props import PROPS as _NP
+    global _CCC
+    try: _CCC
+    except NameError: _CCC = {}
+    def ccs(lt, ln):
+        keys = [f"{round(x*2)/2},{round(z*2)/2}" if x == x and z == z else None for x, z in zip(lt, ln)]
+        miss = [(k, x, z) for k, x, z in zip(keys, lt, ln) if k is not None and k not in _CCC]
+        if miss:
+            for (k, _, _), r_ in zip(miss, _rg.search([(x, z) for _, x, z in miss], mode=1)):
+                _CCC[k] = r_["cc"]
+        return [(_CCC.get(k) if k else None) for k in keys]
+    cca, ccb = ccs(la, lo), ccs(lb, lob); DEF = (np.nan,) * 6
+    pa = np.array([_NP.get(c, DEF) if c else DEF for c in cca], dtype=float); pb = np.array([_NP.get(c, DEF) if c else DEF for c in ccb], dtype=float)
+    nat = np.column_stack([np.fmax(pa, pb), np.fmin(pa, pb), (pa == pb).astype(float) * np.where(np.isfinite(pa + pb), 1.0, np.nan),
+                           np.array([1.0 if (x and y and x == y) else (0.0 if (x and y) else np.nan) for x, y in zip(cca, ccb)])])
+    return np.column_stack([np.fmax(ages_a, ages_b), np.fmin(ages_a, ages_b), np.abs(ages_a - ages_b), start_year, lat_o, lon_o, lat_y, lon_y, d, np.fmax(la, lb), np.fmin(la, lb), np.fmax(lo, lob), np.fmin(lo, lob), (d < 1).astype(float), start_is_jan1, np.isnan(la).astype(float) + np.isnan(lb).astype(float), wd, mo, np.fmax(ea, eb), np.fmin(ea, eb), np.abs(ea - eb), nat])
 
 
 def geo_features_df(df, ages_a, ages_b, start_year, start_is_jan1, jitter=0.0, seed=0):
@@ -144,7 +165,7 @@ def main():
     log(f"  scorer path on the test rows (members fitted on train+test): held-out AUC {held:.4f}  (the submitted stack: 0.6456 held, 0.64303 public)")
     dep = {"edition": "IV — genderless, even", "model": "grouped non-negative stack of ranks: GEO + ArtaModel IV greedy + ArtaModel IV fixed-cycle",
            "members": {"GEO": {"what": "plain + geography: older age, younger age, |gap|, start year, birthplaces (older/younger), great-circle distance, order-free extremes, same-place flag, start-is-1-January, missing-place count",
-                               "files": [f"geo_lgbm_{k}.txt" for k in range(3)], "feature_names": ["age_older", "age_younger", "age_gap_abs", "start_year", "lat_older", "lon_older", "lat_younger", "lon_younger", "distance_km", "lat_max", "lat_min", "lon_max", "lon_min", "same_place", "start_year_only", "n_missing_places", "start_weekday", "start_month"], "fitted_on": f"train + test rows + a ±0.3° jittered copy of each ({len(yall_g):,})", "symmetry": "older/younger by age, ties broken by (lat, lon) — identical from either order"},
+                               "files": [f"geo_lgbm_{k}.txt" for k in range(3)], "feature_names": ["age_older", "age_younger", "age_gap_abs", "start_year", "lat_older", "lon_older", "lat_younger", "lon_younger", "distance_km", "lat_max", "lat_min", "lon_max", "lon_min", "same_place", "start_year_only", "n_missing_places", "start_weekday", "start_month", "elev_max", "elev_min", "elev_absdiff"] + ["nat_landlocked_max", "nat_island_max", "nat_legal_max", "nat_langfam_max", "nat_religion_max", "nat_civ_max", "nat_landlocked_min", "nat_island_min", "nat_legal_min", "nat_langfam_min", "nat_religion_min", "nat_civ_min", "nat_landlocked_same", "nat_island_same", "nat_legal_same", "nat_langfam_same", "nat_religion_same", "nat_civ_same", "same_country"], "fitted_on": f"train + test rows + a ±0.3° jittered copy of each ({len(yall_g):,})", "symmetry": "older/younger by age, ties broken by (lat, lon) — identical from either order"},
                        "AM_GREEDY": {**g_dep, "labels": labels, "fitted_on": f"train + test full-chart rows ({len(yall):,})"},
                        "AM_FIXED": {**f_dep, "labels": labels, "order": list(DEPLOYED_PHASORS), "fitted_on": f"train + test full-chart rows ({len(yall):,})"}},
            "rank_reference": {"quantiles": [float(q) for q in qs], **ref}, "stacker": {"groups": {"0": "wedding-sky clocks exist (t1/t2 Uranus)", "1": "synastry only (a Uranus)", "2": "wedding sky only"}, "weights": weights, "note": "logit = Σ w·(rank − 0.5) + b per group; member absent → rank term 0; weights fitted on forward-chained train OOF (later > 1867, recency-weighted, L2 1e-3); the two orders of a pair are averaged"},

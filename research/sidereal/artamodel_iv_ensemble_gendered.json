@@ -1,0 +1,1207 @@
+{
+ "members": [
+  {
+   "member": "PLAIN + start-is-1-January flag",
+   "n_fit": 100018,
+   "forward_oof": 0.6493802625861967,
+   "held_on_its_rows": 0.6370380085906414,
+   "n_test": 12518
+  },
+  {
+   "member": "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month",
+   "n_fit": 100018,
+   "forward_oof": 0.661025338591242,
+   "held_on_its_rows": 0.6424260444014904,
+   "n_test": 12518
+  },
+  {
+   "member": "ARTAMODEL 9-term greedy boosted (midpoints)",
+   "n_fit": 13633,
+   "forward_oof": 0.5243735809440437,
+   "held_on_its_rows": 0.6120133065832241,
+   "n_test": 12518
+  },
+  {
+   "member": "ARTAMODEL IV greedy boosted (full-chart rows)",
+   "n_fit": 13633,
+   "forward_oof": 0.5360573246058878,
+   "held_on_its_rows": 0.6130659515004039,
+   "n_test": 12518
+  },
+  {
+   "member": "ARTAMODEL IV fixed-cycle boosted (stable)",
+   "n_fit": 13633,
+   "forward_oof": 0.5436156165863044,
+   "held_on_its_rows": 0.6121865155710613,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_sun",
+   "n_fit": 13779,
+   "forward_oof": 0.47611009471309174,
+   "held_on_its_rows": 0.4953846448831497,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_moon",
+   "n_fit": 13633,
+   "forward_oof": 0.5013886816651925,
+   "held_on_its_rows": 0.5021471977219792,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_mercury",
+   "n_fit": 13633,
+   "forward_oof": 0.4846812180985131,
+   "held_on_its_rows": 0.49449760102082013,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_venus",
+   "n_fit": 13633,
+   "forward_oof": 0.49703015202383005,
+   "held_on_its_rows": 0.4974192015027107,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_mars",
+   "n_fit": 13633,
+   "forward_oof": 0.495686536208246,
+   "held_on_its_rows": 0.491306021727794,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_jupiter",
+   "n_fit": 17159,
+   "forward_oof": 0.4874772956466763,
+   "held_on_its_rows": 0.5079285071228116,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_saturn",
+   "n_fit": 17159,
+   "forward_oof": 0.505800659950242,
+   "held_on_its_rows": 0.5732715271026059,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_uranus",
+   "n_fit": 17159,
+   "forward_oof": 0.5837812065519792,
+   "held_on_its_rows": 0.6032525147238563,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_neptune",
+   "n_fit": 17159,
+   "forward_oof": 0.5453458515493839,
+   "held_on_its_rows": 0.5987222476548225,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_pluto",
+   "n_fit": 17159,
+   "forward_oof": 0.5120986728861721,
+   "held_on_its_rows": 0.6002899701972076,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_true_node",
+   "n_fit": 17159,
+   "forward_oof": 0.47806153406607704,
+   "held_on_its_rows": 0.5152246176673116,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_true_south_node",
+   "n_fit": 17159,
+   "forward_oof": 0.47806153406607704,
+   "held_on_its_rows": 0.5152246176673116,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_chiron",
+   "n_fit": 17159,
+   "forward_oof": 0.5618477192396852,
+   "held_on_its_rows": 0.6043922139282901,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor a_mean_lilith",
+   "n_fit": 17159,
+   "forward_oof": 0.5041097672918703,
+   "held_on_its_rows": 0.5038784651211099,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor t1_sun",
+   "n_fit": 17674,
+   "forward_oof": 0.4921305365477411,
+   "held_on_its_rows": 0.4987343299765321,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_moon",
+   "n_fit": 17107,
+   "forward_oof": 0.49685984208681244,
+   "held_on_its_rows": 0.5017537041957295,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t1_mercury",
+   "n_fit": 17107,
+   "forward_oof": 0.4924849217604691,
+   "held_on_its_rows": 0.49541843485573483,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t1_venus",
+   "n_fit": 17107,
+   "forward_oof": 0.4902585210975843,
+   "held_on_its_rows": 0.49593947640910907,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t1_mars",
+   "n_fit": 17107,
+   "forward_oof": 0.48188780754031485,
+   "held_on_its_rows": 0.5033938056063906,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t1_jupiter",
+   "n_fit": 19118,
+   "forward_oof": 0.5088977461843217,
+   "held_on_its_rows": 0.480581610373407,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_saturn",
+   "n_fit": 19118,
+   "forward_oof": 0.5839058519548896,
+   "held_on_its_rows": 0.5452160012476607,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_uranus",
+   "n_fit": 19118,
+   "forward_oof": 0.575810710781443,
+   "held_on_its_rows": 0.5624311187357038,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_neptune",
+   "n_fit": 19118,
+   "forward_oof": 0.6544680248609881,
+   "held_on_its_rows": 0.6329495662893978,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_pluto",
+   "n_fit": 19118,
+   "forward_oof": 0.5824937540305979,
+   "held_on_its_rows": 0.6262619567477646,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_true_node",
+   "n_fit": 19118,
+   "forward_oof": 0.5498894920136901,
+   "held_on_its_rows": 0.5339042494727149,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_true_south_node",
+   "n_fit": 19118,
+   "forward_oof": 0.5498894920136901,
+   "held_on_its_rows": 0.5339042494727149,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_chiron",
+   "n_fit": 19118,
+   "forward_oof": 0.5995756368516035,
+   "held_on_its_rows": 0.5660240843062115,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t1_mean_lilith",
+   "n_fit": 19118,
+   "forward_oof": 0.5132298416617954,
+   "held_on_its_rows": 0.5046696298606779,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_sun",
+   "n_fit": 9337,
+   "forward_oof": 0.49773304648486405,
+   "held_on_its_rows": 0.4901380967234055,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_moon",
+   "n_fit": 9040,
+   "forward_oof": 0.48924034188536986,
+   "held_on_its_rows": 0.49212747184347727,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t2_mercury",
+   "n_fit": 9040,
+   "forward_oof": 0.4955906395766386,
+   "held_on_its_rows": 0.486844631947669,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t2_venus",
+   "n_fit": 9040,
+   "forward_oof": 0.4981517159223772,
+   "held_on_its_rows": 0.5055706750033315,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t2_mars",
+   "n_fit": 9040,
+   "forward_oof": 0.48763704951062936,
+   "held_on_its_rows": 0.5087859028255434,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor t2_jupiter",
+   "n_fit": 10592,
+   "forward_oof": 0.4866146355017467,
+   "held_on_its_rows": 0.47901535068175743,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_saturn",
+   "n_fit": 10592,
+   "forward_oof": 0.5101324830278762,
+   "held_on_its_rows": 0.5173344993019041,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_uranus",
+   "n_fit": 10592,
+   "forward_oof": 0.5549103945061782,
+   "held_on_its_rows": 0.5767517378130291,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_neptune",
+   "n_fit": 10592,
+   "forward_oof": 0.5815549856477342,
+   "held_on_its_rows": 0.5829031503431067,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_pluto",
+   "n_fit": 10592,
+   "forward_oof": 0.5340132453150664,
+   "held_on_its_rows": 0.5903519814039153,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_true_node",
+   "n_fit": 10592,
+   "forward_oof": 0.496597359003834,
+   "held_on_its_rows": 0.4777342705641208,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_true_south_node",
+   "n_fit": 10592,
+   "forward_oof": 0.496597359003834,
+   "held_on_its_rows": 0.4777342705641208,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_chiron",
+   "n_fit": 10592,
+   "forward_oof": 0.5283880198354811,
+   "held_on_its_rows": 0.5537357410212993,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor t2_mean_lilith",
+   "n_fit": 10592,
+   "forward_oof": 0.49018729650817555,
+   "held_on_its_rows": 0.5034687564982325,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor n1_sun",
+   "n_fit": 29789,
+   "forward_oof": 0.48332414249550276,
+   "held_on_its_rows": 0.4998209565500409,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_moon",
+   "n_fit": 29573,
+   "forward_oof": 0.4836278803462563,
+   "held_on_its_rows": 0.49275321250753434,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_mercury",
+   "n_fit": 29573,
+   "forward_oof": 0.4792591757244593,
+   "held_on_its_rows": 0.49970413879522263,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_venus",
+   "n_fit": 29573,
+   "forward_oof": 0.48159395834521784,
+   "held_on_its_rows": 0.5013565766995177,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_mars",
+   "n_fit": 29573,
+   "forward_oof": 0.47916455057078366,
+   "held_on_its_rows": 0.4982607648332139,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_jupiter",
+   "n_fit": 32946,
+   "forward_oof": 0.49845473055250383,
+   "held_on_its_rows": 0.5066042255847744,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_saturn",
+   "n_fit": 32946,
+   "forward_oof": 0.4920229512405283,
+   "held_on_its_rows": 0.505161545589626,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_uranus",
+   "n_fit": 32946,
+   "forward_oof": 0.4646855287584896,
+   "held_on_its_rows": 0.4633531008508368,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_neptune",
+   "n_fit": 32946,
+   "forward_oof": 0.4721511170912845,
+   "held_on_its_rows": 0.46706181396717283,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_pluto",
+   "n_fit": 32946,
+   "forward_oof": 0.5021870262480388,
+   "held_on_its_rows": 0.5333630222637163,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_true_node",
+   "n_fit": 32946,
+   "forward_oof": 0.47819388387785033,
+   "held_on_its_rows": 0.5004889125043241,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_true_south_node",
+   "n_fit": 32946,
+   "forward_oof": 0.48667104552142454,
+   "held_on_its_rows": 0.4987821909700672,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_chiron",
+   "n_fit": 32946,
+   "forward_oof": 0.4675612755814636,
+   "held_on_its_rows": 0.44923802053201195,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n1_mean_lilith",
+   "n_fit": 32946,
+   "forward_oof": 0.4892227374141214,
+   "held_on_its_rows": 0.5012837872866145,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_sun",
+   "n_fit": 17293,
+   "forward_oof": 0.48190872607170065,
+   "held_on_its_rows": 0.506090985686625,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_moon",
+   "n_fit": 17153,
+   "forward_oof": 0.48397069968045153,
+   "held_on_its_rows": 0.50095658191198,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_mercury",
+   "n_fit": 17153,
+   "forward_oof": 0.5005826380859605,
+   "held_on_its_rows": 0.5002114414213449,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_venus",
+   "n_fit": 17153,
+   "forward_oof": 0.5056318264762737,
+   "held_on_its_rows": 0.49989519815285555,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_mars",
+   "n_fit": 17153,
+   "forward_oof": 0.5141177498259746,
+   "held_on_its_rows": 0.4954503147101158,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_jupiter",
+   "n_fit": 20502,
+   "forward_oof": 0.504278554131076,
+   "held_on_its_rows": 0.501449246977845,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_saturn",
+   "n_fit": 20502,
+   "forward_oof": 0.4950401306278793,
+   "held_on_its_rows": 0.5073334690938132,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_uranus",
+   "n_fit": 20502,
+   "forward_oof": 0.4798509769979119,
+   "held_on_its_rows": 0.5213054894295096,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_neptune",
+   "n_fit": 20502,
+   "forward_oof": 0.4828747136632383,
+   "held_on_its_rows": 0.5003606957012634,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_pluto",
+   "n_fit": 20502,
+   "forward_oof": 0.4812746653734834,
+   "held_on_its_rows": 0.49431642426532746,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_true_node",
+   "n_fit": 20502,
+   "forward_oof": 0.48658551532432404,
+   "held_on_its_rows": 0.5071064905255404,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_true_south_node",
+   "n_fit": 20502,
+   "forward_oof": 0.4884714348707277,
+   "held_on_its_rows": 0.5069823732674507,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_chiron",
+   "n_fit": 20502,
+   "forward_oof": 0.4866197478497247,
+   "held_on_its_rows": 0.455991513247943,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor n2_mean_lilith",
+   "n_fit": 20502,
+   "forward_oof": 0.4887804279167984,
+   "held_on_its_rows": 0.49924335765121725,
+   "n_test": 12518
+  },
+  {
+   "member": "phasor tn_sun",
+   "n_fit": 70736,
+   "forward_oof": 0.52339829729482,
+   "held_on_its_rows": 0.5012688263078157,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_moon",
+   "n_fit": 68267,
+   "forward_oof": 0.5192613513954107,
+   "held_on_its_rows": 0.4888199546913191,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor tn_mercury",
+   "n_fit": 68267,
+   "forward_oof": 0.5280918106548179,
+   "held_on_its_rows": 0.5061550361418259,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor tn_venus",
+   "n_fit": 68267,
+   "forward_oof": 0.5260250736116714,
+   "held_on_its_rows": 0.5009913860533026,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor tn_mars",
+   "n_fit": 68267,
+   "forward_oof": 0.5027078237876585,
+   "held_on_its_rows": 0.49688389009044354,
+   "n_test": 3109
+  },
+  {
+   "member": "phasor tn_jupiter",
+   "n_fit": 70736,
+   "forward_oof": 0.5221950611716363,
+   "held_on_its_rows": 0.5049494251849211,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_saturn",
+   "n_fit": 70736,
+   "forward_oof": 0.5220082257670046,
+   "held_on_its_rows": 0.5194282298072067,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_uranus",
+   "n_fit": 70736,
+   "forward_oof": 0.4776050263877279,
+   "held_on_its_rows": 0.43134970145263346,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_neptune",
+   "n_fit": 70736,
+   "forward_oof": 0.5377078874408229,
+   "held_on_its_rows": 0.5290574963609899,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_pluto",
+   "n_fit": 70736,
+   "forward_oof": 0.5774789085403915,
+   "held_on_its_rows": 0.5649463060333304,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_true_node",
+   "n_fit": 70736,
+   "forward_oof": 0.5233949410387307,
+   "held_on_its_rows": 0.4857607016605769,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_true_south_node",
+   "n_fit": 70736,
+   "forward_oof": 0.5259590955075738,
+   "held_on_its_rows": 0.48695192050619374,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_chiron",
+   "n_fit": 70736,
+   "forward_oof": 0.4872846887313322,
+   "held_on_its_rows": 0.553942756141758,
+   "n_test": 3283
+  },
+  {
+   "member": "phasor tn_mean_lilith",
+   "n_fit": 70736,
+   "forward_oof": 0.5232772820556499,
+   "held_on_its_rows": 0.48469016427531714,
+   "n_test": 3283
+  },
+  {
+   "member": "SUM term a",
+   "n_fit": 17159,
+   "forward_oof": 0.5624067675309007,
+   "held_on_its_rows": 0.6029900924407552,
+   "n_test": 12518
+  },
+  {
+   "member": "SUM term t1",
+   "n_fit": 19118,
+   "forward_oof": 0.6647719542258496,
+   "held_on_its_rows": 0.6285805260969016,
+   "n_test": 3283
+  },
+  {
+   "member": "SUM term t2",
+   "n_fit": 10592,
+   "forward_oof": 0.5807989054483337,
+   "held_on_its_rows": 0.5868407078988801,
+   "n_test": 3283
+  },
+  {
+   "member": "SUM term n1",
+   "n_fit": 32946,
+   "forward_oof": 0.4842369194477244,
+   "held_on_its_rows": 0.5200005361536558,
+   "n_test": 12518
+  },
+  {
+   "member": "SUM term n2",
+   "n_fit": 20502,
+   "forward_oof": 0.48759464843114564,
+   "held_on_its_rows": 0.4845825495041902,
+   "n_test": 12518
+  },
+  {
+   "member": "SUM term tn",
+   "n_fit": 70736,
+   "forward_oof": 0.5193100305344212,
+   "held_on_its_rows": 0.4593964441671865,
+   "n_test": 3283
+  },
+  {
+   "member": "SUM 3-term (a+t1+t2)",
+   "n_fit": 29455,
+   "forward_oof": 0.6526685430108391,
+   "held_on_its_rows": 0.6053238515870135,
+   "n_test": 12518
+  },
+  {
+   "member": "SUM 6-term",
+   "n_fit": 86022,
+   "forward_oof": 0.5473130463889183,
+   "held_on_its_rows": 0.5136930842115677,
+   "n_test": 12518
+  },
+  {
+   "member": "ELECTIONAL (wedding day: phase, retro, eclipse, nak\u1e63atra)",
+   "n_fit": 40772,
+   "forward_oof": 0.5197800463125576,
+   "held_on_its_rows": 0.5053931318528966,
+   "n_test": 3109
+  },
+  {
+   "member": "PLAIN + ELECTIONAL",
+   "n_fit": 59858,
+   "forward_oof": 0.6490208794137201,
+   "held_on_its_rows": 0.6363594889185958,
+   "n_test": 12518
+  },
+  {
+   "member": "NUMEROLOGY DEEP (life path, personal year, karmic, Chaldean)",
+   "n_fit": 59858,
+   "forward_oof": 0.5200789103051865,
+   "held_on_its_rows": 0.5182882757357545,
+   "n_test": 12518
+  },
+  {
+   "member": "PLAIN + NUMEROLOGY DEEP",
+   "n_fit": 59858,
+   "forward_oof": 0.6487577366820826,
+   "held_on_its_rows": 0.6298693052211984,
+   "n_test": 12518
+  },
+  {
+   "member": "PLAIN + ELECTIONAL + NUMEROLOGY",
+   "n_fit": 59858,
+   "forward_oof": 0.649992038748873,
+   "held_on_its_rows": 0.6343085855241032,
+   "n_test": 12518
+  },
+  {
+   "member": "DRACONIC (node-relative zodiac) (no ages)",
+   "n_fit": 22332,
+   "forward_oof": 0.6484876363792937,
+   "held_on_its_rows": 0.6234551494487192,
+   "n_test": 12518
+  },
+  {
+   "member": "ANTISCIA (solstice mirrors) (no ages)",
+   "n_fit": 11925,
+   "forward_oof": 0.4681047292662332,
+   "held_on_its_rows": 0.47811422576289253,
+   "n_test": 12518
+  },
+  {
+   "member": "FIXED STARS (Regulus, Spica, Algol, \u2026) (no ages)",
+   "n_fit": 21215,
+   "forward_oof": 0.518478585281136,
+   "held_on_its_rows": 0.5002014431580613,
+   "n_test": 12518
+  },
+  {
+   "member": "HARMONIC 5 (quintiles) (no ages)",
+   "n_fit": 11925,
+   "forward_oof": 0.5545133326638596,
+   "held_on_its_rows": 0.5790931122838123,
+   "n_test": 12518
+  },
+  {
+   "member": "HARMONIC 7 (septiles) (no ages)",
+   "n_fit": 11925,
+   "forward_oof": 0.5435756686840456,
+   "held_on_its_rows": 0.5744678231598691,
+   "n_test": 12518
+  },
+  {
+   "member": "HARMONIC 9 (noviles) (no ages)",
+   "n_fit": 11925,
+   "forward_oof": 0.5334579214537575,
+   "held_on_its_rows": 0.5648347021058578,
+   "n_test": 12518
+  },
+  {
+   "member": "SOFT SIGNS/NAK\u1e62ATRAS (hour-marginalised) (no ages)",
+   "n_fit": 21215,
+   "forward_oof": 0.5143697216459843,
+   "held_on_its_rows": 0.4959251936623759,
+   "n_test": 12518
+  },
+  {
+   "member": "GEOMETRY ALL (no ages)",
+   "n_fit": 22332,
+   "forward_oof": 0.6277772249402968,
+   "held_on_its_rows": 0.6097853645319243,
+   "n_test": 12518
+  },
+  {
+   "member": "PLAIN + GEOMETRY ALL",
+   "n_fit": 59858,
+   "forward_oof": 0.6534182540313577,
+   "held_on_its_rows": 0.6160141283427966,
+   "n_test": 12518
+  }
+ ],
+ "runs": {
+  "from1868_lam0.01": [
+   {
+    "subset": "plain alone",
+    "k": 1,
+    "fit_auc": 0.6515777712745396,
+    "held": 0.6230781969311912,
+    "age_cell": 0.5315443153205299
+   },
+   {
+    "subset": "geography alone",
+    "k": 1,
+    "fit_auc": 0.6614978624419565,
+    "held": 0.630435607881685,
+    "age_cell": 0.5519293939397089
+   },
+   {
+    "subset": "greedy alone",
+    "k": 1,
+    "fit_auc": 0.5549407436441118,
+    "held": 0.587038338867462,
+    "age_cell": 0.5300390627841508
+   },
+   {
+    "subset": "fixed alone",
+    "k": 1,
+    "fit_auc": 0.5607942895464673,
+    "held": 0.5913419357979387,
+    "age_cell": 0.5298966950951733
+   },
+   {
+    "subset": "plain + greedy",
+    "k": 2,
+    "fit_auc": 0.6502290278492371,
+    "held": 0.6300347263587145,
+    "age_cell": 0.535659988548234
+   },
+   {
+    "subset": "geography + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6600592381609077,
+    "held": 0.6392219737049788,
+    "age_cell": 0.5523190865190268
+   },
+   {
+    "subset": "plain + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6496767151087479,
+    "held": 0.63210976437846,
+    "age_cell": 0.536047602767129
+   },
+   {
+    "subset": "plain + greedy + fixed + 6 best phasors",
+    "k": 9,
+    "fit_auc": 0.6504798767624627,
+    "held": 0.633128250704627,
+    "age_cell": 0.5347538234037932
+   },
+   {
+    "subset": "per-phasor (84) + plain",
+    "k": 85,
+    "fit_auc": 0.6520503970438204,
+    "held": 0.6303229539280285,
+    "age_cell": 0.5343225636160146
+   },
+   {
+    "subset": "sums (8) + plain",
+    "k": 9,
+    "fit_auc": 0.6536091081959231,
+    "held": 0.6346032387124941,
+    "age_cell": 0.5440534471166386
+   },
+   {
+    "subset": "ALL members",
+    "k": 112,
+    "fit_auc": 0.6663178583263694,
+    "held": 0.6399037318890393,
+    "age_cell": 0.5484585320332496
+   }
+  ],
+  "from1868_lam0.001": [
+   {
+    "subset": "plain alone",
+    "k": 1,
+    "fit_auc": 0.6576723854077196,
+    "held": 0.6342907223030694,
+    "age_cell": 0.5319475172425977
+   },
+   {
+    "subset": "geography alone",
+    "k": 1,
+    "fit_auc": 0.6668065520242034,
+    "held": 0.6403742671228033,
+    "age_cell": 0.5581603184879512
+   },
+   {
+    "subset": "greedy alone",
+    "k": 1,
+    "fit_auc": 0.5559660530967093,
+    "held": 0.6064777899633218,
+    "age_cell": 0.5297595233072534
+   },
+   {
+    "subset": "fixed alone",
+    "k": 1,
+    "fit_auc": 0.5671427083967957,
+    "held": 0.612692263197367,
+    "age_cell": 0.5296753497101206
+   },
+   {
+    "subset": "plain + greedy",
+    "k": 2,
+    "fit_auc": 0.656787297039395,
+    "held": 0.6368351903500978,
+    "age_cell": 0.5358470409863068
+   },
+   {
+    "subset": "geography + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.666176122950174,
+    "held": 0.643643750621518,
+    "age_cell": 0.5573975602126994
+   },
+   {
+    "subset": "plain + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6565438294188887,
+    "held": 0.6373610630153523,
+    "age_cell": 0.5360216232618412
+   },
+   {
+    "subset": "plain + greedy + fixed + 6 best phasors",
+    "k": 9,
+    "fit_auc": 0.6569960509849178,
+    "held": 0.6374518441616709,
+    "age_cell": 0.5350728517287282
+   },
+   {
+    "subset": "per-phasor (84) + plain",
+    "k": 85,
+    "fit_auc": 0.6592998970633653,
+    "held": 0.6308465647753679,
+    "age_cell": 0.5345605358844515
+   },
+   {
+    "subset": "sums (8) + plain",
+    "k": 9,
+    "fit_auc": 0.6601121914234027,
+    "held": 0.6366355592166163,
+    "age_cell": 0.5459686562464603
+   },
+   {
+    "subset": "ALL members",
+    "k": 112,
+    "fit_auc": 0.6694049994876059,
+    "held": 0.6393146825370205,
+    "age_cell": 0.555256848976979
+   }
+  ],
+  "from1823_lam0.01": [
+   {
+    "subset": "plain alone",
+    "k": 1,
+    "fit_auc": 0.6484700152834905,
+    "held": 0.625015161248212,
+    "age_cell": 0.5318394425006001
+   },
+   {
+    "subset": "geography alone",
+    "k": 1,
+    "fit_auc": 0.65719357642249,
+    "held": 0.6319798640632012,
+    "age_cell": 0.5532346042853713
+   },
+   {
+    "subset": "greedy alone",
+    "k": 1,
+    "fit_auc": 0.5534998519620458,
+    "held": 0.5896498646751771,
+    "age_cell": 0.5300328277028817
+   },
+   {
+    "subset": "fixed alone",
+    "k": 1,
+    "fit_auc": 0.5575548678390482,
+    "held": 0.5889740180606674,
+    "age_cell": 0.5299424190244799
+   },
+   {
+    "subset": "plain + greedy",
+    "k": 2,
+    "fit_auc": 0.6465320005362992,
+    "held": 0.6324445391323672,
+    "age_cell": 0.5331628384999642
+   },
+   {
+    "subset": "geography + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6541762489354054,
+    "held": 0.6408485806205847,
+    "age_cell": 0.5523107730773348
+   },
+   {
+    "subset": "plain + greedy + fixed",
+    "k": 3,
+    "fit_auc": 0.6452211494835534,
+    "held": 0.6348657381030242,
+    "age_cell": 0.5330329409735248
+   },
+   {
+    "subset": "plain + greedy + fixed + 6 best phasors",
+    "k": 9,
+    "fit_auc": 0.6457763510913916,
+    "held": 0.6350682993188047,
+    "age_cell": 0.5335327866552634
+   },
+   {
+    "subset": "per-phasor (84) + plain",
+    "k": 85,
+    "fit_auc": 0.6461364931546774,
+    "held": 0.6326426795222229,
+    "age_cell": 0.5326785805213983
+   },
+   {
+    "subset": "sums (8) + plain",
+    "k": 9,
+    "fit_auc": 0.6496770084659867,
+    "held": 0.6349617368520332,
+    "age_cell": 0.5431670263962165
+   },
+   {
+    "subset": "ALL members",
+    "k": 112,
+    "fit_auc": 0.659398890184659,
+    "held": 0.6400386955921307,
+    "age_cell": 0.5470525212070702
+   }
+  ]
+ },
+ "pools": {
+  "plain + greedy": {
+   "k": 2,
+   "held": 0.6344102388178999,
+   "age_cell": 0.5396826551470076
+  },
+  "plain + greedy + fixed": {
+   "k": 3,
+   "held": 0.6289117209126425,
+   "age_cell": 0.5388720945820261
+  },
+  "plain + greedy + fixed + 6 best phasors": {
+   "k": 9,
+   "held": 0.6226141130189802,
+   "age_cell": 0.525901566772005
+  },
+  "plain + all members with fwd-OOF >= 0.60": {
+   "k": 12,
+   "held": 0.6402734363082485,
+   "age_cell": 0.5450427466780007
+  },
+  "plain + greedy + fixed + traditions + sidereal families": {
+   "k": 3,
+   "held": 0.6289117209126425,
+   "age_cell": 0.5388720945820261
+  },
+  "geography + greedy + fixed": {
+   "k": 3,
+   "held": 0.631878095108261,
+   "age_cell": 0.551198850251014
+  },
+  "geography + plain + greedy + fixed": {
+   "k": 4,
+   "held": 0.6378143133337996,
+   "age_cell": 0.5526448695153368
+  }
+ },
+ "raw_pair_asymmetry": {
+  "PLAIN (older age, younger age, |gap|, start year)": NaN,
+  "PLAIN + start-is-1-January flag": NaN,
+  "PLAIN + GEOGRAPHY (birthplaces, distance) + start weekday/month": NaN,
+  "ARTAMODEL 9-term greedy boosted (midpoints)": NaN,
+  "ARTAMODEL IV greedy boosted (full-chart rows)": NaN,
+  "ARTAMODEL IV fixed-cycle boosted (stable)": NaN,
+  "phasor a_sun": NaN,
+  "phasor a_moon": NaN,
+  "phasor a_mercury": NaN,
+  "phasor a_venus": NaN,
+  "phasor a_mars": NaN,
+  "phasor a_jupiter": NaN,
+  "phasor a_saturn": NaN,
+  "phasor a_uranus": NaN,
+  "phasor a_neptune": NaN,
+  "phasor a_pluto": NaN,
+  "phasor a_true_node": NaN,
+  "phasor a_true_south_node": NaN,
+  "phasor a_chiron": NaN,
+  "phasor a_mean_lilith": NaN,
+  "phasor t1_sun": NaN,
+  "phasor t1_moon": NaN,
+  "phasor t1_mercury": NaN,
+  "phasor t1_venus": NaN,
+  "phasor t1_mars": NaN,
+  "phasor t1_jupiter": NaN,
+  "phasor t1_saturn": NaN,
+  "phasor t1_uranus": NaN,
+  "phasor t1_neptune": NaN,
+  "phasor t1_pluto": NaN,
+  "phasor t1_true_node": NaN,
+  "phasor t1_true_south_node": NaN,
+  "phasor t1_chiron": NaN,
+  "phasor t1_mean_lilith": NaN,
+  "phasor t2_sun": NaN,
+  "phasor t2_moon": NaN,
+  "phasor t2_mercury": NaN,
+  "phasor t2_venus": NaN,
+  "phasor t2_mars": NaN,
+  "phasor t2_jupiter": NaN,
+  "phasor t2_saturn": NaN,
+  "phasor t2_uranus": NaN,
+  "phasor t2_neptune": NaN,
+  "phasor t2_pluto": NaN,
+  "phasor t2_true_node": NaN,
+  "phasor t2_true_south_node": NaN,
+  "phasor t2_chiron": NaN,
+  "phasor t2_mean_lilith": NaN,
+  "phasor n1_sun": NaN,
+  "phasor n1_moon": NaN,
+  "phasor n1_mercury": NaN,
+  "phasor n1_venus": NaN,
+  "phasor n1_mars": NaN,
+  "phasor n1_jupiter": NaN,
+  "phasor n1_saturn": NaN,
+  "phasor n1_uranus": NaN,
+  "phasor n1_neptune": NaN,
+  "phasor n1_pluto": NaN,
+  "phasor n1_true_node": NaN,
+  "phasor n1_true_south_node": NaN,
+  "phasor n1_chiron": NaN,
+  "phasor n1_mean_lilith": NaN,
+  "phasor n2_sun": NaN,
+  "phasor n2_moon": NaN,
+  "phasor n2_mercury": NaN,
+  "phasor n2_venus": NaN,
+  "phasor n2_mars": NaN,
+  "phasor n2_jupiter": NaN,
+  "phasor n2_saturn": NaN,
+  "phasor n2_uranus": NaN,
+  "phasor n2_neptune": NaN,
+  "phasor n2_pluto": NaN,
+  "phasor n2_true_node": NaN,
+  "phasor n2_true_south_node": NaN,
+  "phasor n2_chiron": NaN,
+  "phasor n2_mean_lilith": NaN,
+  "phasor tn_sun": NaN,
+  "phasor tn_moon": NaN,
+  "phasor tn_mercury": NaN,
+  "phasor tn_venus": NaN,
+  "phasor tn_mars": NaN,
+  "phasor tn_jupiter": NaN,
+  "phasor tn_saturn": NaN,
+  "phasor tn_uranus": NaN,
+  "phasor tn_neptune": NaN,
+  "phasor tn_pluto": NaN,
+  "phasor tn_true_node": NaN,
+  "phasor tn_true_south_node": NaN,
+  "phasor tn_chiron": NaN,
+  "phasor tn_mean_lilith": NaN,
+  "SUM term a": NaN,
+  "SUM term t1": NaN,
+  "SUM term t2": NaN,
+  "SUM term n1": NaN,
+  "SUM term n2": NaN,
+  "SUM term tn": NaN,
+  "SUM 3-term (a+t1+t2)": NaN,
+  "SUM 6-term": NaN,
+  "ELECTIONAL (wedding day: phase, retro, eclipse, nak\u1e63atra)": NaN,
+  "PLAIN + ELECTIONAL": NaN,
+  "NUMEROLOGY DEEP (life path, personal year, karmic, Chaldean)": NaN,
+  "PLAIN + NUMEROLOGY DEEP": NaN,
+  "PLAIN + ELECTIONAL + NUMEROLOGY": NaN,
+  "DRACONIC (node-relative zodiac) (no ages)": NaN,
+  "ANTISCIA (solstice mirrors) (no ages)": NaN,
+  "FIXED STARS (Regulus, Spica, Algol, \u2026) (no ages)": NaN,
+  "HARMONIC 5 (quintiles) (no ages)": NaN,
+  "HARMONIC 7 (septiles) (no ages)": NaN,
+  "HARMONIC 9 (noviles) (no ages)": NaN,
+  "SOFT SIGNS/NAK\u1e62ATRAS (hour-marginalised) (no ages)": NaN,
+  "GEOMETRY ALL (no ages)": NaN,
+  "PLAIN + GEOMETRY ALL": NaN
+ },
+ "bagged_stack_all": {
+  "grid": [
+   [
+    1868.0,
+    0.01,
+    3.0
+   ],
+   [
+    1868.0,
+    0.001,
+    3.0
+   ],
+   [
+    1868.0,
+    0.003,
+    1.0
+   ],
+   [
+    1884.0,
+    0.01,
+    3.0
+   ],
+   [
+    1823.0,
+    0.01,
+    3.0
+   ],
+   [
+    1823.0,
+    0.003,
+    0.0
+   ]
+  ],
+  "held": 0.6410119841137106,
+  "age_cell": 0.5515646416854671
+ }
+}

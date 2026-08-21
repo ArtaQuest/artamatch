@@ -1035,6 +1035,10 @@ def order_genderless(m, tag):
 
 
 GENDERLESS = os.environ.get("AQ_ORDER", "") == "none"
+# AQ_ORDER=sex (operator 2026-08-21): GENDERED male x female only — order_by_sex drops same-sex and unknown-sex
+# pairs (counted aloud) and puts the MAN first; the files keep the a/b column names with a = the man, one row per
+# couple (no both-orders duplication).
+GENDERED_AB = os.environ.get("AQ_ORDER", "") == "sex"
 _order = order_genderless if GENDERLESS else order_by_sex
 test_c = _order(test_l, "test half")
 train_c = _order(train_l, "train half")
@@ -1264,7 +1268,11 @@ for col in ("dob_dad", "dob_mom"):
     assert test[col].str.match(r"^\d{4}-\d{2}-\d{2}$").all(), f"test.{col} malformed"
     assert not test[col].eq(ABSENT).any(), f"test.{col} has an absent date — the test half must be complete"
     assert not test[col].str.endswith("-00").any(), f"test.{col} is not day-precision"
-    assert not (test[col].str[5:] == "01-01").any(), f"test.{col} still contains a 1 January"
+    # 1 January in a test birth is REAL when its precision flag said day (the wiki-harvest rows carry Wikidata's
+    # own timePrecision; the original query-side rows still exclude placeholders upstream) — counted, not asserted
+    n_jan1 = int((test[col].str[5:] == "01-01").sum())
+    if n_jan1:
+        print(f"  test.{col}: {n_jan1:,} genuine 1 January birthdays (day-precision on Wikidata's own flag)")
     # EACH PARTNER IS IN THE WINDOW; THE COUPLE IS PLACED BY ITS LATER BIRTH. This asserted `y > CUT` on BOTH
     # columns, which contradicted the straddle fix in the very same file: a couple whose man was born 1845 and
     # whose wife was born 1860 is a held-out couple by the split rule, and its man's year is 1845. The query was
@@ -1351,6 +1359,15 @@ if GENDERLESS:
         .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
     sol = test[["id", LABEL]].copy()
     sol["Usage"] = side_of_pair[test["_pairno"].to_numpy()]
+elif GENDERED_AB:
+    REN = {"dob_dad": "dob_a", "dob_mom": "dob_b", "lat_dad": "lat_a", "lon_dad": "lon_a", "lat_mom": "lat_b", "lon_mom": "lon_b"}
+    train = train.rename(columns=REN); test = test.rename(columns=REN); COLS = [REN.get(c, c) for c in COLS]
+    print(f"  GENDERED: one row per couple, column a IS the man (P21), column b the woman — "
+          f"{len(train):,} train rows, {len(test):,} test rows")
+    train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
+    test["id"] = [f"m{i:06d}" for i in range(len(test))]
+    test[["id", "dob_a", "dob_b", "lat_a", "lon_a", "lat_b", "lon_b", "start"]]\
+        .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
 else:
     train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
     test["id"] = [f"m{i:06d}" for i in range(len(test))]
@@ -1370,7 +1387,7 @@ for side in ("Public", "Private"):
 
 print(f"\n  wrote train.csv ({len(train):,}) · test.csv ({len(test):,}) · solution.csv · sample_submission.csv")
 print("\n  training rows, showing the three shapes it can take:")
-_c1, _c2 = ("dob_a", "dob_b") if GENDERLESS else ("dob_dad", "dob_mom")
+_c1, _c2 = ("dob_a", "dob_b") if (GENDERLESS or GENDERED_AB) else ("dob_dad", "dob_mom")
 ex = pd.concat([train[(train[_c2] != ABSENT) & (train[_c1].str[5:] != "00-00")].head(2),
                 train[train[_c1].str[5:] == "00-00"].head(2),
                 train[train[_c2] == ABSENT].head(2)])

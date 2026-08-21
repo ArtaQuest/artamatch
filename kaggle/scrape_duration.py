@@ -1368,6 +1368,12 @@ elif GENDERED_AB:
     test["id"] = [f"m{i:06d}" for i in range(len(test))]
     test[["id", "dob_a", "dob_b", "lat_a", "lon_a", "lat_b", "lon_b", "start"]]\
         .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
+    rng = np.random.default_rng(20260817)
+    sol = test[["id", LABEL]].copy()
+    sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")
+    sol.to_csv(os.path.join(OUT, "solution.csv"), index=False)
+    samp = test[["id"]].copy(); samp[LABEL] = 0.5
+    samp.to_csv(os.path.join(OUT, "sample_submission.csv"), index=False)
 else:
     train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
     test["id"] = [f"m{i:06d}" for i in range(len(test))]

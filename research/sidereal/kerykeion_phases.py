@@ -94,13 +94,25 @@ def theta(dob, lat, lon, hour, natal):
     return out
 
 
+NO_PLACE = os.environ.get("AQ_NO_PLACE", "") == "1"      # dates-only dataset: cast every chart at 12:00 UT, no place
+
+
 def _work(args):
     i, dd, latd, lond, dm, latm, lonm, start = args
+    if NO_PLACE:
+        wed_ = start
+        return i, theta(dd, None, None, 12, False), theta(dm, None, None, 12, False), theta(wed_, None, None, 12, False)
     wed = start                                                          # precision is in the string: YYYY-00-00 year, YYYY-MM-00 month
     return i, theta(dd, latd, lond, 9, True), theta(dm, latm, lonm, 9, True), theta(wed, None, None, 12, False)
 
 
 def slots(df):
+    if "lat_a" not in df.columns and "dob_a" in df.columns:
+        for c in ("lat_a", "lon_a", "lat_b", "lon_b"):
+            df[c] = np.nan
+    if "lat_dad" not in df.columns and "dob_dad" in df.columns:
+        for c in ("lat_dad", "lon_dad", "lat_mom", "lon_mom"):
+            df[c] = np.nan
     """FOURTH EDITION (genderless, 2026-08-19): the files carry `dob_a/dob_b`; the earlier editions `dob_dad/dob_mom`.
     The extractor reads whichever it is given and names its outputs by the same slot names."""
     return ("a", "b") if "dob_a" in df.columns else ("dad", "mom")
@@ -124,7 +136,10 @@ def main():
     s1, s2 = slots(tr)
     for df in (tr, te):
         for c in (f"lat_{s1}", f"lon_{s1}", f"lat_{s2}", f"lon_{s2}"):
-            df[c] = pd.to_numeric(df[c], errors="coerce")
+            # A dates-only build publishes no coordinate of any kind, so these columns are absent rather than
+            # empty. Materialise them as NaN — NO_PLACE casts every chart at 12:00 UT and never reads them,
+            # but the label-detection line below still needs the names to exclude.
+            df[c] = pd.to_numeric(df[c], errors="coerce") if c in df.columns else np.nan
     LABEL = [c for c in tr.columns if c not in {"id", f"dob_{s1}", f"dob_{s2}", f"lat_{s1}", f"lon_{s1}", f"lat_{s2}", f"lon_{s2}", "start"}][0]
     d1, d2 = tr[f"dob_{s1}"], tr[f"dob_{s2}"]
     if LIMIT:

@@ -141,8 +141,10 @@ def day_features(dstr, sun=np.nan, ven=np.nan, jup=np.nan, moon=np.nan):
     try:
         from convertdate import hebrew
         hy, hm, hd = hebrew.from_gregorian(d.year, d.month, d.day)
-        omer = float(hm == 1 and hd >= 16 or hm == 2 or (hm == 3 and hd <= 5))          # Nisan 16 → Sivan 5
-        three_weeks = float((hm == 11 and hd >= 17) or (hm == 12 and hd <= 9))          # 17 Tammuz → 9 Av
+        omer = float((hm == hebrew.NISAN and hd >= 16) or hm == hebrew.IYYAR or (hm == hebrew.SIVAN and hd <= 5))
+        # convertdate numbers Hebrew months from NISAN=1, so Tammuz is 4 and Av is 5 — NOT 11 and 12, which
+        # are Shevat and Adar and put this mourning period in midwinter instead of midsummer
+        three_weeks = float((hm == hebrew.TAMMUZ and hd >= 17) or (hm == hebrew.AV and hd <= 9))
         rosh_chodesh = float(hd == 1 or hd == 30)
     except Exception:
         hm = hd = omer = three_weeks = rosh_chodesh = np.nan

@@ -1,0 +1,43 @@
+============================================================================================================
+THE GIANT ENSEMBLE — every date-keyed marriage system in the catalogue, and what each one contributes
+============================================================================================================
+
+REFERENCE                                                          RAW    CONTROLLED
+                                                              held-outages+era+prec flat
+------------------------------------------------------------------------------------------------------------
+  the age gap alone                                             0.5924        0.5000
+  the older partner's age                                       0.6442        0.5000
+  the start year alone                                          0.4680        0.5018
+  WHICH DAY OF THE MONTH the wedding was written down on        0.5146        0.5101
+
+  plain ages alone (the baseline)                               0.6438        0.4986
+  STACK (non-negative over family members)                      0.6457        0.5070
+  GIANT (every raw feature at once)                             0.6484        0.5096
+
+------------------------------------------------------------------------------------------------------------
+CONTRIBUTION   feats    alone     adds  LOFO cost   weight   vs the bookkeeping yardstick  
+                       (ctrl)   (ctrl)     (ctrl)    share
+------------------------------------------------------------------------------------------------------------
+  geometry       190   0.5074  +0.0088    +0.0123    16.5%   below it by -0.0028           
+  zodiac          90   0.5071  +0.0085    -0.0006     0.0%   below it by -0.0030           
+  maya            59   0.5047  +0.0061    +0.0059     0.0%   below it by -0.0055           
+  world3          32   0.5045  +0.0059    -0.0013     0.0%   below it by -0.0056           
+  electional      74   0.5026  +0.0040    +0.0011     0.0%   below it by -0.0076           
+  world2          83   0.5021  +0.0035    -0.0012    20.3%   below it by -0.0080           
+  calendar        35   0.5001  +0.0016    +0.0066    14.4%   below it by -0.0100           
+  world           87   0.4968  -0.0018    -0.0000     0.0%   below it by -0.0134           
+  extra           13   0.4950  -0.0036    -0.0004     0.0%   below it by -0.0152           
+------------------------------------------------------------------------------------------------------------
+
+NOT IN THE GIANT MODEL, and absent rather than zero:
+  physics    needs birthplaces; location was removed from this edition, so it has nothing to read
+  traditions the 21-module chart sweep (vedic, hellenistic, uranian, harmonics, ...) is ~50,000 raw
+             features across its modules — too wide to concatenate into one matrix at this row count.
+             It was built and measured separately; under the same control it sits at chance.
+
+The yardstick is WHICH DAY OF THE MONTH the wedding was written down on: 0.5101 controlled.
+It carries no astrological content whatsoever. Read every row above against it.
+
+Columns: 'alone' is plain ages plus that family and nothing else. 'add gain' is what it adds to the ages.
+'LOFO cost' is what the giant model loses when that family is removed — the honest marginal number, and
+far smaller than 'add gain' wherever the families are redundant with each other, which is nearly always.

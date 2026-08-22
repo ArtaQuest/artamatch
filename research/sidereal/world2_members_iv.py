@@ -130,7 +130,12 @@ def day_extras(dstr):
     J = d.toordinal() + 1721425
     sx = (J + 49) % 60
     napeum = float(NAPEUM[sx // 2])
-    # Aztec tonalpōhualli — the same 260-day engine as the Tzolkʼin, read with the Aztec sign set and lords
+    # Aztec tonalpōhualli — the same 260-day engine as the Tzolkʼin, read with the Aztec sign set and lords.
+    # The Aztec-to-Maya correlation is genuinely disputed in the scholarship, so the +160 here is an ASSUMED
+    # alignment, not a verified one. It costs little: every PAIR feature below is a difference on the cycle and
+    # is therefore exactly invariant to the choice, and the single-date features are a relabelling of the same
+    # 260 categories (not quite invariant, since the tree splits them as numbers, but close to it). If the
+    # correlation is ever settled, changing this constant is the whole fix.
     az = (J - 584283 + 160) % 260
     az_sign = az % 20; az_num = (az % 13) + 1; az_trecena = az // 13
     lord_night = (J % 9) + 1; lord_day = (J % 13) + 1

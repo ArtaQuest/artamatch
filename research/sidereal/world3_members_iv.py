@@ -98,7 +98,9 @@ HAWAIIAN = ["Hilo", "Hoaka", "Kukahi", "Kulua", "Kukolu", "Kupau", "Olekukahi", 
             "Laaupau", "Olekukahi2", "Olekulua2", "Olepau2", "Kaloakukahi", "Kaloakulua", "Kaloapau", "Kane",
             "Lono", "Mauli", "Muku"]
 RAHU_ORDER = {6: 8, 0: 2, 1: 7, 2: 5, 3: 6, 4: 4, 5: 3}    # weekday() → which eighth of the day is Rāhu Kālam
-AKAN_M = ["Kwasi", "Kwadwo", "Kwabena", "Kwaku", "Yaw", "Kofi", "Kwame"]
+# the Akan soul-name IS the birth weekday, so the numeric weekday carries the whole system. Ordered here to
+# match datetime.weekday() (Monday first) — the customary listing starts on Sunday and would be off by one.
+AKAN_M = ["Kwadwo", "Kwabena", "Kwaku", "Yaw", "Kofi", "Kwame", "Kwasi"]
 
 
 def day3(dstr):
@@ -139,7 +141,12 @@ def day3(dstr):
     # Rāhu Kālam
     rahu = float(RAHU_ORDER[wd])
     # Parsi Shahenshahi: a flat 365-day year, so the day-name is a pure count from a known anchor
-    parsi_day = float((J - 1945351) % 365 % 30); parsi_month = float(((J - 1945351) % 365) // 30)
+    # Shahenshahi: twelve 30-day months plus five gāthā days, never intercalated, so Nowruz falls one Gregorian
+    # day EARLIER after each leap year. The epoch is pinned to the documented Navroz dates 2023-08-16,
+    # 2024-08-15 and 2025-08-15, and the leap rule then carries it: 2026-27 on 15 Aug, 2028-31 on 14 Aug.
+    # The five gāthās land in their own month index 12 rather than colliding with month 0.
+    p_doy = (J - 1945523) % 365
+    parsi_day = float(p_doy % 30); parsi_month = float(p_doy // 30)
     return [float(wd), lm, ld, son, widow, dbl, float(mm), yat, pya, sabbath, wanphra, tubav, lag, may, wedfri,
             moonnight, kapu, rahu]
 

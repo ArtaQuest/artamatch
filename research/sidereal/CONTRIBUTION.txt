@@ -41,3 +41,37 @@ It carries no astrological content whatsoever. Read every row above against it.
 Columns: 'alone' is plain ages plus that family and nothing else. 'add gain' is what it adds to the ages.
 'LOFO cost' is what the giant model loses when that family is removed — the honest marginal number, and
 far smaller than 'add gain' wherever the families are redundant with each other, which is nearly always.
+
+
+============================================================================================================
+CROSS-CHECK: the same code and the same data, run twice
+============================================================================================================
+
+Once on a Kaggle P100 (xgboost 3.2.0, GPU histograms) and once locally (xgboost 3.4.0, CPU). Identical inputs,
+identical code — only the boosting backend differs. See CONTRIBUTION_GPU.txt for the full second table.
+
+  family        GPU alone  CPU alone     diff     GPU LOFO  CPU LOFO
+  zodiac           0.5117     0.5071   +0.0045     +0.0020   -0.0006
+  geometry         0.5101     0.5074   +0.0027     +0.0041   +0.0123
+  world2           0.5061     0.5021   +0.0040     +0.0055   -0.0012
+  maya             0.5049     0.5047   +0.0002     +0.0021   +0.0059
+  world3           0.5031     0.5045   -0.0014     -0.0008   -0.0013
+  extra            0.5026     0.4950   +0.0076     +0.0014   -0.0004
+  electional       0.5012     0.5026   -0.0014     -0.0022   +0.0011
+  calendar         0.5009     0.5001   +0.0008     +0.0037   +0.0066
+  world            0.4962     0.4968   -0.0006     -0.0005   -0.0000
+  GIANT            0.5078     0.5096   -0.0019
+  yardstick        0.5101     0.5101
+
+THE SPREAD BETWEEN THE TWO RUNS IS 0.0076. THE LARGEST MARGIN ANY FAMILY ACHIEVES OVER THE YARDSTICK IS
++0.0015. The disagreement between two runs of the same code on the same data is FIVE TIMES the best effect
+either run claims.
+
+So the honest reading is not "zodiac clears the bar by +0.0015 on the GPU run". It is that nothing here is
+resolved: the top-three ordering flips between runs (zodiac/geometry/world2 against geometry/zodiac/maya), and
+four of the nine LOFO costs change SIGN — geometry's marginal value is +0.0123 on one run and +0.0041 on the
+other, world2's is +0.0055 and -0.0012.
+
+Either table alone would have supported a confident ranking of the world's astrological traditions. Run twice,
+they agree on only one thing: none of these systems is distinguishable from the day of the month a clerk
+happened to write down, and they are not distinguishable from each other either.

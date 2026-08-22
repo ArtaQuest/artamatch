@@ -119,11 +119,18 @@ def day_features(dstr, sun=np.nan, ven=np.nan, jup=np.nan, moon=np.nan):
     # — the two that actually decide a Japanese wedding booking.
     rokuyo = ((lm + ld) % 6) if ls else np.nan
     taian = float(rokuyo == 0) if ls else np.nan; butsumetsu = float(rokuyo == 5) if ls else np.nan
-    month_branch = ((lm + 1) % 12) if ls else np.nan                        # month 1 (寅) is branch 2
-    officer = ((branch - month_branch) % 12) if ls else np.nan              # 建除十二直
-    officer_good = float(officer in (2, 3, 5, 8, 9, 11)) if ls else np.nan  # 除·满·平·成·收·开 are the usable ones
-    mansion = (J + 20) % 28                                                 # 二十八宿 (phase anchor conventional)
-    clash = float((branch - month_branch) % 12 == 6) if ls else np.nan      # 沖: the day clashes the month
+    # The Day Officers run off the SOLAR-term month (節月), not the lunisolar one: 寅 begins at Lì Chūn, not at
+    # Chinese New Year, and the two can differ by weeks. The terms sit within a day or two of the 5th of each
+    # Gregorian month, which is accurate enough here and — unlike the lunar month — is defined for every date.
+    month_branch = (d.month if d.day >= 5 else d.month - 1) % 12
+    officer = (branch - month_branch) % 12                                  # 建除十二直; 建 when the two agree
+    officer_good = float(officer in (2, 3, 5, 8, 9, 11))                    # 除·满·平·成·收·开 are the usable ones
+    # 二十八宿, the 28-day "duty" cycle. The offset is NOT free: the cycle maps exactly onto the 7-day week, so
+    # the four Sun mansions 房·虛·昴·星 must always fall on a Sunday — which narrows it to four candidates — and
+    # five published assignments for August 2026 (女 1st, 虛 2nd, 角 20th, 心 24th, 牛 28th) then pin it uniquely
+    # to 11. The offset shipped first, 20, failed the weekday test outright and was 19 positions out.
+    mansion = (J + 11) % 28
+    clash = float((branch - month_branch) % 12 == 6)                        # 沖: the day clashes the month
     # Hindu muhūrta
     elong = (moon - sun) % 360.0 if np.isfinite(moon + sun) else np.nan
     tithi = np.floor(elong / 12.0) + 1 if np.isfinite(elong) else np.nan

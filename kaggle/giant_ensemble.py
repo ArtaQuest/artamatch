@@ -443,6 +443,12 @@ def main():
         for fam, why in failed:
             P_(f"  {fam:<11} {why}")
         P_("")
+    P_("NOT IN THE GIANT MODEL, and absent rather than zero:")
+    P_("  physics    needs birthplaces; location was removed from this edition, so it has nothing to read")
+    P_("  traditions the 21-module chart sweep (vedic, hellenistic, uranian, harmonics, ...) is ~50,000 raw")
+    P_("             features across its modules — too wide to concatenate into one matrix at this row count.")
+    P_("             It was built and measured separately; under the same control it sits at chance.")
+    P_("")
     P_(f"The yardstick is WHICH DAY OF THE MONTH the wedding was written down on: {YARD:.4f} controlled.")
     P_("It carries no astrological content whatsoever. Read every row above against it.")
     P_("")

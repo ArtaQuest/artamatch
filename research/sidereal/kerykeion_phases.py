@@ -160,9 +160,13 @@ def main():
                         plain_names=np.array([f"age_{s1}_at_start", f"age_{s2}_at_start", "age_gap", "start_year", "start_year_only"], dtype=object),
                         yr_train=np.column_stack([pd.to_numeric(d1.str[:4], errors="coerce").fillna(0),
                                                   pd.to_numeric(d2.str[:4], errors="coerce").fillna(0)]).astype(np.int16))
-    full = np.isfinite(Dtr).all(1) & np.isfinite(Mtr).all(1)
-    log(f"wrote {OUT}/phases.npz · {len(BODIES)} bodies · train rows with BOTH natal charts complete: {full.sum():,} · "
-        f"wedding sky complete: {np.isfinite(Wtr[:, :10]).all(1).sum():,}")
+    # Count completeness over the ten PLANETS only. The last two bodies are the ascendant and the medium coeli,
+    # which need a birth time and a place — neither of which a dates-only build has — so they are NaN on every
+    # row by design. Including them made this line report "BOTH natal charts complete: 0" on a file that in fact
+    # had 26,680 complete pairs, which reads as a dead dataset.
+    full = np.isfinite(Dtr[:, :10]).all(1) & np.isfinite(Mtr[:, :10]).all(1)
+    log(f"wrote {OUT}/phases.npz · {len(BODIES)} bodies · train rows with BOTH natal charts complete (10 planets): "
+        f"{full.sum():,} · wedding sky complete: {np.isfinite(Wtr[:, :10]).all(1).sum():,}")
 
 
 if __name__ == "__main__":

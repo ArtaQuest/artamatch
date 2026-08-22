@@ -305,11 +305,21 @@ def main():
         if not hits:
             raise SystemExit(f"could not find {name} anywhere under {DATA}")
         return hits[0]
-    tr = pd.read_csv(find("train.csv"), dtype=str)
-    te = pd.read_csv(find("test.csv"), dtype=str)
-    phases = find("phases.npz")
-    log(f"inputs: {find('train.csv')} · {phases}")
-    Z = np.load(phases, allow_pickle=True)
+    trp, tep, phases = find("train.csv"), find("test.csv"), find("phases.npz")
+    tr = pd.read_csv(trp, dtype=str)
+    te = pd.read_csv(tep, dtype=str)
+    log(f"inputs: {trp} · {tep} · {phases}")
+    # The globs above can find the WRONG train.csv when more than one dataset is present — that already happened
+    # here, pairing a 181,596-row table with an 89,467-row phases file, which would have trained happily and
+    # reported confident numbers for data that never lined up. The row counts MUST agree; this is fatal.
+    _z = np.load(phases, allow_pickle=True)
+    if len(tr) != len(_z["y_train"]) or len(te) != len(_z["plain_test"]):
+        raise SystemExit(
+            f"INPUTS DO NOT MATCH: train.csv has {len(tr):,} rows and test.csv {len(te):,}, but phases.npz was "
+            f"built for {len(_z['y_train']):,} train and {len(_z['plain_test']):,} test rows.\n"
+            f"  train.csv  {trp}\n  test.csv   {tep}\n  phases.npz {phases}\n"
+            "Point AQ_DATA at the one directory holding all three, or remove the stray copies.")
+    Z = _z
     y = Z["y_train"].astype(np.int64); later = Z["yr_train"].astype(int).max(1)
     cuts = [np.quantile(later, q) for q in QS]
     pn = list(Z["plain_names"]); s1, s2 = list(Z["slots"])

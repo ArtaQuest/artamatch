@@ -62,8 +62,11 @@ def stage(acct):
             raise SystemExit(f"missing {f} — the rebuild chain has not finished")
         shutil.copy(f, os.path.join(STAGE, dst))
     code = os.path.join(STAGE, "code"); os.makedirs(code, exist_ok=True)
-    shutil.copytree(os.path.join(REPO, "research", "sidereal"), os.path.join(code, "sidereal"),
-                    dirs_exist_ok=True, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.npz", "*.log"))
+    ign = shutil.ignore_patterns("__pycache__", "*.pyc", "*.npz", "*.log")
+    shutil.copytree(os.path.join(REPO, "research", "sidereal"), os.path.join(code, "sidereal"), dirs_exist_ok=True, ignore=ign)
+    # artamodel.py — which every family module imports for auc/absdiff — imports Coherent from research/coherent.
+    # Shipping only research/sidereal made all nine families fail with ModuleNotFoundError on the first GPU run.
+    shutil.copytree(os.path.join(REPO, "research", "coherent"), os.path.join(code, "coherent"), dirs_exist_ok=True, ignore=ign)
     shutil.copy(os.path.join(REPO, "kaggle", "giant_ensemble.py"), os.path.join(code, "giant_ensemble.py"))
     web = os.path.join(STAGE, "web"); os.makedirs(web, exist_ok=True)
     for f in ("sweshim.py", "ephem4.bin", "tables.json"):
@@ -81,11 +84,19 @@ KERNEL = '''import glob, os, shutil, subprocess, sys, time
 T0=time.time()
 def log(*a): print(f"[{time.time()-T0:6.0f}s]", *a, flush=True)
 subprocess.run([sys.executable,"-m","pip","install","-q","lunardate","convertdate","xgboost"],check=False)
-IN=next(p for p in glob.glob("/kaggle/input/**/giant_ensemble.py",recursive=True))
-CODE=os.path.dirname(IN); ROOT=os.path.dirname(CODE)
+hits=glob.glob("/kaggle/input/**/giant_ensemble.py",recursive=True)
+if not hits:
+    # a bare StopIteration here says nothing; show what the kernel can actually SEE
+    log("giant_ensemble.py is not in /kaggle/input. What is attached:")
+    for d in sorted(glob.glob("/kaggle/input/*")):
+        log("  ", d, "->", sorted(os.listdir(d))[:12])
+    raise SystemExit("the input dataset is missing or has not finished processing")
+IN=hits[0]; CODE=os.path.dirname(IN); ROOT=os.path.dirname(CODE)
 W="/kaggle/working/code"; shutil.copytree(CODE,W,dirs_exist_ok=True)
 for d in glob.glob(os.path.join(ROOT,"..","web")) + glob.glob("/kaggle/input/**/web",recursive=True):
     if os.path.isdir(d): shutil.copytree(d,"/kaggle/working/web",dirs_exist_ok=True); break
+sys.path[:0]=[f"{W}/sidereal", f"{W}/coherent", "/kaggle/working/web"]
+os.environ["PYTHONPATH"]=os.pathsep.join([f"{W}/sidereal", f"{W}/coherent", "/kaggle/working/web", os.environ.get("PYTHONPATH","")])
 os.environ.update({"AQ_DATA":"/kaggle/input","AQ_CODE":f"{W}/sidereal","AQ_WEB":"/kaggle/working/web","AQ_OUT":"/kaggle/working"})
 log("nvidia-smi:", subprocess.run(["nvidia-smi","--query-gpu=name","--format=csv,noheader"],capture_output=True,text=True).stdout.strip() or "none")
 r=subprocess.run([sys.executable,"-u",f"{W}/giant_ensemble.py"],env=dict(os.environ))
@@ -99,6 +110,8 @@ def push():
     acct = account(); print(f"ArtaSwitch picked: {acct}")
     d = stage(acct)
     print("uploading the dataset (this is the slow part)")
+    # A dataset that does not exist yet answers 403 Forbidden here, not 404 — so try the NEW path on ANY
+    # version failure rather than pattern-matching the message, and report both attempts if both fail.
     out = kag(acct, f'''
 from kaggle.api.kaggle_api_extended import KaggleApi
 api=KaggleApi(); api.authenticate()
@@ -106,11 +119,17 @@ try:
     api.dataset_create_version({json.dumps(d)}, "giant ensemble inputs", dir_mode="zip")
     print("VERSIONED")
 except Exception as e:
-    if "not found" in str(e).lower() or "404" in str(e):
+    first = f"{{type(e).__name__}}: {{e}}"
+    try:
         api.dataset_create_new({json.dumps(d)}, dir_mode="zip"); print("CREATED")
-    else: raise
+    except Exception as e2:
+        print(f"UPLOAD FAILED — version: {{first}} | new: {{type(e2).__name__}}: {{e2}}")
 ''', timeout=3600)
-    print(" ", out.splitlines()[-1] if out else "?")
+    last = out.splitlines()[-1] if out else "?"
+    print(" ", last)
+    if "UPLOAD FAILED" in out:
+        raise SystemExit("the dataset did not upload — refusing to push a kernel that would run against a stale\n"
+                         "or missing input and report numbers for the wrong data")
     kd = os.path.join(DEV, "giantkernel"); shutil.rmtree(kd, ignore_errors=True); os.makedirs(kd)
     open(os.path.join(kd, "kernel.py"), "w").write(KERNEL)
     json.dump({"id": f"{acct}/artamatch-giant-ensemble", "title": "artamatch-giant-ensemble",

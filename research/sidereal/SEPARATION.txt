@@ -1,0 +1,30 @@
+================================================================================================
+NATURAL (death) vs ARTIFICIAL (divorce) — what each system adds over the confounders
+================================================================================================
+
+  11,116 ended unions, 24.3% artificial. Held-out AUC, forward-chained, mean of 5 seeds.
+
+  BASELINE                                                  AUC   spread
+  ----------------------------------------------------------------------
+  the wedding year alone                                 0.6360   0.0007
+  both ages alone                                        0.6523   0.0002
+  date precision alone                                   0.6084   0.0003
+  CONFOUNDERS ONLY (ages, gap, era, precision)           0.6723   0.0005
+
+  FAMILY (added on top of the baseline)     feats      AUC     GAIN   spread   verdict               
+  ----------------------------------------------------------------------------------------------
+  world                                        87   0.6695  -0.0028   0.0037   inside the noise      
+  world3                                       32   0.6681  -0.0042   0.0026   HURTS                 
+  extra                                        13   0.6675  -0.0047   0.0024   HURTS                 
+  electional                                   74   0.6674  -0.0048   0.0016   HURTS                 
+  calendar                                     35   0.6669  -0.0054   0.0016   HURTS                 
+  zodiac                                       90   0.6659  -0.0064   0.0017   HURTS                 
+  world2                                       83   0.6625  -0.0098   0.0026   HURTS                 
+  maya                                         59   0.6622  -0.0101   0.0029   HURTS                 
+  geometry                                    190   0.6548  -0.0175   0.0053   HURTS                 
+  ----------------------------------------------------------------------------------------------
+  ALL FAMILIES AT ONCE                        663   0.6525  -0.0198   0.0026
+
+A gain is only called real if it exceeds the seed-to-seed spread of its own run and of the baseline.
+The spread is not a standard error — it is what the same model does on the same data when only the
+random seed changes, and it is the floor below which nothing here can be distinguished.

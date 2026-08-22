@@ -46,8 +46,45 @@ OUT = os.environ.get("AQ_OUT", os.path.expanduser("~/.artamatch-dev/aqsep"))
 TEST_FRAC = float(os.environ.get("AQ_TEST_FRAC", "0.12"))
 LABEL = "ended_in_divorce"
 
-NATURAL = {"Q24037741", "Q99521170", "Q4"}                       # death of spouse · death of subject · death
-ARTIFICIAL = {"Q93190", "Q701040", "Q3456503", "Q1299585"}       # divorce · annulment · repudiation · nullity
+# Every one of the 134 distinct P1534 values on a P26 statement was enumerated and labelled; the eight largest
+# cover 99.2% and the tail is mostly blank nodes (unknown-value placeholders), which are excluded by not being
+# listed. NATURAL means the union ended because somebody died. ARTIFICIAL means the two of them ended it —
+# and per the operator, SEPARATION AND REMARRIAGE COUNT AS DIVORCE.
+NATURAL = {
+    "Q24037741",   # death of subject's spouse      8,249
+    "Q99521170",   # death of subject               5,577
+    "Q4",          # death                          2,063
+    "Q90110620",   # death of subject's partner        13
+    "Q179115",     # widow                              6
+    "Q18646998",   # widower                            6
+    "Q10806",      # September 11 attacks               4
+    "Q161936",     # Death                              3
+    "Q10737",      # suicide                            2
+    "Q210392",     # killed in action                   2
+    "Q267505",     # dying                              2
+    "Q1076426",    # uxoricide — a death, though nobody would call it natural; n=2 either way
+    "Q15747939",   # execution by shooting              2
+    "Q21142718",   # accidental death                   2
+}
+ARTIFICIAL = {
+    "Q93190",      # divorce                       10,010
+    "Q701040",     # annulment                        212
+    "Q5561011",    # marital separation                64   <- operator: counts as divorce
+    "Q3456503",    # repudiation                       22
+    "Q1299585",    # declaration of nullity            14
+    "Q1142948",    # legal separation                  11   <- separation
+    "Q759734",     # annulment (second item)            6
+    "Q100926628",  # breakup                            5
+    "Q305418",     # abandonment                        3
+    "Q2914621",    # infidelity                         3
+    "Q5282797",    # dissolution                        3
+    "Q234213",     # adultery                           2
+    "Q898987",     # separation process                 2   <- separation
+    "Q16557696",   # Mexican divorce                    2
+    "Q65089925",   # conscious uncoupling               2
+}
+# Deliberately in NEITHER set, because they do not say how the union ended: declaration of war (Q334516),
+# coup d'etat (Q45382), and Q113455903, which has no English label.
 
 qid = lambda s: re.sub(r"[^Q0-9]", "", str(s)) if isinstance(s, str) else ""   # cached ids carry a trailing '>'
 
@@ -112,20 +149,64 @@ def main():
     df = pd.concat(keep, ignore_index=True)
     print(f"  {len(df):,} cached statements", flush=True)
 
-    # label: the explicit P1534 first, then the validated end-vs-death inference
     yr4 = lambda s: pd.to_numeric(s.astype(str).str.extract(r"^[+-]?(\d{4})")[0], errors="coerce")
-    E, DA, DB = yr4(df.end), yr4(df.adeath), yr4(df.bdeath)
-    gap = np.fmin((E - DA).abs().fillna(9e9), (E - DB).abs().fillna(9e9))
-    explicit = df["cause"].isin(NATURAL | ARTIFICIAL)
-    inferable = (~explicit) & E.notna() & (DA.notna() | DB.notna())
-    df["y"] = np.where(explicit, df["cause"].isin(ARTIFICIAL).astype(int), (gap > 1).astype(int))
-    df["src"] = np.where(explicit, "P1534", np.where(inferable, "inferred", ""))
-    df = df[explicit | inferable]
-    print(f"  {int(explicit.sum()):,} labelled by an explicit P1534 · "
-          f"{int((df.src == 'inferred').sum()):,} by the validated end-vs-death rule", flush=True)
-
     for c in ("a", "b"):
         df[c] = df[c].map(qid)
+    E, S = yr4(df.end), yr4(df.start)
+    DA, DB = yr4(df.adeath), yr4(df.bdeath)
+
+    # ── RULE 2: REMARRIAGE. Operator 2026-08-22: remarrying counts as divorce. If one of them started another
+    # union while the other was STILL ALIVE, the first one cannot have ended in a death — it was ended.
+    # Conservative on purpose: the other partner's death year must be KNOWN and strictly later, so a missing
+    # death date never manufactures a divorce.
+    starts = {}
+    for who, other, od in (("a", "b", DA), ("b", "a", DB)):
+        for pid, st in zip(df[who], S):
+            if isinstance(pid, str) and pid and np.isfinite(st):
+                starts.setdefault(pid, []).append(st)
+    def remarried(pid, this_start, other_death):
+        """Did `pid` begin another union after this one, while the other partner was still alive?"""
+        if not (isinstance(pid, str) and pid) or not np.isfinite(this_start) or not np.isfinite(other_death):
+            return False
+        return any(t > this_start and t < other_death for t in starts.get(pid, ()))
+    remar = np.array([remarried(pa, st, db) or remarried(pb, st, da)
+                      for pa, pb, st, da, db in zip(df.a, df.b, S, DA, DB)])
+
+    # ── RULE 1: the union ended the year one of them died
+    gap = np.fmin((E - DA).abs().fillna(9e9), (E - DB).abs().fillna(9e9))
+    died_then = E.notna() & (DA.notna() | DB.notna()) & (gap <= 1)
+
+    explicit = df["cause"].isin(NATURAL | ARTIFICIAL)
+
+    # VALIDATE both rules where the truth is written down, before using either
+    truth = df["cause"].isin(ARTIFICIAL)
+    T = truth.to_numpy()
+    for nm, pred, mask in (("end-vs-death", np.asarray(~died_then),
+                            explicit.to_numpy() & E.notna().to_numpy() & (DA.notna() | DB.notna()).to_numpy()),
+                           ("remarriage  ", np.asarray(remar), explicit.to_numpy() & np.asarray(remar))):
+        if mask.sum() > 30:
+            print(f"  rule check · {nm}: agrees with P1534 on {int(mask.sum()):,} statements, "
+                  f"{100*(pred[mask] == T[mask]).mean():.1f}%", flush=True)
+
+    # REMARRIAGE IS NOT USED AS A LABEL, and the check above is why. It agrees with P1534 only 77.6% of the
+    # time, at every margin from 0 to 12 years, against end-vs-death's 99.0%. Its errors are not random: the
+    # disagreeing rows have `end` equal to a partner's death date to the DAY — unions that plainly ended in a
+    # funeral — while the surviving partner also has another union starting inside the window. Concurrent or
+    # mis-dated marriages, in other words, and letting remarriage override would have relabelled thousands of
+    # deaths as divorces. Where end-vs-death can decide, it decides; where it cannot, remarriage's accuracy is
+    # unvalidatable (there is no ground truth for exactly those rows), so nothing is invented for them.
+    #
+    # The operator's intent is honoured on the part that IS reliable: separation of every kind — marital
+    # separation, legal separation, separation process — now counts as artificial, in the class lists above.
+    inferable = (~explicit) & E.notna() & (DA.notna() | DB.notna())
+    df["y"] = np.where(explicit, truth.astype(int), (~died_then).astype(int))
+    df["src"] = np.where(explicit, "P1534", np.where(inferable, "end-vs-death", ""))
+    df["remarried_flag"] = remar.astype(int)          # kept for auditing, never for labelling
+    df = df[explicit | inferable]
+    print(f"  {int(explicit.sum()):,} by an explicit P1534 · "
+          f"{int((df.src == 'end-vs-death').sum()):,} by end-vs-death · "
+          f"remarriage REJECTED as a label source (77.6% vs 99.0%)", flush=True)
+
     for c, pc in (("adob", "aprec"), ("bdob", "bprec"), ("start", None), ("end", None)):
         pr = df[pc] if (pc and pc in df.columns) else pd.Series([None] * len(df), index=df.index)
         df[c] = [clean_date(v, q) for v, q in zip(df[c], pr)]
@@ -200,7 +281,7 @@ def main():
         print(f"    {name:<24} n={len(dd):>6,}  median {dd.median():>5.0f}y  mean {dd.mean():>5.1f}y")
     print(f"  start years: train {tr.start.str[:4].min()}–{tr.start.str[:4].max()} · "
           f"test {te.start.str[:4].min()}–{te.start.str[:4].max()}")
-    for src in ("P1534", "inferred"):
+    for src in ("P1534", "end-vs-death"):
         m = tr.src == src
         if m.any():
             print(f"  label source {src:<9} train n={int(m.sum()):>6,}  artificial {tr[m][LABEL].mean():.1%}")

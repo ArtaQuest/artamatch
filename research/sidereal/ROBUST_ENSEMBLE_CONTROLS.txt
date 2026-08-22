@@ -1,0 +1,30 @@
+================================================================================================
+ROBUST ENSEMBLE — a component can help or do nothing, and nothing else
+================================================================================================
+
+  11,117 ended unions, 24.3% artificial (divorce, annulment, separation).
+  One out-of-fold score per family, non-negative stack, forward selection gated on held-out data.
+
+  reporting block (selection never saw it)               1,939 rows
+  BASELINE alone (ages, gap, era, precision)            0.6082
+  SELECTED STACK                                        0.8462
+  gain from every astrological system combined         +0.2381
+
+  FAMILY                                    admitted?  contribution
+  ------------------------------------------------------------------
+  _PLANT_                                         yes       +0.2381
+  world                                            no       +0.0000
+  world2                                           no       +0.0000
+  world3                                           no       +0.0000
+  calendar                                         no       +0.0000
+  maya                                             no       +0.0000
+  geometry                                         no       +0.0000
+  electional                                       no       +0.0000
+  zodiac                                           no       +0.0000
+  extra                                            no       +0.0000
+  _NOISE_                                          no       +0.0000
+  ------------------------------------------------------------------
+
+  A family not admitted contributes EXACTLY zero, not approximately zero: it is absent from the stack,
+  so it cannot move the number in either direction. That is the guarantee the architecture provides —
+  the worst any component can do is nothing.

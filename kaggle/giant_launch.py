@@ -130,6 +130,23 @@ except Exception as e:
     if "UPLOAD FAILED" in out:
         raise SystemExit("the dataset did not upload — refusing to push a kernel that would run against a stale\n"
                          "or missing input and report numbers for the wrong data")
+    # A new dataset version takes a minute or two to process, and a kernel launched before then silently
+    # attaches the PREVIOUS version. That already cost two GPU runs here: both failed on a module that was
+    # sitting in the version the kernel could not see yet. Wait for "ready" before pushing.
+    for attempt in range(40):
+        st = kag(acct, f'''
+from kaggle.api.kaggle_api_extended import KaggleApi
+api=KaggleApi(); api.authenticate()
+print(api.dataset_status("{acct}/{SLUG}"))
+''', timeout=300).splitlines()[-1].strip().lower()
+        print(f"  dataset status: {st}")
+        if "ready" in st:
+            break
+        if "error" in st:
+            raise SystemExit(f"the dataset version failed to process: {st}")
+        time.sleep(15)
+    else:
+        raise SystemExit("the dataset never became ready — refusing to launch against a stale version")
     kd = os.path.join(DEV, "giantkernel"); shutil.rmtree(kd, ignore_errors=True); os.makedirs(kd)
     open(os.path.join(kd, "kernel.py"), "w").write(KERNEL)
     json.dump({"id": f"{acct}/artamatch-giant-ensemble", "title": "artamatch-giant-ensemble",

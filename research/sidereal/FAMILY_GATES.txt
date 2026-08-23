@@ -1,0 +1,39 @@
+========================================================================================================
+EVERY FAMILY UNDER FIVE NUMBERS — two birth dates, natural (death) vs artificial (divorce) separation
+========================================================================================================
+
+  baseline (two dates: years, gap, precision) on the held-out test half: 0.5734
+
+  FAMILY                     feats  test gain   POOLED  fold min   boot5%  perm p   null95  gates
+  ----------------------------------------------------------------------------------------------------
+  _PLANT_                        1    +0.2583  +0.2177   +0.2766  +0.2369   0.000  +0.1809   4/4
+  geometry                     190    -0.1144  -0.0023   -0.0235  -0.1345   1.000  +0.0494   0/4
+  NEW:reenc_pattern            118    -0.0362  -0.0032   -0.0190  -0.0550   0.925  +0.0419   0/4
+  zodiac                        90    -0.0106  -0.0036   -0.0308  -0.0289   0.700  +0.0350   0/4
+  NEW:midpoints_uranian         97    -0.0128  -0.0039   -0.0354  -0.0306   0.700  +0.0474   0/4
+  calendar                      35    -0.0091  -0.0043   -0.0185  -0.0265   0.758  +0.0379   0/4
+  world3                        32    -0.0124  -0.0045   -0.0307  -0.0296   0.733  +0.0374   0/4
+  electional                    33    +0.0029  -0.0050   -0.0348  -0.0147   0.383  +0.0337   0/4
+  NEW:aspect_doctrine          118    -0.0179  -0.0055   -0.0199  -0.0350   0.800  +0.0415   0/4
+  NEW:arabic_parts             109    -0.0351  -0.0058   -0.0310  -0.0526   0.900  +0.0447   0/4
+  extra                         13    -0.0194  -0.0060   -0.0196  -0.0334   0.917  +0.0270   0/4
+  NEW:fixed_stars_deep          99    -0.0270  -0.0067   -0.0280  -0.0458   0.850  +0.0465   0/4
+  NEW:reenc_rotation           118    -0.0248  -0.0070   -0.0393  -0.0407   0.850  +0.0538   0/4
+  NEW:vedic_varga               99    -0.0042  -0.0072   -0.0434  -0.0200   0.633  +0.0399   0/4
+  NEW:numerology_world         116    -0.0215  -0.0076   -0.0333  -0.0386   0.833  +0.0389   0/4
+  world2                        83    -0.0053  -0.0085   -0.0240  -0.0229   0.533  +0.0371   0/4
+  _NOISE_                       60    -0.0158  -0.0087   -0.0406  -0.0338   0.692  +0.0474   0/4
+  world                         87    +0.0061  -0.0093   -0.0509  -0.0090   0.358  +0.0359   0/4
+  NEW:declination_speed        119    -0.0237  -0.0093   -0.0471  -0.0427   0.817  +0.0514   0/4
+  maya                          59    -0.0307  -0.0104   -0.0449  -0.0467   0.883  +0.0453   0/4
+  NEW:phasor_pair              162    -0.1083  -0.0106   -0.0592  -0.1273   1.000  +0.0602   0/4
+  NEW:cyclical_time            106    -0.0692  -0.0179   -0.0573  -0.0881   0.967  +0.0787   0/4
+  ----------------------------------------------------------------------------------------------------
+
+  POOLED is the number to read: it scores 15,687 rows (every training row with a past behind it,
+  once, by the latest model fitted strictly before it) against the test half's 2,801 — 5.6x the power.
+  NULL95 is what a family of THAT WIDTH wins by luck alone 5% of the time; read every test gain against
+  its own null, not against zero.
+
+  CONTROLS: the planted answer takes 4/4 gates, pure noise takes 0/4. The gates are neither too tight
+  to see a real effect nor too loose to admit a fake one, and that is what makes the rest readable.

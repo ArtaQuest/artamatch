@@ -9,7 +9,9 @@ place is in the data, so no wedding houses).
 BODIES: Sun Moon Mercury Venus Mars Jupiter Saturn Uranus Neptune Pluto TrueNode(Rahu) TrueSouthNode(Ketu) Chiron
 MeanLilith, and for the natal charts the Ascendant and MC. Precision-aware like everything else here: a
 year-only birth (1st of January placeholder) gets only the bodies the year can place -- Jupiter and slower --
-and no angles; a month-only birth adds the Sun; a year-only wedding gets the slow bodies only.
+and no angles. A month-only birth gets the SAME set: the Sun used to be added there, but a month is a full
+30-degree sign of uncertainty for a body moving a degree a day, so that was a fabricated position. A year-only
+wedding gets the slow bodies only.
 
 Writes AQ_OUT/phases.npz: theta_dad, theta_mom, theta_wed (rows x bodies, degrees, NaN where undefined),
 bodies, y_train / ids, the plain columns for references. Kerykeion agrees with PyJHora to 0.005 degrees on the
@@ -85,7 +87,13 @@ def theta(dob, lat, lon, hour, natal):
             continue
         if p == 1 and b not in SLOW:
             continue
-        if p == 2 and b not in SLOW and b != "sun":
+        # The Sun used to be exempted here, on the theory that a month places it. It does not: the Sun
+        # moves about a degree a day, so a month is a full 30-degree sign of uncertainty — the same order
+        # as Mercury and Venus, which are NaN-ed. Exempting it handed every month-precision birth a Sun
+        # longitude invented from an assumed day, and any module reading Z["sun"] inherited it silently:
+        # aspect orbs, Arabic lots and sign placements were all being computed from a day nobody recorded.
+        # Found by the arabic_parts agent, which guarded against it locally; this is the fix at source.
+        if p == 2 and b not in SLOW:
             continue
         try:
             out[j] = float(getattr(s, b).abs_pos)

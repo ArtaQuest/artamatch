@@ -48,6 +48,27 @@ os.makedirs(OUT, exist_ok=True)
 
 import giant_ensemble as G   # noqa: E402
 
+NEWFAM = os.environ.get("AQ_NEWFAM", os.path.expanduser("~/.artamatch-dev/newfam"))
+
+
+def load_newfam():
+    """The independently written candidate families. A module that raises is NAMED, never silently dropped —
+    an absent family and a family contributing zero look identical in a table and mean opposite things."""
+    import glob, importlib.util
+    out, bad = {}, []
+    for p in sorted(glob.glob(os.path.join(NEWFAM, "*.py"))):
+        nm = os.path.basename(p)[:-3]
+        try:
+            spec = importlib.util.spec_from_file_location(f"nf_{nm}", p)
+            m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+            if hasattr(m, "build"):
+                out[nm] = m.build
+            else:
+                bad.append((nm, "no build()"))
+        except Exception as e:
+            bad.append((nm, f"{type(e).__name__}: {e}"))
+    return out, bad
+
 # Families split into narrower sub-members by feature-name prefix, so the stacker can take the part that works
 # instead of the whole bundle. A prefix that matches nothing simply yields no member.
 SUBFAMILIES = {
@@ -135,7 +156,22 @@ def main():
             F_te[fam] = np.asarray(X, dtype=np.float32)
         except Exception:
             pass
-    log(f"  {len(F_tr)} members (families + sub-families)")
+    # the newly written families, each as its own member
+    nf, nfbad = load_newfam()
+    for nm, b in nf.items():
+        try:
+            X, names = b(tr, Z, "train"); Xt, _ = b(te, Z, "test")
+            X, Xt = np.asarray(X, np.float32), np.asarray(Xt, np.float32)
+            if X.shape[1] != Xt.shape[1]:
+                nfbad.append((nm, f"width {X.shape[1]} vs {Xt.shape[1]}")); continue
+            if not np.isfinite(X).any():
+                nfbad.append((nm, "all NaN")); continue
+            F_tr[f"NEW:{nm}"] = (X, names); F_te[f"NEW:{nm}"] = Xt
+        except Exception as e:
+            nfbad.append((nm, f"{type(e).__name__}: {e}"))
+    for nm, why in nfbad:
+        log(f"  NEW:{nm} did NOT build — {why}")
+    log(f"  {len(F_tr)} members (families + sub-families + {len(nf)} newly written)")
 
     # ── the augmented copies: extra TRAINING rows only, never test
     aug = []
@@ -151,6 +187,11 @@ def main():
     B = two_date_baseline(tr); Bte = two_date_baseline(te)
     members = {"BASELINE (two dates: years, gap, precision)": (B, Bte)}
     for nm, (X, names) in F_tr.items():
+        if nm.startswith("NEW:"):
+            Xt = F_te.get(nm)
+            if Xt is not None and Xt.shape[1] == X.shape[1]:
+                members[nm] = (X, Xt)
+            continue
         base = nm.split(":")[0]
         if base not in F_te:
             continue

@@ -24,12 +24,23 @@ THREE GUARANTEES, each by construction rather than by hope:
      requires the gain to be positive on EVERY forward-chained fold of the selection block, not on average.
      A family that cannot help consistently is never admitted and contributes EXACTLY zero.
 
-The nesting matters and is forward-chained throughout, so nothing is ever selected using data from its own
-future: member scores come from forward-chained OOF; selection and weight-fitting happen on the earlier part of
-those scored rows; the number reported is measured on the latest block, which selection never saw.
+WHERE THE NUMBER IS MEASURED, and why it moved. Earlier versions reported on the latest block of the
+forward-chained out-of-fold scores. That is not good enough, and the noise control is what exposed it: a family
+of PURE RANDOM NUMBERS scored a standalone out-of-fold AUC of 0.6045 there, because each forward block emits a
+near-constant prediction and the base rate of this target climbs steeply with era, so pooling the blocks ranks
+by era and nothing else. Any figure measured that way carries that artefact.
 
-Contribution is then reported as the improvement a family actually delivered on the reporting block — which is
->= 0 for every family, with the worst case being zero, as it should be.
+So the reported number is now measured on the REAL TEST SET, which is built to be untouchable:
+  · strictly future — training ends in 1954, the test set begins in 1955, with no shared year
+  · person-disjoint — a person who married twice would otherwise put their own birth date in both halves, and
+    the features are three dates and nothing else, so that is memorisable; 183 test rows were dropped for it
+  · date-disjoint — no birth date occurring in training survives in the test half
+
+Selection and weight-fitting happen entirely inside the training half, forward-chained; the test set is read
+once, at the end. Every training era's divorce rate is BELOW the test era's, so a model cannot even extrapolate
+the trend — which is the honest difficulty of predicting the future rather than a leak.
+
+Contribution is the improvement a family delivered on that test set — >= 0 for every family, worst case zero.
 """
 import json
 import os
@@ -75,6 +86,16 @@ def main():
 
     tr = pd.read_csv(os.path.join(DATA, "train.csv"), dtype=str)
     te = pd.read_csv(os.path.join(DATA, "test.csv"), dtype=str)
+    sol = pd.read_csv(os.path.join(DATA, "solution.csv"))
+    yte = sol["ended_in_divorce"].to_numpy().astype(np.int64)
+    assert len(yte) == len(te), f"solution has {len(yte)} rows, test has {len(te)}"
+    # the guarantee the whole measurement rests on, asserted rather than trusted
+    sy = pd.to_numeric(tr.start.str[:4], errors="coerce"); ty = pd.to_numeric(te.start.str[:4], errors="coerce")
+    assert ty.min() > sy.max(), f"test starts {ty.min()} but train runs to {sy.max()} — not strictly future"
+    seen = (set(tr.dob_a) | set(tr.dob_b)) - {"0000-00-00"}
+    shared = int((te.dob_a.isin(seen) | te.dob_b.isin(seen)).sum())
+    assert shared == 0, f"{shared} test rows carry a birth date seen in training"
+    log(f"leak checks PASS · train to {int(sy.max())}, test from {int(ty.min())}, no shared birth date")
     Z = np.load(os.path.join(DATA, "phases.npz"), allow_pickle=True)
     y = Z["y_train"].astype(np.int64); later = Z["yr_train"].astype(int).max(1)
     cuts = [np.quantile(later, q) for q in QS]
@@ -105,19 +126,19 @@ def main():
                            ["planted"], "the answer, buried in noise — must ALWAYS be admitted")
     names = ["BASELINE (ages, gap, era, precision)"] + list(fams)
 
-    # ── one out-of-fold score per member, averaged over seeds to damp the seed noise
-    log("one out-of-fold score per member")
-    cols = []
+    # ── one score per member, on the training half (for selection) and on the test half (for the report)
+    log("one score per member — OOF inside train, and on the untouched test set")
+    cols, tcols = [], []
     for nm, (X, Xt) in [("BASELINE", (B, Bte))] + [(f, (fams[f][0], fams[f][1])) for f in fams]:
-        acc = []
+        acc, tacc = [], []
         for sd in SEEDS:
-            s, _ = G.forward_oof(X, Xt, y, later, cuts, params, seed=sd)
-            acc.append(s)
-        s = np.nanmean(np.column_stack(acc), axis=1)
-        cols.append(s)
-        f = np.isfinite(s) & (later > cuts[0])
-        log(f"  {nm:<44} OOF AUC {G.auc(y[f], s[f]):.4f}")
-    S = np.column_stack(cols)
+            sh, st = G.forward_oof(X, Xt, y, later, cuts, params, seed=sd)
+            acc.append(sh); tacc.append(st)
+        s = np.nanmean(np.column_stack(acc), axis=1); t = np.nanmean(np.column_stack(tacc), axis=1)
+        cols.append(s); tcols.append(t)
+        f = np.isfinite(s) & (later > cuts[0]); ft = np.isfinite(t)
+        log(f"  {nm:<30} OOF(train) {G.auc(y[f], s[f]):.4f}   TEST {G.auc(yte[ft], t[ft]):.4f}")
+    S = np.column_stack(cols); T = np.column_stack(tcols)
 
     # ── forward-chained nesting: select on the earlier scored rows, report on the latest
     scored = np.isfinite(S[:, 0]) & (later > cuts[0])
@@ -175,21 +196,22 @@ def main():
             if np.isfinite(g).all():
                 log(f"  rejected {names[j]:<28} worst fold {g.min():+.4f} (needs > {MIN_GAIN:+.4f} on all folds)")
 
-    # ── report on the block selection never saw
-    final_auc, w = auc_on(chosen, SEL, REP)
-    base_rep, _ = auc_on([0], SEL, REP)
-    log(f"reporting block · baseline {base_rep:.4f} · selected stack {final_auc:.4f}")
+    # ── the report, on the untouched future test set. Weights are fitted on ALL of train; the test half is
+    #    scored once, here, and has taken no part in building anything above.
+    def test_auc(cols_):
+        F = G.rankfeat(S[:, cols_]); ok = scored & np.isfinite(F).all(1)
+        if ok.sum() < 200:
+            return float("nan")
+        w_, b_ = G.fit_nonneg(F[ok], y[ok], np.ones(int(ok.sum())))
+        Ft = G.rankfeat(T[:, cols_]); m = np.isfinite(Ft).all(1)
+        return G.auc(yte[m], (Ft[m] @ w_ + b_)) if m.sum() > 50 else float("nan")
 
-    # ── and the honest per-family number: what each one adds to the FINAL stack, measured on REP
+    final_auc = test_auc(chosen); base_rep = test_auc([0])
+    log(f"TEST SET · baseline {base_rep:.4f} · selected stack {final_auc:.4f}")
+
     per = {}
     for j in range(1, S.shape[1]):
-        if j in chosen:
-            without = [c for c in chosen if c != j]
-            a_wo, _ = auc_on(without, SEL, REP)
-            per[names[j]] = final_auc - a_wo
-        else:
-            # never admitted: it contributes exactly zero, by construction
-            per[names[j]] = 0.0
+        per[names[j]] = (final_auc - test_auc([c for c in chosen if c != j])) if j in chosen else 0.0
 
     L = []; p = L.append
     p("=" * 96)
@@ -199,7 +221,7 @@ def main():
     p(f"  {len(tr):,} ended unions, {y.mean():.1%} artificial (divorce, annulment, separation).")
     p(f"  One out-of-fold score per family, non-negative stack, forward selection gated on held-out data.")
     p("")
-    p(f"  {'reporting block (selection never saw it)':<52}{REP.sum():>8,} rows")
+    p(f"  {'TEST SET — strictly future, person- and date-disjoint':<52}{len(te):>8,} rows")
     p(f"  {'BASELINE alone (ages, gap, era, precision)':<52}{base_rep:>8.4f}")
     p(f"  {'SELECTED STACK':<52}{final_auc:>8.4f}")
     p(f"  {'gain from every astrological system combined':<52}{final_auc-base_rep:>+8.4f}")

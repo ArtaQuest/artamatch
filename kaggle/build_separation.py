@@ -240,8 +240,8 @@ def main():
             A, B = (r.bdob, r.adob)
         else:
             continue                                   # same-sex or unknown: dropped, as in the gendered edition
-        rows.append((A, B, r.start, r.end, r.y, r.src))
-    out = pd.DataFrame(rows, columns=["dob_a", "dob_b", "start", "end", LABEL, "src"])
+        rows.append((A, B, r.start, r.end, r.y, r.src, r.a, r.b))
+    out = pd.DataFrame(rows, columns=["dob_a", "dob_b", "start", "end", LABEL, "src", "pid_a", "pid_b"])
     print(f"  {len(out):,} male x female pairs with a known sex for both", flush=True)
 
     # a duration the control can hold flat — NOT an input
@@ -256,14 +256,38 @@ def main():
           f"{int(bad_dur.sum()):,} with an impossible duration", flush=True)
     out = out[~bad_birth & ~bad_dur]
 
-    # forward-chained split, exactly as before: the TEST half is the most recent, so nothing is fitted on its era
+    # ── the split has to survive three separate leaks, and the first version survived none of them.
     out = out.sort_values("start", kind="mergesort").reset_index(drop=True)
     cut = int(len(out) * (1 - TEST_FRAC))
     tr, te = out.iloc[:cut].copy(), out.iloc[cut:].copy()
+
+    # (a) STRICTLY future. A percentile cut split the year 1954 down the middle, so train ran to 1954 and test
+    #     began in 1954 — one shared year in which a model can learn the very era it is then tested on.
+    boundary = pd.to_numeric(tr.start.str[:4], errors="coerce").max()
+    te = te[pd.to_numeric(te.start.str[:4], errors="coerce") > boundary]
+    print(f"  temporal cut: train ends {int(boundary)}, test begins strictly after", flush=True)
+
+    # (b) PERSON-DISJOINT. The features are three dates and nothing else, so a person who married twice puts
+    #     their own birth date in both halves and the model can simply memorise it — 11.9% of test rows had a
+    #     birth date already seen in training. Any test row sharing a PERSON with training is dropped; train is
+    #     left whole, because the leak runs train -> test.
+    seen = set(tr.pid_a) | set(tr.pid_b)
+    shares = te.pid_a.isin(seen) | te.pid_b.isin(seen)
+    print(f"  dropped {int(shares.sum()):,} test rows sharing a person with training "
+          f"({100*shares.mean():.1f}% of the test half)", flush=True)
+    te = te[~shares]
+
+    # (c) and the same birth DATE reaching both halves through two different people
+    dseen = set(tr.dob_a) | set(tr.dob_b)
+    dseen.discard(MISSING)
+    dshare = te.dob_a.isin(dseen) | te.dob_b.isin(dseen)
+    print(f"  dropped a further {int(dshare.sum()):,} test rows whose birth DATE occurs in training", flush=True)
+    te = te[~dshare].copy()
     te.insert(0, "id", [f"s{i:06d}" for i in range(len(te))])
     sol = te[["id", LABEL]].copy()
     cols = ["dob_a", "dob_b", "start", LABEL]
     tr[cols].to_csv(f"{OUT}/train.csv", index=False)
+    tr[["pid_a", "pid_b", "start", "end", "duration_years", "src"]].to_csv(f"{OUT}/_train_ids.csv", index=False)
     te[["id", "dob_a", "dob_b", "start"]].to_csv(f"{OUT}/test.csv", index=False)
     sol.to_csv(f"{OUT}/solution.csv", index=False)
     # the end date and duration go to a SIDECAR the control reads and no model ever sees

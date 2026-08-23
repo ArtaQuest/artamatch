@@ -198,7 +198,11 @@ def _ad_zodiac(df, Z, half):
     m = __import__("zodiac_members_iv")
     A, B, W, bodies = _thetas(Z, half)
     j = {b: bodies.index(b) for b in ("sun", "moon", "venus")}
-    yrs = pd.to_numeric(df.start.str[:4], errors="coerce").fillna(1900).to_numpy(dtype=float)
+    # A year of 0000 means the year is UNKNOWN — the augmentation produces it deliberately, and a real
+    # ayanamsa cannot be computed for a year nobody recorded. Clamp the lookup to the span the shipped
+    # ephemeris covers; the rows themselves still carry NaN longitudes, so nothing is invented for them.
+    yrs = pd.to_numeric(df.start.str[:4], errors="coerce").to_numpy(dtype=float)
+    yrs = np.where(np.isfinite(yrs) & (yrs >= 1000) & (yrs <= 2100), yrs, 1900.0)
     SW, _, _ = swe()
     tabs = m.aya_diff_tables(SW, np.unique(yrs))
     FEAT = ["sun_hi", "sun_lo", "sun_dist", "sun_same", "sun_elem", "sun_mode", "moon_hi", "moon_lo", "moon_dist",
@@ -241,6 +245,9 @@ FAMILIES = [
 ]
 
 
+FAMILIES_BY_NAME = [(f, a) for f, a, _ in FAMILIES]
+
+
 def build_families(tr, te, Z):
     """Build every family on both halves. A family that fails is REPORTED and skipped, never silently dropped —
     a missing family would otherwise show up as a contribution of zero, which reads as a finding."""
@@ -263,9 +270,13 @@ def build_families(tr, te, Z):
     return out, failed
 
 
-def forward_oof(X, Xte, y, later, cuts, params, seed=0):
+def forward_oof(X, Xte, y, later, cuts, params, seed=0, extra=None):
     """Forward-chained OOF: fit on everything older than the cut, score what comes after. Never the reverse —
-    fitting on the future and scoring the past lets an era clock read its own answer."""
+    fitting on the future and scoring the past lets an era clock read its own answer.
+
+    `extra` is (X_extra, y_extra): augmented rows added to every FIT and never scored, so a degraded-date copy
+    of the training set teaches the model without ever becoming a prediction that gets measured.
+    """
     import xgboost as xgb
     rows = np.isfinite(X).any(1)
     s_tr = np.full(len(y), np.nan)
@@ -277,11 +288,21 @@ def forward_oof(X, Xte, y, later, cuts, params, seed=0):
         fit = rows & (later <= lo)
         if fit.sum() < 500 or len(np.unique(y[fit])) < 2 or not blk.any():
             continue
-        c = xgb.XGBClassifier(random_state=seed, **P); c.fit(X[fit], y[fit])
+        Xf, yf = X[fit], y[fit]
+        if extra is not None:
+            Xe, ye = extra
+            m = len(y)
+            keep = np.resize(fit, len(Xe)) if len(Xe) % m == 0 else np.ones(len(Xe), bool)
+            Xf = np.vstack([Xf, Xe[keep]]); yf = np.concatenate([yf, ye[keep]])
+        c = xgb.XGBClassifier(random_state=seed, **P); c.fit(Xf, yf)
         s_tr[blk] = c.predict_proba(X[blk])[:, 1]
     c = xgb.XGBClassifier(random_state=seed, **P)
     if rows.sum() >= 500 and len(np.unique(y[rows])) >= 2:
-        c.fit(X[rows], y[rows])
+        Xf, yf = X[rows], y[rows]
+        if extra is not None:
+            Xe, ye = extra
+            Xf = np.vstack([Xf, Xe]); yf = np.concatenate([yf, ye])
+        c.fit(Xf, yf)
         s_te = np.full(len(Xte), np.nan); rte = np.isfinite(Xte).any(1)
         if rte.any():
             s_te[rte] = c.predict_proba(Xte[rte])[:, 1]

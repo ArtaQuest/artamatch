@@ -1,0 +1,35 @@
+====================================================================================================
+TWO BIRTH DATES, NOTHING ELSE — natural (death) vs artificial (divorce) separation
+====================================================================================================
+
+  inputs            dob_a, dob_b. No wedding date, no era, no start year — absent, not masked.
+  train             20,955 pairs, 32.3% artificial, born to 1948
+  test              2,801 pairs, 65.4% artificial, born 1949+
+                    strictly later-born, no shared person, no shared birth date, read once
+  augmentation      3 masked copies in the fit (year gone, or month+day gone)
+  members           46 + baseline, families split into sub-families
+
+  BASELINE (two dates: years, gap, precision)                  0.5764
+  STACK, REAL MEMBERS ONLY  <- the production number           0.5764
+  gain from every astrological system combined                +0.0000
+
+  stack including the two diagnostic controls                  0.8384
+    ... of which the PLANTED answer accounts for              +0.2619
+
+  MEMBER                                                      admitted  contribution
+  ----------------------------------------------------------------------------------
+  _PLANT_ (must always be admitted)                                yes       +0.2619
+  world                                                             no       +0.0000
+  world2                                                            no       +0.0000
+  world3                                                            no       +0.0000
+  calendar                                                          no       +0.0000
+  maya                                                              no       +0.0000
+  geometry                                                          no       +0.0000
+  electional                                                        no       +0.0000
+  zodiac                                                            no       +0.0000
+  extra                                                             no       +0.0000
+  _NOISE_ (must never be admitted)                                  no       +0.0000
+  ----------------------------------------------------------------------------------
+
+  A member that is not admitted is ABSENT from the stack and contributes exactly zero — it cannot move
+  the number in either direction. That is the guarantee: the worst any component can do is nothing.

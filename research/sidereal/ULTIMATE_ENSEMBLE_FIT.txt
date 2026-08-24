@@ -1,0 +1,38 @@
+  32,592 pairs · 2,085 pure features · 22 families
+    member arabic_parts           OOF AUC 0.5824 on 19,208 rows
+    member aspect_doctrine        OOF AUC 0.5742 on 19,417 rows
+    member calendar               OOF AUC 0.5559 on 19,417 rows
+    member chinese_bazi_deep      OOF AUC 0.5895 on 19,417 rows
+    member cyclical_time          OOF AUC 0.4806 on 19,417 rows
+    member declination_speed      OOF AUC 0.5609 on 19,417 rows
+    member electional             OOF AUC 0.5771 on 19,417 rows
+    member extra                  OOF AUC 0.5792 on 19,417 rows
+    member fixed_stars_deep       OOF AUC 0.5686 on 19,417 rows
+    member geometry               OOF AUC 0.5427 on 19,208 rows
+    member maya                   OOF AUC 0.5543 on 19,417 rows
+    member midpoints_uranian      OOF AUC 0.5824 on 19,208 rows
+    member numerology_world       OOF AUC 0.5534 on 19,417 rows
+    member phasor_pair            OOF AUC 0.4800 on 17,155 rows
+    member reenc_pattern          OOF AUC 0.5580 on 19,417 rows
+    member reenc_rotation         OOF AUC 0.5778 on 19,417 rows
+    member reenc_soft             OOF AUC 0.5746 on 19,417 rows
+    member vedic_varga            OOF AUC 0.5717 on 19,417 rows
+    member world                  OOF AUC 0.5859 on 19,417 rows
+    member world2                 OOF AUC 0.5541 on 19,417 rows
+    member world3                 OOF AUC 0.5311 on 19,417 rows
+    member zodiac                 OOF AUC 0.5686 on 19,417 rows
+
+  NON-NEGATIVE STACK over 22 members · OOF AUC 0.5866 on 17,155 rows
+  stack weights:
+    chinese_bazi_deep        0.428  (37%)
+    world                    0.226  (20%)
+    reenc_rotation           0.121  (11%)
+    midpoints_uranian        0.108  (9%)
+    zodiac                   0.100  (9%)
+    arabic_parts             0.081  (7%)
+    extra                    0.065  (6%)
+    world3                   0.016  (1%)
+    electional               0.006  (1%)
+    (weight zero: aspect_doctrine, calendar, cyclical_time, declination_speed, fixed_stars_deep, geometry, maya, numerology_world, phasor_pair, reenc_pattern, reenc_soft, vedic_varga, world2)
+
+  deployed: every member refitted on all 32,592 pairs; weights + rank reference saved

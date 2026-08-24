@@ -22,7 +22,8 @@ import pandas as pd
 
 SRC = os.environ.get("AQ_WT_OUT", os.path.expanduser("~/.artamatch-dev/wikitree"))
 WD = os.environ.get("AQ_WD", os.path.expanduser("~/.artamatch-dev/sep2"))
-OUT = os.environ.get("AQ_OUT", os.path.expanduser("~/.artamatch-dev/sep3"))
+OUT = os.environ.get("AQ_OUT", os.path.expanduser("~/.artamatch-dev/wt_corpus"))
+PURE = os.environ.get("AQ_PURE_WT", "1") == "1"          # operator 2026-08-24: replace Wikidata entirely
 TEST_FRAC = float(os.environ.get("AQ_TEST_FRAC", "0.15"))
 LABEL = "ended_in_divorce"
 MISSING = "0000-00-00"
@@ -98,8 +99,30 @@ def main():
     out = out[(np.abs(ya - yb) <= 60) & ya.between(1400, 2015) & yb.between(1400, 2015)]
     out = out[(out.dob_a != MISSING) & (out.dob_b != MISSING)]
 
-    # merge with the Wikidata half, dropping any WikiTree pair whose birth dates already appear there so the
-    # two corpora cannot contribute the same couple twice under different ids
+    if PURE:
+        both = out.copy()
+        both[LABEL] = pd.to_numeric(both[LABEL])
+        both["later_birth"] = np.fmax(pd.to_numeric(both.dob_a.str[:4], errors="coerce").replace(0, np.nan),
+                                      pd.to_numeric(both.dob_b.str[:4], errors="coerce").replace(0, np.nan))
+        both = both.dropna(subset=["later_birth"]).sort_values("later_birth", kind="mergesort").reset_index(drop=True)
+        cut = int(len(both) * (1 - TEST_FRAC))
+        boundary = both.later_birth.iloc[cut - 1]
+        tr = both[both.later_birth <= boundary].copy(); te = both[both.later_birth > boundary].copy()
+        seen_p = set(tr.pid_a) | set(tr.pid_b)
+        te = te[~(te.pid_a.isin(seen_p) | te.pid_b.isin(seen_p))]
+        seen_d = (set(tr.dob_a) | set(tr.dob_b)) - {MISSING}
+        te = te[~(te.dob_a.isin(seen_d) | te.dob_b.isin(seen_d))].copy()
+        te.insert(0, "id", [f"w{i:06d}" for i in range(len(te))])
+        for f in (tr, te):
+            f["start"] = MISSING
+        tr[["dob_a", "dob_b", "start", LABEL]].to_csv(f"{OUT}/train.csv", index=False)
+        te[["id", "dob_a", "dob_b", "start"]].to_csv(f"{OUT}/test.csv", index=False)
+        te[["id", LABEL]].to_csv(f"{OUT}/solution.csv", index=False)
+        print(f"\n  PURE WIKITREE: train {len(tr):,} · test {len(te):,}")
+        print(f"  artificial: train {tr[LABEL].mean():.1%} · test {te[LABEL].mean():.1%}")
+        print(f"  later birth: train {int(tr.later_birth.min())}-{int(boundary)} · "
+              f"test {int(te.later_birth.min())}-{int(te.later_birth.max())}")
+        return
     wd_tr = pd.read_csv(os.path.join(WD, "train.csv"), dtype=str)
     wd_te = pd.read_csv(os.path.join(WD, "test.csv"), dtype=str)
     wd = pd.concat([wd_tr[["dob_a", "dob_b", LABEL]],

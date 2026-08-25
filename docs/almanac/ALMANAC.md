@@ -1,3 +1,423 @@
+# The ArtaMatch v13 Almanac (current)
+
+**v13 — the pair-only rule model (2026-08-25).** Every rule reads BOTH birth dates: a statement about one
+person alone may appear only inside a conjunction whose clauses span both partners. 405 rules survived a
+non-negative sparse regression (with relaxed refit) over 9,602 candidates — 6,098 single doctrine statements
+plus two- and three-clause conjunctions. Held-out TEST AUC 0.7709 (read once), statistically level with the
+best trained black-box ensemble (0.7747; paired-bootstrap 95% CI of the difference [-0.0066, +0.0144]).
+Deployed weights refit on all 56,621 couples; signs sidereal (Lahiri), charts 12:00 UT.
+Full rules with plain-language explanations and examples: `v13_rules.json`. Model: `v13_model.json`.
+
+| statement | weight |
+|---|---|
+| cycle_neptune_pluto_phase=Ari | +0.6712 |
+| comp_pluto_sign=Tau | +0.4924 |
+| cycle_neptune_pluto_phase=Tau | +0.3841 |
+| comp_pluto_sign=Gem | +0.2165 |
+| comp_pluto_decan=2 | +0.2140 |
+| cycle_neptune_pluto_phase=Tau AND comp_pluto_decan=9 | +0.2059 |
+| his_moon_conj_her_pluto AND his_moon_decan=1 | +0.1995 |
+| comp_neptune_sign=Tau | +0.1989 |
+| comp_neptune_sign=Pis | +0.1944 |
+| comp_pluto_sign=Tau AND cycle_neptune_pluto_phase=Pis | +0.1937 |
+| cycle24_neptune_pluto=1 | +0.1884 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_neptune_pluto=1 | +0.1884 |
+| cycle36_uranus_neptune=16 AND cycle36_uranus_pluto=17 | +0.1810 |
+| cycle36_uranus_neptune=16 AND cycle36_uranus_pluto=17 AND cycle_neptune_pluto_phase=Ari | +0.1810 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_uranus_neptune=17 | +0.1804 |
+| his_moon_conj_her_pluto AND his_moon_decan=1 AND his_moon_pada=3 | +0.1791 |
+| his_moon_pada=3 AND his_moon_conj_her_pluto | +0.1791 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo | +0.1759 |
+| his_neptune_semisext_her_pluto | +0.1715 |
+| comp_pluto_decan=9 AND his_pluto_sign=Can AND cycle_neptune_pluto_phase=Tau | +0.1688 |
+| his_tithi=17 AND his_moon_conj_her_pluto | +0.1655 |
+| his_neptune_conj_her_pluto | +0.1581 |
+| cycle_neptune_pluto_phase=Ari AND his_chiron_sign=Sco | +0.1531 |
+| cycle_neptune_pluto_phase=Ari AND cycle_jupiter_saturn_phase=Aqu | +0.1518 |
+| cycle_neptune_pluto_phase=Tau AND her_pluto_sign=Gem | +0.1514 |
+| comp_pluto_sign=Ari | +0.1465 |
+| comp_pluto_sign=Tau AND his_neptune_sign=Ari AND cycle_neptune_pluto_phase=Pis | +0.1460 |
+| cycle36_uranus_neptune=23 AND his_pluto_sign=Can AND cycle_neptune_pluto_phase=Tau | +0.1446 |
+| his_sun_decan=15 AND his_moon_conj_her_pluto | +0.1441 |
+| cycle36_neptune_pluto=32 AND her_neptune_sign=Pis | +0.1378 |
+| his_moon_conj_her_pluto AND his_year_animal=Ox | +0.1376 |
+| his_stem_season=GengMetalxRooster AND his_moon_conj_her_pluto | +0.1359 |
+| his_uranus_semisext_her_venus | +0.1349 |
+| cycle36_uranus_neptune=17 | +0.1333 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 AND comp_pluto_sign=Tau | +0.1320 |
+| moonpair=CapxTau | +0.1297 |
+| his_venus_square_her_saturn | +0.1293 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 | +0.1286 |
+| cycle24_neptune_pluto=2 | +0.1274 |
+| cycle_neptune_pluto_phase=Tau AND cycle24_neptune_pluto=2 | +0.1274 |
+| dav_tithi=1 | +0.1260 |
+| cycle_neptune_pluto_phase=Tau AND her_chiron_sign=Leo | +0.1221 |
+| cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=9 | +0.1217 |
+| cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=9 AND comp_pluto_decan=9 | +0.1217 |
+| his_stem_season=GengMetalxRooster AND cycle36_neptune_pluto=31 | +0.1214 |
+| his_moon_conj_her_jupiter | +0.1213 |
+| cycle24_neptune_pluto=1 AND her_year_animal=Goat AND her_saturn_sign=Aqu | +0.1204 |
+| his_jupiter_sign=Can AND her_saturn_sign=Aqu | +0.1199 |
+| his_venus_opp_her_pluto | +0.1194 |
+| comp_pluto_sign=Tau AND his_tithi=14 | +0.1178 |
+| his_pluto_quinc_her_uranus | +0.1173 |
+| cycle_neptune_pluto_phase=Ari AND his_year_animal=Ox | +0.1173 |
+| his_mars_square_her_pluto | +0.1170 |
+| cycle_neptune_pluto_phase=Ari AND his_uranus_semisext_her_venus | +0.1151 |
+| animalpair=DragonxTiger | +0.1150 |
+| comp_neptune_sign=Ari | +0.1150 |
+| dav_mars_sign=Aqu | +0.1144 |
+| cycle24_neptune_pluto=23 | +0.1142 |
+| comp_pluto_sign=Tau AND cycle24_neptune_pluto=23 | +0.1142 |
+| comp_pluto_sign=Tau AND her_neptune_sign=Tau | +0.1140 |
+| his_pluto_opp_her_uranus | +0.1138 |
+| cycle_uranus_neptune_phase=Lib | +0.1131 |
+| his_pluto_trine_her_jupiter | +0.1130 |
+| cycle36_uranus_neptune=23 | +0.1129 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_uranus_neptune=12 | +0.1127 |
+| cycle24_neptune_pluto=1 AND cycle24_uranus_neptune=12 | +0.1127 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_uranus_neptune=12 AND cycle24_neptune_pluto=1 | +0.1127 |
+| his_venus_conj_her_jupiter | +0.1124 |
+| his_mercury_trine_her_pluto | +0.1115 |
+| his_mercury_square_her_uranus | +0.1106 |
+| gap_years=8 | +0.1087 |
+| cycle24_neptune_pluto=23 AND dav_pluto_decan=4 AND her_neptune_sign=Tau | +0.1067 |
+| cycle36_uranus_neptune=16 AND comp_neptune_decan=5 AND cycle_neptune_pluto_phase=Ari | +0.1062 |
+| cycle36_neptune_pluto=4 AND cycle_neptune_pluto_phase=Tau | +0.1061 |
+| cycle36_neptune_pluto=4 | +0.1061 |
+| his_neptune_sign=Ari AND cycle36_uranus_neptune=11 | +0.1058 |
+| varapair=20 | +0.1054 |
+| comp_neptune_sign=Leo | +0.1054 |
+| comp_tithi=3 | +0.1052 |
+| comp_pluto_sign=Tau AND her_birthday=26 AND cycle_neptune_pluto_phase=Ari | +0.1048 |
+| dav_tithi=24 | +0.1047 |
+| his_neptune_trine_her_uranus | +0.1041 |
+| his_jupiter_sign=Can AND her_pluto_sign=Gem AND cycle_uranus_neptune_phase=Lib | +0.1031 |
+| his_venus_semisext_her_uranus | +0.1025 |
+| his_neptune_quinc_her_mars | +0.1011 |
+| cycle_neptune_pluto_phase=Tau AND his_jupiter_sign=Can | +0.1003 |
+| his_pluto_conj_her_mercury | +0.0999 |
+| his_pluto_opp_her_mars | +0.0994 |
+| his_mercury_square_her_pluto | +0.0994 |
+| vashyapair=1x0 | +0.0987 |
+| cycle_jupiter_saturn_phase=Ari | +0.0985 |
+| comp_pluto_sign=Tau AND her_birthday=21 | +0.0982 |
+| his_saturn_sext_her_saturn | +0.0978 |
+| his_moon_trine_her_jupiter | +0.0978 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_semisext_her_venus | +0.0977 |
+| kuapair=52 | +0.0976 |
+| cycle_neptune_pluto_phase=Ari AND comp_uranus_decan=24 AND comp_pluto_sign=Tau | +0.0970 |
+| cycle36_neptune_pluto=14 AND her_neptune_sign=Ari | +0.0962 |
+| dav_pluto_sign=Gem | +0.0955 |
+| comp_jupiter_decan=10 | +0.0951 |
+| his_jupiter_semisext_her_neptune | +0.0949 |
+| cycle24_saturn_pluto=17 | +0.0949 |
+| comp_uranus_sign=Ari | +0.0948 |
+| cycle_neptune_pluto_phase=Ari AND his_pluto_quinc_her_uranus | +0.0946 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 AND cycle36_uranus_neptune=16 | +0.0945 |
+| his_pluto_conj_her_venus | +0.0945 |
+| comp_pluto_sign=Tau AND his_tithi=2 | +0.0941 |
+| his_jupiter_opp_her_moon | +0.0941 |
+| comp_jupiter_decan=19 | +0.0929 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=23 | +0.0925 |
+| venus_modepair=CardinalxFixed | +0.0922 |
+| comp_pluto_sign=Tau AND comp_saturn_decan=31 | +0.0921 |
+| lifepath_pair=1x2 | +0.0912 |
+| his_mercury_opp_her_uranus | +0.0910 |
+| his_moon_square_her_uranus | +0.0903 |
+| cycle36_uranus_pluto=12 | +0.0901 |
+| his_sun_decan=15 AND his_mercury_square_her_uranus | +0.0900 |
+| comp_pluto_sign=Tau AND his_sun_trine_her_uranus AND cycle_neptune_pluto_phase=Ari | +0.0900 |
+| dav_pluto_sign=Tau | +0.0900 |
+| cycle_neptune_pluto_phase=Ari AND dav_tithi=1 | +0.0898 |
+| cycle_neptune_pluto_phase=Ari AND her_stem_season=DingFirexMonkey | +0.0898 |
+| his_nityayoga=12 AND her_saturn_sign=Aqu | +0.0896 |
+| cycle_neptune_pluto_phase=Ari AND his_year_animal=Ox AND comp_pluto_sign=Tau | +0.0895 |
+| cycle_neptune_pluto_phase=Tau AND dav_tithi=24 | +0.0893 |
+| comp_neptune_sign=Can | +0.0893 |
+| his_jupiter_sign=Can AND her_pluto_sign=Gem | +0.0890 |
+| his_mars_conj_her_saturn | +0.0889 |
+| cycle_neptune_pluto_phase=Tau AND his_tithi=2 | +0.0886 |
+| his_mercury_quinc_her_moon | +0.0885 |
+| cycle36_saturn_neptune=10 | +0.0884 |
+| his_mercury_conj_her_saturn | +0.0882 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo AND dav_tithi=24 | +0.0880 |
+| cycle_saturn_pluto_phase=Sco | +0.0876 |
+| his_moon_opp_her_moon | +0.0875 |
+| comp_pluto_sign=Tau AND his_sun_trine_her_uranus | +0.0873 |
+| his_venus_conj_her_neptune | +0.0872 |
+| comp_uranus_sign=Tau | +0.0867 |
+| his_neptune_quinc_her_sun | +0.0864 |
+| dav_jupiter_sign=Sag | +0.0860 |
+| cycle_jupiter_saturn_phase=Sco | +0.0859 |
+| his_venus_square_her_moon | +0.0858 |
+| cycle24_uranus_pluto=4 | +0.0853 |
+| comp_mars_decan=5 | +0.0850 |
+| cycle_neptune_pluto_phase=Ari AND kuapair=0 | +0.0848 |
+| cycle36_saturn_neptune=7 | +0.0843 |
+| cycle_uranus_pluto_phase=Cap | +0.0842 |
+| his_uranus_quinc_her_venus | +0.0841 |
+| comp_pluto_sign=Tau AND comp_uranus_decan=24 | +0.0835 |
+| dav_jupiter_decan=3 | +0.0833 |
+| his_uranus_quinc_her_pluto | +0.0832 |
+| his_saturn_semisext_her_venus | +0.0831 |
+| cycle_saturn_neptune_phase=Leo | +0.0825 |
+| cycle_neptune_pluto_phase=Aqu | +0.0823 |
+| comp_tithi=16 | +0.0821 |
+| comp_pluto_sign=Tau AND kuapair=52 | +0.0821 |
+| cycle36_saturn_uranus=26 | +0.0819 |
+| his_moon_square_her_sun | +0.0817 |
+| his_moon_her_saturn_house=3 | +0.0814 |
+| his_moon_square_her_saturn | +0.0810 |
+| comp_sun_decan=34 | +0.0809 |
+| his_pluto_sext_her_moon | +0.0809 |
+| cycle36_neptune_pluto=4 AND his_neptune_sign=Leo | +0.0808 |
+| cycle36_neptune_pluto=4 AND his_neptune_sign=Leo AND cycle_neptune_pluto_phase=Tau | +0.0808 |
+| her_tithi=18 AND his_pluto_sign=Can AND cycle_neptune_pluto_phase=Tau | +0.0807 |
+| his_mars_sext_her_mars | +0.0806 |
+| cycle24_saturn_pluto=4 | +0.0803 |
+| cycle_neptune_pluto_phase=Tau AND his_year_animal=Ox AND comp_pluto_decan=9 | +0.0802 |
+| her_tithi=18 AND his_pluto_sign=Can AND dav_pluto_decan=9 | +0.0801 |
+| his_venus_quinc_her_uranus | +0.0799 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo AND his_tithi=2 | +0.0798 |
+| dav_pluto_decan=5 | +0.0796 |
+| his_pluto_square_her_sun | +0.0795 |
+| his_neptune_trine_her_sun | +0.0795 |
+| his_venus_opp_her_moon | +0.0794 |
+| his_neptune_sext_her_sun | +0.0793 |
+| comp_tithi=14 | +0.0784 |
+| his_jupiter_conj_her_saturn | +0.0783 |
+| his_jupiter_conj_her_moon | +0.0780 |
+| kuapair=12 | +0.0779 |
+| cycle_jupiter_saturn_phase=Lib | +0.0774 |
+| varapair=20 AND her_pluto_sign=Gem | +0.0773 |
+| cycle24_saturn_pluto=12 | +0.0769 |
+| cycle36_neptune_pluto=4 AND his_neptune_sign=Leo AND dav_tithi=24 | +0.0765 |
+| her_moon_his_saturn_house=3 | +0.0764 |
+| his_venus_opp_her_saturn | +0.0762 |
+| comp_saturn_decan=31 | +0.0761 |
+| his_jupiter_sext_her_uranus | +0.0757 |
+| his_jupiter_square_her_pluto | +0.0757 |
+| kuapair=0 | +0.0756 |
+| stempair=GuiWaterxDingFire | +0.0754 |
+| his_sun_trine_her_uranus | +0.0751 |
+| marspair=GemxAri | +0.0750 |
+| his_saturn_trine_her_sun | +0.0748 |
+| kuapair=2 | +0.0746 |
+| his_pluto_conj_her_jupiter | +0.0745 |
+| animalpair=DragonxMonkey | +0.0742 |
+| dav_saturn_decan=25 | +0.0741 |
+| branchpair=GoatxRat | +0.0741 |
+| cycle36_uranus_neptune=17 AND cycle36_saturn_neptune=7 | +0.0741 |
+| her_neptune_sign=Pis AND his_pluto_sext_her_moon | +0.0736 |
+| comp_pluto_sign=Tau AND kuapair=52 AND cycle_neptune_pluto_phase=Ari | +0.0734 |
+| his_venus_opp_her_mercury | +0.0733 |
+| comp_jupiter_decan=23 | +0.0732 |
+| vashyapair=0x1 | +0.0732 |
+| varnapair=2x2 | +0.0726 |
+| moon_elempair=EarthxEarth | +0.0726 |
+| cycle_neptune_pluto_phase=Ari AND his_moon_pada=98 | +0.0726 |
+| his_neptune_square_her_jupiter | +0.0724 |
+| his_sun_semisext_her_mercury | +0.0723 |
+| nadipair=AntyaxAntya | +0.0721 |
+| cycle_jupiter_saturn_phase=Tau | +0.0719 |
+| his_uranus_opp_her_sun | +0.0718 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_jupiter_saturn=2 AND comp_pluto_sign=Tau | +0.0717 |
+| his_sunmoon_mid_conj_other_sun | +0.0715 |
+| dav_venus_decan=15 | +0.0714 |
+| dav_saturn_decan=11 | +0.0712 |
+| his_uranus_conj_her_sun | +0.0711 |
+| cycle_neptune_pluto_phase=Ari AND his_moon_decan=1 AND his_neptune_conj_her_pluto | +0.0711 |
+| moonpair=PisxAqu | +0.0710 |
+| his_pluto_trine_her_saturn | +0.0709 |
+| cycle24_neptune_pluto=23 AND his_neptune_quinc_her_mars AND comp_pluto_sign=Tau | +0.0708 |
+| cycle24_neptune_pluto=23 AND his_neptune_quinc_her_mars | +0.0708 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_square_her_uranus AND his_neptune_conj_her_pluto | +0.0708 |
+| his_tithi=2 AND her_saturn_sign=Aqu | +0.0700 |
+| his_pluto_sign=Can AND his_sun_trine_her_uranus AND dav_pluto_decan=9 | +0.0699 |
+| his_jupiter_conj_her_neptune | +0.0696 |
+| dav_pluto_decan=9 AND his_neptune_sign=Leo | +0.0695 |
+| comp_mars_decan=24 | +0.0695 |
+| dav_venus_decan=27 | +0.0694 |
+| her_moon_his_saturn_house=0 | +0.0693 |
+| his_pluto_quinc_her_uranus AND his_neptune_conj_her_pluto | +0.0692 |
+| his_neptune_semisext_her_moon | +0.0691 |
+| animalpair=GoatxRabbit | +0.0688 |
+| her_neptune_sign=Tau AND kuapair=52 | +0.0688 |
+| his_jupiter_sext_her_saturn | +0.0687 |
+| his_mars_quinc_her_jupiter | +0.0687 |
+| his_neptune_trine_her_mars | +0.0679 |
+| cycle_neptune_pluto_phase=Tau AND his_jupiter_sign=Can AND her_saturn_sign=Aqu | +0.0676 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_square_her_uranus | +0.0675 |
+| his_mars_opp_her_saturn | +0.0675 |
+| ninestarpair=76 | +0.0672 |
+| his_mercury_semisext_her_venus | +0.0671 |
+| her_neptune_sign=Pis AND gap_years=8 | +0.0670 |
+| comp_jupiter_sign=Leo | +0.0669 |
+| her_neptune_sign=Tau AND dav_pluto_decan=4 | +0.0669 |
+| her_neptune_sign=Tau AND dav_pluto_decan=4 AND comp_pluto_sign=Tau | +0.0669 |
+| comp_mars_decan=2 | +0.0667 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_uranus_neptune=17 AND his_chiron_sign=Sco | +0.0659 |
+| his_moon_pada=18 AND his_moon_conj_her_pluto AND cycle_neptune_pluto_phase=Ari | +0.0656 |
+| her_neptune_sign=Tau AND cycle_jupiter_saturn_phase=Aqu | +0.0654 |
+| cycle24_neptune_pluto=1 AND cycle_jupiter_saturn_phase=Aqu | +0.0654 |
+| cycle_neptune_pluto_phase=Ari AND cycle_jupiter_saturn_phase=Aqu AND cycle24_neptune_pluto=1 | +0.0654 |
+| his_neptune_square_her_saturn | +0.0652 |
+| cycle36_saturn_uranus=13 | +0.0650 |
+| cycle_neptune_pluto_phase=Ari AND his_moon_decan=1 | +0.0650 |
+| comp_pluto_sign=Tau AND her_moon_pada=22 | +0.0649 |
+| his_jupiter_sext_her_jupiter | +0.0640 |
+| his_mercury_opp_her_sun | +0.0638 |
+| cycle36_jupiter_saturn=15 | +0.0635 |
+| cycle_saturn_uranus_phase=Leo | +0.0634 |
+| comp_venus_sign=Sco | +0.0634 |
+| cycle24_neptune_pluto=23 AND comp_jupiter_decan=10 AND comp_pluto_sign=Tau | +0.0633 |
+| cycle24_neptune_pluto=23 AND comp_jupiter_decan=10 | +0.0633 |
+| his_venus_trine_her_uranus | +0.0631 |
+| lifepath_pair=1x4 | +0.0630 |
+| comp_saturn_decan=31 AND his_neptune_sign=Leo | +0.0629 |
+| comp_mars_decan=14 | +0.0629 |
+| his_mars_trine_her_saturn | +0.0628 |
+| his_jupiter_semisext_her_moon | +0.0627 |
+| dav_tithi=25 | +0.0624 |
+| his_mars_sext_her_moon | +0.0622 |
+| his_saturn_square_her_venus | +0.0621 |
+| her_neptune_sign=Tau AND comp_neptune_decan=5 | +0.0621 |
+| his_venus_semisext_her_sun | +0.0619 |
+| his_jupiter_trine_her_moon | +0.0618 |
+| venus_elempair=EarthxFire | +0.0617 |
+| comp_pluto_sign=Tau AND her_moon_decan=32 | +0.0611 |
+| tarapair=2 | +0.0611 |
+| varapair=5 | +0.0607 |
+| varapair=37 | +0.0605 |
+| his_neptune_opp_her_jupiter | +0.0598 |
+| cycle36_jupiter_saturn=0 | +0.0590 |
+| cycle36_neptune_pluto=4 AND dav_neptune_decan=13 | +0.0586 |
+| cycle_neptune_pluto_phase=Tau AND dav_neptune_decan=13 | +0.0586 |
+| cycle36_neptune_pluto=4 AND cycle_neptune_pluto_phase=Tau AND dav_neptune_decan=13 | +0.0586 |
+| cycle_neptune_pluto_phase=Ari AND dashalordpair=78 | +0.0582 |
+| comp_sun_decan=12 | +0.0581 |
+| comp_moon_sign=Tau | +0.0580 |
+| his_mercury_square_her_saturn | +0.0580 |
+| his_saturn_trine_her_venus | +0.0578 |
+| comp_pluto_sign=Tau AND comp_uranus_decan=24 AND his_neptune_conj_her_pluto | +0.0575 |
+| his_mercury_quinc_her_sun | +0.0573 |
+| his_jupiter_semisext_her_sun | +0.0573 |
+| rajjupair=0x0 | +0.0572 |
+| comp_uranus_decan=1 | +0.0571 |
+| his_moon_opp_her_uranus | +0.0569 |
+| cycle_uranus_pluto_phase=Can | +0.0568 |
+| his_sun_quinc_her_mercury | +0.0564 |
+| comp_pluto_sign=Tau AND her_neptune_sign=Tau AND comp_jupiter_decan=10 | +0.0564 |
+| his_sun_sext_her_moon | +0.0564 |
+| nayinpair=EarthxMetal | +0.0563 |
+| comp_uranus_decan=27 AND cycle24_uranus_neptune=12 AND cycle_uranus_neptune_phase=Lib | +0.0562 |
+| cycle36_saturn_uranus=26 AND her_pluto_sign=Gem | +0.0562 |
+| gap_years=3 | +0.0557 |
+| dav_jupiter_decan=11 | +0.0557 |
+| venus_elempair=WaterxWater | +0.0554 |
+| ninestarpair=34 | +0.0552 |
+| cycle_jupiter_saturn_phase=Aqu | +0.0551 |
+| comp_jupiter_sign=Gem | +0.0547 |
+| sunpair=LeoxTau | +0.0545 |
+| comp_pluto_sign=Tau AND dav_moon_decan=5 AND cycle_neptune_pluto_phase=Ari | +0.0542 |
+| comp_tithi=2 | +0.0537 |
+| cycle36_saturn_pluto=7 | +0.0530 |
+| dashalordpair=78 | +0.0530 |
+| his_saturn_trine_her_jupiter | +0.0529 |
+| comp_pluto_sign=Tau AND comp_saturn_decan=31 AND cycle_neptune_pluto_phase=Ari | +0.0527 |
+| his_saturn_sext_her_neptune | +0.0522 |
+| yonipair=10x2 | +0.0521 |
+| cycle_saturn_neptune_phase=Can | +0.0515 |
+| cycle36_jupiter_saturn=32 | +0.0512 |
+| dav_mars_decan=20 | +0.0510 |
+| dav_venus_decan=10 | +0.0510 |
+| his_sun_sext_her_mercury | +0.0509 |
+| his_pluto_trine_her_moon | +0.0506 |
+| sun_polpair=YangxYin | +0.0504 |
+| comp_pluto_sign=Tau AND dav_moon_decan=5 | +0.0500 |
+| his_sun_square_her_jupiter | +0.0499 |
+| animalpair=DragonxGoat AND her_year_animal=Goat | +0.0497 |
+| animalpair=DragonxGoat | +0.0497 |
+| comp_saturn_decan=33 | +0.0493 |
+| dav_moon_decan=5 | +0.0491 |
+| branchpair=TigerxTiger | +0.0490 |
+| cycle_uranus_neptune_phase=Lib AND comp_uranus_decan=27 | +0.0489 |
+| his_venus_opp_her_mars | +0.0486 |
+| cycle36_jupiter_saturn=8 | +0.0483 |
+| cycle36_neptune_pluto=4 AND cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=8 | +0.0483 |
+| cycle36_neptune_pluto=4 AND dav_pluto_decan=8 | +0.0483 |
+| dav_sun_decan=23 | +0.0479 |
+| ninestarpair=55 | +0.0478 |
+| dav_pluto_decan=8 | +0.0477 |
+| comp_jupiter_decan=25 | +0.0476 |
+| his_sun_conj_her_jupiter | +0.0472 |
+| his_moon_her_saturn_house=8 | +0.0469 |
+| cycle36_jupiter_saturn=29 | +0.0463 |
+| cycle_neptune_pluto_phase=Tau AND his_sun_semisext_her_mercury | +0.0456 |
+| comp_saturn_decan=19 | +0.0453 |
+| kuapair=33 | +0.0452 |
+| his_uranus_conj_her_saturn | +0.0451 |
+| his_mars_conj_her_sun | +0.0450 |
+| dav_tithi=14 | +0.0440 |
+| comp_pluto_sign=Tau AND cycle36_jupiter_saturn=0 | +0.0438 |
+| cycle36_uranus_neptune=5 AND his_neptune_sign=Leo | +0.0438 |
+| cycle36_jupiter_saturn=2 | +0.0436 |
+| his_pluto_sext_her_uranus | +0.0430 |
+| his_jupiter_trine_her_uranus | +0.0430 |
+| her_neptune_sign=Tau AND his_neptune_sign=Ari AND cycle36_saturn_neptune=7 | +0.0429 |
+| dav_venus_decan=3 | +0.0421 |
+| his_jupiter_opp_her_saturn | +0.0419 |
+| ninestarpair=16 | +0.0418 |
+| dav_moon_sign=Tau | +0.0413 |
+| kuapair=7 | +0.0412 |
+| his_neptune_trine_her_mercury | +0.0411 |
+| his_saturn_opp_her_neptune | +0.0403 |
+| cycle36_jupiter_saturn=25 | +0.0403 |
+| his_moon_trine_her_sun | +0.0402 |
+| kuapair=34 | +0.0401 |
+| his_jupiter_trine_her_saturn | +0.0400 |
+| cycle24_saturn_pluto=15 | +0.0393 |
+| cycle24_neptune_pluto=23 AND his_neptune_sign=Ari AND her_neptune_sign=Tau | +0.0390 |
+| vashyapair=0x3 | +0.0387 |
+| his_neptune_conj_her_neptune | +0.0385 |
+| cycle_saturn_pluto_phase=Sag | +0.0382 |
+| his_jupiter_opp_her_venus | +0.0381 |
+| comp_pluto_sign=Tau AND his_pluto_conj_her_mercury | +0.0380 |
+| kuapair=10 | +0.0379 |
+| cycle24_uranus_pluto=15 | +0.0374 |
+| his_jupiter_square_her_neptune | +0.0370 |
+| his_saturn_trine_her_uranus | +0.0368 |
+| venus_elempair=FirexEarth | +0.0366 |
+| his_venus_sext_her_pluto | +0.0359 |
+| comp_jupiter_decan=31 | +0.0353 |
+| his_pluto_trine_her_uranus | +0.0348 |
+| cycle36_saturn_uranus=31 | +0.0325 |
+| comp_pluto_sign=Tau AND his_pluto_sext_her_moon | +0.0320 |
+| cycle_saturn_uranus_phase=Sag | +0.0314 |
+| his_venus_opp_her_jupiter | +0.0303 |
+| comp_saturn_sign=Lib | +0.0301 |
+| his_mercury_square_her_neptune | +0.0279 |
+| his_mars_square_her_neptune | +0.0278 |
+| cycle24_uranus_neptune=3 | +0.0266 |
+| cycle_uranus_pluto_phase=Leo | +0.0263 |
+| cycle36_saturn_neptune=35 | +0.0246 |
+| his_venus_square_her_jupiter | +0.0242 |
+| cycle36_uranus_neptune=5 | +0.0216 |
+| her_neptune_sign=Tau AND his_neptune_sign=Ari | +0.0195 |
+| dav_sun_sign=Gem | +0.0193 |
+| his_moon_quinc_her_uranus | +0.0191 |
+| gap_years=2 | +0.0179 |
+| his_venus_sext_her_moon | +0.0178 |
+| his_moon_trine_her_venus | +0.0178 |
+| comp_uranus_decan=27 | +0.0169 |
+| cycle24_uranus_neptune=9 | +0.0151 |
+| his_moon_square_her_mars | +0.0076 |
+| cycle36_saturn_uranus=6 | +0.0067 |
+| cycle_saturn_neptune_phase=Ari | +0.0025 |
+
+---
+
 # The ArtaMatch v5 Almanac
 
 Every line is a tradition's own statement and the weight five centuries of recorded marriages give it (positive = toward divorce).

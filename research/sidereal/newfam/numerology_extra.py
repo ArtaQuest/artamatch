@@ -33,8 +33,12 @@ def build(df, Z, half):
         cols.append(c); names.append(f"bio_compat_{P}")
         tot = tot + np.nan_to_num(c)
     cols.append(np.where(np.isfinite(dd), tot / 3, np.nan)); names.append("bio_compat_mean")
-    digits = lambda s: [sum(int(c) for c in v if c.isdigit()) if isinstance(v, str) and v[:4] != "0000" else -1
-                        for v in s.astype(str)]
+    # the Lo Shu grid and the digit root read the FULL birth date. 'YYYY-00-00' spells "month and day unknown",
+    # and its zeros are placeholders, not digits — counting them fabricated a verdict for every year-only birth
+    # (and made shared-missing-numbers a proxy for date precision, which is era, which is no tradition at all).
+    fullp = lambda v: isinstance(v, str) and len(v) >= 10 and v[:4].isdigit() and v[:4] != "0000" \
+        and v[5:7] != "00" and v[8:10] != "00"
+    digits = lambda s: [sum(int(c) for c in v if c.isdigit()) if fullp(v) else -1 for v in s.astype(str)]
     da, db = digits(df.dob_a), digits(df.dob_b)
     comb = np.array([float(_root(x + y)) if x >= 0 and y >= 0 else np.nan for x, y in zip(da, db)])
     cols += [comb, np.where(np.isfinite(comb), np.isin(comb, [2, 6, 9]).astype(float), np.nan)]
@@ -42,7 +46,7 @@ def build(df, Z, half):
     def loshu(s):
         out = np.full((len(s), 9), np.nan)
         for i, v in enumerate(s.astype(str)):
-            if isinstance(v, str) and v[:4] != "0000":
+            if fullp(v):
                 row = np.zeros(9)
                 for c in v:
                     if c.isdigit() and c != "0":

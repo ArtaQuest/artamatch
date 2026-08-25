@@ -37,18 +37,20 @@ def build(df, Z, half):
     for tag, C, dob in (("h", A, df.dob_a), ("w", B, df.dob_b)):
         sun, moon, node = C[:, ix["sun"]], C[:, ix["moon"]], C[:, ix["true_node"]]
         el = (moon - sun) % 360.0
-        tithi = np.floor(el / 12.0) + 1
-        karana = np.floor(el / 6.0) % 60
-        yoga = np.floor(((moon + sun) % 360.0) / (360.0 / 27.0))
-        paksha = (tithi > 15).astype(float)
-        tclass = ((tithi - 1) % 5)                       # nanda/bhadra/jaya/rikta/purna
-        rikta = (tclass == 3).astype(float)
+        lum_ok = np.isfinite(moon) & np.isfinite(sun)
+        NAg = lambda v: np.where(lum_ok, v, np.nan)      # a flag from an unknown tithi is NaN, never a quiet 0:
+        tithi = NAg(np.floor(el / 12.0) + 1)             # np.nan == 3 is False, and False casts to 0.0 — the
+        karana = NAg(np.floor(el / 6.0) % 60)            # tradition would then be ASSERTING "no dosha" about a
+        yoga = NAg(np.floor(((moon + sun) % 360.0) / (360.0 / 27.0)))   # couple it cannot read
+        paksha = NAg((tithi > 15).astype(float))
+        tclass = NAg((tithi - 1) % 5)
+        rikta = NAg((tclass == 3).astype(float))
         # eclipse-born: luminaries' syzygy near the nodal axis
         near_node = np.fmin(np.abs((sun - node + 180) % 360 - 180), np.abs((sun - node) % 360 - 180) * 0 + 999)
         node_arc = np.abs((sun - node + 180) % 360 - 180)
         node_axis = np.fmin(node_arc, 180 - node_arc)
         newfull = np.fmin(el % 360, 360 - el % 360); newfull = np.fmin(newfull, np.abs(180 - el))
-        eclipse_born = ((node_axis < 15) & (newfull < 24)).astype(float)
+        eclipse_born = np.where(lum_ok & np.isfinite(node), ((node_axis < 15) & (newfull < 24)).astype(float), np.nan)
         vr = _wd(dob)
         vara_lord = np.where(np.isfinite(vr), np.array(VARA_LORD * 1)[np.nan_to_num(vr).astype(int) % 7], np.nan)
         per[tag] = dict(tithi=tithi, karana=karana, yoga=yoga, paksha=paksha, tclass=tclass, lord=vara_lord)

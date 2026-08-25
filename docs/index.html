@@ -125,6 +125,7 @@ the past — not a prophecy.</p>
 
 <section class="step" id="s3">
 <h2 style="margin-top:34px">Step 3 · Your matches</h2>
+<p class="sub">Searching birth dates within 15 years of yours, limited to partners aged 18–80 today.</p>
 <p class="sub" id="scanline">Scanning candidate birth dates…</p>
 <div class="bar"><i id="prog"></i></div>
 <div id="top10"></div>
@@ -251,7 +252,8 @@ $("to2").onclick=()=>show(2);
 $("to3").onclick=async()=>{
   show(3);
   const [y,m,d]=state.me,g=state.g;
-  const lo=Math.max(1930,y-30),hi=Math.min(2008,y+30);
+  // operator: search within ±15 years of the user, and only partners aged 18–80 today (born 1946–2008)
+  const lo=Math.max(1946,y-15),hi=Math.min(2008,y+15);
   let all=[];
   for(let part=0;part<4;part++){
     const r=JSON.parse(await state.py.runPythonAsync(`scan(${y},${m},${d},"${g}",${lo},${hi},${part})`));

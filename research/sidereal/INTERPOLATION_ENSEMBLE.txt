@@ -1,0 +1,41 @@
+  SHUFFLED interpolation · train 48,128 (4.8%) · test 8,493 (4.7%)
+  5 group-folds over 42,289 components
+  2,405 pure features · 27 families
+    arabic_parts           OOF 0.6262   TEST 0.6135
+    aspect_doctrine        OOF 0.6230   TEST 0.6145
+    calendar               OOF 0.7153   TEST 0.7265
+    chinese_bazi_deep      OOF 0.6345   TEST 0.6306
+    cyclical_time          OOF 0.7519   TEST 0.7731
+    davison_chart          OOF 0.6920   TEST 0.7092
+    declination_speed      OOF 0.6846   TEST 0.6821
+    degree_lore            OOF 0.6313   TEST 0.6113
+    electional             OOF 0.6211   TEST 0.6261
+    extra                  OOF 0.5003   TEST 0.5077
+    fixed_stars_deep       OOF 0.6805   TEST 0.6788
+    gendered_synastry      OOF 0.7604   TEST 0.7759
+    geometry               OOF 0.7273   TEST 0.7418
+    maya                   OOF 0.7441   TEST 0.7585
+    midpoints_uranian      OOF 0.6117   TEST 0.6144
+    numerology_extra       OOF 0.6177   TEST 0.5979
+    numerology_world       OOF 0.6978   TEST 0.6928
+    panchanga_natal        OOF 0.6227   TEST 0.6083
+    phasor_pair            OOF 0.7587   TEST 0.7774
+    reenc_pattern          OOF 0.7028   TEST 0.6867
+    reenc_rotation         OOF 0.6691   TEST 0.6748
+    reenc_soft             OOF 0.6240   TEST 0.6190
+    vedic_varga            OOF 0.6349   TEST 0.6245
+    world                  OOF 0.6507   TEST 0.6664
+    world2                 OOF 0.6495   TEST 0.6555
+    world3                 OOF 0.7522   TEST 0.7629
+    zodiac                 OOF 0.6237   TEST 0.6185
+
+  STACK over 27 members · OOF 0.7651 on 48,128
+  weights: cyclical_time 15% · phasor_pair 14% · gendered_synastry 13% · world3 11% · calendar 8% · reenc_pattern 7% · maya 7% · geometry 6% · numerology_world 5% · fixed_stars_deep 5% · davison_chart 4% · declination_speed 4% · reenc_rotation 2%
+
+  TEST AUC (interpolation, read once): 0.7747   chance 0.5000
+
+  GENDER CHECK — swap, phases rebuilt, name-aligned:
+    mean |dP| 0.0034 · max 0.0274 · rows >1pt: 4%
+    swapped AUC 0.7733 vs correct 0.7747
+
+  deployed on all 56,621 pairs · saved as shuf

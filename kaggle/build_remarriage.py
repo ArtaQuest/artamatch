@@ -162,14 +162,50 @@ def main():
     print(f"    label by the rule:    {out.y_rule.mean():.1%} artificial")
     print(f"    label by the variant: {out.y_alive.mean():.1%} artificial")
 
-    out = out.sort_values("later_birth", kind="mergesort").reset_index(drop=True)
-    cut = int(len(out) * 0.85)
-    bnd = out.later_birth.iloc[cut - 1]
-    tr = out[out.later_birth <= bnd].copy(); te = out[out.later_birth > bnd].copy()
+    # SPLIT (operator 2026-08-25): SHUFFLED, not temporal — "don't bias into modern. I want models that
+    # interpolate the entire history of recorded marriages." The test half is a uniform sample of five
+    # centuries, so every era appears on both sides and the slow-body era channel is measurable skill.
+    # Person- and birth-date-disjointness are KEPT: identity must still never leak, only doctrine.
+    if os.environ.get("AQ_SPLIT", "shuffle") == "shuffle":
+        # SPLIT BY CONNECTED COMPONENT of the marriage graph, not by row. Row-shuffling followed by dropping
+        # test rows that share a person with train deletes exactly the REMARRIED (their multiple rows straddle
+        # the halves), halving the positive rate in test (8.2% vs 17.6%). Whole components go to one side, so
+        # nothing is deleted and both halves keep the true base rate — and person-disjointness holds by
+        # construction.
+        parent = {}
+        def find(x):
+            while parent.setdefault(x, x) != x:
+                parent[x] = parent[parent[x]]; x = parent[x]
+            return x
+        for a, b in zip(out.pid_a, out.pid_b):
+            ra, rb = find(a), find(b)
+            if ra != rb:
+                parent[ra] = rb
+        comp = np.array([find(a) for a in out.pid_a])
+        rng = np.random.default_rng(42)
+        uniq = rng.permutation(np.unique(comp))
+        sizes = pd.Series(comp).value_counts()
+        cum = np.cumsum([sizes[c] for c in uniq])
+        n_te = int(len(out) * 0.15)
+        te_comps = set(uniq[cum <= n_te])
+        is_te = np.array([c in te_comps for c in comp])
+        tr = out[~is_te].copy(); te = out[is_te].copy()
+        bnd = -1
+    else:
+        out = out.sort_values("later_birth", kind="mergesort").reset_index(drop=True)
+        cut = int(len(out) * 0.85)
+        bnd = out.later_birth.iloc[cut - 1]
+        tr = out[out.later_birth <= bnd].copy(); te = out[out.later_birth > bnd].copy()
     seen_p = set(tr.pid_a) | set(tr.pid_b)
-    te = te[~(te.pid_a.isin(seen_p) | te.pid_b.isin(seen_p))]
-    seen_d = (set(tr.dob_a) | set(tr.dob_b)) - {MISSING}
-    te = te[~(te.dob_a.isin(seen_d) | te.dob_b.isin(seen_d))].copy()
+    te = te[~(te.pid_a.isin(seen_p) | te.pid_b.isin(seen_p))].copy()
+    # birth-DATE disjointness is a TEMPORAL-split guard (a memorisable person recurring under a new id). In the
+    # shuffled interpolation regime five centuries of training cover nearly every calendar date, so it deleted
+    # 87% of the test half and skewed what survived toward the under-documented centuries (7.5% positive
+    # against 17.6% overall). Two DIFFERENT people sharing a birth date is interpolation itself — the person
+    # filter above is the identity guard.
+    if bnd != -1:
+        seen_d = (set(tr.dob_a) | set(tr.dob_b)) - {MISSING}
+        te = te[~(te.dob_a.isin(seen_d) | te.dob_b.isin(seen_d))].copy()
     te.insert(0, "id", [f"r{i:06d}" for i in range(len(te))])
     for f in (tr, te):
         f["start"] = MISSING
@@ -179,7 +215,9 @@ def main():
     te.rename(columns={"y_alive": LABEL})[["id", LABEL]].to_csv(f"{OUT}/solution.csv", index=False)
     tr[["pid_a", "pid_b", "y_rule", "y_alive"]].to_csv(f"{OUT}/_train_ids.csv", index=False)
     te[["id", "pid_a", "pid_b", "y_rule", "y_alive"]].to_csv(f"{OUT}/_test_ids.csv", index=False)
-    print(f"\n  train {len(tr):,} · test {len(te):,} · born to {int(bnd)} / from {int(te.later_birth.min())}")
+    print(f"\n  train {len(tr):,} · test {len(te):,} · split={'SHUFFLED (interpolation)' if bnd == -1 else f'temporal to {int(bnd)}'}")
+    print(f"  test birth-year span: {int(te.later_birth.min())}-{int(te.later_birth.max())} (train "
+          f"{int(tr.later_birth.min())}-{int(tr.later_birth.max())})")
     print(f"  artificial: train {tr.y_rule.mean():.1%} · test {te.y_rule.mean():.1%}")
 
 

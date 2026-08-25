@@ -3,254 +3,271 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ArtaMatch Almanac</title>
+<title>ArtaMatch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,560&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{--bg:#010C17;--card:#06121E;--raise:#0C1E32;--gold:#E8B923;--blue:#1746DC;--blue-l:#5B7FF2;
 --ink:#E9EFF7;--mut:#8FA3B8;--line:rgba(232,185,35,.14);--good:rgba(232,185,35,.12);--bad:rgba(91,127,242,.14)}
 *{box-sizing:border-box;margin:0}
-body{background:var(--bg);color:var(--ink);font:16px/1.55 "Source Sans 3",system-ui,sans-serif;
-padding:0 20px 72px}
-.wrap{max-width:880px;margin:0 auto}
-h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:560;text-wrap:balance}
-header{padding:52px 0 30px;border-bottom:1px solid var(--line)}
+body{background:var(--bg);color:var(--ink);font:16px/1.6 "Source Sans 3",system-ui,sans-serif;padding:0 20px 80px}
+.wrap{max-width:760px;margin:0 auto}
+h1,h2{font-family:Fraunces,Georgia,serif;font-weight:560;text-wrap:balance}
 .eyebrow{color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:12px;font-weight:600}
-h1{font-size:44px;line-height:1.08;margin:10px 0 8px}
-.sub{color:var(--mut);max-width:60ch}
-.prov{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
-.prov span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;
-font:500 12.5px/1.4 "IBM Plex Mono",monospace;color:var(--mut)}
-.prov b{color:var(--gold);font-weight:500}
-.hero{margin:34px 0 10px;background:radial-gradient(120% 140% at 20% 0%,#0D2036 0%,var(--card) 55%);
-border:1px solid var(--line);border-radius:14px;padding:26px 26px 22px;position:relative;overflow:hidden}
-.hero:before{content:"";position:absolute;inset:-40% -20% auto auto;width:340px;height:340px;
-background:radial-gradient(closest-side,rgba(232,185,35,.13),transparent 70%)}
-.hero .rk1{color:var(--gold);font:600 12px/1 "IBM Plex Mono",monospace;letter-spacing:.12em}
-.hero .date{font-family:Fraunces,serif;font-size:40px;margin:8px 0 2px}
-.hero .meta{color:var(--mut);margin-bottom:14px}
-.hero .p{color:var(--gold);font:500 15px/1 "IBM Plex Mono",monospace}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.chip{border-radius:8px;padding:6px 10px;font-size:13.5px;border:1px solid var(--line);background:var(--good)}
-.chip b{color:var(--gold);font:500 12px "IBM Plex Mono",monospace;margin-left:4px}
+header{padding:52px 0 8px}
+h1{font-size:42px;line-height:1.08;margin:10px 0 10px}
+.sub{color:var(--mut);max-width:58ch}
+.step{display:none;animation:fadein .5s}
+.step.on{display:block}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;margin-top:26px}
+label{display:block;color:var(--mut);font-size:13px;margin:14px 0 6px;letter-spacing:.06em;text-transform:uppercase}
+input[type=date]{background:var(--raise);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+padding:12px 14px;font:500 17px "IBM Plex Mono",monospace;width:100%;max-width:280px}
+.gbtns{display:flex;gap:10px}
+.gbtn{flex:0 0 auto;background:var(--raise);border:1px solid var(--line);color:var(--ink);border-radius:10px;
+padding:12px 22px;font-size:16px;cursor:pointer}
+.gbtn.sel{border-color:var(--gold);color:var(--gold)}
+.cta{margin-top:22px;background:var(--gold);color:#0A0A06;border:0;border-radius:10px;padding:13px 26px;
+font:600 16px "Source Sans 3";cursor:pointer}
+.cta:disabled{opacity:.45;cursor:default}
+.ghost{background:none;border:1px solid var(--line);color:var(--blue-l);border-radius:10px;padding:11px 20px;
+font:600 15px "Source Sans 3";cursor:pointer;margin-top:22px}
+.status{color:var(--mut);font:500 13px "IBM Plex Mono",monospace;margin-top:14px}
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:12px;
+opacity:0;transform:translateY(8px);transition:opacity .5s,transform .5s}
+.pcard.show{opacity:1;transform:none}
+.pcard .k{color:var(--gold);font:600 12px "IBM Plex Mono",monospace;letter-spacing:.1em;text-transform:uppercase}
+.pcard .v{font-family:Fraunces,serif;font-size:26px;margin:4px 0 4px}
+.pcard .e{color:var(--mut);font-size:14px}
+.match{background:var(--card);border:1px solid rgba(232,185,35,.1);border-radius:12px;padding:14px 16px;margin-top:10px}
+.match:hover{border-color:var(--blue)}
+.mtop{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mrk{color:var(--mut);font:500 13px "IBM Plex Mono",monospace}
+.mdt{font:500 18px "IBM Plex Mono",monospace}
+.mgap{color:var(--mut);font-size:13px}
+.mp{margin-left:auto;color:var(--gold);font:500 14px "IBM Plex Mono",monospace}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.chip{border-radius:8px;padding:4px 9px;font-size:12.5px;border:1px solid var(--line);background:var(--good)}
 .chip.bad{background:var(--bad);border-color:rgba(91,127,242,.3)}
+.chip b{font:500 11px "IBM Plex Mono",monospace;margin-left:4px;color:var(--gold)}
 .chip.bad b{color:var(--blue-l)}
-h2{font-size:22px;margin:38px 0 14px}
-.row{display:grid;grid-template-columns:34px 118px 46px 130px 1fr;gap:12px;align-items:center;
-background:var(--card);border:1px solid rgba(232,185,35,.08);border-radius:10px;padding:11px 14px;margin:7px 0}
-.row:hover{border-color:var(--blue)}
-.rk{color:var(--mut);font:500 13px "IBM Plex Mono",monospace}
-.dt{font:500 15px "IBM Plex Mono",monospace}
-.gap{color:var(--mut);font-size:13px}
-.pv{font:500 13px "IBM Plex Mono",monospace;color:var(--gold)}
-.bar{height:3px;background:var(--raise);border-radius:2px;margin-top:5px}
-.bar i{display:block;height:100%;background:var(--gold);border-radius:2px}
-.why{display:flex;flex-wrap:wrap;gap:6px}
-.why .chip{padding:3px 8px;font-size:12.5px}
-details{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 16px}
-summary{cursor:pointer;color:var(--blue-l);font-weight:600;padding:10px 0}
-.tblwrap{overflow-x:auto}
+.why{color:var(--mut);font-size:13px;margin-top:8px;display:none}
+.match.open .why{display:block}
+.bar{height:4px;background:var(--raise);border-radius:2px;margin-top:16px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .3s}
+details{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 16px}
+summary{cursor:pointer;color:var(--blue-l);font-weight:600;padding:9px 0}
 table{border-collapse:collapse;width:100%;font-size:14px}
-td{padding:7px 10px;border-top:1px solid rgba(143,163,184,.12);font-variant-numeric:tabular-nums}
+td{padding:6px 10px;border-top:1px solid rgba(143,163,184,.12);font-variant-numeric:tabular-nums}
 .mono{font-family:"IBM Plex Mono",monospace;font-size:13px}
-.reason{color:var(--mut)}
-.read{margin-top:36px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
-.read li{margin:8px 0 8px 18px;color:var(--mut)}
-.read b{color:var(--ink)}
-footer{margin-top:40px;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
-@media(max-width:640px){.row{grid-template-columns:28px 104px 1fr;grid-auto-rows:auto}
-.gap,.why{grid-column:2/-1} .pv{grid-column:3} h1{font-size:34px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-.trad{border-top:1px solid rgba(143,163,184,.12);padding:10px 0}.tn{font-weight:600}.tc{color:var(--mut);font:500 12px "IBM Plex Mono",monospace;margin-left:8px}.td{color:var(--mut);font-size:13.5px}</style>
+footer{margin-top:44px;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+a{color:var(--blue-l)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.pcard{opacity:1;transform:none}}
+</style>
 </head>
 <body>
 <div class="wrap">
 <header>
-<div class="eyebrow">ArtaMatch v5 · the doctrine almanac</div>
-<h1>Match dates for a man born 15 February 1994</h1>
-<p class="sub">One hundred partner birth dates, ranked by the chance the marriage would end in divorce rather
-than death — scored by 1,293 named statements of world astrology and numerology — every sign and nakṣatra <b>sidereal (Lahiri ayanāṁśa)</b> —, weighted by five centuries of
-recorded marriages. Every ranking decomposes into the statements that produced it.</p>
-<div class="prov">
-<span>test AUC <b>0.7707</b> · read once</span>
-<span>trained on <b>56,621</b> couples · all data</span>
-<span>only the blend fitted · <b>fully explainable</b></span>
-<span>divorce = remarried while both lived</span>
-<span>zodiac <b>sidereal · Lahiri</b></span>
-<span><a href="lab.html" style="color:var(--blue-l);text-decoration:none">the research lab →</a></span>
-</div>
+<div class="eyebrow">ArtaMatch v5 · sidereal (Lahiri) · fully explainable</div>
+<h1 id="h1">Whose birth date fits yours?</h1>
+<p class="sub">An experiment: five centuries of recorded marriages, read through 1,293 named rules of the
+world's astrology and numerology. Enter a birth date and it reads the chart step by step — no background
+needed — then ranks partner birth dates and shows exactly why.</p>
 </header>
 
-<section class="hero">
-<div class="rk1">Nº 1 MATCH</div>
-<div class="date">2007-07-15</div>
-<div class="meta">13 years younger · P(divorce | the marriage ends) <span class="p">1.8%</span></div>
-<div><b style="font-family:Fraunces,serif">Why the almanac favours her</b></div>
-<div class="chips"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span><span class="chip good">Uranus–Neptune era phase in Aries <b>-0.10</b></span><span class="chip good">Jupiter–Saturn era phase in Pisces <b>-0.07</b></span><span class="chip bad">Neptune–Pluto era phase in Taurus <b>+0.29</b></span></div>
+<section class="step on" id="s0">
+<div class="panel">
+<label for="dob">Your date of birth</label>
+<input type="date" id="dob" min="1930-01-01" max="2008-12-31" value="">
+<label>You are</label>
+<div class="gbtns">
+<button class="gbtn" id="gm" type="button">A man seeking a woman</button>
+<button class="gbtn" id="gf" type="button">A woman seeking a man</button>
+</div>
+<button class="cta" id="go" disabled>Read my chart</button>
+<div class="status" id="boot">loading the ephemeris — a few seconds…</div>
+</div>
 </section>
 
-<h2>Ranks 2–20</h2>
-<div class="row">
-<div class="rk">2</div>
-<div class="dt">2005-12-15</div>
-<div class="gap">11y</div>
-<div class="pv">1.9%<div class="bar"><i style="width:79%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">3</div>
-<div class="dt">2005-12-25</div>
-<div class="gap">11y</div>
-<div class="pv">1.9%<div class="bar"><i style="width:79%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">4</div>
-<div class="dt">2007-06-15</div>
-<div class="gap">13y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:80%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">5</div>
-<div class="dt">2006-09-05</div>
-<div class="gap">12y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:80%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">6</div>
-<div class="dt">2006-11-15</div>
-<div class="gap">12y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:80%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">7</div>
-<div class="dt">2006-08-25</div>
-<div class="gap">12y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:81%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">8</div>
-<div class="dt">2007-10-05</div>
-<div class="gap">13y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:81%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">9</div>
-<div class="dt">2004-05-05</div>
-<div class="gap">10y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:82%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">10</div>
-<div class="dt">2006-06-15</div>
-<div class="gap">12y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:83%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">11</div>
-<div class="dt">2008-08-25</div>
-<div class="gap">14y</div>
-<div class="pv">2.0%<div class="bar"><i style="width:83%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">12</div>
-<div class="dt">2007-03-05</div>
-<div class="gap">13y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:83%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">13</div>
-<div class="dt">2006-09-25</div>
-<div class="gap">12y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:84%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">14</div>
-<div class="dt">2007-01-25</div>
-<div class="gap">13y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:84%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">15</div>
-<div class="dt">2003-12-25</div>
-<div class="gap">9y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:85%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">16</div>
-<div class="dt">1999-06-15</div>
-<div class="gap">5y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:85%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">17</div>
-<div class="dt">1998-10-15</div>
-<div class="gap">4y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:86%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">18</div>
-<div class="dt">2007-08-05</div>
-<div class="gap">13y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:86%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">19</div>
-<div class="dt">2007-09-25</div>
-<div class="gap">13y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:87%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
-</div><div class="row">
-<div class="rk">20</div>
-<div class="dt">2007-11-05</div>
-<div class="gap">13y</div>
-<div class="pv">2.1%<div class="bar"><i style="width:87%"></i></div></div>
-<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+<section class="step" id="s1">
+<h2 style="margin-top:34px">Step 1 · Your sky, plainly</h2>
+<p class="sub">Computed for noon on your birthday, in the <b>sidereal</b> zodiac (the Lahiri alignment used
+across Indian astrology — it can sit one sign earlier than newspaper horoscopes).</p>
+<div id="cards"></div>
+<button class="cta" id="to2" style="display:none">How the matching works →</button>
+</section>
+
+<section class="step" id="s2">
+<h2 style="margin-top:34px">Step 2 · How the matching works</h2>
+<div class="panel">
+<p>Each tradition makes small, checkable statements: <i>“her Moon is in Rohini”, “his Saturn squares her
+Moon”, “their year animals clash”.</i> We wrote down <b>1,293</b> such statements across eleven traditions —
+Western sign placements, the couple's Davison chart, the slow outer-planet cycles, the Sun-sign and Moon-sign
+pair tables, birth nakṣatra and tithi, classical synastry contacts, Chinese day pillars and year animals, and
+numerology life paths.</p>
+<p style="margin-top:10px">Then <b>history set the weights</b>: on 56,621 couples from five centuries of
+records, a single transparent blend learned how much each statement matters. Nothing else is learned — no
+black box. Every score you'll see decomposes into named statements.</p>
+<p style="margin-top:10px" class="sub">What the score means: among historical marriages that <i>ended</i>, the
+chance the ending was a divorce (someone remarried while both lived) rather than a death. It's a ranking from
+the past — not a prophecy.</p>
+</div>
+<button class="cta" id="to3">Scan partner dates for me →</button>
+</section>
+
+<section class="step" id="s3">
+<h2 style="margin-top:34px">Step 3 · Your matches</h2>
+<p class="sub" id="scanline">Scanning candidate birth dates…</p>
+<div class="bar"><i id="prog"></i></div>
+<div id="top10"></div>
+<details id="more" style="display:none"><summary>The full top 100</summary>
+<div style="overflow-x:auto"><table><tbody id="t100"></tbody></table></div></details>
+<p class="sub" id="honest" style="display:none;margin-top:16px">Tap any match to see every statement behind
+it. Held-out accuracy of this model: AUC 0.771 — a real but modest edge, identical in accuracy to our best
+black-box model, and fully readable. Signs are sidereal (Lahiri).</p>
+</section>
+
+<footer>ArtaMatch v5 · trained on all 56,621 couples · six production checks · zodiac sidereal (Lahiri) ·
+<a href="almanac/">the frozen almanac & weights</a> · <a href="lab.html">the research lab</a> ·
+ArtaQuest Foundation</footer>
 </div>
 
-<details><summary>Ranks 21–100</summary>
-<div class="tblwrap"><table><tbody><tr><td>21</td><td class="mono">2007-02-05</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>22</td><td class="mono">2007-08-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>23</td><td class="mono">1995-12-25</td><td>1y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>24</td><td class="mono">2005-11-25</td><td>11y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>25</td><td class="mono">2007-03-15</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>26</td><td class="mono">1999-11-05</td><td>5y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>27</td><td class="mono">2001-08-15</td><td>7y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>28</td><td class="mono">2005-12-05</td><td>11y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>29</td><td class="mono">2007-05-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>30</td><td class="mono">2007-12-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>31</td><td class="mono">1999-10-05</td><td>5y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>32</td><td class="mono">2007-02-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>33</td><td class="mono">2008-11-15</td><td>14y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>34</td><td class="mono">2000-12-05</td><td>6y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>35</td><td class="mono">2001-06-15</td><td>7y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>36</td><td class="mono">1996-10-05</td><td>2y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>37</td><td class="mono">2000-07-05</td><td>6y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>38</td><td class="mono">2001-11-05</td><td>7y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>39</td><td class="mono">2007-05-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>40</td><td class="mono">2004-03-15</td><td>10y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>41</td><td class="mono">2006-11-05</td><td>12y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>42</td><td class="mono">2007-08-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>43</td><td class="mono">2007-10-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>44</td><td class="mono">2007-11-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>45</td><td class="mono">2005-03-25</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>46</td><td class="mono">2005-10-05</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>47</td><td class="mono">2007-07-25</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>48</td><td class="mono">2007-09-05</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>49</td><td class="mono">1996-06-15</td><td>2y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>50</td><td class="mono">2005-10-15</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>51</td><td class="mono">2000-01-05</td><td>6y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>52</td><td class="mono">1995-07-25</td><td>1y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>53</td><td class="mono">2005-11-15</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>54</td><td class="mono">1998-09-15</td><td>4y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>55</td><td class="mono">2006-02-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>56</td><td class="mono">2006-10-15</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>57</td><td class="mono">2007-06-25</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>58</td><td class="mono">2000-06-15</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>59</td><td class="mono">2006-04-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>60</td><td class="mono">2006-12-15</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>61</td><td class="mono">2007-01-15</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>62</td><td class="mono">2001-07-15</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>63</td><td class="mono">2003-10-25</td><td>9y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>64</td><td class="mono">2003-09-25</td><td>9y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>65</td><td class="mono">2006-06-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>66</td><td class="mono">2006-09-15</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>67</td><td class="mono">2000-06-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>68</td><td class="mono">2001-02-05</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>69</td><td class="mono">2007-01-05</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>70</td><td class="mono">2007-02-15</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>71</td><td class="mono">1996-03-15</td><td>2y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>72</td><td class="mono">2001-06-25</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>73</td><td class="mono">2001-10-15</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>74</td><td class="mono">2002-07-05</td><td>8y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>75</td><td class="mono">2004-12-25</td><td>10y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>76</td><td class="mono">2006-06-05</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>77</td><td class="mono">2000-04-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>78</td><td class="mono">2005-06-15</td><td>11y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>79</td><td class="mono">2006-12-05</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>80</td><td class="mono">2007-06-05</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>81</td><td class="mono">1996-08-15</td><td>2y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>82</td><td class="mono">1997-07-05</td><td>3y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>83</td><td class="mono">2004-02-05</td><td>10y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>84</td><td class="mono">2008-02-05</td><td>14y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>85</td><td class="mono">2000-01-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>86</td><td class="mono">2000-09-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>87</td><td class="mono">2004-04-25</td><td>10y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>88</td><td class="mono">2006-11-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>89</td><td class="mono">2008-09-05</td><td>14y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>90</td><td class="mono">2004-03-05</td><td>10y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>91</td><td class="mono">2005-09-05</td><td>11y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>92</td><td class="mono">2006-07-05</td><td>12y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>93</td><td class="mono">2007-04-15</td><td>13y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>94</td><td class="mono">1996-01-05</td><td>2y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>95</td><td class="mono">1996-06-05</td><td>2y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>96</td><td class="mono">1999-05-05</td><td>5y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>97</td><td class="mono">2000-04-05</td><td>6y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>98</td><td class="mono">2004-01-05</td><td>10y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>99</td><td class="mono">2008-10-15</td><td>14y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>100</td><td class="mono">2008-11-25</td><td>14y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr></tbody></table></div>
-</details>
+<script type="module">
+const $=id=>document.getElementById(id);
+const qs=new URLSearchParams(location.search);
+const state={g:null,py:null,coefs:null};
+const NAKN=["Ashwini","Bharani","Krittika","Rohini","Mrigashira","Ardra","Punarvasu","Pushya","Ashlesha","Magha","Purva Phalguni","Uttara Phalguni","Hasta","Chitra","Swati","Vishakha","Anuradha","Jyeshtha","Mula","Purva Ashadha","Uttara Ashadha","Shravana","Dhanishta","Shatabhisha","Purva Bhadrapada","Uttara Bhadrapada","Revati"];
+const SIGNF={Ari:"Aries",Tau:"Taurus",Gem:"Gemini",Can:"Cancer",Leo:"Leo",Vir:"Virgo",Lib:"Libra",Sco:"Scorpio",Sag:"Sagittarius",Cap:"Capricorn",Aqu:"Aquarius",Pis:"Pisces"};
+function human(n){
+  let m;
+  if(m=n.match(/^(his|her)_(\w+?)_sign=(\w+)$/)) return `${m[1]==="his"?"His":"Her"} ${m[2].replace("true_node","north node")} in ${SIGNF[m[3]]||m[3]}`;
+  if(m=n.match(/^dav_(\w+?)_sign=(\w+)$/)) return `The couple's ${m[1]} in ${SIGNF[m[2]]||m[2]} (Davison chart)`;
+  if(m=n.match(/^cycle_(\w+)_(\w+)_phase=(\w+)$/)) return `${cap(m[1])}–${cap(m[2])} era phase in ${SIGNF[m[3]]||m[3]}`;
+  if(m=n.match(/^sunpair=(\w+)x(\w+)$/)) return `Sun signs ${SIGNF[m[1]]} × ${SIGNF[m[2]]}`;
+  if(m=n.match(/^moonpair=(\w+)x(\w+)$/)) return `Moon signs ${SIGNF[m[1]]} × ${SIGNF[m[2]]}`;
+  if(m=n.match(/^(his|her)_nakshatra=(\d+)$/)) return `${m[1]==="his"?"His":"Her"} nakṣatra ${NAKN[+m[2]%27]}`;
+  if(m=n.match(/^(his|her)_tithi=(\d+)$/)) return `${m[1]==="his"?"His":"Her"} birth tithi ${+m[2]+1}`;
+  if(m=n.match(/^his_(\w+)_(conj|sext|square|trine|opp)_her_(\w+)$/)){const A={conj:"conjunct",sext:"sextile",square:"square",trine:"trine",opp:"opposite"};return `His ${m[1]} ${A[m[2]]} her ${m[3]}`}
+  if(m=n.match(/^(his|her)_daystem=(\w+)$/)) return `${m[1]==="his"?"His":"Her"} day master ${m[2].replace(/([A-Z])/g," $1").trim()}`;
+  if(m=n.match(/^(his|her)_daybranch=(\w+)$/)) return `${m[1]==="his"?"His":"Her"} day branch ${m[2]}`;
+  if(m=n.match(/^(his|her)_year_animal=(\w+)$/)) return `${m[1]==="his"?"His":"Her"} year animal ${m[2]}`;
+  if(m=n.match(/^animalpair=(\w+)x(\w+)$/)) return `Year animals ${m[1]} × ${m[2]}`;
+  if(m=n.match(/^(his|her)_lifepath=(\d+)$/)) return `${m[1]==="his"?"His":"Her"} life path ${m[2]}`;
+  if(m=n.match(/^lifepath_pair=(\d+)x(\d+)$/)) return `Life paths ${m[1]} × ${m[2]}`;
+  return n;
+}
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+function pick(){ $("go").disabled=!($("dob").value&&state.g); }
+$("gm").onclick=()=>{state.g="m";$("gm").classList.add("sel");$("gf").classList.remove("sel");pick()};
+$("gf").onclick=()=>{state.g="f";$("gf").classList.add("sel");$("gm").classList.remove("sel");pick()};
+$("dob").oninput=pick;
 
+async function boot(){
+  const {loadPyodide}=await import("https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.mjs");
+  const py=await loadPyodide({indexURL:"https://cdn.jsdelivr.net/pyodide/v0.28.3/full/"});
+  $("boot").textContent="loading numpy + the star tables…";
+  await py.loadPackage(["numpy","astropy"]);
+  for(const f of ["sweshim.py","scorer.py"]) py.FS.writeFile("/"+f,await (await fetch(f)).text());
+  const [asset,tables,mj]=await Promise.all([fetch("ephem4.bin").then(r=>r.arrayBuffer()),
+    fetch("tables.json").then(r=>r.text()),fetch("almanac/model.json").then(r=>r.text())]);
+  py.FS.writeFile("/asset.bin",new Uint8Array(asset));
+  py.FS.writeFile("/tables.json",tables);
+  py.FS.writeFile("/am_model.json",mj);
+  await py.runPythonAsync(`
+import sys,json; sys.path.insert(0,"/")
+import sweshim as SW
+SW.load("/asset.bin","/tables.json"); SW.set_sid_mode(SW.SIDM_LAHIRI)
+import scorer; scorer.init(SW)
+_ART=json.load(open("/am_model.json")); _CO=_ART["coefficients"]; _B0=_ART["intercept"]
+def read_user(y,m,d):
+    C=scorer.chart(y,m,d); NAK=360.0/27.0
+    s=lambda v: scorer.SIGNS[int(v//30)%12]
+    el=(C["moon"]-C["sun"])%360.0
+    j=scorer.jdn(y,m,d); sx=(j+49)%60
+    return json.dumps({"sun":s(C["sun"]),"moon":s(C["moon"]),"nak":int((C["moon"]%360)//NAK),
+      "tithi":int(el//12.0)+1,"stem":scorer.STEMS[sx%10],"branch":scorer.BRANCH[sx%12],
+      "animal":scorer.BRANCH[(y-4)%12],"lp":scorer.lifepath(y,m,d)})
+def scan(y,m,d,g,lo,hi,part):
+    out=[]
+    me=(y,m,d)
+    for yy in range(lo,hi+1):
+        if yy%4!=part%4: continue
+        for mm in range(1,13):
+            for dd in (5,15,25):
+                cand=(yy,mm,dd)
+                his,her=(me,cand) if g=="m" else (cand,me)
+                p,contrib=scorer.score(_CO,_B0,his,her)
+                out.append((f"{yy:04d}-{mm:02d}-{dd:02d}",p,contrib[:3],contrib[-1:]))
+    return json.dumps(out)
+`);
+  state.py=py;
+  $("boot").textContent="ready";
+  window.__AM_READY=true;
+  pick();
+}
+boot().catch(e=>{$("boot").textContent="failed to load: "+e});
 
-<section class="read" id="inside">
-<h2 style="margin-top:0">Inside the ensemble</h2>
-<p class="sub" style="margin-bottom:14px">The model is a single weighted blend of <b>1,293 atomic
-statements</b>, each one a sentence a named tradition actually says. Nothing else is learned: no tree, no
-embedding, no hidden feature. The weights were fitted (logistic, C=0.005 chosen by grouped cross-validation)
-on all 56,621 couples, and each weight is readable below and in
-<a href="almanac/ALMANAC.md" style="color:var(--blue-l)">the full almanac</a> /
-<a href="almanac/model.json" style="color:var(--blue-l)">model.json</a>.</p>
-<div class="trad"><div class="tn">Western sign placements <span class="tc">288 statements · 288 weighted</span></div><div class="td">Hellenistic/modern Western astrology — each partner&#x27;s bodies by sidereal (Lahiri) sign</div></div><div class="trad"><div class="tn">Davison relationship chart <span class="tc">108 statements · 108 weighted</span></div><div class="td">the couple&#x27;s own chart, cast at the time-midpoint of the two births (modern Western)</div></div><div class="trad"><div class="tn">Mundane outer cycles <span class="tc">84 statements · 84 weighted</span></div><div class="td">Barbault&#x27;s mundane astrology — the Jupiter–Saturn through Neptune–Pluto cycle phases: the era, read astrologically</div></div><div class="trad"><div class="tn">Sun-sign pair table <span class="tc">144 statements · 144 weighted</span></div><div class="td">the popular compatibility table, all 144 his×her cells (signs sidereal Lahiri, as everywhere here)</div></div><div class="trad"><div class="tn">Moon-sign (rāśi) pair table <span class="tc">144 statements · 144 weighted</span></div><div class="td">Vedic rāśi kūṭa — the 144 Moon-sign pairings</div></div><div class="trad"><div class="tn">Janma nakṣatra <span class="tc">54 statements · 54 weighted</span></div><div class="td">Vedic — the birth lunar mansion of each partner</div></div><div class="trad"><div class="tn">Janma tithi <span class="tc">60 statements · 60 weighted</span></div><div class="td">Vedic pañcāṅga — the Moon-phase day each was born on</div></div><div class="trad"><div class="tn">Named synastry contacts <span class="tc">100 statements · 100 weighted</span></div><div class="td">classical synastry — his body to her body, aspect by aspect, gendered</div></div><div class="trad"><div class="tn">BaZi day pillar <span class="tc">44 statements · 44 weighted</span></div><div class="td">Chinese Four Pillars — the day master stem and branch of each partner</div></div><div class="trad"><div class="tn">Chinese year animals <span class="tc">168 statements · 168 weighted</span></div><div class="td">the Chinese zodiac, including all 144 his×her animal pairings</div></div><div class="trad"><div class="tn">Numerology life paths <span class="tc">99 statements · 99 weighted</span></div><div class="td">Pythagorean numerology — each life path and all 81 pairings</div></div>
-<div class="trad"><div class="tn">Everything else <span class="tc">0 statements</span></div>
-<div class="td">smaller doctrine blocks kept for completeness</div></div>
-<h2>The strongest weights in the almanac</h2>
-<div class="tblwrap"><table><tbody>
-<tr><td colspan="2" style="color:var(--gold);border:0;padding-top:2px">toward divorce</td></tr>
-<tr><td class='reason'>cycle_neptune_pluto_phase=Ari</td><td class='mono'>+0.404</td></tr><tr><td class='reason'>cycle_neptune_pluto_phase=Tau</td><td class='mono'>+0.292</td></tr><tr><td class='reason'>his_pluto_sign=Tau</td><td class='mono'>+0.243</td></tr><tr><td class='reason'>her_pluto_sign=Tau</td><td class='mono'>+0.237</td></tr><tr><td class='reason'>her_pluto_sign=Gem</td><td class='mono'>+0.209</td></tr><tr><td class='reason'>his_pluto_sign=Gem</td><td class='mono'>+0.169</td></tr><tr><td class='reason'>his_neptune_sign=Gem</td><td class='mono'>+0.159</td></tr><tr><td class='reason'>dav_pluto_sign=Tau</td><td class='mono'>+0.148</td></tr><tr><td class='reason'>her_pluto_sign=Can</td><td class='mono'>+0.147</td></tr><tr><td class='reason'>his_neptune_sign=Leo</td><td class='mono'>+0.144</td></tr>
-<tr><td colspan="2" style="color:var(--blue-l);border:0;padding-top:14px">against divorce</td></tr>
-<tr><td class='reason'>cycle_neptune_pluto_phase=Sco</td><td class='mono'>-0.320</td></tr><tr><td class='reason'>cycle_neptune_pluto_phase=Sag</td><td class='mono'>-0.212</td></tr><tr><td class='reason'>cycle_neptune_pluto_phase=Lib</td><td class='mono'>-0.150</td></tr><tr><td class='reason'>her_pluto_sign=Pis</td><td class='mono'>-0.142</td></tr><tr><td class='reason'>his_pluto_sign=Pis</td><td class='mono'>-0.141</td></tr><tr><td class='reason'>her_neptune_sign=Lib</td><td class='mono'>-0.131</td></tr><tr><td class='reason'>her_neptune_sign=Cap</td><td class='mono'>-0.122</td></tr><tr><td class='reason'>his_neptune_sign=Lib</td><td class='mono'>-0.118</td></tr><tr><td class='reason'>her_neptune_sign=Aqu</td><td class='mono'>-0.114</td></tr><tr><td class='reason'>his_neptune_sign=Sco</td><td class='mono'>-0.109</td></tr>
-</tbody></table></div>
-<p class="sub" style="margin-top:12px">The Neptune–Pluto and Uranus–Neptune phases dominate both directions:
-the birth era, expressed as mundane astrology — which is what interpolating five centuries rewards. Within an
-era, the pair tables, named contacts and pañcāṅga carry the rest.</p>
-</section>
-<section class="read">
-<h2 style="margin-top:0">How to read this</h2>
-<ul>
-<li><b>The ranking is the product.</b> The percentages are calibrated to the historical corpus (4.8% of ended
-marriages ended in divorce by this definition), not to modern rates.</li>
-<li><b>Every score is a sum of named statements.</b> Gold chips lower the risk; blue chips raise it. Ask for
-any candidate's full breakdown — all 1,293 statements are on the books.</li>
-<li><b>The era speaks through the slow planets.</b> Neptune and the outer cycle phases carry the largest
-weights — the birth era read astrologically, which is what an interpolation over five centuries rewards.</li>
-<li><b>All signs are sidereal (Lahiri).</b> A placement here can sit one sign earlier than the tropical newspaper zodiac — the whole almanac, pair tables included, is computed on Lahiri longitudes.</li>
-<li><b>Your own cohort scores worst.</b> Partners born 1994–1998 rank at the bottom for the fourth model
-generation in a row.</li>
-</ul>
-</section>
-
-<footer>ArtaMatch v5 · Wikidata marriages, both partners born 1500–1949 · component-split, person-disjoint ·
-six production checks passed (label precision 89.8% · determinism · fold-seed spread 0.0035 · gender swap moves
-26% of rows · calibration ≤0.04) · ArtaQuest Foundation</footer>
-</div>
+function show(i){document.querySelectorAll(".step").forEach(s=>s.classList.remove("on"));$("s"+i).classList.add("on");window.scrollTo({top:0,behavior:"smooth"})}
+const EXPL={sun:"Where the Sun sat at your birth — the sign most people mean by “my sign”, here in the sidereal zodiac.",
+moon:"The Moon moves fastest; its sign is read as temperament in both Indian and Western practice.",
+nak:"The Moon's lunar mansion — the 27 nakṣatras are the backbone of Vedic marriage matching.",
+tithi:"The Moon-phase day you were born on (1–30) — one of the five limbs of the Indian almanac.",
+stem:"Your Chinese day pillar's “day master” — the element BaZi reads a person by.",
+animal:"Your Chinese year animal — the twelve-year cycle everyone knows from the zodiac placemats.",
+lp:"Your numerology life path: all the digits of your birth date, reduced to one number."};
+$("go").onclick=async()=>{
+  const [y,m,d]=$("dob").value.split("-").map(Number);
+  state.me=[y,m,d];
+  const u=JSON.parse(await state.py.runPythonAsync(`read_user(${y},${m},${d})`));
+  const cards=[["Sun sign",SIGNF[u.sun],EXPL.sun],["Moon sign",SIGNF[u.moon],EXPL.moon],
+    ["Nakṣatra",NAKN[u.nak],EXPL.nak],["Birth tithi",u.tithi,EXPL.tithi],
+    ["Day master",u.stem.replace(/([A-Z])/g," $1").trim(),EXPL.stem],
+    ["Year animal",u.animal,EXPL.animal],["Life path",u.lp,EXPL.lp]];
+  $("cards").innerHTML=cards.map(c=>`<div class="pcard"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="e">${c[2]}</div></div>`).join("");
+  show(1);
+  const els=[...document.querySelectorAll(".pcard")];
+  const reduced=matchMedia("(prefers-reduced-motion: reduce)").matches||qs.get("auto");
+  els.forEach((el,i)=>setTimeout(()=>el.classList.add("show"),reduced?0:450*i));
+  setTimeout(()=>{$("to2").style.display="inline-block"},reduced?0:450*els.length);
+};
+$("to2").onclick=()=>show(2);
+$("to3").onclick=async()=>{
+  show(3);
+  const [y,m,d]=state.me,g=state.g;
+  const lo=Math.max(1930,y-30),hi=Math.min(2008,y+30);
+  let all=[];
+  for(let part=0;part<4;part++){
+    const r=JSON.parse(await state.py.runPythonAsync(`scan(${y},${m},${d},"${g}",${lo},${hi},${part})`));
+    all=all.concat(r);
+    $("prog").style.width=`${25*(part+1)}%`;
+    $("scanline").textContent=`scanned ${all.length} candidate dates…`;
+    await new Promise(r=>setTimeout(r,30));
+  }
+  all.sort((a,b)=>a[1]-b[1]);
+  const P=g==="m"?"She":"He";
+  $("scanline").textContent=`${all.length} candidate birth dates scanned · lowest historical divorce share first`;
+  $("top10").innerHTML=all.slice(0,10).map((r,i)=>{
+    const gap=Math.abs(y-+r[0].slice(0,4));
+    const chips=r[2].map(c=>`<span class="chip">${human(c[0])} <b>${c[1].toFixed(2)}</b></span>`).join("")
+      +r[3].filter(c=>c[1]>0.05).map(c=>`<span class="chip bad">${human(c[0])} <b>+${c[1].toFixed(2)}</b></span>`).join("");
+    return `<div class="match" onclick="this.classList.toggle('open')">
+      <div class="mtop"><span class="mrk">${i+1}</span><span class="mdt">${r[0]}</span>
+      <span class="mgap">${P} would be ${gap===0?"your age":gap+"y "+(+r[0].slice(0,4)>y?"younger":"older")}</span>
+      <span class="mp">${(100*r[1]).toFixed(1)}%</span></div>
+      <div class="chips">${chips}</div>
+      <div class="why">The chips are the strongest of the named statements behind this score — gold lowers the
+      historical divorce share, blue raises it. Percentages are shares among historical marriages that ended.</div></div>`;
+  }).join("");
+  $("t100").innerHTML=all.slice(0,100).map((r,i)=>`<tr><td>${i+1}</td><td class="mono">${r[0]}</td><td class="mono">${(100*r[1]).toFixed(1)}%</td><td style="color:var(--mut)">${human(r[2][0][0])}</td></tr>`).join("");
+  $("more").style.display="block";$("honest").style.display="block";
+  window.__AM_DONE={top:all.slice(0,3).map(r=>[r[0],r[1]])};
+};
+(async()=>{ if(qs.get("dob")&&qs.get("g")){
+  const t=setInterval(()=>{ if(window.__AM_READY){clearInterval(t);
+    $("dob").value=qs.get("dob"); (qs.get("g")==="f"?$("gf"):$("gm")).click();
+    if(qs.get("auto")){$("go").click(); setTimeout(()=>{$("to2").click();$("to3").click()},1200);} }
+  },300); }})();
+</script>
 </body>
 </html>

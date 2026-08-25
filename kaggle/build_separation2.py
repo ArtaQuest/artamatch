@@ -30,7 +30,7 @@ import re
 import numpy as np
 import pandas as pd
 
-SRC = os.environ.get("AQ_ENDED", os.path.expanduser("~/.artamatch-dev/ended"))
+SRC = os.environ.get("AQ_ENDED", os.path.expanduser("~/.artamatch-dev/ended_max"))
 OUT = os.environ.get("AQ_OUT", os.path.expanduser("~/.artamatch-dev/sep2"))
 TEST_FRAC = float(os.environ.get("AQ_TEST_FRAC", "0.15"))
 LABEL = "ended_in_divorce"
@@ -43,7 +43,9 @@ ARTIFICIAL = {"Q93190", "Q701040", "Q5561011", "Q3456503", "Q1299585", "Q1142948
 MALE, FEMALE = "Q6581097", "Q6581072"
 
 qid = lambda s: re.sub(r"[^Q0-9]", "", str(s)) if isinstance(s, str) else ""
-yr = lambda s: pd.to_numeric(s.astype(str).str.extract(r"^[+-]?(\d{4})")[0], errors="coerce")
+# 0000-00-00 means UNKNOWN, and the regex below happily reads its year as the number 0 — which then fails a
+# 1400-2015 range check and silently deleted every one-birth-known pair at the sanity step. Zero is NaN here.
+yr = lambda s: pd.to_numeric(s.astype(str).str.extract(r"^[+-]?(\d{4})")[0], errors="coerce").replace(0, np.nan)
 
 
 def render(ts, prec):
@@ -104,8 +106,13 @@ def main():
     df = df[~df["pair"].isin(conflicted)].drop_duplicates("pair", keep="first")
     print(f"  {len(df):,} distinct pairs ({len(conflicted):,} dropped for disagreeing with themselves)", flush=True)
 
-    df = df[(df.dob_a != MISSING) & (df.dob_b != MISSING)]
-    print(f"  {len(df):,} with both birth dates", flush=True)
+    # AT LEAST ONE birth date, not both. A partner with none renders as 0000-00-00, every feature over them
+    # is NaN, and the missing-date augmentation has already trained the model on that shape — so the partner
+    # we DO know still contributes their whole chart instead of the pair being thrown away.
+    df = df[(df.dob_a != MISSING) | (df.dob_b != MISSING)]
+    nboth = int(((df.dob_a != MISSING) & (df.dob_b != MISSING)).sum())
+    print(f"  {len(df):,} with at least one birth date ({nboth:,} with both, "
+          f"{len(df)-nboth:,} with one)", flush=True)
 
     sx = {}
     sp = os.path.join(SRC, "_sex.csv")
@@ -123,8 +130,13 @@ def main():
     print(f"  {len(out):,} male x female pairs with a known sex for both", flush=True)
 
     ya, yb = yr(out.dob_a), yr(out.dob_b)
-    out = out[(np.abs(ya - yb) <= 60) & (ya.between(1400, 2015)) & (yb.between(1400, 2015))]
-    out["later_birth"] = np.fmax(ya, yb)
+    # the sanity bounds must not reject a pair merely for having one date unknown
+    gap_ok = (np.abs(ya - yb) <= 60) | ya.isna() | yb.isna()
+    in_range = lambda v: v.isna() | v.between(1400, 2015)
+    known = ya.notna() | yb.notna()
+    out = out[gap_ok & in_range(ya) & in_range(yb) & known]
+    ya, yb = yr(out.dob_a), yr(out.dob_b)
+    out["later_birth"] = np.fmax(ya.fillna(-1), yb.fillna(-1)).replace(-1, np.nan)
 
     # ── the split. The only inputs are the two births, so THAT is the axis: the test half is the most recently
     #    BORN couples, people the training half has never seen at any age.

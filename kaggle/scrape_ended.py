@@ -15,7 +15,7 @@ import time
 import urllib.parse
 import urllib.request
 
-OUT = os.environ.get("AQ_ENDED", os.path.expanduser("~/.artamatch-dev/ended"))
+OUT = os.environ.get("AQ_ENDED", os.path.expanduser("~/.artamatch-dev/ended_max"))
 EP = "https://qlever.dev/api/wikidata"
 UA = "ArtaMatch/1.0 (https://artaquest.com; arash@artaquest.org)"
 RELS = {"P26": "marriage", "P451": "unmarried partnership", "P1327": "professional partner",
@@ -32,13 +32,26 @@ PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
 PREFIX wikibase: <http://wikiba.se/ontology#>
 """
 
+# THE MAXIMAL VIABLE QUERY, after measuring every relaxation against the label rather than guessing:
+#   · an END DATE **or** an explicit END CAUSE. Requiring the date alone silently dropped 1,089 P26 statements
+#     whose cause is written down but whose date is not — a divorce is a label with or without a date.
+#   · AT LEAST ONE birth date, not both. This adds 14,521 P26 pairs and is only usable because the pipeline was
+#     built for missing dates: a partner with no birth date renders as 0000-00-00, every feature over them is
+#     NaN, and the missing-date augmentation has already trained the model on exactly that shape. The partner
+#     we DO know still carries their whole chart.
+#   · the birth date is OPTIONAL on each side so a one-sided pair survives the join at all.
+# Relaxations measured and REJECTED: "both partners dead, so it ended in a death" scores 35.7% against the
+# explicit causes, and no margin repairs it.
 Q = PREFIX + """SELECT ?a ?b ?adob ?aprec ?bdob ?bprec ?end ?cause ?adeath ?bdeath WHERE {{
-  ?a p:{rel} ?st . ?st ps:{rel} ?b . ?st pq:P582 ?end .
-  ?a p:P569/psv:P569 ?an . ?an wikibase:timeValue ?adob ; wikibase:timePrecision ?aprec .
-  ?b p:P569/psv:P569 ?bn . ?bn wikibase:timeValue ?bdob ; wikibase:timePrecision ?bprec .
+  ?a p:{rel} ?st . ?st ps:{rel} ?b .
+  {{ ?st pq:P582 ?end }} UNION {{ ?st pq:P1534 ?cause }}
+  OPTIONAL {{ ?st pq:P582 ?end }}
   OPTIONAL {{ ?st pq:P1534 ?cause }}
+  OPTIONAL {{ ?a p:P569/psv:P569 ?an . ?an wikibase:timeValue ?adob ; wikibase:timePrecision ?aprec }}
+  OPTIONAL {{ ?b p:P569/psv:P569 ?bn . ?bn wikibase:timeValue ?bdob ; wikibase:timePrecision ?bprec }}
   OPTIONAL {{ ?a wdt:P570 ?adeath }}
   OPTIONAL {{ ?b wdt:P570 ?bdeath }}
+  FILTER( BOUND(?adob) || BOUND(?bdob) )
 }}"""
 
 

@@ -1,0 +1,37 @@
+  WIKIDATA ONLY · train 48,269 (3.3% artificial) · test 6,477 (12.8%) · born to 1903 / from 1904
+  2,241 pure features · 23 families
+    arabic_parts           OOF 0.6207   TEST 0.5479
+    aspect_doctrine        OOF 0.6227   TEST 0.5449
+    calendar               OOF 0.6536   TEST 0.5569
+    chinese_bazi_deep      OOF 0.6235   TEST 0.5459
+    cyclical_time          OOF 0.6848   TEST 0.5247
+    declination_speed      OOF 0.6058   TEST 0.5513
+    electional             OOF 0.6108   TEST 0.5586
+    extra                  OOF 0.6538   TEST 0.5095
+    fixed_stars_deep       OOF 0.6010   TEST 0.5604
+    gendered_synastry      OOF 0.5587   TEST 0.5609
+    geometry               OOF 0.5558   TEST 0.5245
+    maya                   OOF 0.6703   TEST 0.5419
+    midpoints_uranian      OOF 0.6110   TEST 0.5439
+    numerology_world       OOF 0.6093   TEST 0.5619
+    phasor_pair            OOF 0.5424   TEST 0.5509
+    reenc_pattern          OOF 0.6397   TEST 0.5419
+    reenc_rotation         OOF 0.5958   TEST 0.5444
+    reenc_soft             OOF 0.6140   TEST 0.5497
+    vedic_varga            OOF 0.6159   TEST 0.5582
+    world                  OOF 0.6004   TEST 0.5447
+    world2                 OOF 0.6184   TEST 0.5456
+    world3                 OOF 0.7234   TEST 0.5480
+    zodiac                 OOF 0.6282   TEST 0.5469
+
+  STACK over 23 members · weights on the 14,244 most-recent scored rows (born > 1862) · recent-block OOF 0.6461
+  weights: world3 21% · reenc_pattern 13% · extra 11% · chinese_bazi_deep 9% · arabic_parts 9% · calendar 7% · zodiac 7% · reenc_soft 4% · reenc_rotation 4% · aspect_doctrine 4% · declination_speed 3% · vedic_varga 2% · world2 2% · cyclical_time 2% · midpoints_uranian 1%
+
+  TEST AUC (Wikidata only, strictly later-born, read once): 0.5643   chance 0.5000
+
+  GENDER CHECK — husband and wife swapped, phases rebuilt, rescored:
+    mean |ΔP| 0.0047 · median 0.0035 · max 0.0394 · rows moving >1 point: 11%
+    swapped-order TEST AUC 0.5669 vs correct-order 0.5643
+    VERDICT: near-invariant under swap — the feature set is ERASING gender
+
+  deployed on the ENTIRE Wikidata corpus: 54,746 pairs · saved

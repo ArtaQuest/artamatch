@@ -104,7 +104,36 @@ def features(his, her):
     F[f"his_lifepath={la}"] = 1.0
     F[f"her_lifepath={lb}"] = 1.0
     F[f"lifepath_pair={la}x{lb}"] = 1.0
+    # ── v6 additions: the finer doctrine grains and the pair matrices the sparse model draws on
+    for tag, C in (("his", CA), ("her", CB)):
+        for b in ("sun", "moon"):
+            if C[b] == C[b]:
+                F[f"{tag}_{b}_decan={int((C[b] % 360) // 10)}"] = 1.0
+        if C["moon"] == C["moon"]:
+            F[f"{tag}_moon_pada={int((C['moon'] % 360) // (360.0 / 108.0))}"] = 1.0
+    for x, y_ in (("neptune", "pluto"), ("uranus", "neptune"), ("uranus", "pluto"), ("saturn", "pluto")):
+        if CA[x] == CA[x] and CB[x] == CB[x] and CA[y_] == CA[y_] and CB[y_] == CB[y_]:
+            ph = ((CA[x] + CB[x]) / 2 - (CA[y_] + CB[y_]) / 2) % 360.0
+            F[f"cycle24_{x}_{y_}={int(ph // 15)}"] = 1.0
+    if CA["moon"] == CA["moon"] and CB["moon"] == CB["moon"]:
+        ta, tb = CA["moon"], CB["moon"]
+        raw = (tb - ta + 180.0) % 360.0 - 180.0
+        k = round((MEAN["moon"] * dt - raw) / 360.0)
+        davm = (ta + (raw + 360.0 * k) / 2.0) % 360.0
+        F[f"dav_moon_nakshatra={int(davm // (360.0 / 27.0))}"] = 1.0
+        NAKW = 360.0 / 27.0
+        F[f"nakpair={int((ta % 360) // NAKW)}x{int((tb % 360) // NAKW)}"] = 1.0
+    sxa, sxb = (ja + 49) % 60, (jb + 49) % 60
+    F[f"branchpair={BRANCH[sxa % 12]}x{BRANCH[sxb % 12]}"] = 1.0
+    F[f"stempair={STEMS[sxa % 10]}x{STEMS[sxb % 10]}"] = 1.0
     return F
+
+
+def score_v6(weights, intercept, his, her):
+    """The non-negative sparse model: a couple's score is the intercept plus the risk rules they trip."""
+    F = features(his, her)
+    fired = sorted(((k, weights[k]) for k in F if k in weights), key=lambda t: -t[1])
+    return intercept + sum(w for _, w in fired), fired
 
 
 def score(coefs, intercept, his, her):

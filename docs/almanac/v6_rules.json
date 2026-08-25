@@ -1,0 +1,1035 @@
+{
+ "meta": {
+  "model": "ArtaMatch v6 \u2014 non-negative sparse risk rules",
+  "alpha": 0.0003,
+  "cv_auc": 0.7507,
+  "test_auc": 0.7635,
+  "intercept": -8.983910083770752e-05,
+  "n_bank": 2749,
+  "n_surviving": 120
+ },
+ "calibration_deciles": [
+  {
+   "lo": -1000000000.0,
+   "hi": 0.007632162421941757,
+   "share": 0.007689110556940981,
+   "n": 4812
+  },
+  {
+   "lo": 0.007632162421941757,
+   "hi": 0.012029202282428741,
+   "share": 0.009555463232239303,
+   "n": 4814
+  },
+  {
+   "lo": 0.012029202282428741,
+   "hi": 0.016084802709519865,
+   "share": 0.012881778516517764,
+   "n": 4813
+  },
+  {
+   "lo": 0.016084802709519865,
+   "hi": 0.02059182897210121,
+   "share": 0.015173560590313865,
+   "n": 4811
+  },
+  {
+   "lo": 0.02059182897210121,
+   "hi": 0.026102297939360142,
+   "share": 0.02098047361861238,
+   "n": 4814
+  },
+  {
+   "lo": 0.026102297939360142,
+   "hi": 0.03453186750411987,
+   "share": 0.03158113442759194,
+   "n": 4813
+  },
+  {
+   "lo": 0.03453186750411987,
+   "hi": 0.05398259982466698,
+   "share": 0.03366583541147132,
+   "n": 4812
+  },
+  {
+   "lo": 0.05398259982466698,
+   "hi": 0.0965707466006279,
+   "share": 0.06025348015790567,
+   "n": 4813
+  },
+  {
+   "lo": 0.0965707466006279,
+   "hi": 0.131071837246418,
+   "share": 0.12528568460419698,
+   "n": 4813
+  },
+  {
+   "lo": 0.131071837246418,
+   "hi": 1000000000.0,
+   "share": 0.16060669021400373,
+   "n": 4813
+  }
+ ],
+ "rules": [
+  {
+   "name": "cycle_neptune_pluto_phase=Ari",
+   "weight": 0.083768,
+   "human": "Neptune\u2013Pluto era phase in Aries",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle_neptune_pluto_phase=Tau",
+   "weight": 0.04585,
+   "human": "Neptune\u2013Pluto era phase in Taurus",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "his_moon_pada=3",
+   "weight": 0.03188,
+   "human": "His Moon in p\u0101da 4 of Ashwini",
+   "family": "pada",
+   "what": "Nak\u1e63atra p\u0101das: each lunar mansion split in four.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_pluto_sign=Tau",
+   "weight": 0.026461,
+   "human": "The couple's pluto in Taurus (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle24_neptune_pluto=23",
+   "weight": 0.022992,
+   "human": "Neptune\u2013Pluto cycle, half-sign 24 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_neptune_sign=Leo",
+   "weight": 0.022602,
+   "human": "The couple's neptune in Leo (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "cycle_neptune_pluto_phase=Pis",
+   "weight": 0.022556,
+   "human": "Neptune\u2013Pluto era phase in Pisces",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_pluto_sign=Can",
+   "weight": 0.017483,
+   "human": "The couple's pluto in Cancer (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "cycle24_neptune_pluto=1",
+   "weight": 0.013036,
+   "human": "Neptune\u2013Pluto cycle, half-sign 2 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_pluto_sign=Gem",
+   "weight": 0.012921,
+   "human": "The couple's pluto in Gemini (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "moonpair=CapxTau",
+   "weight": 0.012897,
+   "human": "Moon signs Capricorn \u00d7 Taurus",
+   "family": "moonpair",
+   "what": "The Vedic version of the pair table, using the Moon's sign (r\u0101\u015bi) of each partner.",
+   "example": "e.g. him born 1949-06-15, her born 1935-10-15"
+  },
+  {
+   "name": "his_sun_decan=15",
+   "weight": 0.011424,
+   "human": "His sun in decan 1 of Virgo",
+   "family": "decan",
+   "what": "The 36 decans: each sign split in three \u2014 the tradition's finer grain.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_neptune_sign=Leo",
+   "weight": 0.010624,
+   "human": "His neptune in Leo",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "his_moon_decan=1",
+   "weight": 0.010565,
+   "human": "His moon in decan 2 of Aries",
+   "family": "decan",
+   "what": "The 36 decans: each sign split in three \u2014 the tradition's finer grain.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle24_neptune_pluto=21",
+   "weight": 0.009915,
+   "human": "Neptune\u2013Pluto cycle, half-sign 22 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "her_moon_sign=Aqu",
+   "weight": 0.009669,
+   "human": "Her moon in Aquarius",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1937-10-15"
+  },
+  {
+   "name": "her_pluto_sign=Gem",
+   "weight": 0.009292,
+   "human": "Her pluto in Gemini",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_tithi=17",
+   "weight": 0.007996,
+   "human": "His birth tithi 18",
+   "family": "tithi",
+   "what": "The Moon-phase day of birth (1\u201330), one of the five limbs of the Indian almanac.",
+   "example": "e.g. someone born 1943-10-15"
+  },
+  {
+   "name": "her_neptune_sign=Leo",
+   "weight": 0.007488,
+   "human": "Her neptune in Leo",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "dav_jupiter_sign=Sag",
+   "weight": 0.007353,
+   "human": "The couple's jupiter in Sagittarius (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1937-06-15"
+  },
+  {
+   "name": "his_pluto_sign=Ari",
+   "weight": 0.007341,
+   "human": "His pluto in Aries",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "her_moon_sign=Tau",
+   "weight": 0.007337,
+   "human": "Her moon in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-10-15"
+  },
+  {
+   "name": "her_saturn_sign=Aqu",
+   "weight": 0.006799,
+   "human": "Her saturn in Aquarius",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "dav_uranus_sign=Sag",
+   "weight": 0.006764,
+   "human": "The couple's uranus in Sagittarius (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1971-02-15, her born 2005-06-15"
+  },
+  {
+   "name": "her_venus_sign=Aqu",
+   "weight": 0.00672,
+   "human": "Her venus in Aquarius",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "his_saturn_trine_her_sun",
+   "weight": 0.006419,
+   "human": "His saturn trine her sun",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1943-10-15, her born 1935-02-15"
+  },
+  {
+   "name": "her_pluto_sign=Can",
+   "weight": 0.005853,
+   "human": "Her pluto in Cancer",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "his_tithi=2",
+   "weight": 0.005819,
+   "human": "His birth tithi 3",
+   "family": "tithi",
+   "what": "The Moon-phase day of birth (1\u201330), one of the five limbs of the Indian almanac.",
+   "example": "e.g. someone born 1939-10-15"
+  },
+  {
+   "name": "his_neptune_sign=Gem",
+   "weight": 0.005773,
+   "human": "His neptune in Gemini",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_moon_sign=Tau",
+   "weight": 0.005674,
+   "human": "The couple's moon in Taurus (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1943-10-15"
+  },
+  {
+   "name": "her_sun_sign=Tau",
+   "weight": 0.005577,
+   "human": "Her sun in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_year_animal=Ox",
+   "weight": 0.005485,
+   "human": "His year animal Ox",
+   "family": "animal",
+   "what": "The Chinese year animal \u2014 the twelve-year cycle.",
+   "example": "e.g. someone born 1937-02-15"
+  },
+  {
+   "name": "his_daybranch=Goat",
+   "weight": 0.005227,
+   "human": "His day branch Goat",
+   "family": "daybranch",
+   "what": "The branch of the Chinese day pillar \u2014 the day's animal sign.",
+   "example": "e.g. someone born 1939-02-15"
+  },
+  {
+   "name": "her_pluto_sign=Tau",
+   "weight": 0.005155,
+   "human": "Her pluto in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_venus_square_her_saturn",
+   "weight": 0.005147,
+   "human": "His venus square her saturn",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1935-02-15, her born 1987-02-15"
+  },
+  {
+   "name": "her_tithi=18",
+   "weight": 0.004868,
+   "human": "Her birth tithi 19",
+   "family": "tithi",
+   "what": "The Moon-phase day of birth (1\u201330), one of the five limbs of the Indian almanac.",
+   "example": "e.g. someone born 1935-10-15"
+  },
+  {
+   "name": "his_jupiter_sign=Can",
+   "weight": 0.004703,
+   "human": "His jupiter in Cancer",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1943-06-15"
+  },
+  {
+   "name": "his_daystem=GengMetal",
+   "weight": 0.004548,
+   "human": "His day master \\1eng \\1etal",
+   "family": "daystem",
+   "what": "The BaZi day master: the element of the Chinese day pillar someone was born on.",
+   "example": "e.g. someone born 1957-10-15"
+  },
+  {
+   "name": "her_true_node_sign=Tau",
+   "weight": 0.004396,
+   "human": "Her north node in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1947-02-15"
+  },
+  {
+   "name": "her_neptune_sign=Tau",
+   "weight": 0.004396,
+   "human": "Her neptune in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_venus_opp_her_moon",
+   "weight": 0.004248,
+   "human": "His venus opposite her moon",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1935-02-15, her born 1937-06-15"
+  },
+  {
+   "name": "his_nakshatra=21",
+   "weight": 0.004175,
+   "human": "His nak\u1e63atra Shravana",
+   "family": "nak",
+   "what": "The Moon's lunar mansion at birth \u2014 the 27 nak\u1e63atras are the backbone of Vedic marriage matching.",
+   "example": "e.g. someone born 1945-10-15"
+  },
+  {
+   "name": "his_mercury_sign=Leo",
+   "weight": 0.003941,
+   "human": "His mercury in Leo",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_mars_sign=Aqu",
+   "weight": 0.0039,
+   "human": "The couple's mars in Aquarius (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1947-10-15"
+  },
+  {
+   "name": "his_true_node_sign=Sco",
+   "weight": 0.00384,
+   "human": "His north node in Scorpio",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1937-02-15"
+  },
+  {
+   "name": "cycle_jupiter_saturn_phase=Aqu",
+   "weight": 0.003789,
+   "human": "Jupiter\u2013Saturn era phase in Aquarius",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1941-06-15"
+  },
+  {
+   "name": "his_tithi=14",
+   "weight": 0.003786,
+   "human": "His birth tithi 15",
+   "family": "tithi",
+   "what": "The Moon-phase day of birth (1\u201330), one of the five limbs of the Indian almanac.",
+   "example": "e.g. someone born 1965-02-15"
+  },
+  {
+   "name": "cycle24_neptune_pluto=2",
+   "weight": 0.003718,
+   "human": "Neptune\u2013Pluto cycle, half-sign 3 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_venus_sign=Lib",
+   "weight": 0.003561,
+   "human": "His venus in Libra",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1939-10-15"
+  },
+  {
+   "name": "cycle24_uranus_pluto=4",
+   "weight": 0.003502,
+   "human": "Uranus\u2013Pluto cycle, half-sign 5 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_venus_square_her_moon",
+   "weight": 0.003243,
+   "human": "His venus square her moon",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1935-02-15, her born 1951-02-15"
+  },
+  {
+   "name": "his_chiron_sign=Sco",
+   "weight": 0.003181,
+   "human": "His chiron in Scorpio",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1949-02-15"
+  },
+  {
+   "name": "her_daybranch=Horse",
+   "weight": 0.003059,
+   "human": "Her day branch Horse",
+   "family": "daybranch",
+   "what": "The branch of the Chinese day pillar \u2014 the day's animal sign.",
+   "example": "e.g. someone born 1941-02-15"
+  },
+  {
+   "name": "cycle_saturn_uranus_phase=Leo",
+   "weight": 0.003043,
+   "human": "Saturn\u2013Uranus era phase in Leo",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1939-10-15"
+  },
+  {
+   "name": "his_lifepath=1",
+   "weight": 0.002997,
+   "human": "His life path 1",
+   "family": "lifepath",
+   "what": "Numerology's life path: all digits of the birth date reduced to one number.",
+   "example": "e.g. someone born 1937-02-15"
+  },
+  {
+   "name": "his_daystem=JiaWood",
+   "weight": 0.00289,
+   "human": "His day master \\1ia \\1ood",
+   "family": "daystem",
+   "what": "The BaZi day master: the element of the Chinese day pillar someone was born on.",
+   "example": "e.g. someone born 1935-10-15"
+  },
+  {
+   "name": "her_daybranch=Dragon",
+   "weight": 0.002716,
+   "human": "Her day branch Dragon",
+   "family": "daybranch",
+   "what": "The branch of the Chinese day pillar \u2014 the day's animal sign.",
+   "example": "e.g. someone born 1943-02-15"
+  },
+  {
+   "name": "his_sun_sign=Vir",
+   "weight": 0.00268,
+   "human": "His sun in Virgo",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-10-15"
+  },
+  {
+   "name": "his_neptune_sign=Ari",
+   "weight": 0.002628,
+   "human": "His neptune in Aries",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_venus_sign=Ari",
+   "weight": 0.002622,
+   "human": "His venus in Aries",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1937-06-15"
+  },
+  {
+   "name": "cycle24_saturn_pluto=15",
+   "weight": 0.002514,
+   "human": "Saturn\u2013Pluto cycle, half-sign 16 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle_saturn_uranus_phase=Aqu",
+   "weight": 0.002479,
+   "human": "Saturn\u2013Uranus era phase in Aquarius",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "his_saturn_sext_her_saturn",
+   "weight": 0.002448,
+   "human": "His saturn sextile her saturn",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1935-02-15, her born 1939-10-15"
+  },
+  {
+   "name": "cycle_saturn_uranus_phase=Sag",
+   "weight": 0.002394,
+   "human": "Saturn\u2013Uranus era phase in Sagittarius",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1965-06-15"
+  },
+  {
+   "name": "dav_uranus_sign=Ari",
+   "weight": 0.002369,
+   "human": "The couple's uranus in Aries (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "his_true_node_sign=Lib",
+   "weight": 0.002175,
+   "human": "His north node in Libra",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1939-02-15"
+  },
+  {
+   "name": "cycle24_uranus_neptune=9",
+   "weight": 0.002138,
+   "human": "Uranus\u2013Neptune cycle, half-sign 10 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_moon_square_her_saturn",
+   "weight": 0.002128,
+   "human": "His moon square her saturn",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1935-02-15, her born 1939-10-15"
+  },
+  {
+   "name": "his_mars_sign=Can",
+   "weight": 0.002008,
+   "human": "His mars in Cancer",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1947-10-15"
+  },
+  {
+   "name": "his_year_animal=Dragon",
+   "weight": 0.001999,
+   "human": "His year animal Dragon",
+   "family": "animal",
+   "what": "The Chinese year animal \u2014 the twelve-year cycle.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_neptune_sign=Pis",
+   "weight": 0.001928,
+   "human": "The couple's neptune in Pisces (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_pluto_sign=Tau",
+   "weight": 0.001846,
+   "human": "His pluto in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle24_saturn_pluto=4",
+   "weight": 0.001656,
+   "human": "Saturn\u2013Pluto cycle, half-sign 5 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "her_year_animal=Goat",
+   "weight": 0.001653,
+   "human": "Her year animal Goat",
+   "family": "animal",
+   "what": "The Chinese year animal \u2014 the twelve-year cycle.",
+   "example": "e.g. someone born 1943-02-15"
+  },
+  {
+   "name": "her_jupiter_sign=Vir",
+   "weight": 0.001528,
+   "human": "Her jupiter in Virgo",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1945-02-15"
+  },
+  {
+   "name": "dav_saturn_sign=Sag",
+   "weight": 0.001525,
+   "human": "The couple's saturn in Sagittarius (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1983-02-15"
+  },
+  {
+   "name": "cycle_jupiter_saturn_phase=Sco",
+   "weight": 0.001433,
+   "human": "Jupiter\u2013Saturn era phase in Scorpio",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1989-06-15"
+  },
+  {
+   "name": "his_saturn_sign=Sag",
+   "weight": 0.001402,
+   "human": "His saturn in Sagittarius",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1959-02-15"
+  },
+  {
+   "name": "her_daystem=WuEarth",
+   "weight": 0.001387,
+   "human": "Her day master \\1u \\1arth",
+   "family": "daystem",
+   "what": "The BaZi day master: the element of the Chinese day pillar someone was born on.",
+   "example": "e.g. someone born 1949-10-15"
+  },
+  {
+   "name": "her_pluto_sign=Ari",
+   "weight": 0.001369,
+   "human": "Her pluto in Aries",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "her_daybranch=Pig",
+   "weight": 0.001363,
+   "human": "Her day branch Pig",
+   "family": "daybranch",
+   "what": "The branch of the Chinese day pillar \u2014 the day's animal sign.",
+   "example": "e.g. someone born 1937-10-15"
+  },
+  {
+   "name": "cycle_saturn_pluto_phase=Sco",
+   "weight": 0.001345,
+   "human": "Saturn\u2013Pluto era phase in Scorpio",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "his_lifepath=7",
+   "weight": 0.001345,
+   "human": "His life path 7",
+   "family": "lifepath",
+   "what": "Numerology's life path: all digits of the birth date reduced to one number.",
+   "example": "e.g. someone born 1935-10-15"
+  },
+  {
+   "name": "her_true_node_sign=Can",
+   "weight": 0.001344,
+   "human": "Her north node in Cancer",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1943-06-15"
+  },
+  {
+   "name": "her_lifepath=4",
+   "weight": 0.00125,
+   "human": "Her life path 4",
+   "family": "lifepath",
+   "what": "Numerology's life path: all digits of the birth date reduced to one number.",
+   "example": "e.g. someone born 1941-10-15"
+  },
+  {
+   "name": "cycle_uranus_neptune_phase=Sco",
+   "weight": 0.001233,
+   "human": "Uranus\u2013Neptune era phase in Scorpio",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "his_daystem=WuEarth",
+   "weight": 0.0011,
+   "human": "His day master \\1u \\1arth",
+   "family": "daystem",
+   "what": "The BaZi day master: the element of the Chinese day pillar someone was born on.",
+   "example": "e.g. someone born 1949-10-15"
+  },
+  {
+   "name": "dav_sun_sign=Gem",
+   "weight": 0.0011,
+   "human": "The couple's sun in Gemini (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1935-10-15"
+  },
+  {
+   "name": "his_year_animal=Horse",
+   "weight": 0.001062,
+   "human": "His year animal Horse",
+   "family": "animal",
+   "what": "The Chinese year animal \u2014 the twelve-year cycle.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_pluto_sign=Gem",
+   "weight": 0.001015,
+   "human": "His pluto in Gemini",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle_jupiter_saturn_phase=Ari",
+   "weight": 0.000945,
+   "human": "Jupiter\u2013Saturn era phase in Aries",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1947-02-15"
+  },
+  {
+   "name": "his_daystem=RenWater",
+   "weight": 0.00092,
+   "human": "His day master \\1en \\1ater",
+   "family": "daystem",
+   "what": "The BaZi day master: the element of the Chinese day pillar someone was born on.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "cycle_saturn_neptune_phase=Can",
+   "weight": 0.000897,
+   "human": "Saturn\u2013Neptune era phase in Cancer",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1955-02-15"
+  },
+  {
+   "name": "cycle24_uranus_neptune=11",
+   "weight": 0.000879,
+   "human": "Uranus\u2013Neptune cycle, half-sign 12 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_lifepath=8",
+   "weight": 0.000817,
+   "human": "His life path 8",
+   "family": "lifepath",
+   "what": "Numerology's life path: all digits of the birth date reduced to one number.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "his_uranus_sign=Cap",
+   "weight": 0.000806,
+   "human": "His uranus in Capricorn",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1995-02-15"
+  },
+  {
+   "name": "his_moon_trine_her_sun",
+   "weight": 0.000724,
+   "human": "His moon trine her sun",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1949-06-15, her born 1935-10-15"
+  },
+  {
+   "name": "her_saturn_sign=Sco",
+   "weight": 0.000714,
+   "human": "Her saturn in Scorpio",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1957-02-15"
+  },
+  {
+   "name": "her_mercury_sign=Ari",
+   "weight": 0.000687,
+   "human": "Her mercury in Aries",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle_neptune_pluto_phase=Aqu",
+   "weight": 0.000669,
+   "human": "Neptune\u2013Pluto era phase in Aquarius",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "dav_neptune_sign=Tau",
+   "weight": 0.000662,
+   "human": "The couple's neptune in Taurus (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle24_saturn_pluto=12",
+   "weight": 0.000502,
+   "human": "Saturn\u2013Pluto cycle, half-sign 13 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle_saturn_neptune_phase=Gem",
+   "weight": 0.000427,
+   "human": "Saturn\u2013Neptune era phase in Gemini",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1949-06-15"
+  },
+  {
+   "name": "her_chiron_sign=Ari",
+   "weight": 0.000378,
+   "human": "Her chiron in Aries",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1975-06-15"
+  },
+  {
+   "name": "her_mars_sign=Pis",
+   "weight": 0.000362,
+   "human": "Her mars in Pisces",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1941-10-15"
+  },
+  {
+   "name": "dav_saturn_sign=Aqu",
+   "weight": 0.000331,
+   "human": "The couple's saturn in Aquarius (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-02-15, her born 1935-02-15"
+  },
+  {
+   "name": "her_chiron_sign=Gem",
+   "weight": 0.000322,
+   "human": "Her chiron in Gemini",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1937-06-15"
+  },
+  {
+   "name": "cycle24_uranus_pluto=6",
+   "weight": 0.000285,
+   "human": "Uranus\u2013Pluto cycle, half-sign 7 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle24_uranus_neptune=15",
+   "weight": 0.000257,
+   "human": "Uranus\u2013Neptune cycle, half-sign 16 of 24",
+   "family": "cycle24",
+   "what": "The same outer-planet cycle, read at half-sign resolution.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "cycle_uranus_pluto_phase=Lib",
+   "weight": 0.000219,
+   "human": "Uranus\u2013Pluto era phase in Libra",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "rare \u2014 no example in the scan"
+  },
+  {
+   "name": "his_moon_square_her_sun",
+   "weight": 0.000195,
+   "human": "His moon square her sun",
+   "family": "contact",
+   "what": "A synastry aspect: the angle between his planet and her planet. Conjunct=together, square=90\u00b0, trine=120\u00b0, opposite=180\u00b0.",
+   "example": "e.g. him born 1935-02-15, her born 1935-10-15"
+  },
+  {
+   "name": "his_moon_sign=Sco",
+   "weight": 0.000147,
+   "human": "His moon in Scorpio",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-06-15"
+  },
+  {
+   "name": "dav_venus_sign=Can",
+   "weight": 0.000104,
+   "human": "The couple's venus in Cancer (Davison)",
+   "family": "dav",
+   "what": "The Davison chart: a chart cast for the moment exactly midway between the two births \u2014 astrologers read it as the chart of the relationship itself.",
+   "example": "e.g. him born 1935-10-15, her born 1941-06-15"
+  },
+  {
+   "name": "cycle_saturn_pluto_phase=Gem",
+   "weight": 8.6e-05,
+   "human": "Saturn\u2013Pluto era phase in Gemini",
+   "family": "cycle",
+   "what": "The slow outer planets meet in cycles lasting decades to centuries. Which phase of the cycle you were both born under marks your shared era.",
+   "example": "e.g. him born 1935-02-15, her born 1939-10-15"
+  },
+  {
+   "name": "his_moon_sign=Cap",
+   "weight": 6.7e-05,
+   "human": "His moon in Capricorn",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1945-10-15"
+  },
+  {
+   "name": "his_daybranch=Horse",
+   "weight": 4.7e-05,
+   "human": "His day branch Horse",
+   "family": "daybranch",
+   "what": "The branch of the Chinese day pillar \u2014 the day's animal sign.",
+   "example": "e.g. someone born 1941-02-15"
+  },
+  {
+   "name": "her_daystem=DingFire",
+   "weight": 4.4e-05,
+   "human": "Her day master \\1ing \\1ire",
+   "family": "daystem",
+   "what": "The BaZi day master: the element of the Chinese day pillar someone was born on.",
+   "example": "e.g. someone born 1945-10-15"
+  },
+  {
+   "name": "his_chiron_sign=Tau",
+   "weight": 5e-06,
+   "human": "His chiron in Taurus",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1935-02-15"
+  },
+  {
+   "name": "his_lifepath=9",
+   "weight": 3e-06,
+   "human": "His life path 9",
+   "family": "lifepath",
+   "what": "Numerology's life path: all digits of the birth date reduced to one number.",
+   "example": "e.g. someone born 1937-10-15"
+  },
+  {
+   "name": "his_mercury_sign=Cap",
+   "weight": 2e-06,
+   "human": "His mercury in Capricorn",
+   "family": "sign",
+   "what": "Where a planet sat in the sidereal zodiac at birth. Slow planets stay in one sign for years, so this partly reads the generation someone belongs to.",
+   "example": "e.g. someone born 1937-02-15"
+  }
+ ]
+}

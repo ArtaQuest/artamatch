@@ -69,15 +69,15 @@ jobs:
         run: |
           python -m http.server 8891 --directory docs --bind 127.0.0.1 &
           for i in $(seq 1 40); do
-            curl -sf -m 2 -o /dev/null http://127.0.0.1:8891/index.html && break
+            curl -sf -m 2 -o /dev/null http://127.0.0.1:8891/lab.html && break
             sleep 0.5
           done
-          curl -sf -m 5 -o /dev/null -w 'index.html -> HTTP %{http_code}\n' http://127.0.0.1:8891/index.html
+          curl -sf -m 5 -o /dev/null -w 'lab.html -> HTTP %{http_code}\n' http://127.0.0.1:8891/lab.html
 
       # Load the page in Chrome and WAIT for Pyodide, then assert the precision grid actually painted 15
       # numbers, that the headline statistic is not still a placeholder, and that the console is clean.
       - name: The page renders its own measurements
-        run: node web/browser_verify.mjs http://127.0.0.1:8891/index.html
+        run: node web/browser_verify.mjs http://127.0.0.1:8891/lab.html
 
       - uses: actions/upload-pages-artifact@v4
         with:

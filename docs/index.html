@@ -1,713 +1,256 @@
-<title>ArtaMatch — astrology-only relationship-duration prediction from two birth dates</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23010C17'/%3E%3Ccircle cx='12' cy='16' r='7' fill='none' stroke='%23E8B923' stroke-width='2.5'/%3E%3Ccircle cx='20' cy='16' r='7' fill='none' stroke='%231746DC' stroke-width='2.5'/%3E%3C/svg%3E">
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ArtaMatch Almanac</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,560&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root{
-    --gold:#E8B923; --blue:#1746DC;
-    --bg:#010C17; --bg2:#06121E; --bg3:#0C1E32;
-    --ink:#E9EEF5; --ink2:#9FB0C4; --ink3:#6C8099;
-    --line:#173049; --ok:#5FD08A; --warn:#E8B923;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--sans);
-       -webkit-font-smoothing:antialiased}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
-  header{padding:56px 0 28px;border-bottom:1px solid var(--line)}
-  h1{margin:0 0 6px;font-size:clamp(30px,5vw,46px);line-height:1.08;letter-spacing:-.02em;
-     text-wrap:balance}
-  h1 em{font-style:normal;color:var(--gold)}
-  .sub{margin:0;color:var(--ink2);font-size:clamp(15px,2vw,18px);max-width:62ch}
-  h2{margin:0 0 4px;font-size:19px;letter-spacing:-.01em}
-  h2 .n{color:var(--blue);font:600 13px/1 var(--mono);vertical-align:2px;margin-right:8px}
-  .lede{margin:0 0 18px;color:var(--ink2);font-size:14.5px;max-width:70ch}
-  .card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:22px;margin:20px 0}
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:1px;
-         background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden;
-         margin:24px 0 8px}
-  .stats>div{background:var(--bg2);padding:16px 18px}
-  .note.warn{color:var(--gold)}
-  .worked{margin:8px 0 10px;padding:10px 12px;border-left:2px solid var(--gold);background:var(--bg2)}
-  .worked b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2)}
-  .worked ul{margin:6px 0 0;padding-left:18px;font-size:14px}
-  .worked li{margin:3px 0}
-  #trad-tab summary{cursor:pointer}
-  #trad-tab summary::marker{color:var(--gold)}
-  #trad-tab details[open] summary{margin-bottom:2px}
-  .blocklist{margin:0 0 4px;padding-left:18px;color:var(--ink2);font-size:14px}
-  .blocklist li{margin:2px 0}
-  .blocklist .n{color:var(--ink);font-variant-numeric:tabular-nums}
-  /* One date on ONE row, at every width. A flex row that wrapped gave each part its own full-width line, so a
-     single date occupied three rows and the two of them six — the controls pushed the button off a phone screen
-     entirely. A three-column grid with a fixed year column and two fluid ones keeps it to one row at 320px, and
-     min-width:0 is what actually lets a select shrink below its longest option ("September"). */
-  /* The day column is sized to its own CONTENT, not to a guessed em value. At 3.6em it had 34px of text room
-     and needed 45 — the widest option is the em-dash placeholder plus the arrow every browser draws inside the
-     box — so the selected value rendered truncated ("1" for "15") and the control looked broken rather than
-     narrow. `max-content` measures the real widest option, and minmax(0,1fr) is what lets the month column give
-     up the space instead of overflowing. */
-  .dpart{display:grid;grid-template-columns:4.4em minmax(0,1fr) max-content;gap:6px;align-items:stretch}
-  .dpart>*{min-width:0;width:100%}
-  .dpart select{padding-left:8px;padding-right:8px}
-  /* The spinner on a four-digit year is a target nobody wants and it steals horizontal room. */
-  .dpart .dy{-moz-appearance:textfield;appearance:textfield}
-  .dpart .dy::-webkit-outer-spin-button,.dpart .dy::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  /* A reason for a dead button has to sit beside the button, not below the fold. */
-  .why{display:flex;gap:8px;align-items:flex-start;margin:8px 0 0;padding:9px 11px;border-radius:8px;
-       background:var(--bg2);border-left:2px solid var(--ink2);font-size:14px;line-height:1.5}
-  .why.bad{border-left-color:var(--gold);color:var(--ink)}
-  .why b{white-space:nowrap}
-  .stats b{display:block;font:600 26px/1.15 var(--mono);color:var(--gold);
-           font-variant-numeric:tabular-nums}
-  .stats span{display:block;color:var(--ink3);font-size:12px;margin-top:4px;line-height:1.35}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
-  label{display:block;color:var(--ink3);font-size:11.5px;text-transform:uppercase;
-        letter-spacing:.07em;margin-bottom:6px}
-  input,select{width:100%;background:var(--bg);color:var(--ink);border:1px solid var(--line);
-       border-radius:9px;padding:10px 11px;font:15px/1.2 var(--mono)}
-  input:focus,select:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
-  button{background:var(--gold);color:#12212F;border:0;border-radius:9px;padding:11px 20px;
-         font:600 15px/1 var(--sans);cursor:pointer}
-  button:hover:not(:disabled){background:#F2C63A}
-  button:disabled{opacity:.42;cursor:not-allowed}
-  button.ghost{background:transparent;color:var(--ink2);border:1px solid var(--line)}
-  button.ghost:hover:not(:disabled){border-color:var(--blue);color:var(--ink)}
-  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
-  th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
-  th{color:var(--ink3);font:600 11px/1 var(--sans);text-transform:uppercase;letter-spacing:.07em}
-  td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
-  tbody tr:hover{background:var(--bg3)}
-  .big{font:600 30px/1 var(--mono);color:var(--gold);font-variant-numeric:tabular-nums}
-  .bar{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;min-width:70px}
-  .bar i{display:block;height:100%;background:var(--blue)}
-  #log{color:var(--ink3);font:12.5px/1.5 var(--mono);margin-top:10px;min-height:1.5em}
-  .pill{display:inline-block;background:var(--bg3);border:1px solid var(--line);border-radius:999px;
-        padding:3px 11px;font:12px/1.5 var(--mono);color:var(--ink2);margin:0 6px 6px 0}
-  .note{color:var(--ink3);font-size:13px;margin:12px 0 0}
-  ul{margin:10px 0 0;padding-left:20px;color:var(--ink2);font-size:14px}
-  li{margin:7px 0}
-  code{font:13px var(--mono);background:var(--bg3);border-radius:4px;padding:1px 5px;color:var(--gold)}
-  .warnbox{border-left:2px solid var(--warn);padding-left:14px;margin:14px 0;color:var(--ink2);
-           font-size:13.5px}
-  footer{border-top:1px solid var(--line);margin-top:44px;padding-top:22px;color:var(--ink3);
-         font-size:12.5px}
-</style>
-
+:root{--bg:#010C17;--card:#06121E;--raise:#0C1E32;--gold:#E8B923;--blue:#1746DC;--blue-l:#5B7FF2;
+--ink:#E9EFF7;--mut:#8FA3B8;--line:rgba(232,185,35,.14);--good:rgba(232,185,35,.12);--bad:rgba(91,127,242,.14)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 "Source Sans 3",system-ui,sans-serif;
+padding:0 20px 72px}
+.wrap{max-width:880px;margin:0 auto}
+h1,h2,h3{font-family:Fraunces,Georgia,serif;font-weight:560;text-wrap:balance}
+header{padding:52px 0 30px;border-bottom:1px solid var(--line)}
+.eyebrow{color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:12px;font-weight:600}
+h1{font-size:44px;line-height:1.08;margin:10px 0 8px}
+.sub{color:var(--mut);max-width:60ch}
+.prov{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.prov span{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 12px;
+font:500 12.5px/1.4 "IBM Plex Mono",monospace;color:var(--mut)}
+.prov b{color:var(--gold);font-weight:500}
+.hero{margin:34px 0 10px;background:radial-gradient(120% 140% at 20% 0%,#0D2036 0%,var(--card) 55%);
+border:1px solid var(--line);border-radius:14px;padding:26px 26px 22px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;inset:-40% -20% auto auto;width:340px;height:340px;
+background:radial-gradient(closest-side,rgba(232,185,35,.13),transparent 70%)}
+.hero .rk1{color:var(--gold);font:600 12px/1 "IBM Plex Mono",monospace;letter-spacing:.12em}
+.hero .date{font-family:Fraunces,serif;font-size:40px;margin:8px 0 2px}
+.hero .meta{color:var(--mut);margin-bottom:14px}
+.hero .p{color:var(--gold);font:500 15px/1 "IBM Plex Mono",monospace}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{border-radius:8px;padding:6px 10px;font-size:13.5px;border:1px solid var(--line);background:var(--good)}
+.chip b{color:var(--gold);font:500 12px "IBM Plex Mono",monospace;margin-left:4px}
+.chip.bad{background:var(--bad);border-color:rgba(91,127,242,.3)}
+.chip.bad b{color:var(--blue-l)}
+h2{font-size:22px;margin:38px 0 14px}
+.row{display:grid;grid-template-columns:34px 118px 46px 130px 1fr;gap:12px;align-items:center;
+background:var(--card);border:1px solid rgba(232,185,35,.08);border-radius:10px;padding:11px 14px;margin:7px 0}
+.row:hover{border-color:var(--blue)}
+.rk{color:var(--mut);font:500 13px "IBM Plex Mono",monospace}
+.dt{font:500 15px "IBM Plex Mono",monospace}
+.gap{color:var(--mut);font-size:13px}
+.pv{font:500 13px "IBM Plex Mono",monospace;color:var(--gold)}
+.bar{height:3px;background:var(--raise);border-radius:2px;margin-top:5px}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:2px}
+.why{display:flex;flex-wrap:wrap;gap:6px}
+.why .chip{padding:3px 8px;font-size:12.5px}
+details{margin-top:22px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 16px}
+summary{cursor:pointer;color:var(--blue-l);font-weight:600;padding:10px 0}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+td{padding:7px 10px;border-top:1px solid rgba(143,163,184,.12);font-variant-numeric:tabular-nums}
+.mono{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.reason{color:var(--mut)}
+.read{margin-top:36px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.read li{margin:8px 0 8px 18px;color:var(--mut)}
+.read b{color:var(--ink)}
+footer{margin-top:40px;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+@media(max-width:640px){.row{grid-template-columns:28px 104px 1fr;grid-auto-rows:auto}
+.gap,.why{grid-column:2/-1} .pv{grid-column:3} h1{font-size:34px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.trad{border-top:1px solid rgba(143,163,184,.12);padding:10px 0}.tn{font-weight:600}.tc{color:var(--mut);font:500 12px "IBM Plex Mono",monospace;margin-left:8px}.td{color:var(--mut);font-size:13.5px}</style>
+</head>
+<body>
 <div class="wrap">
 <header>
-  <h1>Can two <em>birth dates</em> predict whether a relationship lasts thirty years?</h1>
-  <p class="sub">An astrology-only model, trained on couples <b>born 1600&ndash;1900</b> and tested on couples
-  <b>born after 1900</b> — a split by <b>time</b>, and only over people who have <b>died</b>, so every
-  relationship in it has ended and none was cut short by the records running out. Any relationship two people
-  chose counts: a marriage, an unmarried or same-sex partnership, a business partnership. The first date is
-  always the <b>older</b> partner's. Reported against the one baseline it is
-  allowed: a two-parameter logistic on the signed subtraction of the two dates.</p>
+<div class="eyebrow">ArtaMatch v5 · the doctrine almanac</div>
+<h1>Match dates for a man born 15 February 1994</h1>
+<p class="sub">One hundred partner birth dates, ranked by the chance the marriage would end in divorce rather
+than death — scored by 1,293 named statements of world astrology and numerology — every sign and nakṣatra <b>sidereal (Lahiri ayanāṁśa)</b> —, weighted by five centuries of
+recorded marriages. Every ranking decomposes into the statements that produced it.</p>
+<div class="prov">
+<span>test AUC <b>0.7707</b> · read once</span>
+<span>trained on <b>56,621</b> couples · all data</span>
+<span>only the blend fitted · <b>fully explainable</b></span>
+<span>divorce = remarried while both lived</span>
+<span>zodiac <b>sidereal · Lahiri</b></span>
+<span><a href="lab.html" style="color:var(--blue-l);text-decoration:none">the research lab →</a></span>
+</div>
 </header>
 
-<div class="stats">
-  <div><b id="s-auc">—</b><span>benchmark: row-count-weighted mean AUC over the precision grid</span></div>
-  <div><b id="s-clean">—</b><span>AUC when both dates are full</span></div>
-  <div><b id="s-base">—</b><span>baseline over the same grid: signed age gap</span></div>
-  <div><b id="s-lift">—</b><span>lift over the baseline</span></div>
-  <div><b id="s-n">—</b><span>partnerships trained on</span></div>
-  <div><b id="s-trad">—</b><span>traditions stacked</span></div>
-</div>
-<div id="log">loading Python, numpy, astropy and the ephemeris…</div>
+<section class="hero">
+<div class="rk1">Nº 1 MATCH</div>
+<div class="date">2007-07-15</div>
+<div class="meta">13 years younger · P(divorce | the marriage ends) <span class="p">1.8%</span></div>
+<div><b style="font-family:Fraunces,serif">Why the almanac favours her</b></div>
+<div class="chips"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span><span class="chip good">Uranus–Neptune era phase in Aries <b>-0.10</b></span><span class="chip good">Jupiter–Saturn era phase in Pisces <b>-0.07</b></span><span class="chip bad">Neptune–Pluto era phase in Taurus <b>+0.29</b></span></div>
+</section>
 
-<div class="card">
-  <h2><span class="n">01</span>Score a pair</h2>
-  <p class="lede">Two dates in, one probability out. Every planetary position is computed here, in your
-  browser, when you press the button — there is no lookup table of answers and no cache.</p>
-  <div class="grid">
-    <div><label>Older partner's birth date</label><span class="dpart" id="a-dob"></span></div>
-    <div><label>Younger partner's birth date</label><span class="dpart" id="b-dob"></span></div>
-    <p class="note" style="grid-column:1/-1;margin:2px 0 0">Leave the month or day on
-      <b>&mdash;</b> when it is not known: a third of the training data is incomplete the same way, and the
-      model is told the precision rather than left to guess it.</p>
-  </div>
-  <p style="margin:16px 0 0"><button id="go-pair" disabled>Score this pair</button></p>
-  <p class="why" id="pair-window"></p>
-  <div id="pair-out"></div>
-</div>
-
-<div class="card">
-  <h2><span class="n">02</span>Search the dates</h2>
-  <p class="lede">Holds one birth date fixed and scores every candidate date in a range, then ranks them.
-  There is no city dimension: the model's only inputs are two dates.</p>
-  <div class="grid">
-    <div><label>One birth date</label><input id="f-self" type="date" value="1889-04-16"
-         min="1600-01-01" max="2032-12-31"></div>
-    <div><label>Candidates from</label><input id="f-from" type="date" value="1893-01-01"
-         min="1600-01-01" max="2032-12-31"></div>
-    <div><label>to</label><input id="f-to" type="date" value="1895-12-31"
-         min="1600-01-01" max="2032-12-31"></div>
-    <div><label>Step (days)</label><select id="f-step">
-      <option value="1">every day</option><option value="7" selected>every 7 days</option>
-      <option value="14">every 14 days</option><option value="30">every 30 days</option></select></div>
-  </div>
-  <p style="margin:16px 0 0"><button id="go-find" disabled>Run the search</button>
-    <button id="stop" class="ghost" disabled>Stop</button></p>
-  <div id="find-out"></div>
-</div>
-
-<div class="card">
-  <h2><span class="n">03</span>What each tradition contributes</h2>
-  <p class="lede">Every tradition that can be computed from two dates is in the stack, with up to three
-  feature blocks each — a per-tradition guarantee rather than a global cut, so no tradition is starved by a
-  stronger neighbour. The AUC is that tradition's own blocks, scored alone, on the held-out couples. Each row
-  opens to say what the tradition actually computes and which blocks it contributes.</p>
-  <div class="scroll"><table id="trad-tab"><thead><tr><th>Tradition</th><th>AUC alone</th>
-    <th>Blocks</th><th style="width:34%"></th></tr></thead><tbody></tbody></table></div>
-  <p class="note" id="trad-missing"></p>
-</div>
-
-<div class="card">
-  <h2><span class="n">04</span>The precision grid — how much a vague date costs</h2>
-  <p class="lede">Real birth data arrives to the day, to the month, to the year, or not at all. So each
-  partner's date is degraded independently and the model is scored in every combination, on the same couples
-  each time — the held-out fifth, split by person group so nobody in it appears in training. Reading across a
-  row shows what losing the younger partner's precision costs; reading down a column, the older's. The bottom-right cell is
-  blank because with neither date there is no input to rank on.</p>
-  <div class="scroll"><table id="grid-tab"><thead></thead><tbody></tbody></table></div>
-  <p class="note" id="grid-note"></p>
-  <div class="scroll" style="margin-top:18px"><table id="grid-detail"><thead><tr>
-    <th>Older's date</th><th>Younger's date</th><th>Stack</th><th>Baseline</th><th>Lift</th>
-    <th style="width:26%"></th></tr></thead><tbody></tbody></table></div>
-</div>
-
-<div class="card">
-  <h2><span class="n">05</span>What this is, and what it is not</h2>
-  <div class="warnbox">
-    <b>A score here is a model output, not a fact about anybody.</b> The label is whether Wikidata's record of
-    a relationship — a marriage, a partnership of any kind — spans thirty years or more, which is a fact about
-    what was written down, not about what happened. A relationship whose ending was never recorded is dated
-    from the earlier partner's death instead.
-    Nothing on this page is advice.
-  </div>
-  <ul>
-    <li><b>Astrology only.</b> Every feature comes from a tradition module: charts, aspects, harmonics,
-      divisional charts, calendars, heliacal risings. No cohort, exposure, nationality or sex variable is a
-      feature.</li>
-    <li><b>One baseline, and it is reported every time.</b> A two-parameter logistic on
-      <code>dob_younger − dob_older</code> in years — the age gap, non-negative because the older partner is
-      always first. The gap is not a nuisance to be removed; it is the number astrology has to beat.</li>
-    <li><b>The browser runs the training code.</b> Not a port of it — the same <code>core.py</code> and the
-      same <code>trad_*.py</code> modules, with Swiss Ephemeris replaced by a pure-numpy shim because
-      Pyodide has no pyswisseph. The shim is verified against the real library — longitudes to 0.005°,
-      the same as the ephemeris' own storage step, all 21 ayanamsas to 0.003°, eclipse dates and calendar
-      conversion exact — and a whole build of every feature block agrees with a chunked one bit for bit.</li>
-    <li><b>Nothing is cached.</b> No precomputed scores, no candidate grid, no memo between calls. The one
-      table that ships is the ephemeris itself — positions of planets, which is what Swiss Ephemeris' own
-      data files are, not answers about people.</li>
-    <li><b>Two dates is the whole input.</b> Birthplaces were dropped, so there is no Ascendant, no house
-      cusp and no astrocartography line, and every chart is cast at 08:00 UT.</li>
-    <li><b>Person-disjoint validation, five folds of 80/20.</b> A person appears in more than one
-      partnership, so folds are split by person group, never by row. Every number in the grid is
-      out-of-fold, and a degraded row is scored by the fold-model that never saw it.</li>
-    <li><b>The split is the experiment, and it is a split in TIME.</b> Couples born up to 1900 train; couples
-      born after it are held out. So the question is not &ldquo;rank couples drawn from the years you
-      learned from&rdquo; but &ldquo;learn from the earlier couples and predict the later ones&rdquo;, which is
-      the harder and the honest one. An earlier version of this project split at random and scored 0.6452
-      within its training era against 0.5159 out of it — a gap of 0.13 that was entirely the model
-      interpolating a calendar it had already seen.</li>
-    <li><b>Nothing here is censored, because everybody in it is dead.</b> A relationship still running cannot
-      be labelled, and one that has not yet had thirty years cannot reach thirty. Rather than cap the birth years
-      and infer it, the dataset requires a datable end — a recorded end date or a partner's death — and the
-      held-out half requires both partners dead. So it reaches into the twentieth century and stops on its own,
-      because there are almost no couples born after 1950 who are both dead with dated relationships.</li>
-    <li><b>That rule has a bias of its own, and it is measured rather than hoped about.</b> A couple born
-      recently who are <i>already</i> dead died young, and a relationship cannot outlive its shorter-lived partner —
-      so &ldquo;born late&rdquo; leans negative for a reason that has nothing to do with astrology. The build
-      prints the positive rate for every birth decade and names any decade where a thirty-year relationship is
-      arithmetically impossible. Read the per-tradition table below against the era rule reported beside it, not
-      against chance.</li>
-    <li><b>The sharpest confound is which way the relationship ended.</b> Relationships with a recorded end
-      date reach thirty years far less often than ones that ran until a death (about 16% against 53% in the
-      marriage-only version of this dataset). That is
-      not an input — a model cannot see which case a couple is in — but it correlates with things that are, so
-      a case-only reference is reported alongside every score.</li>
-    <li><b>A date can say &ldquo;I do not know&rdquo;.</b> A third of the training dates are incomplete, and
-      an unknown component is written <code>00</code> — <code>1889-00-00</code> is a year,
-      <code>1889-04-00</code> a month. Wikidata pads an unknown day with <code>01</code> instead, which would
-      make a year-only birth indistinguishable from a genuine 1 January birthday and let the model read date
-      precision as a proxy for how well documented somebody is. The controls above accept the same encoding,
-      and the model is told the precision rather than left to infer it.</li>
-  </ul>
-  <p style="margin:18px 0 0" id="pills"></p>
+<h2>Ranks 2–20</h2>
+<div class="row">
+<div class="rk">2</div>
+<div class="dt">2005-12-15</div>
+<div class="gap">11y</div>
+<div class="pv">1.9%<div class="bar"><i style="width:79%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">3</div>
+<div class="dt">2005-12-25</div>
+<div class="gap">11y</div>
+<div class="pv">1.9%<div class="bar"><i style="width:79%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">4</div>
+<div class="dt">2007-06-15</div>
+<div class="gap">13y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:80%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">5</div>
+<div class="dt">2006-09-05</div>
+<div class="gap">12y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:80%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">6</div>
+<div class="dt">2006-11-15</div>
+<div class="gap">12y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:80%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">7</div>
+<div class="dt">2006-08-25</div>
+<div class="gap">12y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:81%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">8</div>
+<div class="dt">2007-10-05</div>
+<div class="gap">13y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:81%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">9</div>
+<div class="dt">2004-05-05</div>
+<div class="gap">10y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:82%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">10</div>
+<div class="dt">2006-06-15</div>
+<div class="gap">12y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:83%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">11</div>
+<div class="dt">2008-08-25</div>
+<div class="gap">14y</div>
+<div class="pv">2.0%<div class="bar"><i style="width:83%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">12</div>
+<div class="dt">2007-03-05</div>
+<div class="gap">13y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:83%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">13</div>
+<div class="dt">2006-09-25</div>
+<div class="gap">12y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:84%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">14</div>
+<div class="dt">2007-01-25</div>
+<div class="gap">13y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:84%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">15</div>
+<div class="dt">2003-12-25</div>
+<div class="gap">9y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:85%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">16</div>
+<div class="dt">1999-06-15</div>
+<div class="gap">5y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:85%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">17</div>
+<div class="dt">1998-10-15</div>
+<div class="gap">4y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:86%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">18</div>
+<div class="dt">2007-08-05</div>
+<div class="gap">13y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:86%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">19</div>
+<div class="dt">2007-09-25</div>
+<div class="gap">13y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:87%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
+</div><div class="row">
+<div class="rk">20</div>
+<div class="dt">2007-11-05</div>
+<div class="gap">13y</div>
+<div class="pv">2.1%<div class="bar"><i style="width:87%"></i></div></div>
+<div class="why"><span class="chip good">Her Neptune in Capricorn <b>-0.12</b></span><span class="chip good">His Neptune in Sagittarius <b>-0.10</b></span></div>
 </div>
 
-<footer>
-<p><a href="almanac/" style="color:var(--gold,#E8B923)">ArtaMatch v5 — the doctrine almanac</a>: the fully explainable edition. 1,293 named tradition statements, only the blend trained, test AUC 0.7707.</p>
-  ArtaMatch · the model, the shim and the ephemeris builder are in this repository, and every figure on this
-  page is read from the shipped <code>model.json</code> rather than written into the page.
-  <p><a href="artamodel.html">ArtaModel IV</a> — the fourth edition's deployed model, term by term: genderless — two births and birthplaces in no order, the start date, every phase difference an absolute value — sidereal, and what it turns out to read. Weights and scorer on <a href="https://huggingface.co/artaquest/artamodel">Hugging Face</a>; competition <a href="https://www.kaggle.com/competitions/artamatch-genderless">artamatch-genderless</a>.</p>
-</footer>
+<details><summary>Ranks 21–100</summary>
+<div class="tblwrap"><table><tbody><tr><td>21</td><td class="mono">2007-02-05</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>22</td><td class="mono">2007-08-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>23</td><td class="mono">1995-12-25</td><td>1y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>24</td><td class="mono">2005-11-25</td><td>11y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>25</td><td class="mono">2007-03-15</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>26</td><td class="mono">1999-11-05</td><td>5y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>27</td><td class="mono">2001-08-15</td><td>7y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>28</td><td class="mono">2005-12-05</td><td>11y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>29</td><td class="mono">2007-05-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>30</td><td class="mono">2007-12-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>31</td><td class="mono">1999-10-05</td><td>5y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>32</td><td class="mono">2007-02-25</td><td>13y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>33</td><td class="mono">2008-11-15</td><td>14y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>34</td><td class="mono">2000-12-05</td><td>6y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>35</td><td class="mono">2001-06-15</td><td>7y</td><td class="mono">2.2%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>36</td><td class="mono">1996-10-05</td><td>2y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>37</td><td class="mono">2000-07-05</td><td>6y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>38</td><td class="mono">2001-11-05</td><td>7y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>39</td><td class="mono">2007-05-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>40</td><td class="mono">2004-03-15</td><td>10y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>41</td><td class="mono">2006-11-05</td><td>12y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>42</td><td class="mono">2007-08-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>43</td><td class="mono">2007-10-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>44</td><td class="mono">2007-11-15</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>45</td><td class="mono">2005-03-25</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>46</td><td class="mono">2005-10-05</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>47</td><td class="mono">2007-07-25</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>48</td><td class="mono">2007-09-05</td><td>13y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>49</td><td class="mono">1996-06-15</td><td>2y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>50</td><td class="mono">2005-10-15</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>51</td><td class="mono">2000-01-05</td><td>6y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>52</td><td class="mono">1995-07-25</td><td>1y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>53</td><td class="mono">2005-11-15</td><td>11y</td><td class="mono">2.3%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>54</td><td class="mono">1998-09-15</td><td>4y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>55</td><td class="mono">2006-02-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>56</td><td class="mono">2006-10-15</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>57</td><td class="mono">2007-06-25</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>58</td><td class="mono">2000-06-15</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>59</td><td class="mono">2006-04-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>60</td><td class="mono">2006-12-15</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>61</td><td class="mono">2007-01-15</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>62</td><td class="mono">2001-07-15</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>63</td><td class="mono">2003-10-25</td><td>9y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>64</td><td class="mono">2003-09-25</td><td>9y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>65</td><td class="mono">2006-06-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>66</td><td class="mono">2006-09-15</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>67</td><td class="mono">2000-06-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>68</td><td class="mono">2001-02-05</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>69</td><td class="mono">2007-01-05</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>70</td><td class="mono">2007-02-15</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>71</td><td class="mono">1996-03-15</td><td>2y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>72</td><td class="mono">2001-06-25</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>73</td><td class="mono">2001-10-15</td><td>7y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>74</td><td class="mono">2002-07-05</td><td>8y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>75</td><td class="mono">2004-12-25</td><td>10y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>76</td><td class="mono">2006-06-05</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>77</td><td class="mono">2000-04-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>78</td><td class="mono">2005-06-15</td><td>11y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>79</td><td class="mono">2006-12-05</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>80</td><td class="mono">2007-06-05</td><td>13y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>81</td><td class="mono">1996-08-15</td><td>2y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>82</td><td class="mono">1997-07-05</td><td>3y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>83</td><td class="mono">2004-02-05</td><td>10y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>84</td><td class="mono">2008-02-05</td><td>14y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>85</td><td class="mono">2000-01-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>86</td><td class="mono">2000-09-25</td><td>6y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>87</td><td class="mono">2004-04-25</td><td>10y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>88</td><td class="mono">2006-11-25</td><td>12y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>89</td><td class="mono">2008-09-05</td><td>14y</td><td class="mono">2.4%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>90</td><td class="mono">2004-03-05</td><td>10y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>91</td><td class="mono">2005-09-05</td><td>11y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>92</td><td class="mono">2006-07-05</td><td>12y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>93</td><td class="mono">2007-04-15</td><td>13y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>94</td><td class="mono">1996-01-05</td><td>2y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>95</td><td class="mono">1996-06-05</td><td>2y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>96</td><td class="mono">1999-05-05</td><td>5y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>97</td><td class="mono">2000-04-05</td><td>6y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>98</td><td class="mono">2004-01-05</td><td>10y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>99</td><td class="mono">2008-10-15</td><td>14y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr><tr><td>100</td><td class="mono">2008-11-25</td><td>14y</td><td class="mono">2.5%</td><td class="reason">Her Neptune in Capricorn; His Neptune in Sagittarius</td></tr></tbody></table></div>
+</details>
+
+
+<section class="read" id="inside">
+<h2 style="margin-top:0">Inside the ensemble</h2>
+<p class="sub" style="margin-bottom:14px">The model is a single weighted blend of <b>1,293 atomic
+statements</b>, each one a sentence a named tradition actually says. Nothing else is learned: no tree, no
+embedding, no hidden feature. The weights were fitted (logistic, C=0.005 chosen by grouped cross-validation)
+on all 56,621 couples, and each weight is readable below and in
+<a href="almanac/ALMANAC.md" style="color:var(--blue-l)">the full almanac</a> /
+<a href="almanac/model.json" style="color:var(--blue-l)">model.json</a>.</p>
+<div class="trad"><div class="tn">Western sign placements <span class="tc">288 statements · 288 weighted</span></div><div class="td">Hellenistic/modern Western astrology — each partner&#x27;s bodies by sidereal (Lahiri) sign</div></div><div class="trad"><div class="tn">Davison relationship chart <span class="tc">108 statements · 108 weighted</span></div><div class="td">the couple&#x27;s own chart, cast at the time-midpoint of the two births (modern Western)</div></div><div class="trad"><div class="tn">Mundane outer cycles <span class="tc">84 statements · 84 weighted</span></div><div class="td">Barbault&#x27;s mundane astrology — the Jupiter–Saturn through Neptune–Pluto cycle phases: the era, read astrologically</div></div><div class="trad"><div class="tn">Sun-sign pair table <span class="tc">144 statements · 144 weighted</span></div><div class="td">the popular compatibility table, all 144 his×her cells (signs sidereal Lahiri, as everywhere here)</div></div><div class="trad"><div class="tn">Moon-sign (rāśi) pair table <span class="tc">144 statements · 144 weighted</span></div><div class="td">Vedic rāśi kūṭa — the 144 Moon-sign pairings</div></div><div class="trad"><div class="tn">Janma nakṣatra <span class="tc">54 statements · 54 weighted</span></div><div class="td">Vedic — the birth lunar mansion of each partner</div></div><div class="trad"><div class="tn">Janma tithi <span class="tc">60 statements · 60 weighted</span></div><div class="td">Vedic pañcāṅga — the Moon-phase day each was born on</div></div><div class="trad"><div class="tn">Named synastry contacts <span class="tc">100 statements · 100 weighted</span></div><div class="td">classical synastry — his body to her body, aspect by aspect, gendered</div></div><div class="trad"><div class="tn">BaZi day pillar <span class="tc">44 statements · 44 weighted</span></div><div class="td">Chinese Four Pillars — the day master stem and branch of each partner</div></div><div class="trad"><div class="tn">Chinese year animals <span class="tc">168 statements · 168 weighted</span></div><div class="td">the Chinese zodiac, including all 144 his×her animal pairings</div></div><div class="trad"><div class="tn">Numerology life paths <span class="tc">99 statements · 99 weighted</span></div><div class="td">Pythagorean numerology — each life path and all 81 pairings</div></div>
+<div class="trad"><div class="tn">Everything else <span class="tc">0 statements</span></div>
+<div class="td">smaller doctrine blocks kept for completeness</div></div>
+<h2>The strongest weights in the almanac</h2>
+<div class="tblwrap"><table><tbody>
+<tr><td colspan="2" style="color:var(--gold);border:0;padding-top:2px">toward divorce</td></tr>
+<tr><td class='reason'>cycle_neptune_pluto_phase=Ari</td><td class='mono'>+0.404</td></tr><tr><td class='reason'>cycle_neptune_pluto_phase=Tau</td><td class='mono'>+0.292</td></tr><tr><td class='reason'>his_pluto_sign=Tau</td><td class='mono'>+0.243</td></tr><tr><td class='reason'>her_pluto_sign=Tau</td><td class='mono'>+0.237</td></tr><tr><td class='reason'>her_pluto_sign=Gem</td><td class='mono'>+0.209</td></tr><tr><td class='reason'>his_pluto_sign=Gem</td><td class='mono'>+0.169</td></tr><tr><td class='reason'>his_neptune_sign=Gem</td><td class='mono'>+0.159</td></tr><tr><td class='reason'>dav_pluto_sign=Tau</td><td class='mono'>+0.148</td></tr><tr><td class='reason'>her_pluto_sign=Can</td><td class='mono'>+0.147</td></tr><tr><td class='reason'>his_neptune_sign=Leo</td><td class='mono'>+0.144</td></tr>
+<tr><td colspan="2" style="color:var(--blue-l);border:0;padding-top:14px">against divorce</td></tr>
+<tr><td class='reason'>cycle_neptune_pluto_phase=Sco</td><td class='mono'>-0.320</td></tr><tr><td class='reason'>cycle_neptune_pluto_phase=Sag</td><td class='mono'>-0.212</td></tr><tr><td class='reason'>cycle_neptune_pluto_phase=Lib</td><td class='mono'>-0.150</td></tr><tr><td class='reason'>her_pluto_sign=Pis</td><td class='mono'>-0.142</td></tr><tr><td class='reason'>his_pluto_sign=Pis</td><td class='mono'>-0.141</td></tr><tr><td class='reason'>her_neptune_sign=Lib</td><td class='mono'>-0.131</td></tr><tr><td class='reason'>her_neptune_sign=Cap</td><td class='mono'>-0.122</td></tr><tr><td class='reason'>his_neptune_sign=Lib</td><td class='mono'>-0.118</td></tr><tr><td class='reason'>her_neptune_sign=Aqu</td><td class='mono'>-0.114</td></tr><tr><td class='reason'>his_neptune_sign=Sco</td><td class='mono'>-0.109</td></tr>
+</tbody></table></div>
+<p class="sub" style="margin-top:12px">The Neptune–Pluto and Uranus–Neptune phases dominate both directions:
+the birth era, expressed as mundane astrology — which is what interpolating five centuries rewards. Within an
+era, the pair tables, named contacts and pañcāṅga carry the rest.</p>
+</section>
+<section class="read">
+<h2 style="margin-top:0">How to read this</h2>
+<ul>
+<li><b>The ranking is the product.</b> The percentages are calibrated to the historical corpus (4.8% of ended
+marriages ended in divorce by this definition), not to modern rates.</li>
+<li><b>Every score is a sum of named statements.</b> Gold chips lower the risk; blue chips raise it. Ask for
+any candidate's full breakdown — all 1,293 statements are on the books.</li>
+<li><b>The era speaks through the slow planets.</b> Neptune and the outer cycle phases carry the largest
+weights — the birth era read astrologically, which is what an interpolation over five centuries rewards.</li>
+<li><b>All signs are sidereal (Lahiri).</b> A placement here can sit one sign earlier than the tropical newspaper zodiac — the whole almanac, pair tables included, is computed on Lahiri longitudes.</li>
+<li><b>Your own cohort scores worst.</b> Partners born 1994–1998 rank at the bottom for the fourth model
+generation in a row.</li>
+</ul>
+</section>
+
+<footer>ArtaMatch v5 · Wikidata marriages, both partners born 1500–1949 · component-split, person-disjoint ·
+six production checks passed (label precision 89.8% · determinism · fold-seed spread 0.0035 · gender swap moves
+26% of rows · calibration ≤0.04) · ArtaQuest Foundation</footer>
 </div>
-
-<script type="module">
-const $ = s => document.querySelector(s);
-const log = m => { $("#log").textContent = m; };
-const fmt = (x, d = 4) => (x == null ? "—" : Number(x).toFixed(d));
-const pct = x => (x == null ? "—" : (100 * x).toFixed(2) + "%");
-
-const BUNDLE = [];               // filled from bundle/manifest.json
-let py = null, ready = false, stopFlag = false;
-
-async function boot() {
-  log("loading Pyodide…");
-  const { loadPyodide } = await import("https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.mjs");
-  py = await loadPyodide({ indexURL: "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/" });
-  log("loading numpy and astropy…");
-  await py.loadPackage(["numpy", "astropy"]);
-
-  log("fetching the pipeline…");
-  const man = await (await fetch("bundle/manifest.json")).json();
-  py.FS.mkdirTree("/bundle");
-  await Promise.all(man.files.map(async f => {
-    const t = await (await fetch("bundle/" + f)).text();
-    py.FS.writeFile("/bundle/" + f, t);
-  }));
-  for (const f of ["sweshim.py", "predictor.py", "runner.py", "worked.py"]) {
-    py.FS.writeFile("/" + f, await (await fetch(f)).text());
-  }
-
-  log("fetching the ephemeris…");
-  const [asset, tables, mjson, mnpz] = await Promise.all([
-    fetch("ephem4.bin").then(r => r.arrayBuffer()),
-    fetch("tables.json").then(r => r.text()),
-    fetch("model.json").then(r => r.text()),
-    fetch("model.npz").then(r => r.arrayBuffer()),
-  ]);
-  py.FS.writeFile("/asset.bin", new Uint8Array(asset));
-  py.FS.writeFile("/model.npz", new Uint8Array(mnpz));
-  py.FS.writeFile("/tables.json", tables);
-  py.FS.writeFile("/model.json", mjson);
-
-  log("computing — importing the tradition modules…");
-  const info = await py.runPythonAsync(`
-import sys, json
-sys.path.insert(0, "/")
-import runner
-info = runner.init(open("/asset.bin","rb").read(), open("/tables.json").read(),
-                   open("/model.json").read(), open("/model.npz","rb").read())
-json.dumps(info)
-`);
-  render(JSON.parse(info));
-  ready = true;
-  // showPairValidity owns #go-pair from here: enabling it unconditionally is what let an out-of-window pair be
-  // submitted and refused.
-  showPairValidity();
-  $("#go-find").disabled = false;
-  // The table paints first with a placeholder; the worked examples are real astronomy on the two dates in the
-  // controls and arrive a moment later.
-  refreshWorked();
-}
-
-let WORKED = {};          // tradition slug -> lines, computed for the pair currently in the controls
-let redrawTraditions = () => {};
-
-// THE WINDOW IS ONE VARIABLE AND IT COMES FROM THE MODEL. It was written into the HTML as min="1800"
-// max="1950" in four places, which is the same drift that let the page offer 1994 while the model could only
-// answer 1800-1950. `min`/`max` on an input are ADVISORY anyway — a year can be typed straight past them, and
-// a browser restoring form state from a previous visit ignores them entirely — so nothing may rely on them.
-// Every control is clamped in JS instead, on load and on every change.
-// WIN is what can be COMPUTED — the shipped ephemeris and core.py's own bounds, capped at the present, because
-// a birth date in the future is not a birth date. TRAIN is what the model was FITTED on. They are different
-// questions and the page needs both: a 1994 pair is answerable and is also extrapolation, and the useful thing
-// to do is give the number and say which side of the fitted range it came from. Refusing it was wrong.
-let WIN = { from: 1600, to: new Date().getFullYear(), maxGap: 60 };
-// The years the model was FITTED on — the TRAINING half, births 1600-1900. The held-out half is everyone born
-// after, so a 1930 couple is inside the dataset and outside the fit. The runner overrides this from the model
-// header (train_window, written by inject_benchmark.py); this is only the pre-load default.
-let TRAIN = { from: 1600, to: 1900 };
-
-const clampYear = y => Math.min(WIN.to, Math.max(WIN.from, Math.trunc(Number(y) || WIN.from)));
-
-function clampISO(iso, fallback) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
-  if (!m) return fallback;
-  const y = clampYear(m[1]);
-  return `${String(y).padStart(4, "0")}-${m[2]}-${m[3]}`;
-}
-
-// Apply the window to every control that has one, and pull anything outside it back inside.
-function applyWindow() {
-  for (const host of [$("#a-dob"), $("#b-dob")].filter(Boolean)) {
-    const y = host.querySelector(".dy");
-    if (!y) continue;
-    y.min = WIN.from; y.max = WIN.to;
-    const before = y.value;
-    y.value = clampYear(y.value);
-    if (String(before) !== String(y.value)) y.dataset.clamped = "1";
-  }
-  // The two pair defaults sit inside the FITTED range, because that is where the model's own numbers came from.
-  // Nothing stops a visitor moving them out; the notice says what changes when they do.
-  for (const [id, fb] of [["#f-self", `${TRAIN.from + 89}-04-16`],
-                          ["#f-from", `${TRAIN.from + 93}-01-01`],
-                          ["#f-to", `${TRAIN.from + 95}-12-31`]]) {
-    const el = $(id);
-    if (!el) continue;
-    el.min = `${WIN.from}-01-01`;
-    el.max = `${WIN.to}-12-31`;
-    el.value = clampISO(el.value, fb);
-  }
-  showPairValidity();
-}
-
-// Say whether the pair can be answered BEFORE the button is pressed. The old page only refused after doing the
-// work, so an out-of-window pair looked accepted right up until it was not.
-function showPairValidity() {
-  const note = $("#pair-window");
-  if (!note) return;
-  const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
-  const ya = Number(a.slice(0, 4)), yb = Number(b.slice(0, 4));
-  const gap = Math.abs(ya - yb);
-  const inWin = ya >= WIN.from && ya <= WIN.to && yb >= WIN.from && yb <= WIN.to;
-  const ok = inWin && gap <= WIN.maxGap;
-  const outside = [ya, yb].filter(y => y < TRAIN.from || y > TRAIN.to);
-  const msg = !ok
-    ? (!inWin
-        ? [`Out of range.`, `Both births must fall in ${WIN.from}–${WIN.to}: before that the shipped `
-           + `ephemeris runs out, and after it is the future.`]
-        : [`${gap} years apart.`, `This model was fitted on couples less than ${WIN.maxGap} years apart, so `
-           + `move either year closer to score the pair.`])
-    : outside.length
-        ? [`Extrapolation.`, `${outside.length === 2 ? "Both years are" : "One year is"} outside `
-           + `${TRAIN.from}–${TRAIN.to}, the range this model was fitted on. It will still be scored. The `
-           + `model was fitted on births to ${TRAIN.to} and measured on couples born after who have since died, `
-           + `so every relationship it learned from had ended; a couple born in ${Math.max(...outside)} who `
-           + `are alive may still be together, and a relationship that has not yet had thirty years cannot reach thirty.`]
-        : [`Inside the fitted range.`, `Both years fall in ${TRAIN.from}–${TRAIN.to}, the years this model was `
-           + `measured on.`];
-  note.innerHTML = `<b>${msg[0]}</b><span>${msg[1]}</span>`;
-  note.className = ok && !outside.length ? "why" : "why bad";
-  const btn = $("#go-pair");
-  if (btn) btn.disabled = !ready || !ok;
-}
-
-// The worked examples are real astronomy on the two dates in the controls, not stored text: the sexagenary year
-// is arithmetic on the year, the Long Count arithmetic on the Julian day, and everything else comes from the
-// same ephemeris the model runs on. Recomputed whenever the pair changes, because an example that does not
-// follow the inputs is decoration.
-async function refreshWorked() {
-  if (!ready) return;
-  const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
-  try {
-    WORKED = JSON.parse(await py.runPythonAsync(
-      `import json, runner; json.dumps(runner.worked_examples(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
-  } catch (e) {
-    // A failed example must not blank the table it lives in — the table is the measurement, this is the gloss.
-    WORKED = {};
-    console.warn("worked examples unavailable", e);
-  }
-  redrawTraditions();
-}
-
-function render(i) {
-  // The headline number is the METRIC — the mean of the 15 per-cell AUCs — not the out-of-fold AUC on clean
-  // dates. Those differ, and showing one under the other's caption is how a page ends up quietly overstating
-  // its own robustness. Both are displayed, each with its own label.
-  const bmk = (i.benchmark || {});
-  // THE HEADLINE PREFERS THE HELD-OUT NUMBER and says which one it is showing. The precision grid was retired
-  // when the test set became day-precision only, so `benchmark15` is now absent and this used to fall through
-  // to `i.auc` — which was the in-training selection AUC, an optimistic score, displayed under a label about a
-  // grid that no longer exists. Both halves of that were wrong.
-  const head = bmk.benchmark15 != null ? bmk.benchmark15
-             : (i.heldout ? i.heldout.auc : i.auc);
-  const headLabel = bmk.benchmark15 != null
-    ? "benchmark: row-count-weighted mean AUC over the precision grid"
-    : (i.heldout
-        ? `held-out AUC on ${Number(i.heldout.n || 0).toLocaleString()} couples born after the training years`
-        : "in-training selection AUC — optimistic, not a performance estimate");
-  const lab = document.querySelector("#s-auc + span");
-  if (lab) lab.textContent = headLabel;
-  const base = bmk.reference15 != null ? bmk.reference15
-             : (i.heldout && i.heldout.era_rule != null ? i.heldout.era_rule
-               : (i.baseline ? Object.values(i.baseline)[0] : null));
-  const baseLab = document.querySelector("#s-base + span");
-  if (baseLab && bmk.reference15 == null && i.heldout && i.heldout.era_rule != null) {
-    baseLab.textContent = "the era rule on the same held-out couples — the bar that matters";
-  }
-  $("#s-auc").textContent = fmt(head);
-  // Labelled "AUC when both dates are full", so it must be that grid cell — not the out-of-fold CV score,
-  // which is a different measurement on a different half of the data and reads about 0.01 lower.
-  $("#s-clean").textContent = fmt((bmk.cells && bmk.cells["full|full"]) ? bmk.cells["full|full"].stack : null);
-  $("#s-base").textContent = fmt(base);
-  $("#s-lift").textContent = (head != null && base != null)
-    ? (head - base >= 0 ? "+" : "") + fmt(head - base) : "—";
-  $("#s-n").textContent = i.n ? i.n.toLocaleString() : "—";
-  $("#s-trad").textContent = (i.tradition_auc ? Object.keys(i.tradition_auc).length : i.traditions.length);
-
-  window.__rate = i.rate;
-  const perTrad = {};
-  (i.base || []).forEach(b => { perTrad[b.slug] = (perTrad[b.slug] || 0) + 1; });
-  // WHAT EACH TRADITION IS. Written against the block names the model itself carries, so every claim here can
-  // be checked against the rows below it rather than believed. The worked examples are computed in the browser
-  // from the two dates on screen and land asynchronously, so the table keeps a redraw hook rather than being
-  // built once and frozen.
-  const TRAD = {"harmonics": ["The geometry of the two charts, with no culture attached", "Not a tradition but the raw relationship between the two skies: contacts in ecliptic latitude, parallels of declination and out-of-bounds bodies, and each planet's speed — stationary, applying or separating."], "lunar_calendrical": ["Eclipse and lunation cycles", "The long repeating periods of the Sun–Moon–Earth system: the Saros and Inex eclipse cycles, the Metonic and Callippic calendar cycles, and the computus that fixes Easter. Plus the synodic phase of all 45 body pairs at each birth and the difference between them."], "uranian": ["The Hamburg School and its hypothetical planets", "Eight hypothetical bodies — Cupido, Hades, Zeus, Kronos, Apollon, Admetos, Vulkanus, Poseidon — placed on the 360°, 90°, 45° and 22.5° dials, with the cross-chart distances between them and the specific “planetary pictures” this school reads for marriage and children."], "babylonian_egyptian": ["Babylonian goal-years and the Egyptian civil calendar", "The goal-year periods Babylonian astronomers used to predict a planet's return, taken as circular phases; the schematic 360-day year beside the 365-day Egyptian civil calendar that drifts against it; and the 36 decans that divide the sky into ten-day segments."], "african": ["Heliacal risings of the southern year, and Sirius", "The first dawn appearance of Isilimela (the Pleiades) and Naka, which open the agricultural year across southern Africa; the Sothic rising of Sirius and its elongation from the Sun; and the Dogon sigui, a sixty-year ceremony, alongside the orbital phase of Sirius B."], "mesoamerican": ["The Maya Long Count and the Calendar Round", "Long Count components and the katun wheel, distance numbers — the intervals Maya inscriptions use to step between dates — and the 365-day Haab with the Calendar Round and its year bearer."], "indigenous_americas": ["Northern skywatching: the revolving pair, the morning star", "Diné Náhookǫs, the revolving pair turning about the north star, evaluated at midnight; the Pawnee morning and evening stars; and a Woodland moon count taken from the solstice."], "aboriginal_australian": ["Australian Aboriginal astronomies", "Visibility classes for named stars at each birth; the solar phase of the Emu in the Sky, the dark constellation whose changing orientation marks the season; and Barnumbirr, Venus as the morning star."], "modern_western": ["Twentieth-century relationship charts", "The Davison chart — one chart for the midpoint in time between two births — set against the composite of midpoints, including where the two methods disagree, plus aspect patterns in each chart."], "hellenistic": ["Greek astrology as Ptolemy left it", "Ptolemaic aspects at their classical orbs of 2°, 4°, 6° and 12°; essential dignity — whether a planet sits in its own sign, exile or fall; and the hermetic lots, taken circularly."], "persian_arabic": ["Reception, the lots, and al-Bīrūnī", "Reception and mutual reception, where two planets each occupy a sign the other rules; the Arabic lots with the dignities of their rulers; and al-Bīrūnī's distinction between an aspect applying and one separating."], "vedic_core": ["Jyotiṣa: nakṣatras, vargas, graha states", "The 27 nakṣatras and their 108 padas as circular quantities; the divisional charts D1, D2, D3, D12, D30 and D60; and graha states with avasthā, the conditions a planet is held to be in."], "vedic_ashtakavarga": ["Aṣṭakavarga and ṣaḍbala", "Bhinnāṣṭakavarga scores for seven grahas across twelve signs, and the six strengths: sthāna bala in five components, cheṣṭa bala, and the iṣṭa and kaṣṭa phala derived from them."], "vedic_match": ["The marriage-matching system itself", "Aṣṭakūṭa — the eight-fold kūṭa score used to judge a match — computed under a ±6° smear on the Moon to reflect an unknown birth time, the nakṣatra pair taken as a low-rank vector, and kuja doṣa."], "chinese": ["The sexagenary cycle and the five phases", "Stem-and-branch positions in the sixty-year cycle as circular quantities with the offsets between the two births; the generating and overcoming relations between each partner's elements, with nāyīn and the life-stage sequence; and the 28 xiù, measured as equal divisions from Spica."], "east_asian_deep": ["Korean saju and Mongolian zurkhai", "The ten gods (sipseong) read across the four pillars of saju, with gyeokguk structure and sin-gang strength; and Mongolian zurkhai's sixty-year jaran with the Tsagaan Sar year boundary."], "tibetan_seasia": ["Tibetan, Burmese and Javanese reckoning", "The Tibetan rabjung cycle as animal crossed with element; Burmese mahabote, built from the weekday of birth and a remainder of the birth year; and the Javanese pawukon, several week-cycles of different lengths running at once."], "polynesian": ["Māori maramataka and Hawaiian mahina", "The named nights of the lunar month. Neither calendar treats the cycle as smooth: the nights are sorted into classes with opposite reputations — Whiro and Mutuwhenua are the dark, unproductive nights, the Tangaroa nights the most productive — and the Hawaiian month is three ten-night anahulu with the ʻOle and Kāloa nights recurring inside them. Both traditions begin the year from the heliacal rising of the Pleiades, Matariki or Makaliʻi, with Puanga (Rigel) standing in where the Pleiades sit too low, so &ldquo;where in the year&rdquo; is anchored to a star rather than a solstice. The elongation these nights are counted from is not contributed here — it is already computed as the synodic phase and as tithi — so these blocks carry only the classes, the anahulu and the star anchor."], "numerology": ["Numerology: Pythagorean and Chaldean", "The one tradition here that needs no sky. Every quantity is arithmetic on the digits of the date: the Life Path (the whole date reduced to a single figure, with 11, 22 and 33 kept as master numbers), the Birthday and Attitude numbers, each date component reduced on its own, and the same date under the Chaldean rule. For the pair: the ordered Life Path combination, whether the two fall in the same 1-5-7 / 2-4-8 / 3-6-9 compatibility group, the relationship number (both Life Paths summed and reduced again), and each partner's Personal Year in the other's birth year and at the Davison midpoint. Name numerology is absent, since there is no name in the data. It is worth having beside the astrological traditions because the digit-sum of a year is almost decorrelated from the year itself: 1899 and 1900 sit next to each other in time and have digit sums 27 and 10, so numerology cannot read the calendar the way a long-baseline cycle can."]};
-
-  const ta = i.tradition_auc || {};
-  // Fall back to the per-block scores the model always carries. `tradition_auc` was absent from a shipped
-  // model and this table rendered ZERO rows — a whole section of the page silently blank, because an empty
-  // object is a perfectly good object.
-  const derived = {};
-  (i.base || []).forEach(b => {
-    derived[b.slug] = Math.max(derived[b.slug] || 0, b.auc || 0);
-  });
-  const usingDerived = !Object.keys(ta).length;
-  const src = usingDerived ? derived : ta;
-  const rows = Object.entries(src).sort((a, b) => b[1] - a[1]);
-  const lo = Math.min(...rows.map(r => r[1]), 0.5), hi = Math.max(...rows.map(r => r[1]), 0.6);
-  const blocksOf = {};
-  (i.base || []).forEach(b => { (blocksOf[b.slug] = blocksOf[b.slug] || []).push(b); });
-  const drawTraditions = () => { $("#trad-tab tbody").innerHTML = rows.map(([k, v]) => {
-    const w = Math.max(2, 100 * (v - lo) / Math.max(1e-9, hi - lo));
-    const n = perTrad[k] || "";
-    const t = TRAD[k] || ["", ""];
-    const bl = (blocksOf[k] || []).slice().sort((x, y) => y.auc - x.auc)
-      // Never index straight into a field the page did not put there itself. A missing `name` threw inside
-      // this map and blanked every section that renders after it.
-      .map(b => `<li><span class="n">${fmt(b.auc)}</span> ${String(b.name || b.key || b.slug || "")
-        .replace(/^[a-z0-9+]+:\s*/i, "")}</li>`)
-      .join("");
-    const wk = (WORKED[k] || []).map(x => `<li>${x}</li>`).join("");
-    return `<tr><td><details><summary><b>${t[0] || k.replace(/_/g, " ")}</b>
-        <span class="note" style="display:block">${k.replace(/_/g, " ")}</span></summary>
-        <p class="note" style="margin:8px 0 6px">${t[1]}</p>
-        <div class="worked"><b>Worked for this pair</b><ul>${wk
-          || "<li class=\"note\">computing…</li>"}</ul></div>
-        <ul class="blocklist">${bl}</ul></details></td>
-      <td class="n">${fmt(v)}</td>
-      <td class="n">${n || ""}</td><td><div class="bar"><i style="width:${w}%"></i></div></td></tr>`;
-  }).join(""); };
-  drawTraditions();
-  // The window the model declares wins over the fallback, and every control is re-clamped to it.
-  if (i.train_window && i.train_window.from && i.train_window.to) {
-    TRAIN = { from: Number(i.train_window.from), to: Number(i.train_window.to) };
-  }
-  // What can be computed comes from the asset the page actually loaded, capped at the present year.
-  if (i.yearFrom && i.yearTo) {
-    WIN = { from: Math.max(1600, Number(i.yearFrom) + 2),
-            to: Math.min(Number(i.yearTo) - 2, new Date().getFullYear()),
-            maxGap: WIN.maxGap };
-  }
-  applyWindow();
-  redrawTraditions = () => drawTraditions();
-  $("#trad-missing").innerHTML =
-    (usingDerived
-      ? "<b>Each figure is that tradition's strongest single block</b>, out-of-fold — this model build did not "
-        + "record a stacked per-tradition score. "
-      : "Each figure is that tradition's own blocks stacked and scored alone. ")
-    + "Absent by necessity, not by choice: electional astrology, Vedic vivaha muhurta and wedding-day transits "
-    + "all need the date the relationship began, which is not an input. Houses and astrocartography need a birthplace, "
-    + "which is not an input either.";
-
-  const bm = i.benchmark || {};
-  const cells = bm.cells || {};
-  const LV = ["full", "month", "year", "absent"];
-  const LABEL = { full: "full date", month: "month only", year: "year only", absent: "no date" };
-  const vals = Object.values(cells).map(c => c.stack);
-  if (vals.length) {
-    const lo = Math.min(...vals), hi = Math.max(...vals);
-    // one hue, light to dark, over the observed range — a magnitude scale, not a rainbow
-    const shade = v => {
-      const t = (v - lo) / Math.max(1e-9, hi - lo);
-      return `background:color-mix(in oklab, var(--blue) ${Math.round(12 + 62 * t)}%, var(--bg2))`;
-    };
-    // The key is `older|younger` in that order, the same order as the dataset's columns and the metric's
-    // definition. Reading it the other way round transposes the whole matrix and still looks plausible, which
-    // is precisely how a published dataset ended up claiming a column order it did not have.
-    $("#grid-tab thead").innerHTML =
-      `<tr><th style="text-align:right">older \u2193 &nbsp; younger \u2192</th>`
-      + LV.map(w => `<th class="n">${LABEL[w]}</th>`).join("") + `</tr>`;
-    $("#grid-tab tbody").innerHTML = LV.map(m =>
-      `<tr><th style="text-align:right;color:var(--ink2)">${LABEL[m]}</th>` + LV.map(w => {
-        const c = cells[`${m}|${w}`];
-        // A blank means the cell is not part of the metric, and the model says which ones those are.
-        if (!c) return `<td class="n" title="${(bm.excluded || []).includes(`${m}|${w}`)
-          ? "excluded from the metric — see the note below the table" : "not scored"}">—</td>`;
-        return `<td class="n" style="${shade(c.stack)}"><b>${fmt(c.stack)}</b></td>`;
-      }).join("") + `</tr>`).join("");
-    const rows = LV.flatMap(m => LV.map(w => [m, w, cells[`${m}|${w}`]])).filter(r => r[2]);
-    const mxl = Math.max(...rows.map(r => r[2].lift));
-    $("#grid-detail tbody").innerHTML = rows.map(([m, w, c]) =>
-      `<tr><td>${LABEL[m]}</td><td>${LABEL[w]}</td><td class="n">${fmt(c.stack)}</td>
-       <td class="n">${fmt(c.baseline)}</td>
-       <td class="n">${(c.lift >= 0 ? "+" : "") + fmt(c.lift)}</td>
-       <td><div class="bar"><i style="width:${Math.max(2, 100 * c.lift / mxl)}%"></i></div></td></tr>`
-    ).join("");
-    $("#grid-note").textContent =
-      `${bm.n_rows ? bm.n_rows.toLocaleString() : "—"} held-out couples, each scored in every cell. `
-      + `The benchmark is the row-count-weighted mean of those ${Object.keys(cells).length} AUCs: `
-      + `${fmt(bm.benchmark15)}, against ${fmt(bm.reference15)} for the signed-gap reference over the same `
-      + `cells. Two of the sixteen combinations are excluded — `
-      + `${(bm.excluded || []).join(" and ")}: with neither date there is no input at all to rank on, and `
-      + `both dates known only to the month is a case the records essentially never present (18 real pairs `
-      + `out of 107,698, where an AUC is noise).`;
-  } else {
-    $("#grid-note").textContent = "this model build did not record the precision grid";
-  }
-
-  $("#pills").innerHTML = [
-    `${i.nbase} base models`, `${i.days.toLocaleString()} days of ephemeris`,
-    `${i.bodies} bodies`, `${i.yearFrom}–${i.yearTo}`, i.hour || "", i.contract || "",
-  ].filter(Boolean).map(t => `<span class="pill">${t}</span>`).join("");
-  log(`ready — ${i.traditions.length} tradition modules imported, ${i.nbase} base models, `
-    + `${i.days.toLocaleString()} days of ephemeris. Nothing precomputed.`);
-}
-
-// A DATE THAT CAN SAY "I DO NOT KNOW". `<input type="date">` cannot express a partial date, and a third of the
-// training data is partial: an unknown component is written `00`, so `1889-00-00` is a year and `1889-04-00` a
-// month. The control therefore holds its three parts as the state, and the string is composed FROM them — never
-// parsed back out of a combined value, which is how a multi-part control silently discards what was picked.
-// Abbreviated because the widest full name ("September") sets the column width on every screen, and a date
-// control that needs 9em for a month cannot sit on one row on a phone.
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function dateControl(host, year, month, day) {
-  const opts = (n, labels, sel) =>
-    [`<option value="00">—</option>`].concat(
-      Array.from({ length: n }, (_, i) => {
-        const v = String(i + 1).padStart(2, "0");
-        return `<option value="${v}"${v === sel ? " selected" : ""}>${labels ? labels[i] : i + 1}</option>`;
-      })).join("");
-  host.innerHTML =
-    `<input class="dy" type="number" min="${WIN.from}" max="${WIN.to}" step="1" value="${year}" `
-    + `aria-label="year">`
-    + `<select class="dm" aria-label="month">${opts(12, MONTHS, month)}</select>`
-    + `<select class="dd" aria-label="day">${opts(31, null, day)}</select>`;
-}
-
-function readDate(host) {
-  const y = String(Math.trunc(Number(host.querySelector(".dy").value) || 0)).padStart(4, "0");
-  let m = host.querySelector(".dm").value;
-  let d = host.querySelector(".dd").value;
-  // Precision is monotone: a day cannot be known when the month is not. Saying so here rather than letting an
-  // impossible pair reach the model, which would compute a chart for a day it was told nothing about.
-  if (m === "00") d = "00";
-  const dim = m === "00" ? 31 : new Date(Number(y), Number(m), 0).getDate();
-  if (d !== "00" && Number(d) > dim) d = String(dim).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-// Derived from the window, so a change to the training years cannot leave the page offering dates it will
-// then refuse — which is exactly what happened when the window moved to 1800-1950 and these stayed at 1994.
-dateControl($("#a-dob"), TRAIN.from + 89, "04", "16");
-dateControl($("#b-dob"), TRAIN.from + 93, "07", "08");
-
-// Clamp and re-validate on every interaction, then recompute the examples so what is shown follows the inputs.
-for (const host of [$("#a-dob"), $("#b-dob")].filter(Boolean)) {
-  for (const ev of ["change", "input"]) {
-    host.addEventListener(ev, () => {
-      const y = host.querySelector(".dy");
-      if (y && y.value !== "" && String(clampYear(y.value)) !== String(y.value)) {
-        y.value = clampYear(y.value);
-        y.dataset.clamped = "1";
-      }
-      showPairValidity();
-      if (ev === "change") refreshWorked();
-    });
-  }
-}
-for (const id of ["#f-self", "#f-from", "#f-to"]) {
-  const el = $(id);
-  if (el) el.addEventListener("change", () => { el.value = clampISO(el.value, el.value); });
-}
-
-$("#go-pair").onclick = async () => {
-  if (!ready) return;
-  const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
-  refreshWorked();
-  $("#pair-out").innerHTML = `<p class="note">computing both charts and every tradition…</p>`;
-  const r = JSON.parse(await py.runPythonAsync(
-    `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
-  if (!r.ok) { $("#pair-out").innerHTML = `<p class="note">${r.why}</p>`; return; }
-  const bt = Object.entries(r.by_tradition).sort((x, y) => y[1] - x[1]);
-  const mx = Math.max(...bt.map(x => x[1]));
-  $("#pair-out").innerHTML = `
-    <p style="margin:18px 0 4px"><span class="big">${pct(r.p)}</span></p>
-    <p class="note" style="margin:0 0 14px">the model's probability that a relationship between these two lasts
-      thirty years or longer — against a training-set rate of ${pct(window.__rate)}</p>
-    ${r.extrapolating ? `<p class="note warn" style="margin:-8px 0 14px">This pair falls outside
-      ${r.train_window[0]}–${r.train_window[1]}, the years the model was fitted on, so the number above is an
-      extrapolation. The model was fitted on births to ${r.train_window[1]} and measured on couples born after
-      who have since died, so every relationship it learned from had ended; for a living couple born later, a
-      relationship may still be running, and one that has not yet had thirty years cannot reach thirty.</p>` : ""}
-    <div class="scroll"><table><thead><tr><th>Tradition says</th><th>Relative</th><th style="width:44%"></th>
-      </tr></thead><tbody>${bt.map(([k, v]) =>
-        `<tr><td>${k.replace(/_/g, " ")}</td><td class="n">${pct(v)}</td>
-         <td><div class="bar"><i style="width:${Math.max(2, 100 * v / mx)}%"></i></div></td></tr>`
-      ).join("")}</tbody></table></div>
-    <p class="note">These are the mean base-model probabilities per tradition. They describe where the
-      number comes from; they are not its parts, because the meta model is not additive over traditions.</p>`;
-};
-
-$("#stop").onclick = () => { stopFlag = true; };
-
-$("#go-find").onclick = async () => {
-  if (!ready) return;
-  stopFlag = false;
-  $("#go-find").disabled = true; $("#stop").disabled = false;
-  // Clamp before planning. The old path scanned the whole range and then reported that none of its 5,114
-  // dates could be scored — all of the work, none of the answer.
-  const self = clampISO($("#f-self").value, `${TRAIN.from + 89}-04-16`);
-  const from = clampISO($("#f-from").value, `${TRAIN.from + 93}-01-01`);
-  const to = clampISO($("#f-to").value, `${TRAIN.from + 95}-12-31`);
-  // Clamping two out-of-window endpoints can land them on the same day, which is a legal range of one
-  // candidate and a useless one. Keep a span: pull `to` forward to the end of the window rather than handing
-  // back a search with nothing to search.
-  let to2 = to;
-  if (to2 <= from) to2 = `${WIN.to}-12-31`;
-  $("#f-self").value = self; $("#f-from").value = from; $("#f-to").value = to2;
-  const to_ = to2;
-  const step = $("#f-step").value;
-  const plan = JSON.parse(await py.runPythonAsync(
-    `import json, runner; json.dumps(runner.search_plan(${JSON.stringify(self)}, ${JSON.stringify(from)},
-      ${JSON.stringify(to_)}, ${step}))`));
-  let all = [], dropped = 0, warnings = [];
-  const t0 = performance.now();
-  if (plan.scorable === 0) {
-    $("#find-out").innerHTML = `<p class="note">none of the ${plan.candidates.toLocaleString()} dates in
-      that range can be scored: both births must fall in ${plan.range[0]}–${plan.range[1]} and be no more
-      than ${plan.maxGap} years apart.</p>`;
-    $("#go-find").disabled = false; $("#stop").disabled = true;
-    return;
-  }
-  for (let b = 0; b < plan.batches; b++) {
-    if (stopFlag) break;
-    $("#find-out").innerHTML = `<p class="note">batch ${b + 1} of ${plan.batches} —
-      ${all.length.toLocaleString()} of ${plan.scorable.toLocaleString()} scorable candidates done, each
-      one computed from scratch${plan.unscorable ? ` · ${plan.unscorable.toLocaleString()} of the
-      ${plan.candidates.toLocaleString()} dates are out of range` : ""}</p>`;
-    const r = JSON.parse(await py.runPythonAsync(
-      `import json, runner; json.dumps(runner.search_batch(${JSON.stringify(self)},
-        ${JSON.stringify(from)}, ${JSON.stringify(to_)}, ${step}, ${b}, ${plan.batch}))`));
-    all = all.concat(r.rows); dropped += r.dropped || 0;
-    if (r.warning) warnings.push(r.warning);
-  }
-  const secs = (performance.now() - t0) / 1000;
-  all.sort((x, y) => y.p - x.p);
-  const top = all.slice(0, 20), mx = top.length ? top[0].p : 1;
-  $("#find-out").innerHTML = `
-    <p class="note">${all.length.toLocaleString()} candidates scored in ${secs.toFixed(1)}s
-      ${dropped ? ` · ${dropped.toLocaleString()} of the ${plan.candidates.toLocaleString()} dates were
-      not scorable (outside ${plan.range[0]}–${plan.range[1]}, or more than ${plan.maxGap} years from your
-      own date) — counted here rather than dropped quietly` : ""}
-      ${stopFlag ? " · stopped early, so this ranking covers only what was scored" : ""}</p>
-    ${warnings.map(w => `<p class="note">${w}</p>`).join("")}
-    <div class="scroll"><table><thead><tr><th>#</th><th>Birth date</th><th>Score</th>
-      <th style="width:40%"></th></tr></thead><tbody>${top.map((r, i) =>
-      `<tr><td class="n">${i + 1}</td><td>${r.date}</td><td class="n">${pct(r.p)}</td>
-       <td><div class="bar"><i style="width:${Math.max(2, 100 * r.p / mx)}%"></i></div></td></tr>`
-      ).join("")}</tbody></table></div>
-    <p class="note">A ranking of what the model says, over the dates you asked for. The spread between the
-      best and worst candidate is ${all.length ? pct(top[0].p - all[all.length - 1].p) : "—"} — read the
-      order, not the certainty.</p>`;
-  $("#go-find").disabled = false; $("#stop").disabled = true;
-};
-
-boot().catch(e => { log("failed: " + e.message); console.error(e); });
-</script>
+</body>
+</html>

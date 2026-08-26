@@ -275,6 +275,174 @@ def features(his, her, CA=None, CB=None):
             F[f"{tag}_house={h - 1}"] = 1.0
             if h in (12, 1, 2):
                 F[f"{tag}_sadesati"] = 1.0
+    # ── v16 additions: the aggregate-doctrine wave (guna milan, mangal, D9, Chinese relations, overlays,
+    #    harmonics) and wave 3 (luminary crosses, year pillar, personal years, biorhythms, draconic).
+    #    Label conventions reproduce the training one-hots exactly.
+    VASHYA_T = [1,1,2,0,1,2,2,0,1,3,3,2]
+    VARNA_T = [1,2,3,0,1,2,3,0,1,2,3,0]
+    LORDS_T = [4,5,2,1,0,2,5,4,3,6,6,3]
+    FRIEND_T = {(0,1),(1,0),(0,3),(3,0),(0,4),(4,0),(1,2),(2,1),(5,6),(6,5),(2,5),(5,2),(3,4),(4,3)}
+    GANA_T = [0,1,2,1,0,1,0,0,2,2,1,1,0,2,0,2,0,2,2,1,1,0,2,2,1,1,0]
+    NADI_T = [0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2]
+    YONI_T = [0,1,2,3,3,4,5,5,6,7,7,8,9,10,8,10,11,11,12,13,12,0,1,4,9,2,6]
+    YONI_EN = {(0,7),(1,8),(2,9),(3,10),(4,11),(5,12),(6,13)}
+    if CA["moon"] == CA["moon"] and CB["moon"] == CB["moon"]:
+        na_g, nb_g = nak_i(CA["moon"]), nak_i(CB["moon"])
+        ra_g, rb_g = sign_i(CA["moon"]), sign_i(CB["moon"])
+        varna = 1.0 if VARNA_T[rb_g] >= VARNA_T[ra_g] else 0.0
+        vd = abs(VASHYA_T[ra_g] - VASHYA_T[rb_g])
+        vashya = 2.0 if vd == 0 else (1.0 if vd == 1 else 0.0)
+        t1 = ((nb_g - na_g) % 27 + 1) % 9; t2 = ((na_g - nb_g) % 27 + 1) % 9
+        tara = 0.0 if (t1 in (3, 5, 7) or t2 in (3, 5, 7)) else 3.0
+        ya_, yb_ = YONI_T[na_g], YONI_T[nb_g]
+        yoni = 4.0 if ya_ == yb_ else (0.0 if (min(ya_, yb_), max(ya_, yb_)) in YONI_EN else 2.0)
+        la_, lb_ = LORDS_T[ra_g], LORDS_T[rb_g]
+        maitri = 5.0 if (la_ == lb_ or (la_, lb_) in FRIEND_T) else 1.0
+        gd = abs(GANA_T[na_g] - GANA_T[nb_g])
+        gana = 6.0 if gd == 0 else (3.0 if gd == 1 else 0.0)
+        dist = (rb_g - ra_g) % 12; dist2 = (ra_g - rb_g) % 12
+        bhak = 0.0 if (dist in (5, 7, 1, 11) or dist2 in (5, 7)) else 7.0
+        nadi = 0.0 if NADI_T[na_g] == NADI_T[nb_g] else 8.0
+        total = varna + vashya + tara + yoni + maitri + gana + bhak + nadi
+        F[f"kuta_varna={int(varna)}"] = 1.0
+        F[f"kuta_vashya={int(vashya)}"] = 1.0
+        F[f"kuta_tara={int(tara)}"] = 1.0
+        F[f"kuta_yoni={int(yoni)}"] = 1.0
+        F[f"kuta_maitri={int(maitri)}"] = 1.0
+        F[f"kuta_gana={int(gana)}"] = 1.0
+        F[f"kuta_bhakoot={int(bhak)}"] = 1.0
+        F[f"kuta_nadi={int(nadi)}"] = 1.0
+        F[f"guna_total={int(total)}"] = 1.0
+        band = 0 if total < 18 else (1 if total < 25 else (2 if total < 33 else 3))
+        F[f"guna_band={['under18_rejected','18to24_acceptable','25to32_good','33plus_excellent'][band]}"] = 1.0
+        F[f"her_moon_from_his_moon={int((rb_g - ra_g) % 12)}"] = 1.0
+    for ref in ("moon", "venus"):
+        if CA[ref] == CA[ref] and CB[ref] == CB[ref] and CA["mars"] == CA["mars"] and CB["mars"] == CB["mars"]:
+            ha_ = (sign_i(CA["mars"]) - sign_i(CA[ref])) % 12 + 1
+            hb_ = (sign_i(CB["mars"]) - sign_i(CB[ref])) % 12 + 1
+            cls = (1 if ha_ in (1, 2, 4, 7, 8, 12) else 0) * 2 + (1 if hb_ in (1, 2, 4, 7, 8, 12) else 0)
+            F[f"mangal_{ref}={['neither','her_only','his_only','both'][cls]}"] = 1.0
+    for b in ("moon", "venus"):
+        if CA[b] == CA[b] and CB[b] == CB[b]:
+            d9a = int((CA[b] % 360) // (10.0 / 3.0)) % 12; d9b = int((CB[b] % 360) // (10.0 / 3.0)) % 12
+            F[f"{b}_d9pair={SIGNS[d9a]}x{SIGNS[d9b]}"] = 1.0
+            h7a = int(((CA[b] * 7) % 360) // 30); h7b = int(((CB[b] * 7) % 360) // 30)
+            F[f"{b}_h7pair={SIGNS[h7a]}x{SIGNS[h7b]}"] = 1.0
+    SANHE = [{0, 4, 8}, {1, 5, 9}, {2, 6, 10}, {3, 7, 11}]
+    LIUHE = {(0, 1), (2, 11), (3, 10), (4, 9), (5, 8), (6, 7)}
+    XING = {(0, 3), (1, 10), (2, 5), (4, 4), (6, 6), (7, 7), (8, 11), (9, 9)}
+    LIUHAI = {(0, 7), (1, 6), (2, 5), (3, 4), (8, 11), (9, 10)}
+    PO = {(0, 9), (1, 4), (2, 11), (3, 6), (5, 8), (7, 10)}
+    REL_L = ["Clash", "Punishment", "Harm", "Break", "SixHarmony", "Trine", "Same", "None"]
+    def _relbr(x, y_):
+        if (x - y_) % 12 == 6:
+            return 0
+        if (x, y_) in XING or (y_, x) in XING or (x == y_ and (x, x) in XING):
+            return 1
+        if (min(x, y_), max(x, y_)) in LIUHAI:
+            return 2
+        if (min(x, y_), max(x, y_)) in PO:
+            return 3
+        if (x, y_) in LIUHE or (y_, x) in LIUHE:
+            return 4
+        if any(x in t and y_ in t for t in SANHE):
+            return 5
+        if x == y_:
+            return 6
+        return 7
+    GEN5 = {(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)}
+    OVR5 = {(0, 2), (2, 4), (4, 1), (1, 3), (3, 0)}
+    STEM_EL = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4]
+    def _relel(x, y_):
+        if x == y_:
+            return 0
+        if (x, y_) in GEN5:
+            return 1
+        if (y_, x) in GEN5:
+            return 2
+        if (x, y_) in OVR5:
+            return 3
+        if (y_, x) in OVR5:
+            return 4
+        return 5
+    yba_, ybb_ = (his[0] - 4) % 12, (her[0] - 4) % 12
+    F[f"year_branch_rel={REL_L[_relbr(yba_, ybb_)]}"] = 1.0
+    F[f"day_branch_rel={REL_L[_relbr(sxa % 12, sxb % 12)]}"] = 1.0
+    ELREL6 = ["Same", "HeFeedsHer", "SheFeedsHim", "HeControlsHer", "SheControlsHim", "None"]
+    F[f"daymaster_rel={ELREL6[_relel(STEM_EL[sxa % 10], STEM_EL[sxb % 10])]}"] = 1.0
+    if (min(sxa % 10, sxb % 10), max(sxa % 10, sxb % 10)) in {(0, 5), (1, 6), (2, 7), (3, 8), (4, 9)}:
+        F["stem_he_combo"] = 1.0
+    nyi_a = NAYIN[(sxa // 2) % 30]; nyi_b = NAYIN[(sxb // 2) % 30]
+    F[f"nayin_rel={ELREL6[_relel(nyi_a, nyi_b)]}"] = 1.0
+    if CA["moon"] == CA["moon"] and CB["moon"] == CB["moon"]:
+        na_g, nb_g = nak_i(CA["moon"]), nak_i(CB["moon"])
+        VEDHA_T = {(0,17),(1,16),(2,15),(3,14),(4,22),(5,21),(6,20),(7,19),(8,18),(9,26),(10,25),(11,24),(12,23)}
+        if (min(na_g, nb_g), max(na_g, nb_g)) in VEDHA_T:
+            F["vedha_pair"] = 1.0
+        cnt = (na_g - nb_g) % 27 + 1
+        if cnt in (4, 7, 10, 13, 16, 19, 22, 25):
+            F["mahendra"] = 1.0
+        if cnt > 13:
+            F["stridirgha"] = 1.0
+    for tag, C1, Cm in (("his", CA, CB), ("her", CB, CA)):
+        if Cm["moon"] == Cm["moon"]:
+            refm = sign_i(Cm["moon"])
+            for b in ("sun", "venus", "mars", "jupiter"):
+                if C1[b] == C1[b]:
+                    F[f"{tag}_{b}_from_other_moon={int((sign_i(C1[b]) - refm) % 12)}"] = 1.0
+    if CA["moon"] == CA["moon"] and CA["sun"] == CA["sun"] and CB["moon"] == CB["moon"] and CB["sun"] == CB["sun"]:
+        TCL = ["Nanda", "Bhadra", "Jaya", "Rikta", "Purna"]
+        ta_ = int(((CA["moon"] - CA["sun"]) % 360) // 12) % 5
+        tb_ = int(((CB["moon"] - CB["sun"]) % 360) // 12) % 5
+        F[f"tithiclass_pair={TCL[ta_]}x{TCL[tb_]}"] = 1.0
+        F[f"tithi_distance={int((((CA['moon'] - CA['sun']) % 360) // 12 - ((CB['moon'] - CB['sun']) % 360) // 12) % 30)}"] = 1.0
+    # wave 3
+    if CA["sun"] == CA["sun"] and CB["moon"] == CB["moon"]:
+        F[f"his_sun_her_moon_pair={SIGNS[sign_i(CA['sun'])]}x{SIGNS[sign_i(CB['moon'])]}"] = 1.0
+        ELEM4 = ("Fire", "Earth", "Air", "Water")
+        F[f"his_sunelem_her_moonelem={ELEM4[sign_i(CA['sun']) % 4]}x{ELEM4[sign_i(CB['moon']) % 4]}"] = 1.0
+    if CA["moon"] == CA["moon"] and CB["sun"] == CB["sun"]:
+        F[f"his_moon_her_sun_pair={SIGNS[sign_i(CA['moon'])]}x{SIGNS[sign_i(CB['sun'])]}"] = 1.0
+        ELEM4 = ("Fire", "Earth", "Air", "Water")
+        F[f"his_moonelem_her_sunelem={ELEM4[sign_i(CA['moon']) % 4]}x{ELEM4[sign_i(CB['sun']) % 4]}"] = 1.0
+    if CA["venus"] == CA["venus"] and CB["mars"] == CB["mars"]:
+        F[f"his_venus_her_mars_pair={SIGNS[sign_i(CA['venus'])]}x{SIGNS[sign_i(CB['mars'])]}"] = 1.0
+    if CA["mars"] == CA["mars"] and CB["venus"] == CB["venus"]:
+        F[f"his_mars_her_venus_pair={SIGNS[sign_i(CA['mars'])]}x{SIGNS[sign_i(CB['venus'])]}"] = 1.0
+    if CA["mercury"] == CA["mercury"] and CB["mercury"] == CB["mercury"]:
+        F[f"mercurypair={SIGNS[sign_i(CA['mercury'])]}x{SIGNS[sign_i(CB['mercury'])]}"] = 1.0
+    for b in ("sun", "venus"):
+        if CA[b] == CA[b] and CB[b] == CB[b]:
+            F[f"her_{b}_from_his_{b}={int((sign_i(CB[b]) - sign_i(CA[b])) % 12)}"] = 1.0
+    ysa_, ysb_ = (his[0] - 4) % 10, (her[0] - 4) % 10
+    F[f"year_stempair={STEMS[ysa_]}x{STEMS[ysb_]}"] = 1.0
+    EL5v = ["Wood", "Fire", "Earth", "Metal", "Water"]
+    yna_ = NAYIN[((his[0] - 4) % 60) // 2 % 30]; ynb_ = NAYIN[((her[0] - 4) % 60) // 2 % 30]
+    F[f"year_nayinpair={EL5v[yna_]}x{EL5v[ynb_]}"] = 1.0
+    ELREL5 = ["Same", "HeFeedsHer", "SheFeedsHim", "HeControlsHer", "SheControlsHim"]
+    r5 = _relel(STEM_EL[ysa_], STEM_EL[ysb_])
+    if r5 < 5:
+        F[f"year_elem_rel={ELREL5[r5]}"] = 1.0
+    F[f"his_personal_year_in_hers={(his[2] + his[1] + sum(int(c) for c in str(her[0])) - 1) % 9}"] = 1.0
+    F[f"her_personal_year_in_his={(her[2] + her[1] + sum(int(c) for c in str(his[0])) - 1) % 9}"] = 1.0
+    dj_ = abs(jb - ja)
+    F[f"bio_physical={dj_ % 23}"] = 1.0
+    F[f"bio_emotional={dj_ % 28}"] = 1.0
+    F[f"bio_intellectual={dj_ % 33}"] = 1.0
+    _east = lambda k: 1 if k in (1, 3, 4, 9) else 0
+    F[f"eastwest_pair={['WestxWest','WestxEast','EastxWest','EastxEast'][_east(ka_) * 2 + _east(kb_)]}"] = 1.0
+    for b in ("sun", "moon"):
+        if (CA[b] == CA[b] and CA["true_node"] == CA["true_node"]
+                and CB[b] == CB[b] and CB["true_node"] == CB["true_node"]):
+            dra = (CA[b] - CA["true_node"]) % 360; drb = (CB[b] - CB["true_node"]) % 360
+            F[f"draconic_{b}pair={SIGNS[int(dra // 30)]}x{SIGNS[int(drb // 30)]}"] = 1.0
+    for tag, C1, C2 in (("his", CA, CB), ("her", CB, CA)):
+        for b in ("sun", "moon", "venus"):
+            if C1[b] == C1[b]:
+                cant = (360.0 - C1[b]) % 360.0
+                for b2 in ("sun", "moon", "venus"):
+                    if C2[b2] == C2[b2] and arc(cant, C2[b2]) <= 3.0:
+                        F[f"{tag}_{b}_contrantiscia_other_{b2}"] = 1.0
     KAR = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"]
     for tag, C in (("his", CA), ("her", CB)):
         degs = [C[b] % 30.0 if C[b] == C[b] else float("nan") for b in KAR]

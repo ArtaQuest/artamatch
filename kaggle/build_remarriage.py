@@ -72,6 +72,38 @@ def main():
     per = (d.sort_values("dob").drop_duplicates("a")
              .set_index("a")[["dob", "aby", "ady", "asex"]])
     print(f"  {len(per):,} distinct people with a birth date", flush=True)
+    # AUDIT 2026-08-26: ~6% of persons carry MULTI-VALUED birth dates and the lexical pick above chooses
+    # the coarsest (or even a deprecated) statement. AQ_TRUTHY points at a rank-resolved sweep
+    # (qid, dob_truthy, death_truthy) fetched live: preferred > normal, deprecated never — those override.
+    tp = os.environ.get("AQ_TRUTHY")
+    if tp and os.path.exists(os.path.expanduser(tp)):
+        tt = pd.read_csv(os.path.expanduser(tp), dtype=str).set_index("qid")
+        hit = per.index.intersection(tt.index)
+        per.loc[hit, "dob"] = tt.loc[hit, "dob_truthy"]
+        tdy = pd.to_numeric(tt.loc[hit, "death_truthy"], errors="coerce")
+        per.loc[hit, "ady"] = np.where(np.isfinite(tdy), tdy, per.loc[hit, "ady"])
+        amap_d = per.dob.to_dict(); amap_y = per.ady.to_dict()
+        inA = d.a.isin(hit)
+        d.loc[inA, "dob"] = d.loc[inA, "a"].map(amap_d)
+        d.loc[inA, "ady"] = d.loc[inA, "a"].map(amap_y)
+        print(f"  {len(hit):,} persons patched to rank-resolved (truthy) birth/death dates", flush=True)
+    # OPERATOR 2026-08-26: a day-precision 1 January is kept as a REAL date only when the person's
+    # Wikipedia article states the birth as 1 January of that year (the corpus carries ~2x the natural
+    # rate of Jan-1 claims — half are import artifacts). AQ_JAN1 points at the verification sweep;
+    # verified persons are upgraded from the blanket year-only demotion back to the true date.
+    jp = os.environ.get("AQ_JAN1")
+    if jp and os.path.exists(os.path.expanduser(jp)):
+        jv = pd.read_csv(os.path.expanduser(jp), dtype=str)
+        upgraded = 0
+        for q, y in zip(jv[jv.verified == "1"].qid, jv[jv.verified == "1"].year):
+            if q in per.index and per.at[q, "dob"] == f"{y}-00-00":
+                per.at[q, "dob"] = f"{y}-01-01"
+                upgraded += 1
+        amap_d = per.dob.to_dict()
+        inA = d.a.isin(set(jv[jv.verified == "1"].qid))
+        d.loc[inA, "dob"] = d.loc[inA, "a"].map(amap_d)
+        print(f"  {upgraded} Wikipedia-verified 1-January births restored to full precision "
+              f"({int((jv.verified == '0').sum())} unverified stay year-only)", flush=True)
 
     # ── EVERY MARRIAGE OF EVERY PERSON, from both sides of each statement
     mar = pd.concat([d[["a", "b", "sy"]].rename(columns={"a": "p", "b": "q"}),
@@ -84,7 +116,16 @@ def main():
 
     # ── THE RULE: did either partner marry again AFTER this marriage began?
     d["a_later"] = [np.nansum(g) if False else 0 for g in []] if False else 0
-    idx = {p: g.sy.values for p, g in mar.groupby("p")}
+    # AUDIT 2026-08-26: the same wedding recorded on both pages with discrepant years must not count as
+    # a remarriage — collapse to ONE start per distinct spouse (validated: precision 89.8% -> 92.1% against
+    # explicit end causes; spouse-unknown marriages keep every year). AQ_NO_COLLAPSE=1 restores the old rule.
+    if os.environ.get("AQ_NO_COLLAPSE"):
+        idx = {p: g.sy.values for p, g in mar.groupby("p")}
+    else:
+        mm_ = mar[mar.q != ""]
+        idx = {p: g.groupby("q").sy.min().values for p, g in mm_.groupby("p")}
+        for p, g in mar[mar.q == ""].groupby("p"):
+            idx[p] = np.concatenate([idx.get(p, np.empty(0)), g.sy.values])
     def remarried_after(p, s):
         v = idx.get(p)
         if v is None or not np.isfinite(s):
@@ -120,6 +161,7 @@ def main():
     print(f"    (base rate among those: {truth[m].mean():.1%} artificial)")
 
     # ── the dataset: gendered, both dates, pre-1950, one row per couple
+    draw = d                                   # full statement table, kept for the recovery pass below
     d = d[d.sy.notna()]
     bdob = per.dob.reindex(d.b).to_numpy(); bsex = per.asex.reindex(d.b).to_numpy()
     # a b-side partner born outside 1500-1950 never appears as ?a, so their sex is unknown here — those rows
@@ -156,6 +198,41 @@ def main():
     ya = pd.to_numeric(out.dob_a.str[:4], errors="coerce").replace(0, np.nan)
     yb = pd.to_numeric(out.dob_b.str[:4], errors="coerce").replace(0, np.nan)
     out = out[(ya < 1950) & (yb < 1950) & (np.abs(ya - yb) <= 60) & ya.between(1400, 1950) & yb.between(1400, 1950)]
+    # AUDIT 2026-08-26: a statement with no start date CAN still be labeled when neither partner has any
+    # other marriage statement at all — nobody remarried, so the label is 0 by definition. 52% of the raw
+    # harvest was dropped for a missing start; this recovers the mono-married slice of it as definitive
+    # negatives (each such couple is its own marriage component, so split integrity holds by construction).
+    # AQ_NO_RECOVER=1 skips it.
+    if not os.environ.get("AQ_NO_RECOVER"):
+        nmar_any = pd.concat([draw[["a", "b"]].rename(columns={"a": "p", "b": "q"}),
+                              draw[["b", "a"]].rename(columns={"b": "p", "a": "q"})], ignore_index=True)
+        nmar_any = nmar_any[nmar_any.p.str.startswith("Q")].drop_duplicates(["p", "q"])
+        cnt = nmar_any.groupby("p").size()
+        miss = draw[draw.sy.isna()].copy()
+        rec = miss[(miss.a.map(cnt).fillna(9) == 1) & (miss.b.map(cnt).fillna(9) == 1)].copy()
+        rec["dob_b"] = per.dob.reindex(rec.b).to_numpy()
+        rec["bsex"] = per.asex.reindex(rec.b).to_numpy()
+        rec = rec[(rec.dob != MISSING) & pd.notna(rec.dob_b) & (rec.dob_b != MISSING)]
+        keep2 = ((rec.asex == MALE) & (rec.bsex == FEM)) | ((rec.asex == FEM) & (rec.bsex == MALE))
+        rec = rec[keep2].copy()
+        sw2 = rec.asex == FEM
+        rec_out = pd.DataFrame({
+            "dob_a": np.where(sw2, rec.dob_b, rec.dob), "dob_b": np.where(sw2, rec.dob, rec.dob_b),
+            "pid_a": np.where(sw2, rec.b, rec.a), "pid_b": np.where(sw2, rec.a, rec.b),
+            "y_rule": 0, "y_alive": 0})
+        ry_a = pd.to_numeric(rec_out.dob_a.str[:4], errors="coerce").replace(0, np.nan)
+        ry_b = pd.to_numeric(rec_out.dob_b.str[:4], errors="coerce").replace(0, np.nan)
+        rec_out = rec_out[(ry_a < 1950) & (ry_b < 1950) & (np.abs(ry_a - ry_b) <= 60)
+                          & ry_a.between(1400, 1950) & ry_b.between(1400, 1950)]
+        rec_out["pair"] = [f"{min(x,y)}|{max(x,y)}" for x, y in zip(rec_out.pid_a, rec_out.pid_b)]
+        out = pd.concat([out, rec_out], ignore_index=True).drop_duplicates("pair")
+        print(f"  +{len(rec_out):,} recovered mono-married missing-start couples (all definitive negatives)")
+    # OPERATOR 2026-08-26: AQ_FULLPREC=1 keeps only couples where BOTH dates are full precision
+    if os.environ.get("AQ_FULLPREC"):
+        fp = ((out.dob_a.str[5:7] != "00") & (out.dob_a.str[8:10] != "00")
+              & (out.dob_b.str[5:7] != "00") & (out.dob_b.str[8:10] != "00"))
+        print(f"  FULL-PRECISION GATE: {int(fp.sum()):,} of {len(out):,} couples have both dates to the day")
+        out = out[fp].copy()
     out["later_birth"] = np.fmax(pd.to_numeric(out.dob_a.str[:4], errors="coerce"),
                                  pd.to_numeric(out.dob_b.str[:4], errors="coerce"))
     print(f"\n  {len(out):,} gendered couples, both born before 1950, one row each")

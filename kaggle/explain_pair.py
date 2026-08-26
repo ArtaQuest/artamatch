@@ -186,6 +186,82 @@ def human_clause(n):
     if m: return f"His {m[1].title()} in a {m[2]} sign, hers in a {m[3]} sign"
     m = re.match(r"comp_(\w+)_(conj|square|opp|trine)_(\w+)$", n)
     if m: return f"The couple's composite {PLN(m[1])} {ASP[m[2]]} composite {PLN(m[3])}"
+    m = re.match(r"kuta_(varna|vashya|tara|yoni|maitri|gana|bhakoot|nadi)=(\d+)$", n)
+    if m:
+        KM = {"varna": "Varṇa", "vashya": "Vaśya", "tara": "Tārā", "yoni": "Yoni", "maitri": "Graha Maitrī",
+              "gana": "Gaṇa", "bhakoot": "Bhakūṭa", "nadi": "Nāḍī"}
+        return f"{KM[m[1]]} kūṭa scores {m[2]} points"
+    m = re.match(r"guna_total=(\d+)$", n)
+    if m: return f"Guṇa Milan total: {m[1]} of 36 points"
+    m = re.match(r"guna_band=(\w+)$", n)
+    if m:
+        return {"under18_rejected": "Guṇa Milan under 18 — classically rejected",
+                "18to24_acceptable": "Guṇa Milan 18–24 — classically acceptable",
+                "25to32_good": "Guṇa Milan 25–32 — classically good",
+                "33plus_excellent": "Guṇa Milan 33+ — classically excellent"}[m[1]]
+    m = re.match(r"mangal_(moon|venus)=(\w+)$", n)
+    if m:
+        who = {"neither": "neither is Manglik", "her_only": "she alone is Manglik",
+               "his_only": "he alone is Manglik", "both": "both are Manglik"}[m[2]]
+        return f"Mangal doṣa (Mars from the {m[1].title()}): {who}"
+    m = re.match(r"(moon|venus)_d9pair=(\w+)x(\w+)$", n)
+    if m: return f"Navāṁśa (D9) {m[1].title()} signs: {SIGNF[m[2]]} × {SIGNF[m[3]]}"
+    m = re.match(r"(moon|venus)_h7pair=(\w+)x(\w+)$", n)
+    if m: return f"7th-harmonic {m[1].title()} signs: {SIGNF[m[2]]} × {SIGNF[m[3]]}"
+    m = re.match(r"(year|day)_branch_rel=(\w+)$", n)
+    if m:
+        RW = {"Clash": "clash (Liu Chong)", "Punishment": "punishment (Xing)", "Harm": "harm (Liu Hai)",
+              "Break": "break (Po)", "SixHarmony": "six-harmony (Liu He)", "Trine": "trine (San He)",
+              "Same": "the same branch", "None": "no named relation"}
+        return f"Their {m[1]}-pillar branches form {RW[m[2]]}"
+    m = re.match(r"(daymaster|nayin|year_elem)_rel=(\w+)$", n)
+    if m:
+        RW = {"Same": "share one element", "HeFeedsHer": "his element feeds hers",
+              "SheFeedsHim": "her element feeds his", "HeControlsHer": "his element controls hers",
+              "SheControlsHim": "her element controls his", "None": "stand apart"}
+        base = {"daymaster": "day masters", "nayin": "Na Yin elements", "year_elem": "year elements"}[m[1]]
+        return f"Their {base} {RW[m[2]]}"
+    if n == "stem_he_combo": return "Their day stems form one of the five combinations (He)"
+    if n == "vedha_pair": return "Their nakṣatras form a Vedha (mutual obstruction) pair"
+    if n == "mahendra": return "Mahendra: his star counted from hers falls on a supportive count"
+    if n == "stridirgha": return "Strīdīrgha: his star lies more than 13 counts from hers"
+    m = re.match(r"(his|her)_(\w+)_from_other_moon=(\d+)$", n)
+    if m: return f"{He(m[1])} {PLN(m[2])} in the {int(m[3]) + 1}. sign from the other's Moon"
+    m = re.match(r"tithiclass_pair=(\w+)x(\w+)$", n)
+    if m: return f"Their tithi classes: {m[1]} × {m[2]}"
+    m = re.match(r"tithi_distance=(\d+)$", n)
+    if m: return f"Their birth Moon-phases lie {m[1]} tithis apart"
+    m = re.match(r"his_sun_her_moon_pair=(\w+)x(\w+)$", n)
+    if m: return f"His Sun {SIGNF[m[1]]} × her Moon {SIGNF[m[2]]}"
+    m = re.match(r"his_moon_her_sun_pair=(\w+)x(\w+)$", n)
+    if m: return f"His Moon {SIGNF[m[1]]} × her Sun {SIGNF[m[2]]}"
+    m = re.match(r"his_venus_her_mars_pair=(\w+)x(\w+)$", n)
+    if m: return f"His Venus {SIGNF[m[1]]} × her Mars {SIGNF[m[2]]}"
+    m = re.match(r"his_mars_her_venus_pair=(\w+)x(\w+)$", n)
+    if m: return f"His Mars {SIGNF[m[1]]} × her Venus {SIGNF[m[2]]}"
+    m = re.match(r"mercurypair=(\w+)x(\w+)$", n)
+    if m: return f"Their Mercury signs: {SIGNF[m[1]]} × {SIGNF[m[2]]}"
+    m = re.match(r"her_(\w+)_from_his_\w+=(\d+)$", n)
+    if m: return f"Her {m[1].title()} in the {int(m[2]) + 1}. sign from his"
+    m = re.match(r"his_(sun|moon)elem_her_(sun|moon)elem=(\w+)x(\w+)$", n)
+    if m: return f"His {m[1].title()} in a {m[3]} sign, her {m[2].title()} in {'an' if m[4] in ('Earth','Air') else 'a'} {m[4]} sign"
+    m = re.match(r"year_stempair=(\w+)x(\w+)$", n)
+    if m: return (f"Their year stems: {re.sub(r'([A-Z])', r' \\1', m[1]).strip()} × "
+                  f"{re.sub(r'([A-Z])', r' \\1', m[2]).strip()}")
+    m = re.match(r"year_nayinpair=(\w+)x(\w+)$", n)
+    if m: return f"Their year Na Yin elements: {m[1]} × {m[2]}"
+    m = re.match(r"(his|her)_personal_year_in_(hers|his)=(\d+)$", n)
+    if m: return f"{He(m[1])} personal year in the other's birth year: {int(m[3]) + 1}"
+    m = re.match(r"bio_(physical|emotional|intellectual)=(\d+)$", n)
+    if m:
+        L = {"physical": 23, "emotional": 28, "intellectual": 33}[m[1]]
+        return f"Biorhythm: their {m[1]} cycles sit {m[2]} of {L} days apart"
+    m = re.match(r"eastwest_pair=(\w+)x(\w+)$", n)
+    if m: return f"Feng-shui groups: {m[1]} × {m[2]}".replace("x", " × ")
+    m = re.match(r"draconic_(sun|moon)pair=(\w+)x(\w+)$", n)
+    if m: return f"Draconic {m[1].title()} signs: {SIGNF[m[2]]} × {SIGNF[m[3]]}"
+    m = re.match(r"(his|her)_(\w+)_contrantiscia_other_(\w+)$", n)
+    if m: return f"{He(m[1])} {PLN(m[2])} contra-antiscia (equinox mirror) on the other's {PLN(m[3])}"
     return n
 
 FAMWHAT = [
@@ -230,7 +306,26 @@ FAMWHAT = [
  (r"gap_", "The age gap itself — the slowest 'aspect' of all: the phase difference of the two birth moments."),
  (r"same_birth", "Born on the same day or month — calendar synastry."),
  (r"atmakaraka|darakaraka", "Jaimini astrology: the planet with the highest degree in its sign is the soul significator (Ātmakāraka), the lowest the spouse significator (Dārakāraka)."),
- (r"elempair", "The four elements of the signs (fire, earth, air, water) paired between the partners."),
+ (r"elempair|sunelem|moonelem", "The four elements of the signs (fire, earth, air, water) paired between the partners."),
+ (r"^kuta_|^guna_", "Guṇa Milan: the Vedic 36-point match score — eight kūṭas (varṇa 1, vaśya 2, tārā 3, yoni 4, maitrī 5, gaṇa 6, bhakūṭa 7, nāḍī 8) summed; under 18 is classically rejected."),
+ (r"^mangal_", "Mangal (Kuja) doṣa: Mars in the 1st, 2nd, 4th, 7th, 8th or 12th from the Moon marks a Manglik; tradition matches Manglik with Manglik."),
+ (r"_d9pair", "The navāṁśa (D9): the ninth divisional chart, read above all for marriage."),
+ (r"_h7pair", "The 7th harmonic (Addey): the chart multiplied by seven, the harmonic of union."),
+ (r"_branch_rel", "The Chinese almanac's branch relations: six harmonies, trines, clashes, harms, punishments and breaks between the pillars."),
+ (r"_rel=|stem_he_combo", "The five-element cycle between the two pillars: feeding (sheng), controlling (ke), or the five stem combinations."),
+ (r"vedha|mahendra|stridirgha", "Further nakṣatra tests of the Vedic match: Vedha obstruction pairs, the Mahendra counts, Strīdīrgha distance."),
+ (r"_from_other_moon", "Chandra-lagna overlay: the partner's planet counted from one's Moon sign, house by house."),
+ (r"tithiclass|tithi_distance", "The tithi classes (Nandā, Bhadrā, Jayā, Riktā, Pūrṇā) and the distance between the two birth Moon-phases."),
+ (r"his_sun_her_moon|his_moon_her_sun", "The luminary exchange: his Sun against her Moon and the reverse — the classical marriage axis."),
+ (r"venus_her_mars|mars_her_venus", "The Venus–Mars cross: the attraction polarity between the charts."),
+ (r"mercurypair", "The Mercury pair: how the two minds meet, sign against sign."),
+ (r"_from_his_", "Whole-sign distance between the same planet in the two charts."),
+ (r"year_stempair|year_nayin", "The year pillar: the birth years' heavenly stems and their Na Yin elements, paired."),
+ (r"personal_year", "Numerology's personal-year cycle, each partner's year read in the other's birth year."),
+ (r"^bio_", "Biorhythm matching: the 23-, 28- and 33-day cycles started at birth; the offset between two people is fixed for life."),
+ (r"eastwest", "Feng-shui East/West group matching, from the Kua numbers."),
+ (r"draconic_", "The draconic zodiac: each chart referred to its own lunar node — read for soul-level affinity."),
+ (r"contrantiscia", "Contra-antiscia: points mirrored across the equinox axis, the second of the two classical mirrors."),
  (r"modepair", "The three modes (cardinal, fixed, mutable) paired between the partners."),
  (r"polpair", "The yang/yin polarity of the signs paired between the partners."),
 ]

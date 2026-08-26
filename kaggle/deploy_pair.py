@@ -7,11 +7,13 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.expanduser("~/Studio/artamatch/research/sidereal"))
 sys.path.insert(0, os.path.expanduser("~/Studio/artamatch/kaggle"))
 import giant_ensemble as G, v6_fit as V6, v7_fit as V7, v8_fit as V8, v13_fit as V13
+import v15_families as F15
+import v17_families as F17
 try:
     import v14_fit as V14
 except Exception:
     V14 = None
-D = os.path.expanduser("~/.artamatch-dev/remar_sh")
+D = os.path.expanduser(os.environ.get("AQ_D", "~/.artamatch-dev/remar_sh"))
 
 M = json.load(open(sys.argv[1]))
 clauses = sorted({p for k in M["weights"] for p in k.split(" AND ")})
@@ -29,6 +31,10 @@ def build(df, half):
     ex1 = set(n6 + nA + nL)
     XN, nN = V13.new_singles(df, Z, half, ex1)
     Xs, ns = [X6, XA, XL, XN], n6 + nA + nL + nN
+    if any(c not in set(ns) for c in clauses):
+        XF, nF = F15.families15(df, Z, half)
+        XW, nW = F17.families17(df, Z, half)
+        Xs += [XF, XW]; ns += nF + nW
     if V14 is not None and any(c not in set(ns) for c in clauses):
         XM, nM = V14.newer_singles(df, Z, half, ex1 | set(nN))
         Xs.append(XM); ns += nM

@@ -443,6 +443,61 @@ def features(his, her, CA=None, CB=None):
                 for b2 in ("sun", "moon", "venus"):
                     if C2[b2] == C2[b2] and arc(cant, C2[b2]) <= 3.0:
                         F[f"{tag}_{b}_contrantiscia_other_{b2}"] = 1.0
+    # ── v19 additions: wave 4 (retro pairs, node/Chiron synastry, exact conjunctions, gandanta,
+    #    vargottama, Tzolkin, mansions, Nine-Star months, attitude pairs)
+    P4 = ["neither", "her_only", "his_only", "both"]
+    for b in ("venus", "mercury", "mars"):
+        sa_r = CA.get(f"__speed_{b}", float("nan")); sb_r = CB.get(f"__speed_{b}", float("nan"))
+        if sa_r == sa_r and sb_r == sb_r:
+            F[f"retro_{b}_pair={P4[(1 if sa_r < 0 else 0) * 2 + (1 if sb_r < 0 else 0)]}"] = 1.0
+    TENG2 = ("sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto")
+    ASP7 = ((0, 8, "conj"), (60, 4, "sext"), (90, 6, "square"), (120, 6, "trine"), (180, 8, "opp"),
+            (150, 3, "quinc"), (30, 3, "semisext"))
+    for x in ("true_node", "chiron"):
+        for y_ in TENG2:
+            if CA[x] == CA[x] and CB[y_] == CB[y_]:
+                a = arc(CA[x], CB[y_])
+                for t, o, lab in ASP7:
+                    if abs(a - t) <= o:
+                        F[f"his_{x}_{lab}_her_{y_}"] = 1.0
+            if CA[y_] == CA[y_] and CB[x] == CB[x]:
+                a = arc(CA[y_], CB[x])
+                for t, o, lab in ASP7:
+                    if abs(a - t) <= o:
+                        F[f"his_{y_}_{lab}_her_{x}"] = 1.0
+    for x in TENG2:
+        for y_ in TENG2:
+            if CA[x] == CA[x] and CB[y_] == CB[y_] and arc(CA[x], CB[y_]) <= 1.0:
+                F[f"his_{x}_exactconj_her_{y_}"] = 1.0
+    GW = 10.0 / 3.0
+    if CA["moon"] == CA["moon"] and CB["moon"] == CB["moon"]:
+        g_a = 1 if min((CA["moon"] % 360) % 120, 120 - (CA["moon"] % 360) % 120) <= GW else 0
+        g_b = 1 if min((CB["moon"] % 360) % 120, 120 - (CB["moon"] % 360) % 120) <= GW else 0
+        F[f"gandanta_moon_pair={P4[g_a * 2 + g_b]}"] = 1.0
+    for b in ("moon", "venus"):
+        if CA[b] == CA[b] and CB[b] == CB[b]:
+            va = 1 if int((CA[b] % 360) // 30) == int((CA[b] % 360) // GW) % 12 else 0
+            vb = 1 if int((CB[b] % 360) // 30) == int((CB[b] % 360) // GW) % 12 else 0
+            F[f"vargottama_{b}_pair={P4[va * 2 + vb]}"] = 1.0
+    if all(C[k] == C[k] for C in (CA, CB) for k in ("venus", "sun")):
+        cva = 1 if arc(CA["venus"], CA["sun"]) <= 8.5 else 0
+        cvb = 1 if arc(CB["venus"], CB["sun"]) <= 8.5 else 0
+        F[f"combust_venus_pair={P4[cva * 2 + cvb]}"] = 1.0
+    ksa_ = int((ja - 584283) % 260 % 20); ksb_ = int((jb - 584283) % 260 % 20)
+    F[f"tzolkin_signpair={ksa_ * 20 + ksb_}"] = 1.0
+    F[f"tzolkin_dist={(ksa_ - ksb_) % 20}"] = 1.0
+    F[f"xiu_dist={int((ja - jb) % 28)}"] = 1.0
+    def _ninestar_y(y_):
+        return 1 + (11 - (1 + (sum(int(c) for c in str(y_)) - 1) % 9) - 1) % 9
+    def _monthstar(y_, m_, d_):
+        ys = _ninestar_y(y_)
+        adj = (m_ - 2) if (m_ > 2 or (m_ == 2 and d_ >= 4)) else (m_ + 10)
+        first = 8.0 if ys % 3 == 1 else (2.0 if ys % 3 == 2 else 5.0)
+        return int(1 + (first - 1 - adj) % 9)
+    msa_ = _monthstar(*his); msb_ = _monthstar(*her)
+    F[f"ninestar_monthpair={(msa_ - 1) * 9 + (msb_ - 1)}"] = 1.0
+    aa_ = 1 + (his[2] + his[1] - 1) % 9; ab_ = 1 + (her[2] + her[1] - 1) % 9
+    F[f"attitude_pair={(aa_ - 1) * 9 + (ab_ - 1)}"] = 1.0
     KAR = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"]
     for tag, C in (("his", CA), ("her", CB)):
         degs = [C[b] % 30.0 if C[b] == C[b] else float("nan") for b in KAR]

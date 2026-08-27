@@ -59,7 +59,7 @@ def speed_flags(df):
                 if key not in cache:
                     try:
                         jd = SW.julday(int(v[:4]), int(v[5:7]), int(v[8:10]), 12.0)
-                        cache[key] = {b: SW.calc_ut(jd, c)[3] for b, c in _SPEED["codes"].items()}
+                        cache[key] = {b: SW.calc_ut(jd, c)[0][3] for b, c in _SPEED["codes"].items()}
                     except Exception:
                         cache[key] = {}
                 for b, sp in cache[key].items():

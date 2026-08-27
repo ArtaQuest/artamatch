@@ -197,7 +197,18 @@ def main():
     out = out.drop_duplicates("pair")
     ya = pd.to_numeric(out.dob_a.str[:4], errors="coerce").replace(0, np.nan)
     yb = pd.to_numeric(out.dob_b.str[:4], errors="coerce").replace(0, np.nan)
-    out = out[(ya < 1950) & (yb < 1950) & (np.abs(ya - yb) <= 60) & ya.between(1400, 1950) & yb.between(1400, 1950)]
+    if os.environ.get("AQ_DECEASED"):
+        # OPERATOR 2026-08-26: every deceased person is included — a couple qualifies when both were born
+        # before 1950 (a life that has run its course) OR both have a recorded death, any birth year.
+        dmap = per.ady.to_dict()
+        da_k = np.isfinite(pd.Series([dmap.get(p, np.nan) for p in out.pid_a]).to_numpy(float))
+        db_k = np.isfinite(pd.Series([dmap.get(p, np.nan) for p in out.pid_b]).to_numpy(float))
+        elig = ((ya < 1950) & (yb < 1950)) | (da_k & db_k)
+        out = out[elig & (np.abs(ya - yb) <= 60) & ya.between(1400, 2010) & yb.between(1400, 2010)]
+        print(f"  DECEASED-INCLUSION: {int((da_k & db_k & ~((ya < 1950) & (yb < 1950))).sum()):,} "
+              f"post-1950 both-deceased couples added to the pre-1950 corpus")
+    else:
+        out = out[(ya < 1950) & (yb < 1950) & (np.abs(ya - yb) <= 60) & ya.between(1400, 1950) & yb.between(1400, 1950)]
     # AUDIT 2026-08-26: a statement with no start date CAN still be labeled when neither partner has any
     # other marriage statement at all — nobody remarried, so the label is 0 by definition. 52% of the raw
     # harvest was dropped for a missing start; this recovers the mono-married slice of it as definitive
@@ -222,8 +233,16 @@ def main():
             "y_rule": 0, "y_alive": 0})
         ry_a = pd.to_numeric(rec_out.dob_a.str[:4], errors="coerce").replace(0, np.nan)
         ry_b = pd.to_numeric(rec_out.dob_b.str[:4], errors="coerce").replace(0, np.nan)
-        rec_out = rec_out[(ry_a < 1950) & (ry_b < 1950) & (np.abs(ry_a - ry_b) <= 60)
-                          & ry_a.between(1400, 1950) & ry_b.between(1400, 1950)]
+        if os.environ.get("AQ_DECEASED"):
+            rdmap = per.ady.to_dict()
+            rda = np.isfinite(pd.Series([rdmap.get(p, np.nan) for p in rec_out.pid_a]).to_numpy(float))
+            rdb = np.isfinite(pd.Series([rdmap.get(p, np.nan) for p in rec_out.pid_b]).to_numpy(float))
+            relig = ((ry_a < 1950) & (ry_b < 1950)) | (rda & rdb)
+            rec_out = rec_out[relig & (np.abs(ry_a - ry_b) <= 60)
+                              & ry_a.between(1400, 2010) & ry_b.between(1400, 2010)]
+        else:
+            rec_out = rec_out[(ry_a < 1950) & (ry_b < 1950) & (np.abs(ry_a - ry_b) <= 60)
+                              & ry_a.between(1400, 1950) & ry_b.between(1400, 1950)]
         rec_out["pair"] = [f"{min(x,y)}|{max(x,y)}" for x, y in zip(rec_out.pid_a, rec_out.pid_b)]
         out = pd.concat([out, rec_out], ignore_index=True).drop_duplicates("pair")
         print(f"  +{len(rec_out):,} recovered mono-married missing-start couples (all definitive negatives)")

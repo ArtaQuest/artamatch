@@ -262,6 +262,34 @@ def human_clause(n):
     if m: return f"Draconic {m[1].title()} signs: {SIGNF[m[2]]} × {SIGNF[m[3]]}"
     m = re.match(r"(his|her)_(\w+)_contrantiscia_other_(\w+)$", n)
     if m: return f"{He(m[1])} {PLN(m[2])} contra-antiscia (equinox mirror) on the other's {PLN(m[3])}"
+    m = re.match(r"retro_(\w+)_pair=(\w+)$", n)
+    if m:
+        who = {"neither": "neither born under it", "her_only": "she alone born under it",
+               "his_only": "he alone born under it", "both": "both born under it"}[m[2]]
+        return f"{m[1].title()} retrograde: {who}"
+    m = re.match(r"his_(\w+)_exactconj_her_(\w+)$", n)
+    if m: return f"His {PLN(m[1])} exactly conjunct her {PLN(m[2])} (within one degree)"
+    m = re.match(r"(gandanta_moon|vargottama_moon|vargottama_venus|combust_venus)_pair=(\w+)$", n)
+    if m:
+        base = {"gandanta_moon": "Moon in gaṇḍānta (the karmic knot)",
+                "vargottama_moon": "Moon vargottama (same sign in D1 and D9)",
+                "vargottama_venus": "Venus vargottama",
+                "combust_venus": "Venus combust"}[m[1]]
+        who = {"neither": "neither", "her_only": "hers only", "his_only": "his only", "both": "both"}[m[2]]
+        return f"{base}: {who}"
+    m = re.match(r"tzolkin_signpair=(\d+)$", n)
+    if m:
+        TZ = ["Imix","Ik","Akbal","Kan","Chicchan","Cimi","Manik","Lamat","Muluc","Oc","Chuen","Eb",
+              "Ben","Ix","Men","Cib","Caban","Etznab","Cauac","Ahau"]
+        v = int(m[1]); return f"Their Tzolkin day-signs: {TZ[v // 20]} × {TZ[v % 20]}"
+    m = re.match(r"tzolkin_dist=(\d+)$", n)
+    if m: return f"Their Tzolkin day-signs sit {m[1]} of 20 apart" + (" — the antipode" if m[1] == "10" else "")
+    m = re.match(r"xiu_dist=(\d+)$", n)
+    if m: return f"Their birth mansions (28 xiù) sit {m[1]} apart"
+    m = re.match(r"ninestar_monthpair=(\d+)$", n)
+    if m: return f"His Nine-Star month star {int(m[1]) // 9 + 1} × hers {int(m[1]) % 9 + 1}"
+    m = re.match(r"attitude_pair=(\d+)$", n)
+    if m: return f"Their attitude numbers: {int(m[1]) // 9 + 1} × {int(m[1]) % 9 + 1}"
     return n
 
 FAMWHAT = [
@@ -326,6 +354,14 @@ FAMWHAT = [
  (r"eastwest", "Feng-shui East/West group matching, from the Kua numbers."),
  (r"draconic_", "The draconic zodiac: each chart referred to its own lunar node — read for soul-level affinity."),
  (r"contrantiscia", "Contra-antiscia: points mirrored across the equinox axis, the second of the two classical mirrors."),
+ (r"^retro_", "A planet moving backwards at birth — natal retrogrades, Venus above all, are read for how one loves."),
+ (r"exactconj", "Graha yuddha: two planets within one degree are at war — the tightest contact there is."),
+ (r"gandanta", "Gaṇḍānta: the knots where water signs give way to fire — junctions the tradition treats with awe."),
+ (r"vargottama", "Vargottama: the same sign in the birth chart and the navāṁśa — a planet standing firm."),
+ (r"tzolkin", "The Mayan Tzolkin: the 260-day sacred round, day-sign against day-sign."),
+ (r"xiu_dist", "The 28 lunar mansions of the Chinese almanac, counted between the two birth days."),
+ (r"ninestar_month", "Nine Star Ki, one level finer: the month star each partner was born under."),
+ (r"attitude_pair", "Numerology's attitude numbers (day plus month), paired."),
  (r"modepair", "The three modes (cardinal, fixed, mutable) paired between the partners."),
  (r"polpair", "The yang/yin polarity of the signs paired between the partners."),
 ]

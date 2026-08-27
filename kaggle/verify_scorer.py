@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.expanduser("~/.artaquest-dev/wt/am-pages/docs"))
 import v6_fit as V6, v7_fit as V7, v8_fit as V8, v13_fit as V13
 import v15_families as F15
 import v17_families as F17
+import v19_families as F19
 import scorer as SC
 import sweshim as SW
 D = os.path.expanduser(os.environ.get("AQ_D", "~/.artamatch-dev/remar_sh"))
@@ -27,8 +28,9 @@ XL, nL = V8.last_singles(tr, Z, "train")
 XN, nN = V13.new_singles(tr, Z, "train", set(n6 + nA + nL))
 XF, nF = F15.families15(tr, Z, "train")
 XW, nW = F17.families17(tr, Z, "train")
-X = np.column_stack([X6, XA, XL, XN, XF, XW])
-pos = {n: i for i, n in enumerate(n6 + nA + nL + nN + nF + nW)}
+XV, nV = F19.families19(tr, Z, "train")
+X = np.column_stack([X6, XA, XL, XN, XF, XW, XV])
+pos = {n: i for i, n in enumerate(n6 + nA + nL + nN + nF + nW + nV)}
 
 clauses = sorted({p for k in M["weights"] for p in k.split(" AND ")})
 missing = [c for c in clauses if c not in pos]

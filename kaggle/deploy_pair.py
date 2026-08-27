@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.expanduser("~/Studio/artamatch/kaggle"))
 import giant_ensemble as G, v6_fit as V6, v7_fit as V7, v8_fit as V8, v13_fit as V13
 import v15_families as F15
 import v17_families as F17
+import v19_families as F19
 try:
     import v14_fit as V14
 except Exception:
@@ -34,7 +35,8 @@ def build(df, half):
     if any(c not in set(ns) for c in clauses):
         XF, nF = F15.families15(df, Z, half)
         XW, nW = F17.families17(df, Z, half)
-        Xs += [XF, XW]; ns += nF + nW
+        XV, nV = F19.families19(df, Z, half)
+        Xs += [XF, XW, XV]; ns += nF + nW + nV
     if V14 is not None and any(c not in set(ns) for c in clauses):
         XM, nM = V14.newer_singles(df, Z, half, ex1 | set(nN))
         Xs.append(XM); ns += nM

@@ -367,7 +367,9 @@ function renderTop(all,P){
     const pw=Math.min(100,100*r[4]/0.12);   // shadow share of the bar; success fills the rest
     return `<div class="match" onclick="this.classList.toggle('open')">
       <div class="mtop"><span class="mrk">${i+1}</span><span class="mdt">${r[0]}</span>
-      <span class="mgap">${P} would be ${gap===0?"about your age":gap+"y "+(+r[0].slice(0,4)>state.me[0]?"younger":"older")} · ${r[3]===0?"not one shadow":r[3]+" small shadows"}</span>
+      <span class="mgap">${(state.g==="m"
+        ? `She'd be ${gap===0?"about your age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"younger":"older")}`
+        : `You'd be ${gap===0?"about the same age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"older":"younger")}`)} · ${r[3]===0?"not one shadow":r[3]+" small shadows"}</span>
       <span class="mbar"><i style="width:${(100-pw).toFixed(0)}%"></i></span><span class="mp">${(100*(1-r[4])).toFixed(1)}%</span></div>
       <div class="chips">${chips}</div>
       <div class="why">The percentage is how often matches like this one <b>held for life</b>, among five

@@ -173,6 +173,14 @@ def main():
     # row by design. Including them made this line report "BOTH natal charts complete: 0" on a file that in fact
     # had 26,680 complete pairs, which reads as a dead dataset.
     full = np.isfinite(Dtr[:, :10]).all(1) & np.isfinite(Mtr[:, :10]).all(1)
+    # A dates-only corpus publishes no coordinates, so every natal cast needs AQ_NO_PLACE=1 to fall back
+    # to 12:00 UT. Forget it and theta() takes its `natal and lat is NaN` early return on EVERY row: the
+    # build finishes in under a second, writes a well-formed npz, and every longitude in it is NaN. The
+    # fit scripts downstream read that file happily and report a bank of zero statements. Refuse instead.
+    if not full.any() and not NO_PLACE:
+        log("FATAL: every natal chart is empty and AQ_NO_PLACE is not set.")
+        log("       This corpus has no lat/lon columns, so re-run with AQ_NO_PLACE=1 to cast at 12:00 UT.")
+        sys.exit(2)
     log(f"wrote {OUT}/phases.npz · {len(BODIES)} bodies · train rows with BOTH natal charts complete (10 planets): "
         f"{full.sum():,} · wedding sky complete: {np.isfinite(Wtr[:, :10]).all(1).sum():,}")
 

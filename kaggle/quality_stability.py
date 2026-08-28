@@ -104,10 +104,19 @@ def main():
     era = G.auc(yte, lo.predict_proba(dec_te)[:, 1])
     print(f"    two birth decades, two parameters: TEST AUC {era:.4f}")
     bp = f"{os.path.dirname(D)}/{os.path.basename(D)}_benchmark.json"
+    mp_ = os.environ.get("AQ_MODEL", "")
+    doc = json.load(open(os.path.expanduser(mp_)))["test_auc"] if mp_ and os.path.exists(
+        os.path.expanduser(mp_)) else None
     if os.path.exists(bp):
         bm = json.load(open(bp))
-        print(f"    for comparison — doctrine model 0.5462 · age gap {bm['age_gap_auc']:.4f} · "
+        print(f"    for comparison — doctrine model "
+              f"{f'{doc:.4f}' if doc is not None else 'n/a'} · age gap {bm['age_gap_auc']:.4f} · "
               f"chance 0.5000 · SE {bm['auc_se']:.4f}")
+        if doc is not None:
+            print(f"\n    VERDICT: the birth decade alone scores {era:.4f}; the doctrine model "
+                  f"{doc:.4f}.")
+            print(f"    The doctrine beats the era control by {doc - era:+.4f} "
+                  f"= {(doc - era) / bm['auc_se']:+.2f} standard errors.")
 
 
 if __name__ == "__main__":

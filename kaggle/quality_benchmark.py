@@ -37,7 +37,8 @@ def auc_se(y):
 def main():
     from sklearn.linear_model import LogisticRegression
     print(f"{'target':<16}{'n test':>8}{'pos':>7}{'chance':>9}{'age-gap':>10}{'AUC SE':>9}")
-    for t in ("quality_ht", "quality_toxic", "quality_happy"):
+    targets = sys.argv[1:] or ["quality_good", "quality_good_narr"]
+    for t in targets:
         d = f"{DEV}/{t}"
         if not os.path.exists(f"{d}/train.csv"):
             continue

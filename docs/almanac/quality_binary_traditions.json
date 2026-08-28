@@ -1,0 +1,63 @@
+{
+ "corpus": "quality_good",
+ "era_auc": 0.6013838422561504,
+ "auc_se": 0.01855047610080291,
+ "families": [
+  {
+   "tradition": "Synastry aspects (his body to hers)",
+   "n_rules": 158,
+   "cv": 0.5276,
+   "test": 0.5315,
+   "increment_over_era": -0.0133,
+   "increment_se": -0.72
+  },
+  {
+   "tradition": "Composite chart (midpoint of the two)",
+   "n_rules": 32,
+   "cv": 0.5751,
+   "test": 0.5692,
+   "increment_over_era": -0.0042,
+   "increment_se": -0.23
+  },
+  {
+   "tradition": "Davison chart (chart of the midpoint in time)",
+   "n_rules": 25,
+   "cv": 0.577,
+   "test": 0.576,
+   "increment_over_era": -0.0006,
+   "increment_se": -0.03
+  },
+  {
+   "tradition": "Outer-planet cycles (Neptune-Pluto etc)",
+   "n_rules": 35,
+   "cv": 0.5943,
+   "test": 0.5917,
+   "increment_over_era": 0.0038,
+   "increment_se": 0.2
+  },
+  {
+   "tradition": "Vedic: nakshatra, tithi, yoga",
+   "n_rules": 70,
+   "cv": 0.5111,
+   "test": 0.5104,
+   "increment_over_era": -0.02,
+   "increment_se": -1.08
+  },
+  {
+   "tradition": "Element / mode / polarity pairings",
+   "n_rules": 90,
+   "cv": 0.5083,
+   "test": 0.5308,
+   "increment_over_era": -0.0081,
+   "increment_se": -0.44
+  },
+  {
+   "tradition": "Decans and sign placements",
+   "n_rules": 9,
+   "cv": 0.571,
+   "test": 0.5725,
+   "increment_over_era": 0.0034,
+   "increment_se": 0.18
+  }
+ ]
+}

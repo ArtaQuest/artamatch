@@ -1,0 +1,11 @@
+{
+ "corpus": "quality_good",
+ "alpha": 0.004,
+ "era_auc": 0.6013838422561504,
+ "doctrine_auc": 0.5809324788319221,
+ "combined_auc": 0.6015067671178078,
+ "increment": 0.00012292486165743632,
+ "increment_se": 0.006626507103616377,
+ "n_rules": 15,
+ "verdict": "the doctrine adds nothing beyond era that this test set can resolve"
+}

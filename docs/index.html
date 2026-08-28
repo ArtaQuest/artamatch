@@ -162,19 +162,28 @@ remembers. <span id="honestnum">Honest accuracy: held-out AUC 0.699 — a real b
 <section class="step on" id="rules" style="display:block">
 <details class="fam" style="margin-top:44px"><summary>What we found when we asked a harder question <span class="tc">the honest part</span></summary>
 <p class="fw">Divorce is an outcome, not a verdict: a quiet parting is not a bad marriage, and lasting
-until death is not automatically a good one. So we built a second dataset — <b>10,000 marriages judged
-one at a time</b> from what the record actually says about them, read across 21 languages, each judgement
-carrying its evidence and its sources (<a href="almanac/marriage_quality.csv">download</a>,
-<a href="almanac/">method</a>).<br><br>
-The clearest thing in it has nothing to do with the stars: couples who <b>built something together</b> —
-a business, a body of work — are judged happy 82% and 71% of the time, while couples who only <b>had
-children</b> are judged happy 20% of the time, against a 21% base rate. Creation together predicts a good
-marriage about four times better than procreation alone.<br><br>
-And the honest finding about the astrology: on that quality target, these same rules score
-<b>0.51 to 0.55</b> — at or barely above chance, and below what two birth decades alone achieve (0.57).
-The outer-planet cycles that carry the ranking below appear to be reading the <i>century</i>, and the
-century predicts how an encyclopedia describes a marriage. Treat the ranking as a curiosity, not a
-forecast.</p></details>
+until death is not automatically a good one. So we built a second dataset — <b>7,200 marriages judged one
+at a time</b> from what the record actually says about them, read across 21 languages, each judgement
+carrying its evidence and its sources. Every marriage gets a verdict, good or bad; an earlier pass
+allowed "neutral" and 69% hid there, which taught nothing
+(<a href="almanac/marriage_quality_binary.csv">download</a>, <a href="almanac/">method</a>).<br><br>
+The clearest thing in it has nothing to do with the stars. Against a base rate of 57% good, couples who
+<b>built something together</b> come out at <b>87%</b> (a business) and <b>78%</b> (a body of work);
+couples who only <b>had children</b> come out at 69%. Making something together beats procreation
+alone.<br><br>
+And the honest finding about the astrology. On that quality target these rules reach <b>0.598</b> —
+well clear of chance and far above the age-gap baseline of 0.511. But <b>two birth decades alone score
+0.601</b>, and adding all sixteen rules on top of them changes that by <b>+0.0001</b>. Scored one
+tradition at a time — synastry, composite, Davison, Vedic, Chinese, decans — not one clears the bar.
+The rules the model keeps are Neptune–Pluto phase and Pluto sign: a 492-year cycle and a sign Pluto sits
+in for twenty years. They are calendars. What the sky says about a couple here is which century they were
+born in, and the century is what predicts how an encyclopedia writes about a marriage.<br><br>
+So the ranking below is <b>not validated</b>. It is no longer degenerate — we swept 80 men across 289
+candidate dates each and the score genuinely varies inside the window, with the best date landing about a
+year apart on average rather than pinned to the edge. An earlier model failed that test outright,
+recommending the youngest date allowed to 90% of men. But a ranking that moves is not a ranking that is
+right: all of this model's measured skill belongs to birth era, and birth era barely changes across
+twelve years. Read it as a curiosity, not a forecast.</p></details>
 <details class="fam"><summary>How it works <span class="tc">30 seconds</span></summary>
 <p class="fw" id="howtext">Each tradition makes small, checkable statements — <i>“her Moon is in Rohini”,
 “his Saturn squares her Moon”</i>. We wrote down thousands of them, and five centuries of recorded

@@ -1,3 +1,145 @@
+# Was this a good marriage? The binary redo (2026-08-28)
+
+**Why it was redone.** The first pass judged each marriage happy / neutral / toxic, and 69% landed in
+`neutral` — a class that taught nothing and, worse, hid disagreement between judges inside a safe middle
+option. This pass forces a verdict on every marriage: **good or bad, no neutral**, against a written
+rubric ([RUBRIC2.md](https://github.com/ArtaQuest/artamatch/blob/main/kaggle/RUBRIC2.md)).
+
+**What the forced choice bought.** With nowhere to hide, a systematic disagreement became *countable*.
+The rubric's most common case is a dry genealogical entry — "he married X in 1878; they had three
+children" — and judges split on it. Counting one specific pattern per batch found the divergence exactly:
+
+| batch | children -> good | children -> thin_record |
+|---|---|---|
+| thirteen batches | 57-93 | **0-5** |
+| 0011 / 0013 / 0014 / 0019 | 57 / 65 / 5 / 48 | **36 / 31 / 49 / 53** |
+
+Four batches out of nineteen had applied the rule backwards. The rubric was amended to rule on the case
+explicitly, all four batches were re-judged, and their original labels are preserved as `.bak` files so
+the correction is auditable rather than silent. Under the three-class rubric this would have been
+invisible: `neutral` would have absorbed it.
+
+**The dataset (`marriage_quality_binary.csv`, 7,200 rows).** Same harvest as before — every ended
+marriage in a count-verified Wikidata sweep of 619,130 marriage statements (1500-2009), matched to prose
+assembled from BOTH partners' Wikipedia articles, each language searched under that language's own name
+for the person. Every row carries the verdict, the single strongest ground for it, the confidence, the
+sentence it rests on, and the source links.
+
+| verdict | count |
+|---|---|
+| good | 4,092 (56.8%) |
+| bad | 3,108 (43.2%) |
+
+The target was 50/50 and the result is 57/43. The drift is a property of the corpus, not a slipped bar,
+and it is measurable: across batches ordered by record quality, *trouble* verdicts fall sharply
+(-2.44 per batch, r=-0.82) while the judgement-heavy affirmative grounds stay flat (+0.36, r=+0.24). A
+judge cannot invent a divorce — `divorce` requires the text to state one — so the category that moves
+most is the one least open to interpretation. The mechanism is editorial: divorce, scandal and
+litigation generate paragraphs, while a quiet forty-year marriage gets one sentence.
+
+| ground for the verdict | share |
+|---|---|
+| children (good) | 28.1% |
+| divorce (bad) | 21.0% |
+| thin record (bad) | 11.0% |
+| built something together (good) | 10.8% |
+| lasted to a death (good) | 10.2% |
+| infidelity (bad) | 4.9% |
+| stated affection (good) | 4.9% |
+| adversity endured (good) | 2.6% |
+| conflict / abuse / coercion (bad) | 4.4% |
+
+**Integrity filters, each one earned by a real failure.** Both dates full precision; both partners
+`P31=human` (a judge once found Indiana Jones married to Marion Ravenwood); the judge's own
+`not_a_marriage` flag (63 rows); low-confidence records, which is what a judge assigns to a garbled or
+wrong-person description (519 rows); and every quoted fragment checked verbatim against its own
+description. **Of 95 explicitly quoted fragments, 0 could not be found** — against 3.9% unverifiable in
+the three-class pass. 6,600 couples survive every filter.
+
+Two checks that were built, failed, and are reported as negative results rather than quietly dropped:
+
+- **Confidence is not a neutral filter.** High-confidence rows are 67% *bad*, medium 79% *good*, because
+  a stated divorce is a fact a judge can point at (`divorce` 91% high-confidence, `abuse` 97%) while an
+  affirmative verdict rests on quieter ground (`children` 12%). Filtering on high confidence silently
+  changes the question to "did the record state a divorce". Only `low` is excluded, and its effect on the
+  balance is reported above.
+- **Wrong-person records cannot be caught by name matching.** Requiring each partner's given name to
+  appear flags 47% of the corpus and catches 7 of 8 known cases — but 96.2% of what it flags *does* name
+  the person by surname or title. It is measuring "this prose calls her Lady Cleveland rather than
+  Wilhelmina". No variant works; the judges' own reports are used instead, and the residual is label
+  noise, which attenuates AUC toward 0.5 and so cannot manufacture a positive result.
+
+## What the astrology predicts
+
+The doctrine-only, pair-only rule model — every feature a named tradition, only the weighting fitted —
+regularised for the corpus size, selection declared by cross-validation, one test read.
+
+| model | rules | held-out AUC | vs chance |
+|---|---|---|---|
+| doctrine, good vs bad | 16 | **0.5982** | **+5.29 SE** |
+| doctrine, narrated records only | 18 | **0.6391** | **+6.99 SE** |
+| age gap (the only permitted baseline) | 2 | 0.5108 | +0.6 SE |
+| chance | - | 0.5000 | - |
+
+Against the baseline this project allows — a two-parameter logistic on the signed difference of the two
+birth dates — the doctrine wins decisively, and the selection is stable: all five fold seeds choose the
+same sixteen rules.
+
+**And two birth decades reproduce it.**
+
+| | AUC |
+|---|---|
+| birth decade alone, two parameters | 0.6014 |
+| doctrine, sixteen rules | 0.5982 |
+| era + doctrine together | 0.6015 |
+| **what the doctrine adds to era** | **+0.0001 (+0.01 SE)** |
+
+Fitting the entire unfiltered bank against the *residual* — what era cannot explain — the rules that
+survive are still `dav_pluto_sign`, `cycle_neptune_pluto_phase`, `comp_pluto_sign`. Neptune-Pluto is a
+492-year cycle; Pluto sits about twenty years in a sign. These are calendars.
+
+Scored one tradition at a time, against era, nothing clears the bar (2 SE = +0.0371):
+
+| tradition | rules | test | adds to era |
+|---|---|---|---|
+| Outer-planet cycles | 35 | 0.5917 | +0.0038 |
+| Decans and sign placements | 9 | 0.5725 | +0.0034 |
+| Davison chart | 25 | 0.5760 | -0.0006 |
+| Composite chart | 32 | 0.5692 | -0.0042 |
+| Element / mode / polarity pairings | 90 | 0.5308 | -0.0081 |
+| Synastry aspects | 158 | 0.5315 | -0.0133 |
+| Vedic: nakshatra, tithi, yoga | 70 | 0.5104 | -0.0200 |
+| Synastry houses | 24 | nothing survives selection | |
+| Chinese: nayin, kua | 40 | nothing survives selection | |
+
+**What this means for ranking dates.** The product's question is not the AUC — it is: given his birth
+date, order her candidate dates across +/-12 years. That was measured on the artifact, sweeping 80 real
+men across 289 candidate dates each. The final sixteen-rule model does produce a live ranking: its score
+varies across a window nearly as much as it varies between men (ratio 0.899), all sixteen rules change
+state inside a window, and the best candidate lands at a mean offset of -1.1 years with a spread of 4.7 —
+**not** pinned to the window edge.
+
+That is a real improvement on an earlier seven-rule model, whose within-window spread had a median of
+**exactly zero** and whose best candidate hit the window edge for 90% of men — it was reading a monotone
+era trend and running to the boundary, recommending "the youngest date allowed" every time.
+
+But a ranking that varies is not a ranking that is *right*. Every unit of this model's measured skill is
+attributable to birth era, and birth era is nearly constant inside a twelve-year window. So the ordering
+shown inside the window is **unvalidated** — not degenerate, not proven. That distinction is stated
+plainly on the page rather than papered over.
+
+**The honest summary.** On this target, against the baseline this project permits, the doctrine reaches
+0.5982 and beats it by a wide margin. Against a two-parameter model of the calendar, it adds nothing that
+6,600 marriages can resolve. What the sky says about a couple here is what century they were born in.
+
+**Provenance.** 7,200 of a planned 10,000 marriages were judged before the session's model quota was
+exhausted; four batches that stopped mid-run contributed the verdicts they had finished (160, 120, 80 and
+40 of 200), and twelve batches were never started. Every figure above is computed on what was actually
+judged, and the corpus builder rebuilds the sidereal charts it invalidates so a stale sky can never be
+fitted against fresh labels.
+
+---
+
 # Marriage quality, judged from the record (2026-08-28)
 
 **The question.** Divorce is an outcome, not a verdict on a marriage: a quiet divorce is not a bad

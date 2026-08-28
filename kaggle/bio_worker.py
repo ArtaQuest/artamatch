@@ -34,7 +34,17 @@ bylang = {}
 for lang, t in shard:
     bylang.setdefault(lang, []).append(t)
 print(f"shard: {len(shard)} titles across {len(bylang)} languages", flush=True)
+def upload(rows, suffix=""):
+    buf = gzip.compress("\n".join(json.dumps(o, ensure_ascii=False) for o in rows).encode())
+    url = _url("OUT_URL")
+    if suffix:
+        url = url.replace(".jsonl.gz?", f".part{suffix}.jsonl.gz?")
+    get(url, data=buf, headers={"x-ms-blob-type": "BlockBlob"})
+    print(f"uploaded {len(rows)} pages{'' if not suffix else ' (part ' + suffix + ')'}, "
+          f"{len(buf)/1e6:.1f} MB", flush=True)
+
 out = []
+last_ckpt = 0
 B = 20
 work = [(lang, ts[i:i + B]) for lang, ts in bylang.items() for i in range(0, len(ts), B)]
 for i, (lang, batch) in enumerate(work):
@@ -57,7 +67,12 @@ for i, (lang, batch) in enumerate(work):
         out.append({"lang": lang, "title": norm.get(t, t), "resolved": t, "wikitext": txt[:120000]})
     if i % 25 == 0:
         print(f"  {i}/{len(work)} batches · kept {len(out)}", flush=True)
+    if len(out) - last_ckpt >= 4000:
+        try:
+            upload(out, f"{i:05d}")
+            last_ckpt = len(out)
+        except Exception as e:
+            print(f"  checkpoint failed: {str(e)[:60]}", flush=True)
     time.sleep(0.4)
-buf = gzip.compress("\n".join(json.dumps(o, ensure_ascii=False) for o in out).encode())
-get(_url("OUT_URL"), data=buf, headers={"x-ms-blob-type": "BlockBlob"})
-print(f"DONE uploaded {len(out)} pages, {len(buf)/1e6:.1f} MB", flush=True)
+upload(out)
+print(f"DONE {len(out)} pages", flush=True)

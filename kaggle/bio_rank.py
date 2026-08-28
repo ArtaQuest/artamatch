@@ -12,7 +12,7 @@ checkable:
 
 -> ~/.artamatch-dev/bio/batches/batch_XXXX.json (200 each) + index.csv
 """
-import json, os, re, sys
+import glob, json, os, re, sys
 import numpy as np, pandas as pd
 
 BIO = os.path.expanduser("~/.artamatch-dev/bio")
@@ -36,6 +36,37 @@ def main():
     has_art = set(ti.qid[ti.title != ""])
     q = m[(m.n > 100) & (m.weak == 0) & (m.fp == 1) & m.name_a.notna() & m.name_b.notna()].copy()
     print(f"  {len(m):,} described · {len(q):,} chart-ready, name-confirmed, over 100 chars", flush=True)
+    # A second pass must not re-judge what is already judged: drop the couples that already carry a
+    # label, keep the existing index rows, and number the new batches after the existing ones.
+    judged_pairs, keep_idx, start_batch, start_rid = set(), None, 0, 0
+    if os.environ.get("AQ_APPEND") and os.path.exists(f"{BIO}/index.csv"):
+        old_idx = pd.read_csv(f"{BIO}/index.csv", dtype=str)
+        done_rids = set()
+        for lf in glob.glob(f"{BIO}/labels/batch_*.json"):
+            try:
+                for o in json.load(open(lf)):
+                    if isinstance(o, dict) and o.get("id"):
+                        done_rids.add(o["id"])
+            except Exception:
+                pass
+        # keep every couple that is already judged OR still being judged in an open batch — a couple
+        # must never be cut twice, or two judges label the same marriage under different ids
+        queued_rids = set()
+        for bf in glob.glob(f"{BIO}/batches/batch_*.json"):
+            try:
+                for o in json.load(open(bf)):
+                    if isinstance(o, dict) and o.get("id"):
+                        queued_rids.add(o["id"])
+            except Exception:
+                pass
+        keep_idx = old_idx[old_idx.rid.isin(done_rids | queued_rids)].copy()
+        judged_pairs = set(zip(keep_idx.pid_a, keep_idx.pid_b))
+        start_batch = len(glob.glob(f"{BIO}/batches/batch_*.json"))
+        nums = [int(r[1:]) for r in keep_idx.rid if str(r).startswith("r")]
+        start_rid = (max(nums) + 1) if nums else 0
+        q = q[~q.set_index(["pid_a", "pid_b"]).index.isin(judged_pairs)].copy()
+        print(f"  appending: {len(keep_idx):,} already judged, {len(q):,} candidates remain, "
+              f"new batches start at {start_batch:04d}", flush=True)
     rel = q.description.fillna("").map(lambda s: len(REL.findall(s)))
     dens = rel / (q.n / 200.0).clip(lower=1)                     # relationship words per 200 chars
     both = (q.pid_a.isin(has_art) & q.pid_b.isin(has_art)).astype(float)
@@ -48,12 +79,13 @@ def main():
                     + 0.5 * kids.notna().astype(float)
                     + 0.5 * cause_known)
     q = q.sort_values("quality", ascending=False).head(TOP).reset_index(drop=True)
-    q["rid"] = [f"r{i:06d}" for i in range(len(q))]
+    q["rid"] = [f"r{start_rid + i:06d}" for i in range(len(q))]
     os.makedirs(f"{BIO}/batches", exist_ok=True)
     os.makedirs(f"{BIO}/labels", exist_ok=True)
-    for f in os.listdir(f"{BIO}/batches"):
-        os.remove(f"{BIO}/batches/{f}")
-    nb = 0
+    if keep_idx is None:
+        for f in os.listdir(f"{BIO}/batches"):
+            os.remove(f"{BIO}/batches/{f}")
+    nb = start_batch
     for b in range(0, len(q), PER):
         chunk = q.iloc[b:b + PER]
         items = []
@@ -69,8 +101,11 @@ def main():
                           "ended": ended, "description": r.description})
         json.dump(items, open(f"{BIO}/batches/batch_{nb:04d}.json", "w"), ensure_ascii=False, indent=1)
         nb += 1
-    q.to_csv(f"{BIO}/index.csv", index=False)
-    print(f"  top {len(q):,} by quality -> {nb} batches of {PER}")
+    if keep_idx is not None:
+        pd.concat([keep_idx, q], ignore_index=True).to_csv(f"{BIO}/index.csv", index=False)
+    else:
+        q.to_csv(f"{BIO}/index.csv", index=False)
+    print(f"  top {len(q):,} by quality -> batches {start_batch:04d}..{nb - 1:04d} of {PER}")
     print(f"    two-sided accounts: {int(both.reindex(q.index, fill_value=0).sum()) if len(q) else 0:,}"
           f" · median {int(q.n.median())} chars · median quality {q.quality.median():.1f}")
     print(f"    with children on record: {int(pd.to_numeric(q.children, errors='coerce').notna().sum()):,}"

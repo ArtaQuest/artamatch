@@ -103,10 +103,40 @@ def main():
     print(f"  high confidence: {hi:.0%}")
     fp = pd.to_numeric(m.fullprec, errors="coerce").fillna(0) == 1
     m = m[fp].copy()
+    # Wikidata's spouse property is used loosely: a judge found Indiana Jones married to Marion
+    # Ravenwood in the middle of a batch. Drop any pair where either side is not P31=human.
+    hp = f"{BIO}/humans.csv"
+    if os.path.exists(hp):
+        h = pd.read_csv(hp, dtype=str)
+        nonhuman = set(h.qid[h.is_human == "0"])
+        if nonhuman:
+            bad = m.pid_a.isin(nonhuman) | m.pid_b.isin(nonhuman)
+            if bad.any():
+                print(f"  dropped {int(bad.sum())} pair(s) where someone is not a person")
+            m = m[~bad].copy()
+    # a judge's evidence saying the pair never actually married is a fact about the COUPLE LIST,
+    # not about marriage quality — those rows cannot teach anything about marriages
+    ev = m.evidence.fillna("").str.lower()
+    notmar = ev.str.contains("never married|not a marriage|no marriage record|was his mistress|"
+                             "was her mistress|only as a concubine|lavender marriage|marriage in name only|"
+                             "never states they married|marriage is never stated|were not married")
+    if notmar.any():
+        print(f"  dropped {int(notmar.sum())} pair(s) the judge says were never married")
+        m = m[~notmar].copy()
     print(f"  {len(m):,} of them have both dates to the day (charts need a day)")
     m.to_csv(f"{BIO}/judged.csv", index=False)
     # The judges mark an unreadable or wrong-person description "low" — those must not decide the
     # sharpest target, where every row is meant to be a clear case.
+    # A quoted fragment that cannot be found in the couple's own description means the judgement rests
+    # on something the record does not say. One judge caught such a case auditing itself; a verbatim
+    # sweep of all 2,801 quoted fragments found 56 more on happy/toxic rows. They are excluded here.
+    uq = f"{BIO}/unverified_quotes.csv"
+    if os.path.exists(uq):
+        drop = set(pd.read_csv(uq, dtype=str).rid)
+        n0 = len(m)
+        m = m[~m.rid.isin(drop)].copy()
+        if n0 != len(m):
+            print(f"  dropped {n0 - len(m)} row(s) whose quoted evidence is not in the description")
     ht = m[(m.label != "neutral") & (m.confidence != "low")]
     write_corpus(ht, (ht.label == "toxic").astype(int).to_numpy(), "quality_ht")
     write_corpus(m, (m.label == "toxic").astype(int).to_numpy(), "quality_toxic")

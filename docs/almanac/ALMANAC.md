@@ -1,3 +1,64 @@
+# Marriage quality, judged from the record (2026-08-28)
+
+**The question.** Divorce is an outcome, not a verdict on a marriage: a quiet divorce is not a bad
+marriage, and a marriage that lasted until death is not automatically a good one. So the target was
+rebuilt around what the historical record actually SAYS about each relationship.
+
+**The dataset (`marriage_quality.csv`, 10,000 rows).** Every ended marriage in a count-verified Wikidata
+harvest of 619,130 marriage statements (1500-2009) was matched to prose about that marriage, assembled
+from BOTH partners' Wikipedia articles across 21 languages — each language searched with that language's
+own name for the person, so the Armenian article is searched for "Աննա". The 10,000 richest descriptions
+were judged one at a time against a written rubric (RUBRIC.md) as **happy / neutral / toxic**, each
+judgement carrying its confidence, the sentence it rests on, and the source links it was read from.
+
+Two independent judges on the same 120 marriages agreed 92% of the time (Cohen's kappa 0.784) and never
+once swapped happy for toxic. Against Wikidata's own recorded end-cause — which the judges never saw —
+a marriage recorded as ending in divorce was called happy 1% of the time; one ending in a death, 59%.
+
+| label | count |
+|---|---|
+| neutral | 6,930 (69%) |
+| happy | 2,052 (21%) |
+| toxic | 1,018 (10%) |
+
+**What the record shows about contributions** — the clearest result in the data:
+
+| what the couple did together | n | judged happy | judged toxic |
+|---|---|---|---|
+| built a business together | 283 | **82%** | 6% |
+| joint creative work | 1,186 | **71%** | 8% |
+| had children together | 6,444 | 20% | 9% |
+| conflict on record | 697 | 0% | 97% |
+| infidelity on record | 548 | 3% | 94% |
+| abuse on record | 194 | 0% | 100% |
+
+Creating something together predicts a good marriage roughly four times better than having children does.
+Children alone barely move the needle at all (20% happy against a 21% base rate).
+
+**What the astrology predicts: nothing, on this target.** The same doctrine-only, pair-only rule model
+that reaches 0.77 on divorce-versus-death was fitted to marriage quality, regularised for the corpus size
+and declared by cross-validation with a single test read each:
+
+| target | rules | held-out AUC | vs chance | age-gap baseline |
+|---|---|---|---|---|
+| happy vs toxic | 228 | 0.5066 | +0.2 SE | 0.5393 |
+| happy vs the rest | 3 | 0.5462 | +2.5 SE | 0.5531 |
+| toxic vs the rest | 20 | 0.4733 | -1.1 SE | 0.4957 |
+
+Only one target cleared chance, and it does not survive inspection. Its three rules — chosen identically
+under five different fold assignments, so the model is stable — are two Neptune-Pluto cycle phases and
+"his Pluto conjunct her Pluto". Pluto takes 248 years to cross the zodiac, so that last statement is
+satisfied by almost any couple born within a few decades of each other: it is a statement about the ERA,
+not about the pair. Two birth decades and two parameters score **0.5736** on the same couples — better
+than the astrology. And within the window this site actually searches (births 1946-2008) the strongest
+of the three rules never fires at all, while the second fires for 56% of couples: a birth-year threshold.
+
+So the honest reading is that the outer-planet cycles were never reading the couple. They were reading
+the century — and the century predicts how an encyclopedia describes a marriage. On a target built to
+strip that away, the doctrine finds nothing a pair of birth decades does not find better.
+
+---
+
 # The ArtaMatch v16 Almanac (current)
 
 **v16 — the full-precision corpus (2026-08-26).** The corpus was audited end to end: duplicate wedding

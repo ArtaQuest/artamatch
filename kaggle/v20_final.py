@@ -10,7 +10,7 @@ import giant_ensemble as G, v6_fit as V6, v7_fit as V7, v8_fit as V8, v13_fit as
 import v19_families as F19
 from v12_fit import side
 from denylist import clause_ok
-D = os.path.expanduser("~/.artamatch-dev/remar_sh5")
+D = os.path.expanduser(os.environ.get("AQ_D", "~/.artamatch-dev/remar_sh5"))
 
 def main():
     from sklearn.linear_model import Lasso
@@ -148,8 +148,8 @@ def main():
     json.dump({"model": "ArtaMatch v20 (doctrine-only, pair-only, complete verified corpus)", "alpha": alpha,
                "stage": stage, "cv_auc": round(cv, 4), "test_auc": round(float(auc), 4), "intercept": float(b0),
                "n_matrix": int(Xtr.shape[1]), "n_surviving": len(weights), "weights": weights},
-              open(os.path.expanduser("~/.artamatch-dev/v20_model.json"), "w"), indent=1)
-    np.save(os.path.expanduser("~/.artamatch-dev/v20_test_z.npy"), zt)
+              open(os.path.expanduser(os.environ.get("AQ_OUT_MODEL", "~/.artamatch-dev/v20_model.json")), "w"), indent=1)
+    np.save(os.path.expanduser(os.environ.get("AQ_OUT_Z", "~/.artamatch-dev/v20_test_z.npy")), zt)
     print("  saved v20_model.json + v20_test_z.npy")
 
 

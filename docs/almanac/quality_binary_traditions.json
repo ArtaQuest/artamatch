@@ -1,63 +1,63 @@
 {
  "corpus": "quality_good",
- "era_auc": 0.6013838422561504,
- "auc_se": 0.01855047610080291,
+ "era_auc": 0.5556463919773272,
+ "auc_se": 0.01576840007011145,
  "families": [
   {
    "tradition": "Synastry aspects (his body to hers)",
-   "n_rules": 158,
-   "cv": 0.5276,
-   "test": 0.5315,
-   "increment_over_era": -0.0133,
-   "increment_se": -0.72
+   "n_rules": 47,
+   "cv": 0.5505,
+   "test": 0.5079,
+   "increment_over_era": -0.0136,
+   "increment_se": -0.87
   },
   {
    "tradition": "Composite chart (midpoint of the two)",
-   "n_rules": 32,
-   "cv": 0.5751,
-   "test": 0.5692,
-   "increment_over_era": -0.0042,
-   "increment_se": -0.23
+   "n_rules": 23,
+   "cv": 0.5693,
+   "test": 0.5738,
+   "increment_over_era": 0.0179,
+   "increment_se": 1.14
   },
   {
    "tradition": "Davison chart (chart of the midpoint in time)",
    "n_rules": 25,
-   "cv": 0.577,
-   "test": 0.576,
-   "increment_over_era": -0.0006,
-   "increment_se": -0.03
+   "cv": 0.5707,
+   "test": 0.566,
+   "increment_over_era": 0.0135,
+   "increment_se": 0.86
   },
   {
    "tradition": "Outer-planet cycles (Neptune-Pluto etc)",
-   "n_rules": 35,
-   "cv": 0.5943,
-   "test": 0.5917,
-   "increment_over_era": 0.0038,
-   "increment_se": 0.2
+   "n_rules": 23,
+   "cv": 0.5915,
+   "test": 0.5761,
+   "increment_over_era": 0.014,
+   "increment_se": 0.89
   },
   {
    "tradition": "Vedic: nakshatra, tithi, yoga",
-   "n_rules": 70,
-   "cv": 0.5111,
-   "test": 0.5104,
-   "increment_over_era": -0.02,
-   "increment_se": -1.08
+   "n_rules": 7,
+   "cv": 0.5084,
+   "test": 0.5098,
+   "increment_over_era": -0.0065,
+   "increment_se": -0.41
   },
   {
    "tradition": "Element / mode / polarity pairings",
-   "n_rules": 90,
-   "cv": 0.5083,
-   "test": 0.5308,
-   "increment_over_era": -0.0081,
-   "increment_se": -0.44
+   "n_rules": 17,
+   "cv": 0.5091,
+   "test": 0.4938,
+   "increment_over_era": -0.0207,
+   "increment_se": -1.31
   },
   {
    "tradition": "Decans and sign placements",
-   "n_rules": 9,
-   "cv": 0.571,
-   "test": 0.5725,
-   "increment_over_era": 0.0034,
-   "increment_se": 0.18
+   "n_rules": 7,
+   "cv": 0.5702,
+   "test": 0.5593,
+   "increment_over_era": 0.0102,
+   "increment_se": 0.65
   }
  ]
 }

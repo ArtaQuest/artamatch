@@ -1,0 +1,11 @@
+{
+ "corpus": "remar_sh3",
+ "alpha": 0.0005,
+ "era_auc": 0.7183200974711679,
+ "doctrine_auc": 0.5935174297794843,
+ "combined_auc": 0.714023111106068,
+ "increment": -0.004296986365099897,
+ "increment_se": -0.24497457065521608,
+ "n_rules": 23,
+ "verdict": "the doctrine adds nothing beyond era that this test set can resolve"
+}

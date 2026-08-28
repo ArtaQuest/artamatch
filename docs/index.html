@@ -163,25 +163,25 @@ remembers. <span id="honestnum">Honest accuracy: held-out AUC 0.699 — a real b
 <!--QUALITY-BLOCK-->
 <details class="fam" style="margin-top:44px"><summary>What we found when we asked a harder question <span class="tc">the honest part</span></summary>
 <p class="fw">Divorce is an outcome, not a verdict: a quiet parting is not a bad marriage, and lasting
-until death is not automatically a good one. So we built a second dataset — <b>7,200 marriages judged one
+until death is not automatically a good one. So we built a second dataset — <b>10,000 marriages judged one
 at a time</b> from what the record actually says, read across 21 languages, each verdict carrying its
 evidence and its sources. Every marriage gets a verdict, good or bad; an earlier pass allowed
 &ldquo;neutral&rdquo; and 69% hid there, which taught nothing
 (<a href="almanac/marriage_quality_binary.csv">download</a>, <a href="almanac/">method</a>).<br><br>
-The clearest thing in it has nothing to do with the stars. Against a base rate of 57% good,
-couples who <b>built something together</b> come out at <b>87%</b>
-(a business) and <b>78%</b> (a body of
+The clearest thing in it has nothing to do with the stars. Against a base rate of 59% good,
+couples who <b>built something together</b> come out at <b>89%</b>
+(a business) and <b>82%</b> (a body of
 work); couples who only <b>had children</b> come out at
-69%. Making something together beats
+75%. Making something together beats
 procreation alone.<br><br>
-And the honest finding about the astrology. On that quality target these rules reach <b>0.598</b> —
-well clear of chance and far above the age-gap baseline of 0.511. But <b>two birth decades alone
-score 0.601</b>, and adding all 16 rules on top of them changes that by
-<b>+0.0001</b>. Scored one tradition at a time — synastry, composite, Davison, Vedic,
-Chinese, decans — not one clears the bar. The rules the model keeps are Neptune&ndash;Pluto phase and
-Pluto sign: a 492-year cycle, and a sign Pluto sits in for twenty years. They are calendars. What the sky
-says about a couple here is which century they were born in, and the century is what predicts how an
-encyclopedia writes about a marriage.<br><br>
+And the honest finding about the astrology. On that quality target these rules reach <b>0.586</b> —
+well clear of chance and far above the age-gap baseline of 0.485. Two birth decades alone score
+<b>0.556</b>, and the 13 rules add <b>+0.0199</b>
+(+1.26 SE) on top of them — short of the two standard errors that would settle it, so suggestive rather than proven. Scored one tradition at a time — synastry, composite, Davison, Vedic,
+Chinese, decans — not one clears the bar on its own. And the rules the selection keeps are still
+dominated by Neptune&ndash;Pluto phase and Pluto sign: a 492-year cycle, and a sign Pluto occupies for
+twenty years. Those are calendars, so most of what this model reads is the century a couple was born
+in — and the century is also what predicts how an encyclopedia writes about a marriage.<br><br>
 We then put the model behind the ranking below — a different one, fitted on 44,249 marriages for
 divorce versus death — through the identical test, rather than reporting only the result that was
 comfortable. Same answer: <b>two birth decades score 0.718</b> on that

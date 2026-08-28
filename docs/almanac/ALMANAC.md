@@ -1,4 +1,4 @@
-# Was this a good marriage? The binary redo (7,200 marriages)
+# Was this a good marriage? The binary redo (10,000 marriages)
 
 **Why it was redone.** The first pass judged each marriage happy / neutral / toxic and 69% landed in
 `neutral` — a class that taught nothing and hid judge disagreement inside a safe middle option. This pass
@@ -18,10 +18,10 @@ correction is auditable rather than silent.
 
 | verdict | count |
 |---|---|
-| good | 4,092 (56.8%) |
-| bad | 3,108 (43.2%) |
+| good | 5,909 (59.1%) |
+| bad | 4,091 (40.9%) |
 
-The target was 50/50 and the result is 57%/43%. The drift is the corpus, not a
+The target was 50/50 and the result is 59%/41%. The drift is the corpus, not a
 slipped bar: down the quality ordering *trouble* verdicts fall sharply (-2.44 per batch, r=-0.82) while
 the judgement-heavy affirmative grounds stay flat (+0.36, r=+0.24). A judge cannot invent a divorce —
 `divorce` requires the text to state one — so the category that moves most is the one least open to
@@ -31,7 +31,7 @@ sentence.
 **Integrity filters, each earned by a real failure.** Both dates full precision; both partners `P31=human`
 (a judge once found Indiana Jones married to Marion Ravenwood); the judge's own `not_a_marriage` flag;
 low-confidence records, which is what a judge assigns to a garbled or wrong-person description; and every
-quoted fragment checked verbatim against its own description. **6,600 couples survive every
+quoted fragment checked verbatim against its own description. **9,304 couples survive every
 filter.** Two checks were built, failed, and are published as negative results: confidence is *not* a
 label-neutral filter (high-confidence rows are 67% bad, because a stated divorce is a fact a judge can
 point at), and wrong-person records cannot be caught by name matching (47% flagged, 96% of them false —
@@ -44,44 +44,46 @@ corpus size, selection declared by cross-validation, one test read.
 
 | model | rules | held-out AUC | vs chance |
 |---|---|---|---|
-| doctrine, good vs bad | 16 | **0.5982** | **+5.29 SE** |
-| doctrine, narrated records only | 18 | **0.6391** | +7.50 SE |
-| age gap (the only permitted baseline) | 2 | 0.5108 | +0.58 SE |
+| doctrine, good vs bad | 13 | **0.5862** | **+5.47 SE** |
+| doctrine, narrated records only | 12 | **0.6354** | +8.59 SE |
+| age gap (the only permitted baseline) | 2 | 0.4853 | -0.93 SE |
 | chance | - | 0.5000 | - |
 
 Against the baseline this project allows — a two-parameter logistic on the signed difference of the two
 birth dates — the doctrine wins decisively, and the selection is stable across all five fold seeds.
 
-**And two birth decades reproduce it.**
+**It edges the era control, without clearing the bar.**
 
 | | AUC |
 |---|---|
-| birth decade alone, two parameters | 0.6014 |
-| doctrine, 16 rules | 0.5982 |
-| era + doctrine together | 0.6015 |
-| **what the doctrine adds to era** | **+0.0001 (+0.01 SE)** |
+| birth decade alone, two parameters | 0.5556 |
+| doctrine, 13 rules | 0.5862 |
+| era + doctrine together | 0.5755 |
+| **what the doctrine adds to era** | **+0.0199 (+1.26 SE)** |
 
-Fitted against the *residual* — what era cannot explain — the surviving rules are still Pluto sign and
-Neptune-Pluto phase. Neptune-Pluto is a 492-year cycle; Pluto sits about twenty years in a sign. These
-are calendars.
+The doctrine beats the two-birth-decade model by +0.0306 (+1.94 SE) and adds +0.0199 (+1.26 SE) on top of it. Neither clears two standard errors, so this is suggestive and not established — and it is a real change of direction: on the first 6,600 marriages judged, the same pipeline had the era control AHEAD of the doctrine by 0.17 SE, with the doctrine adding 0.01 SE. More labels moved it. That is worth saying plainly rather than reporting whichever run reads better, and it is why the remaining rules still matter below.
 
-Scored one tradition at a time, against era (2 SE = +0.0371):
+The rules the selection keeps are still dominated by Pluto sign and Neptune-Pluto phase — a 492-year
+cycle, and a sign Pluto occupies for about twenty years. Those are calendars, and they are why the era
+control is the one that matters here.
+
+Scored one tradition at a time, against era (2 SE = +0.0315):
 
 | tradition | rules | test | adds to era |
 |---|---|---|---|
-| Outer-planet cycles (Neptune-Pluto etc) | 35 | 0.5917 | +0.0038 |
-| Decans and sign placements | 9 | 0.5725 | +0.0034 |
-| Davison chart (chart of the midpoint in time) | 25 | 0.5760 | -0.0006 |
-| Composite chart (midpoint of the two) | 32 | 0.5692 | -0.0042 |
-| Element / mode / polarity pairings | 90 | 0.5308 | -0.0081 |
-| Synastry aspects (his body to hers) | 158 | 0.5315 | -0.0133 |
-| Vedic: nakshatra, tithi, yoga | 70 | 0.5104 | -0.0200 |
+| Composite chart (midpoint of the two) | 23 | 0.5738 | +0.0179 |
+| Outer-planet cycles (Neptune-Pluto etc) | 23 | 0.5761 | +0.0140 |
+| Davison chart (chart of the midpoint in time) | 25 | 0.5660 | +0.0135 |
+| Decans and sign placements | 7 | 0.5593 | +0.0102 |
+| Vedic: nakshatra, tithi, yoga | 7 | 0.5098 | -0.0065 |
+| Synastry aspects (his body to hers) | 47 | 0.5079 | -0.0136 |
+| Element / mode / polarity pairings | 17 | 0.4938 | -0.0207 |
 
 **What this means for ranking dates.** The product's question is not the AUC — it is: given his birth
 date, order her candidate dates across +/-12 years. Measured on the artifact, sweeping
 80 real men across 289 candidate dates each: the model's score varies inside a
-window nearly as much as it varies between men (ratio 2.061),
-379 of 401 rules change state inside a window,
+window nearly as much as it varies between men (ratio 0.634),
+13 of 13 rules change state inside a window,
 and the best candidate lands on the window EDGE for 1% of men.
 
 An earlier seven-rule model failed that test outright: within-window spread with a median of **exactly
@@ -121,10 +123,12 @@ almost all the within-window variation and none of the validated skill; the slow
 and they are a calendar. So the order in which dates appear is real output, not a constant — but it is
 **unvalidated**, and no measurement here licenses reading it as a forecast.
 
-**The honest summary.** On the quality target, against the baseline this project permits, the doctrine
-reaches 0.5982 and beats it by a wide margin. Against a two-parameter model of the calendar it adds
-+0.0001, and the same is true of the divorce model behind the live ranking. What the sky
-says about a couple here is which century they were born in.
+**The honest summary.** On the quality target, against the baseline this project permits — a
+two-parameter logistic on the signed date difference, which scores 0.4853 — the doctrine reaches
+0.5862 and beats it decisively. Against a two-parameter model of the calendar it adds
++0.0199 (+1.26 SE): short of the two standard errors that would settle it.
+The divorce model behind the live ranking, tested identically on 44,249 marriages, adds
+-0.0043 (-0.24 SE) over era.
 
 ---
 

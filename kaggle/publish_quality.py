@@ -31,6 +31,8 @@ def main():
     inc = j("quality_good_incremental.json")
     trad = j("quality_good_traditions.json")
     win = j("window_probe.json")
+    dinc = j("remar_sh3_incremental.json")     # the SHIPPED divorce model, same era control
+    dwin = j("window_probe_v18.json")          # the SHIPPED model, same window probe
     if not (fin and inc):
         print("  missing result files — run finalize_quality.sh first"); sys.exit(1)
     csv = f"{DEV}/bio/marriage_quality_binary.csv"
@@ -41,6 +43,30 @@ def main():
     doc = fin["test_auc"]
     base = bm.get("age_gap_auc", float("nan"))
     kept = pd.read_csv(f"{DEV}/bio/judged2.csv") if os.path.exists(f"{DEV}/bio/judged2.csv") else d
+
+    d_era = doc - era
+    z_era, z_inc = d_era / se, inc["increment"] / se
+    beats = z_era > 2 and z_inc > 2
+    edges = z_era > 1 and z_inc > 0.5
+    if beats:
+        verdict_h = "**And it survives the era control.**"
+        verdict_p = (f"The doctrine beats the two-birth-decade model by {d_era:+.4f} ({z_era:+.2f} SE) and "
+                     f"adds {inc['increment']:+.4f} ({z_inc:+.2f} SE) on top of it. Both clear two standard "
+                     f"errors, so on this corpus the doctrine carries information the calendar does not.")
+    elif edges:
+        verdict_h = "**It edges the era control, without clearing the bar.**"
+        verdict_p = (f"The doctrine beats the two-birth-decade model by {d_era:+.4f} ({z_era:+.2f} SE) and adds "
+                     f"{inc['increment']:+.4f} ({z_inc:+.2f} SE) on top of it. Neither clears two standard "
+                     f"errors, so this is suggestive and not established — and it is a real change of "
+                     f"direction: on the first {6600:,} marriages judged, the same pipeline had the era "
+                     f"control AHEAD of the doctrine by 0.17 SE, with the doctrine adding 0.01 SE. More "
+                     f"labels moved it. That is worth saying plainly rather than reporting whichever run "
+                     f"reads better, and it is why the remaining rules still matter below.")
+    else:
+        verdict_h = "**And two birth decades reproduce it.**"
+        verdict_p = (f"The doctrine differs from the two-birth-decade model by {d_era:+.4f} ({z_era:+.2f} SE) "
+                     f"and adds {inc['increment']:+.4f} ({z_inc:+.2f} SE) on top of it. What the sky says "
+                     f"about a couple here is which century they were born in.")
 
     trows = "".join(
         f"| {f['tradition']} | {f['n_rules']} | {f['test']:.4f} | {f['increment_over_era']:+.4f} |\n"
@@ -100,7 +126,7 @@ corpus size, selection declared by cross-validation, one test read.
 Against the baseline this project allows — a two-parameter logistic on the signed difference of the two
 birth dates — the doctrine wins decisively, and the selection is stable across all five fold seeds.
 
-**And two birth decades reproduce it.**
+{verdict_h}
 
 | | AUC |
 |---|---|
@@ -109,9 +135,11 @@ birth dates — the doctrine wins decisively, and the selection is stable across
 | era + doctrine together | {comb:.4f} |
 | **what the doctrine adds to era** | **{inc['increment']:+.4f} ({inc['increment_se']:+.2f} SE)** |
 
-Fitted against the *residual* — what era cannot explain — the surviving rules are still Pluto sign and
-Neptune-Pluto phase. Neptune-Pluto is a 492-year cycle; Pluto sits about twenty years in a sign. These
-are calendars.
+{verdict_p}
+
+The rules the selection keeps are still dominated by Pluto sign and Neptune-Pluto phase — a 492-year
+cycle, and a sign Pluto occupies for about twenty years. Those are calendars, and they are why the era
+control is the one that matters here.
 
 Scored one tradition at a time, against era (2 SE = {2*se:+.4f}):
 
@@ -133,9 +161,41 @@ But a ranking that varies is not a ranking that is *right*. Every unit of this m
 attributable to birth era, and birth era is nearly constant inside a twelve-year window. The ordering
 shown inside the window is therefore **unvalidated** — not degenerate, not proven — and the page says so.
 
-**The honest summary.** On this target, against the baseline this project permits, the doctrine reaches
-{doc:.4f} and beats it by a wide margin. Against a two-parameter model of the calendar it adds
-{inc['increment']:+.4f}. What the sky says about a couple here is which century they were born in.
+## The same test, applied to the model this site actually ranks with
+
+It would be convenient to report the above and leave the product's own model alone. So it was put through
+the identical control. The ranking below comes from a {dwin.get('rules_total', 495)}-rule doctrine model
+fitted on {44249:,} marriages for a different target — divorce versus a marriage ending in death.
+
+| | AUC |
+|---|---|
+| birth decade alone, two parameters | **{dinc.get('era_auc', float('nan')):.4f}** |
+| doctrine fitted on what era cannot explain | {dinc.get('doctrine_auc', float('nan')):.4f} |
+| era + doctrine | {dinc.get('combined_auc', float('nan')):.4f} |
+| **what the doctrine adds to era** | **{dinc.get('increment', float('nan')):+.4f} ({dinc.get('increment_se', float('nan')):+.2f} SE)** |
+
+Same answer. The raw model scores higher than either figure here, but once the two birth decades are
+known it contributes nothing measurable, and the rules that survive against the residual are again
+`cycle_neptune_pluto_phase` and `dav_pluto_sign`.
+
+It does, however, pass the window probe convincingly — better than the quality model does. Sweeping 80
+men across 289 candidate dates each, its score varies **{dwin.get('ratio', float('nan')):.1f}x more inside
+one man's window than it does between different men**,
+{dwin.get('rules_that_flip', '-')} of {dwin.get('rules_total', '-')} rules change state inside a window,
+and the best candidate sits on the window edge for only {dwin.get('best_on_edge_share', 0):.0%} of men.
+
+Those two results are not in conflict, and the combination is the honest description of this product: the
+ranking genuinely moves, and what moves it is not what makes it accurate. The fast-moving rules supply
+almost all the within-window variation and none of the validated skill; the slow ones supply the skill,
+and they are a calendar. So the order in which dates appear is real output, not a constant — but it is
+**unvalidated**, and no measurement here licenses reading it as a forecast.
+
+**The honest summary.** On the quality target, against the baseline this project permits — a
+two-parameter logistic on the signed date difference, which scores {base:.4f} — the doctrine reaches
+{doc:.4f} and beats it decisively. Against a two-parameter model of the calendar it adds
+{inc['increment']:+.4f} ({z_inc:+.2f} SE): {"more than that model can explain" if beats else "short of the two standard errors that would settle it"}.
+The divorce model behind the live ranking, tested identically on 44,249 marriages, adds
+{dinc.get('increment', float('nan')):+.4f} ({dinc.get('increment_se', float('nan')):+.2f} SE) over era.
 
 ---
 
@@ -164,19 +224,24 @@ work); couples who only <b>had children</b> come out at
 {d.good[d.children_together.astype(str).isin(['True','true'])].mean():.0%}. Making something together beats
 procreation alone.<br><br>
 And the honest finding about the astrology. On that quality target these rules reach <b>{doc:.3f}</b> —
-well clear of chance and far above the age-gap baseline of {base:.3f}. But <b>two birth decades alone
-score {era:.3f}</b>, and adding all {fin['n_surviving']} rules on top of them changes that by
-<b>{inc['increment']:+.4f}</b>. Scored one tradition at a time — synastry, composite, Davison, Vedic,
-Chinese, decans — not one clears the bar. The rules the model keeps are Neptune&ndash;Pluto phase and
-Pluto sign: a 492-year cycle, and a sign Pluto sits in for twenty years. They are calendars. What the sky
-says about a couple here is which century they were born in, and the century is what predicts how an
-encyclopedia writes about a marriage.<br><br>
-So the ranking below is <b>not validated</b>. It is no longer degenerate — we swept
-{win.get('n_men',80)} men across 289 candidate dates each and the score genuinely varies inside the
-window, never pinning the best date to the edge. An earlier model failed that test outright, recommending
-the youngest date allowed to 90% of men. But a ranking that moves is not a ranking that is right: all of
-this model's measured skill belongs to birth era, and birth era barely changes across twelve years. Read
-it as a curiosity, not a forecast.</p></details>
+well clear of chance and far above the age-gap baseline of {base:.3f}. Two birth decades alone score
+<b>{era:.3f}</b>, and the {fin['n_surviving']} rules add <b>{inc['increment']:+.4f}</b>
+({z_inc:+.2f} SE) on top of them — {"enough to clear the two-standard-error bar" if beats else "short of the two standard errors that would settle it, so suggestive rather than proven"}. Scored one tradition at a time — synastry, composite, Davison, Vedic,
+Chinese, decans — not one clears the bar on its own. And the rules the selection keeps are still
+dominated by Neptune&ndash;Pluto phase and Pluto sign: a 492-year cycle, and a sign Pluto occupies for
+twenty years. Those are calendars, so most of what this model reads is the century a couple was born
+in — and the century is also what predicts how an encyclopedia writes about a marriage.<br><br>
+We then put the model behind the ranking below — a different one, fitted on {44249:,} marriages for
+divorce versus death — through the identical test, rather than reporting only the result that was
+comfortable. Same answer: <b>two birth decades score {dinc.get('era_auc', float('nan')):.3f}</b> on that
+target, and the doctrine adds <b>{dinc.get('increment', float('nan')):+.4f}</b> on top of them.<br><br>
+It does rank properly, though, and better than the quality model: its score varies
+<b>{dwin.get('ratio', float('nan')):.1f}&times; more inside one man's window than between different
+men</b>, {dwin.get('rules_that_flip','-')} of {dwin.get('rules_total','-')} rules change state inside a
+window, and the best date sits on the edge for only {dwin.get('best_on_edge_share',0):.0%} of men. So the
+order you see is real output, not a constant. But a ranking that moves is not a ranking that is right —
+the fast rules supply the movement and none of the measured skill, the slow ones supply the skill and are
+a calendar. Read it as a curiosity, not a forecast.</p></details>
 {MARK1}"""
     p2 = f"{PAGES}/docs/index.html"
     h = open(p2).read()

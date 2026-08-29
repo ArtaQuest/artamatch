@@ -40,6 +40,12 @@ SEEDS = (7, 23, 101)
 # point either way it costs half the bank, and a signed weight is just as explainable — a negative
 # one reads as a caution rather than a support. Signed needs no orientation, so it cannot leak.
 SIGNED = os.environ.get("AQ_SIGNED", "0") == "1"
+# Restrict the bank to named systems. Selecting over twelve thousand columns dilutes: at any penalty
+# loose enough to keep the statements that carry signal, the Lasso also keeps several hundred that do
+# not, and the joint model scores WORSE in cross-validation than a single system fitted alone. The
+# systems are chosen by system_ranking.py, which is cross-validated on the training couples only and
+# never touches the test set, so narrowing the bank this way spends no test information.
+ONLY = os.environ.get("AQ_ONLY", "")
 
 
 def groups(ids):
@@ -72,6 +78,12 @@ def main():
     Xt = np.column_stack([Xt[:, pos[k]] if k in pos else np.zeros(len(te), np.float32) for k in names])
     keep = np.array([clause_ok(n) for n in names]) & (X.sum(0) >= FLOOR) \
         & np.array([side(n) == "AB" for n in names])
+    if ONLY:
+        import re as _re
+        sel = np.array([bool(_re.search(ONLY, n)) for n in names])
+        print(f"  restricted to the named systems that beat the age gap on their own: "
+              f"{int((keep & sel).sum()):,} of {int(keep.sum()):,} statements")
+        keep = keep & sel
     if MIN_INTER > 0:
         ip = os.path.expanduser("~/.artamatch-dev/interaction_scores.json")
         sc = json.load(open(ip)) if os.path.exists(ip) else {}
@@ -104,17 +116,25 @@ def main():
         xi = X[:, i]
         for j in cand:
             xj = X[:, j]
-            inter = float(np.minimum(xi, xj).sum())
-            union = float(np.maximum(xi, xj).sum())
-            if union > 0 and inter / union > 0.95:
+            # PHI, not Jaccard. Jaccard on two DENSE flags is high whatever they mean: a statement
+            # true of 96% of couples overlaps any other 96% statement in ~96% of the union, so
+            # "porutham_vedha_clear ~ maya_same_baktun" scored 0.961 and one of two unrelated
+            # traditions was deleted. Phi is the correlation of two binaries and is near zero for
+            # independent columns however dense; it still reads 0.997 for the comp/dav Pluto pair
+            # this pruning exists to catch.
+            n11 = float(np.minimum(xi, xj).sum())
+            n1_ = float(xi.sum()); n_1 = float(xj.sum()); N = float(len(xi))
+            den = n1_ * (N - n1_) * n_1 * (N - n_1)
+            phi = (n11 * N - n1_ * n_1) / np.sqrt(den) if den > 0 else 0.0
+            if phi > 0.95:
                 drop[i] = True
-                dropped_pairs.append((names[i], names[j], inter / union))
+                dropped_pairs.append((names[i], names[j], phi))
                 break
         if not drop[i]:
             seen.setdefault(b, []).append(i)
     if drop.any():
         print(f"  dropped {int(drop.sum())} near-duplicate statements "
-              f"(Jaccard > 0.95 with one already kept)")
+              f"(phi > 0.95 with one already kept)")
         for a_, b_, r_ in dropped_pairs[:4]:
             print(f"    {a_[:46]:<48} ~ {b_[:40]:<42} {r_:.3f}")
         X, Xt = X[:, ~drop], Xt[:, ~drop]

@@ -29,8 +29,20 @@ from v12_fit import side
 from denylist import clause_ok
 
 D = os.path.expanduser("~/.artamatch-dev/quality_good")
-N_MID = int(os.environ.get("AQ_MID", "60"))
-SEPS = [0, 1, 2, 3, 5, 7, 9, 11, 13, 14]     # years of half-separation, midpoint held fixed
+# Enough midpoints that a statement clearing the fit's support floor (0.5% of couples) still fires
+# tens of times here. At 60 midpoints a rare statement — most nakshatra pairs, most day-pillar pairs —
+# never fired at all, its variance was zero, and the gate condemned it as "a function of the midpoint"
+# when the truth was that the gate had no evidence about it either way.
+N_MID = int(os.environ.get("AQ_MID", "350"))
+MIN_FIRE = int(os.environ.get("AQ_MIN_FIRE", "8"))   # below this the gate abstains rather than judging
+# Years of half-separation, midpoint held fixed. The FRACTIONS are not decoration: a grid of whole
+# years moves both births by a whole number of years, so every one of them keeps the same day of the
+# year, and any tradition keyed to the tropical calendar — Sun signs, the runic half-months, the Nile
+# zodiac — is frozen by the test rather than measured by it, and gets condemned as a midpoint quantity
+# when it is nothing of the kind. Sub-year steps move the two through the seasons in opposite
+# directions, which is exactly the motion those traditions read.
+SEPS = [0, 0.04, 0.11, 0.19, 0.27, 0.36, 0.44, 0.5, 0.63, 0.78, 0.91,
+        1, 1.5, 2, 2.5, 3, 5, 7, 9, 11, 13, 14]
 
 
 def main():
@@ -42,8 +54,8 @@ def main():
     rows = []
     for gi, m in enumerate(mids):
         for s in SEPS:
-            a = m - pd.Timedelta(days=int(s * 365.2422))
-            b = m + pd.Timedelta(days=int(s * 365.2422))
+            a = m - pd.Timedelta(days=round(s * 365.2422))
+            b = m + pd.Timedelta(days=round(s * 365.2422))
             if a.year < 1600 or b.year > 2010:
                 continue
             rows.append({"dob_a": a.strftime("%Y-%m-%d"), "dob_b": b.strftime("%Y-%m-%d"),
@@ -67,21 +79,45 @@ def main():
     ok = np.array([clause_ok(n) and side(n) == "AB" for n in names])
     print(f"  bank {X.shape[1]:,} · {int(ok.sum()):,} pass the naming test\n", flush=True)
 
-    varies = np.zeros(X.shape[1]); groups = 0
+    # The score is a VARIANCE DECOMPOSITION, not a count of groups that moved. Counting groups looked
+    # reasonable and was not: it asks only "did this statement take more than one value here", so
+    # enlarging the separation grid raises every score mechanically, and a threshold of 0.25 stops
+    # meaning the same thing from one grid to the next. Splitting the variance instead asks how much of
+    # the statement's behaviour is about the two being APART versus about WHEN they were born, and that
+    # ratio barely moves when the grid changes. Within-group variation is separation (the midpoint is
+    # held fixed inside a group); between-group variation is the midpoint. A pure midpoint quantity has
+    # no within-group variance at all and scores 0; a pure separation quantity has no between-group
+    # variance and scores 1. Half means the two sources contribute equally.
+    within = np.zeros(X.shape[1]); wn = 0; groups = 0
     for gi in np.unique(g):
         m = g == gi
         if m.sum() < 3:
             continue
         groups += 1
         sub = X[m]
-        varies += (sub.max(0) != sub.min(0)).astype(float)
-    score = varies / max(groups, 1)
-    out = {names[i]: float(score[i]) for i in range(len(names)) if ok[i]}
+        within += ((sub - sub.mean(0)) ** 2).sum(0)
+        wn += m.sum()
+    within /= max(wn, 1)
+    total = X.var(0)
+    score = np.where(total > 1e-12, within / np.maximum(total, 1e-12), 0.0)
+    score = np.clip(score, 0.0, 1.0)
+    varies = score * groups          # kept so the printout below still reads as a per-group figure
+    fires = (X > 0).sum(0)
+    thin = ok & (fires < MIN_FIRE)
+    print(f"  {int(thin.sum()):,} statements fire fewer than {MIN_FIRE} times here — the gate has no\n"
+          f"  evidence about them and abstains; they are recorded as null, not as zero\n")
+    out = {names[i]: (float(score[i]) if not thin[i] else None)
+           for i in range(len(names)) if ok[i]}
+    _abst = {k: v for k, v in out.items() if v is None}
+    out = {k: v for k, v in out.items() if v is not None}
     sc = np.array([out[n] for n in out])
-    print(f"  interaction score = share of the {groups} midpoint groups in which a statement varies\n")
-    for lo, hi, lab in ((0, 1e-9, "NEVER varies — a function of the midpoint alone"),
-                        (1e-9, .05, "varies in under 5% of groups"),
-                        (.05, .25, "5-25%"), (.25, .6, "25-60%"), (.6, 1.01, "over 60% — a real interaction")):
+    print(f"  interaction score = share of a statement's variance that comes from the SEPARATION\n"
+          f"  rather than the midpoint, over {groups} midpoint groups\n")
+    for lo, hi, lab in ((0, 1e-9, "NO separation variance at all — the midpoint alone"),
+                        (1e-9, .1, "under a tenth of its variance is the pair"),
+                        (.1, .5, "a tenth to a half — mostly era"),
+                        (.5, .9, "more than half is the pair — a real interaction"),
+                        (.9, 1.01, "over nine tenths — the pair and almost nothing else")):
         k = int(((sc >= lo) & (sc < hi)).sum())
         print(f"    {lab:<48}{k:>6,}  ({k/len(sc):.0%})")
     dead = sorted([n for n in out if out[n] == 0.0])
@@ -92,6 +128,7 @@ def main():
     for k, v in c.most_common(10):
         print(f"    {k:<44}{v:>6,}")
     json.dump(out, open(os.path.expanduser("~/.artamatch-dev/interaction_scores.json"), "w"))
+    json.dump(sorted(_abst), open(os.path.expanduser("~/.artamatch-dev/interaction_abstain.json"), "w"))
     print(f"\n  saved interaction_scores.json")
     # and what the SHIPPED model would keep
     M = json.load(open(os.path.expanduser("~/.artamatch-dev/quality_final4.json")))

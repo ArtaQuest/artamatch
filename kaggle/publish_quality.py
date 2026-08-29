@@ -33,6 +33,7 @@ def main():
     win = j("window_probe.json")
     dinc = j("remar_sh3_incremental.json")     # the SHIPPED divorce model, same era control
     dwin = j("window_probe_v18.json")          # the SHIPPED model, same window probe
+    v21 = j("v21_summary.json")                # the expanded bank, and its three test reads
     if not (fin and inc):
         print("  missing result files — run finalize_quality.sh first"); sys.exit(1)
     csv = f"{DEV}/bio/marriage_quality_binary.csv"
@@ -231,6 +232,19 @@ Chinese, decans — not one clears the bar on its own. And the rules the selecti
 dominated by Neptune&ndash;Pluto phase and Pluto sign: a 492-year cycle, and a sign Pluto occupies for
 twenty years. Those are calendars, so most of what this model reads is the century a couple was born
 in — and the century is also what predicts how an encyclopedia writes about a marriage.<br><br>
+<b>A later, larger bank did not change the answer, and taught us something about our own
+reporting.</b> We added the traditions the model had been missing — numerology, Rudhyar's moon phases,
+the Chinese animal relations, the Navamsa D9, all eight kootas with the Guna Milan total, the Mayan
+Tzolkin, and the 5th, 7th and 9th harmonic charts — and dropped the support floor that had been
+structurally excluding them (a twelve-by-twelve pair table averages n/144 rows a cell, so numerology
+could never be selected no matter what it predicted). The bank grew to {v21.get('bank', 0):,} pair-only
+statements. Three regularisation settings then tied on cross-validation
+({v21.get('cv_range',[0,0])[0]:.4f}&ndash;{v21.get('cv_range',[0,0])[1]:.4f}) while their held-out scores
+ranged {v21.get('test_range',[0,0])[0]:.4f}&ndash;{v21.get('test_range',[0,0])[1]:.4f} —
+a spread of {v21.get('test_spread_se',0):.1f} standard errors. Quoting the best of those would have been
+picking a number, so: the honest estimate is the cross-validated <b>0.592</b>, the model we ship is the
+one with the most explainable content rather than the best score, and the doctrine's edge over the
+calendar is <b>not established</b>.<br><br>
 We then put the model behind the ranking below — a different one, fitted on {44249:,} marriages for
 divorce versus death — through the identical test, rather than reporting only the result that was
 comfortable. Same answer: <b>two birth decades score {dinc.get('era_auc', float('nan')):.3f}</b> on that

@@ -507,14 +507,58 @@ def features(his, her, CA=None, CB=None):
             F[f"{tag}_atmakaraka={KAR[ak_]}"] = 1.0
             F[f"{tag}_darakaraka={KAR[dk_]}"] = 1.0
             F[f"{tag}_darakaraka_sign={SIGNS[sign_i(C[KAR[dk_]])]}"] = 1.0
+    # ---- the marriage-quality model's statements ------------------------------------------------
+    # Definitions copied EXACTLY from the training builders, including one that looks wrong and is not
+    # mine to fix: cycle_{x}_{y}_phase averages each planet across the two charts ARITHMETICALLY, not
+    # circularly. The model was fitted on that, so the browser must reproduce it, not improve on it.
+    _MEAN = {"sun": 0.9856474, "moon": 13.1763966, "mercury": 0.9856474, "venus": 0.9856474,
+             "mars": 0.5240208, "jupiter": 0.0830853, "saturn": 0.0334442, "uranus": 0.0117252,
+             "neptune": 0.00598, "pluto": 0.0039717}
+    _PH8 = ["New", "Crescent", "FirstQtr", "Gibbous", "Full", "Disseminating", "LastQtr", "Balsamic"]
+    _dt = jdn(*her) - jdn(*his)
+    for _b, _nm in _MEAN.items():
+        _ta, _tb = CA.get(_b, float("nan")), CB.get(_b, float("nan"))
+        if _ta == _ta and _tb == _tb:
+            _raw = (_tb - _ta + 180.0) % 360.0 - 180.0
+            _m = (_ta + _raw / 2.0) % 360.0                      # Ebertin circular midpoint
+            F[f"comp_{_b}_sign={SIGNS[int(_m // 30)]}"] = 1.0
+            _k = round((_nm * _dt - _raw) / 360.0)                # Davison: carry the whole turns
+            _dav = (_ta + (_raw + 360.0 * _k) / 2.0) % 360.0
+            F[f"dav_{_b}_sign={SIGNS[int(_dav // 30)]}"] = 1.0
+    for _x, _y in (("jupiter", "saturn"), ("saturn", "uranus"), ("saturn", "neptune"),
+                   ("saturn", "pluto"), ("uranus", "neptune"), ("uranus", "pluto"),
+                   ("neptune", "pluto")):
+        _ax, _bx, _ay, _by = CA.get(_x), CB.get(_x), CA.get(_y), CB.get(_y)
+        if None in (_ax, _bx, _ay, _by) or any(v != v for v in (_ax, _bx, _ay, _by)):
+            continue
+        _ph = ((_ax + _bx) / 2.0 - (_ay + _by) / 2.0) % 360.0     # arithmetic, as trained
+        F[f"cycle_{_x}_{_y}_phase={SIGNS[int(_ph // 30)]}"] = 1.0
+        _pa, _pb = (_ax - _ay) % 360.0, (_bx - _by) % 360.0       # each partner's own angle
+        _fa, _fb = int(_pa // 45.0) % 8, int(_pb // 45.0) % 8
+        F[f"cyclephase_{_x}_{_y}={_PH8[_fa]}x{_PH8[_fb]}"] = 1.0
+        if _fa == _fb:
+            F[f"cyclephase_{_x}_{_y}_same"] = 1.0
+        if int(_pa // 7.5) % 48 == int(_pb // 7.5) % 48:
+            F[f"cycle48_{_x}_{_y}_same_part"] = 1.0
+        if int(_pa // 5.0) % 72 == int(_pb // 5.0) % 72:
+            F[f"cycle72_{_x}_{_y}_same_part"] = 1.0
+        if int(_pa // 10.0) % 36 == int(_pb // 10.0) % 36:
+            F[f"cyclesep10_{_x}_{_y}_same_band"] = 1.0
     return F
+
+
+def _fires(clause, F):
+    """a statement may be carried as its negation: NOT(x) fires exactly when x does not"""
+    if clause.startswith("NOT(") and clause.endswith(")"):
+        return clause[4:-1] not in F
+    return clause in F
 
 
 def score_rules(weights, intercept, his, her):
     """v10: a rule may be a conjunction — "A AND B [AND C]" fires only when every clause fires."""
     F = features(his, her)
     fired = [(name, w) for name, w in weights.items()
-             if all(p in F for p in name.split(" AND "))]
+             if all(_fires(p, F) for p in name.split(" AND "))]
     fired.sort(key=lambda t: -t[1])
     return intercept + sum(w for _, w in fired), fired
 

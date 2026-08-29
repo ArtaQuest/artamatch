@@ -156,7 +156,7 @@ sign earlier than the newspaper.</p>
 <details id="more" style="display:none"><summary>The full ranking, every date scanned</summary>
 <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;margin-top:8px"><table><tbody id="t100"></tbody></table></div></details>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
-remembers. <span id="honestnum">Honest accuracy: held-out AUC 0.699 — a real but modest edge over chance.</span></p>
+remembers. <span id="honestnum">What this ranks on: whether the marriage went well, judged from 10,000 historical records. Held-out AUC 0.587 against an age-gap baseline of 0.485 — a real edge, and a modest one. Dates with the same score are shown as ties, because the model has nine statements and cannot tell them apart.</span></p>
 </section>
 
 <section class="step on" id="rules" style="display:block">
@@ -437,8 +437,8 @@ async function boot(){
   await py.loadPackage(["numpy","astropy"]);
   for(const f of ["sweshim.py","scorer.py"]) py.FS.writeFile("/"+f,await (await fetch(f)).text());
   const [asset,tables,mj,rj]=await Promise.all([fetch("ephem4.bin").then(r=>r.arrayBuffer()),
-    fetch("tables.json").then(r=>r.text()),fetch("almanac/v18_model.json").then(r=>r.text()),
-    fetch("almanac/v18_rules.json").then(r=>r.json())]);
+    fetch("tables.json").then(r=>r.text()),fetch("almanac/quality_deployed_model.json").then(r=>r.text()),
+    fetch("almanac/quality_deployed_rules.json").then(r=>r.json())]);
   py.FS.writeFile("/asset.bin",new Uint8Array(asset));
   py.FS.writeFile("/tables.json",tables);
   py.FS.writeFile("/am_model.json",mj);
@@ -461,9 +461,12 @@ def _share(sc):
         return y0+(y1-y0)*(sc-x0)/(x1-x0) if x1>x0 else y0
     return next((c["share"] for c in _CAL if c["lo"]<=sc<c["hi"]),_CAL[-1]["share"])
 _RS=[(n,n.split(" AND "),w) for n,w in _CO.items()]
+def _fires(p,F):
+    # NOT(x) fires exactly when x does not: the same doctrine stated the other way round
+    return (p[4:-1] not in F) if (p.startswith("NOT(") and p.endswith(")")) else (p in F)
 def _score(his,her):
     F=scorer.features(his,her)
-    fired=[(n,w) for n,parts,w in _RS if all(p in F for p in parts)]
+    fired=[(n,w) for n,parts,w in _RS if all(_fires(p,F) for p in parts)]
     fired.sort(key=lambda t:-t[1])
     return _B0+sum(w for _,w in fired),fired
 def read_user(y,m,d):
@@ -578,7 +581,7 @@ function renderTop(all,P){
       <span class="mgap">${(state.g==="m"
         ? `She'd be ${gap===0?"about your age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"younger":"older")}`
         : `You'd be ${gap===0?"about the same age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"older":"younger")}`)} · ${r[3]===0?"not one shadow":r[3]+" small shadows"}</span>
-      <span class="mbar"><i style="width:${(100-pw).toFixed(0)}%"></i></span><span class="mp">${(100*(1-r[4])).toFixed(1)}%</span></div>
+      <span class="mbar"><i style="width:${(100-pw).toFixed(0)}%"></i></span><span class="mp">${(100*r[4]).toFixed(1)}%</span></div>
       <div class="chips">${chips}</div>
       <div class="why">The percentage is how often matches like this one <b>held for life</b>, among five
       centuries of recorded marriages. The chips are the few old rules this pairing stirs — every one is
@@ -608,7 +611,7 @@ async function toMatches(){
   renderTop(all,P);
   const rows=[];
   for(let i=0;i<all.length;i++){const r=all[i];
-    rows.push(`<tr><td>${i+1}</td><td class="mono">${r[0]}</td><td class="mono">${r[3]===0?"—":r[3]}</td><td class="mono">${(100*(1-r[4])).toFixed(1)}%</td></tr>`);}
+    rows.push(`<tr><td>${i+1}</td><td class="mono">${r[0]}</td><td class="mono">${r[3]===0?"—":r[3]}</td><td class="mono">${(100*r[4]).toFixed(1)}%</td></tr>`);}
   $("t100").innerHTML=rows.join("");
   $("more").style.display="block";$("honest").style.display="block";
   window.__AM_DONE={top:all.slice(0,3).map(r=>[r[0],r[1]])};

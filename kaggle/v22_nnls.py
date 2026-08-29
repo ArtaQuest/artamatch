@@ -33,6 +33,7 @@ import v23_traditions as V23
 import v26_traditions as V26
 import v27_traditions as V27
 import v29_traditions as V29
+import v30_maya as V30
 from v12_fit import side
 from denylist import clause_ok
 
@@ -43,6 +44,7 @@ WITH_V23 = os.environ.get("AQ_V23", "1") == "1"   # the marriage-specific tradit
 WITH_V26 = os.environ.get("AQ_V26", "1") == "1"   # the lagna and compatibility systems
 WITH_V27 = os.environ.get("AQ_V27", "1") == "1"   # the deepening of the strongest families
 WITH_V29 = os.environ.get("AQ_V29", "1") == "1"   # aspect patterns, cycle phases, reception
+WITH_V30 = os.environ.get("AQ_V30", "1") == "1"   # the Maya almanac in full
 
 
 def build(df, Z, split):
@@ -65,6 +67,9 @@ def build(df, Z, split):
         parts.append(a); names += nm; ex |= set(nm)
     if WITH_V29:
         a, nm = V29.build(df, Z, split, ex, min_support=1)
+        parts.append(a); names += nm; ex |= set(nm)
+    if WITH_V30:
+        a, nm = V30.build(df, Z, split, ex, min_support=1)
         parts.append(a); names += nm
     return np.column_stack(parts).astype(np.float32), names
 

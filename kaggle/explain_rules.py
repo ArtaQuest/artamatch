@@ -144,6 +144,62 @@ def explain(name):
                 "reading": "Both conditions hold at once, which the doctrine treats as one combined "
                            "statement: " + " ".join(p["reading"] for p in parts)}
 
+    # ---------- v30: the Maya almanac ----------
+    if n.startswith("maya_"):
+        MZ = {
+         "maya_same_daysign": ("The same Tzolkin day sign", "Both births fall on the same one of the twenty day signs.", "The day sign is the Maya reading of character — the closest thing their astrology has to a sun sign."),
+         "maya_same_tone": ("The same galactic tone", "Both births carry the same tone, one to thirteen.", "The tone is the pitch a day is played at, under its sign."),
+         "maya_same_kin": ("The very same kin", "Both births land on the same one of the 260 named days.", "The Tzolkin repeats every 260 days; sharing a kin is the closest two Maya birthdays can be."),
+         "maya_same_trecena": ("The same trecena", "Both births fall in a thirteen-day run opened by the same day sign.", "A Maya day is read through its trecena as much as through itself — the run it belongs to colours it."),
+         "maya_same_haab_month": ("The same Haab month", "Both births fall in the same twenty-day month of the solar year.", "The Haab is the 365-day count: eighteen months of twenty days, and five nameless ones."),
+         "maya_same_haab_day": ("The same Haab date", "The same day of the same month of the solar year.", "The Haab is the Maya farming year, and it drifts against the seasons."),
+         "maya_wayeb_either": ("One born in Wayeb", "One birth falls in the five nameless days at the year's end.", "Wayeb was held to be dangerous and unlucky — a gap in the year when the ordinary rules lapsed."),
+         "maya_wayeb_both": ("Both born in Wayeb", "Both births fall in the five nameless days.", "Wayeb was held to be dangerous and unlucky — a gap in the year when the ordinary rules lapsed."),
+         "maya_same_yearbearer": ("The same Year Bearer", "Both Haab years are carried by the same day sign.", "Only four of the twenty signs can open a Haab year, and the bearer colours everything in it."),
+         "maya_same_lord_of_night": ("The same Lord of the Night", "Both births fall on the same one of the nine night lords.", "The Maya ran a nine-day cycle of night lords alongside the other two calendars."),
+         "maya_same_calendar_round_position": ("The same place in the Calendar Round", "Tzolkin and Haab mesh into a 52-year round, and both births sit at the same point in it.", "The Calendar Round is the Maya century: 52 years before a date can repeat."),
+         "maya_same_tun": ("The same tun", "Both births fall in the same 360-day tun of the Long Count.", "The Long Count is the linear count, running from a fixed origin without repeating."),
+         "maya_same_katun": ("The same katun", "Both births fall in the same katun — a period of about twenty years.", "The katun is the Maya generation, and prophecy was written katun by katun."),
+         "maya_same_baktun": ("The same baktun", "Both births fall in the same baktun, about 394 years.", "The baktun is the Long Count's largest ordinary unit."),
+         "maya_same_819_quarter": ("The same 819-day station", "Both births fall in the same quarter of the 819-day count.", "The 819-day cycle assigns each station a colour and a world-direction; it is one of the least understood Maya counts."),
+         "maya_oracle_antipode": ("Antipode partners", "The two day signs sit ten apart on the twenty-sign wheel.", "In the Dreamspell oracle the antipode is the challenging partner — the one that tests."),
+         "maya_oracle_analog": ("Analog partners", "The two day signs are the paired opposites that sum to nineteen.", "The analog is the supporting partner in the oracle — the one that helps."),
+         "maya_oracle_occult": ("Occult partners", "The two kin numbers sum to 261.", "The occult partner is the hidden one, reached through the back of the calendar."),
+         "maya_his_guide_is_her_daysign": ("His guide is her day sign", "The sign guiding his day is the sign she was born under.", "The guide is the relation a modern Dreamspell reading leads with — the power that directs a day."),
+         "maya_her_guide_is_his_daysign": ("Her guide is his day sign", "The sign guiding her day is the sign he was born under.", "The guide is the relation a modern Dreamspell reading leads with — the power that directs a day."),
+         "maya_same_guide": ("The same guide", "Both days are guided by the same sign.", "The guide is the power that directs a day, taken from the sign and the tone together."),
+         "maya_same_color_family": ("The same colour family", "The twenty signs divide into red, white, blue and yellow; both fall in one.", "Red initiates, white refines, blue transforms, yellow ripens — the four-beat the whole calendar runs on."),
+         "maya_same_wavespell": ("The same wavespell", "Both births fall in the same thirteen-day wavespell.", "A wavespell is one full run of the thirteen tones, from the first stirring to the last release."),
+         "maya_same_castle": ("The same castle", "Both births fall in the same 52-kin castle of the Tzolkin.", "The 260 days divide into five castles of fifty-two, each with its own colour and purpose."),
+         "maya_same_venus_station": ("The same Venus station", "Both births fall in the same station of the 584-day Venus round.", "Venus is the body Maya astronomy watched most closely; the Dresden Codex tabulates its cycle, and war and marriage were timed by it."),
+         "maya_same_venus_eighth": ("The same eighth of the Venus round", "Both births fall in the same eighth of the 584-day cycle.", "The Venus round is the Dresden Codex's great table, and the Maya read it for omens."),
+        }
+        if n in MZ:
+            t, pl, rd = MZ[n]
+            return {"tradition": "Maya calendar", "title": t, "plain": pl, "reading": rd}
+        if "=" in n:
+            a, b = _pair(n.split("=", 1)[1])
+            KIND = {"maya_daysignpair": ("day sign", "the Maya reading of character"),
+                    "maya_tonepair": ("galactic tone", "the pitch a day is played at"),
+                    "maya_trecenapair": ("trecena", "the thirteen-day run a day belongs to"),
+                    "maya_haabmonthpair": ("Haab month", "the twenty-day month of the solar year"),
+                    "maya_yearbearerpair": ("Year Bearer", "the sign that carries the whole Haab year"),
+                    "maya_lordnightpair": ("Lord of the Night", "the nine-day cycle run beside the calendars"),
+                    "maya_colorpair": ("colour family", "red initiates, white refines, blue transforms, yellow ripens"),
+                    "maya_castlepair": ("castle", "one of the five fifty-two-day quarters of the Tzolkin"),
+                    "maya_katunpair": ("katun", "a Maya generation of about twenty years"),
+                    "maya_baktunpair": ("baktun", "the Long Count's largest ordinary unit, about 394 years"),
+                    "maya_819_stationpair": ("819-day station", "a colour and a world-direction in the 819-day count"),
+                    "maya_venus_stationpair": ("Venus station", "where Venus stood in its 584-day round"),
+                    }.get(n.split("=")[0], ("Maya count", "one of the interlocking Maya cycles"))
+            return {"tradition": "Maya calendar",
+                    "title": f"{KIND[0].capitalize()}: {a} and {b}",
+                    "plain": f"His {KIND[0]} is {a}, hers is {b}.",
+                    "reading": f"The {KIND[0]} is {KIND[1]}."}
+        return {"tradition": "Maya calendar", "title": n.replace("maya_", "").replace("_", " "),
+                "plain": f"The Maya statement `{n}`, computed from both birth dates.",
+                "reading": "One of the interlocking counts the Maya kept at once."}
+
     # ---------- v29: cycle phases, chart gestalts, reception, Tibetan four ----------
     m = re.match(r"^cycle(\d+)_(\w+?)_(\w+?)_same_part$", n)
     if m:

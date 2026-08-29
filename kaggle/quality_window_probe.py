@@ -23,7 +23,7 @@ import numpy as np, pandas as pd
 warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.expanduser("~/Studio/artamatch/research/sidereal"))
 sys.path.insert(0, os.path.expanduser("~/Studio/artamatch/kaggle"))
-import v6_fit as V6, v7_fit as V7, v8_fit as V8, v13_fit as V13
+from v22_nnls import build as full_build
 
 D = os.path.expanduser(sys.argv[1])
 MODEL = json.load(open(os.path.expanduser(sys.argv[2])))
@@ -60,15 +60,22 @@ def main():
         print("  chart build failed:\n" + r.stdout[-1500:] + r.stderr[-1500:]); sys.exit(1)
     Z = np.load(f"{tmp}/phases.npz", allow_pickle=True)
     tr = pd.read_csv(f"{tmp}/train.csv", dtype=str)
-    X6, n6 = V6.bank(tr, Z, "train"); XA, nA = V7.additions(tr, Z, "train")
-    XL, nL = V8.last_singles(tr, Z, "train")
-    XN, nN = V13.new_singles(tr, Z, "train", set(n6 + nA + nL))
-    X = np.column_stack([X6, XA, XL, XN]); names = n6 + nA + nL + nN
+    # use the SAME bank builder the model was fitted with, or the probe silently drops the very
+    # statements it is meant to be testing
+    X, names = full_build(tr, Z, "train")
     pos = {n: i for i, n in enumerate(names)}
     w = MODEL["weights"]
-    missing = [k for k in w if k not in pos]
-    cols = [pos[k] for k in w if k in pos]
-    coef = np.array([v for k, v in w.items() if k in pos])
+    # a statement may be carried as its negation; rebuild that column rather than skipping it
+    base = lambda k: k[4:-1] if k.startswith("NOT(") and k.endswith(")") else k
+    missing = [k for k in w if base(k) not in pos]
+    keys = [k for k in w if base(k) in pos]
+    built = []
+    for k in keys:
+        col = X[:, pos[base(k)]]
+        built.append(1.0 - col if k.startswith("NOT(") else col)
+    X = np.column_stack(built) if built else X[:, :0]
+    cols = list(range(X.shape[1]))
+    coef = np.array([w[k] for k in keys])
     if missing:
         print(f"  note: {len(missing)} of {len(w)} model rules are not reproducible here, skipped")
     score = X[:, cols] @ coef + MODEL.get("intercept", 0.0)

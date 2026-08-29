@@ -1,37 +1,41 @@
 {
- "ranked_by": "drop-one cross-validated loss, summed over the statements that read it",
+ "ranked_by": "summed absolute weight of the statements in each group",
+ "note": "every statement here changes when the two birth dates move apart around a fixed midpoint",
  "cards": [
   {
-   "key": "cyc",
-   "label": "Neptune\u2013Pluto in",
+   "key": "synastry",
+   "label": "How your planets meet theirs",
    "statements": 4,
-   "drop_one": 0.0253,
-   "share": 0.686,
-   "weight": 0.8661
+   "share": 0.23,
+   "mean_interaction": 0.496
   },
   {
-   "key": "plu",
-   "label": "Your Pluto",
-   "statements": 2,
-   "drop_one": 0.0053,
-   "share": 0.143,
-   "weight": 0.6538
+   "key": "cycles",
+   "label": "The slow cycles you were both born under",
+   "statements": 6,
+   "share": 0.216,
+   "mean_interaction": 0.599
   },
   {
-   "key": "ph",
-   "label": "Neptune\u2013Pluto phase",
-   "statements": 2,
-   "drop_one": 0.0034,
-   "share": 0.093,
-   "weight": 0.6459
+   "key": "vedic",
+   "label": "What Vedic matching says",
+   "statements": 8,
+   "share": 0.199,
+   "mean_interaction": 0.894
   },
   {
-   "key": "nep",
-   "label": "Your Neptune",
-   "statements": 1,
-   "drop_one": 0.0029,
-   "share": 0.078,
-   "weight": 0.2531
+   "key": "other",
+   "label": "Everything else the model reads",
+   "statements": 6,
+   "share": 0.185,
+   "mean_interaction": 0.653
+  },
+  {
+   "key": "relchart",
+   "label": "The chart the two of you make",
+   "statements": 7,
+   "share": 0.17,
+   "mean_interaction": 0.646
   }
  ]
 }

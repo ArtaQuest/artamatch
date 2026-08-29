@@ -1,106 +1,22 @@
 {
- "cv_auc": 0.5969,
- "test_auc": 0.5872,
- "alpha": 0.007,
- "n_bank": 11152,
- "n_statements": 9,
- "n_negated": 4,
+ "cv_auc": 0.5212,
+ "test_auc": 0.5217,
+ "alpha": 0.004,
+ "n_bank": 2907,
+ "n_statements": 31,
+ "n_negated": 14,
  "age_gap_auc": 0.4853475508363363,
  "auc_se": 0.01576840007011145,
- "over_chance_se": 5.53,
- "over_baseline_se": 6.46,
+ "over_chance_se": 1.38,
+ "over_baseline_se": 2.31,
  "audit_failures": [],
- "full_model_cv_logistic": 0.6039,
- "top": [
-  {
-   "rank": 1,
-   "title": "Not both born under Neptune\u2013Pluto in Taurus",
-   "tradition": "Mundane astrology \u2014 planetary cycles",
-   "fires": 5743,
-   "good_when_fires": 0.626,
-   "good_otherwise": 0.523,
-   "drop_one": 0.023,
-   "weight": 0.493
-  },
-  {
-   "rank": 2,
-   "title": "Not: Pluto in Taurus, in the composite chart",
-   "tradition": "Composite chart",
-   "fires": 5998,
-   "good_when_fires": 0.616,
-   "good_otherwise": 0.542,
-   "drop_one": 0.0032,
-   "weight": 0.2016
-  },
-  {
-   "rank": 3,
-   "title": "Not: Neptune in Gemini, in the composite chart",
-   "tradition": "Composite chart",
-   "fires": 6713,
-   "good_when_fires": 0.612,
-   "good_otherwise": 0.518,
-   "drop_one": 0.0029,
-   "weight": 0.2531
-  },
-  {
-   "rank": 4,
-   "title": "Both born in the Disseminating phase of Neptune\u2013Pluto",
-   "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
-   "fires": 1125,
-   "good_when_fires": 0.723,
-   "good_otherwise": 0.577,
-   "drop_one": 0.0028,
-   "weight": 0.3785
-  },
-  {
-   "rank": 5,
-   "title": "Pluto in Pisces, in the composite chart",
-   "tradition": "Composite chart",
-   "fires": 609,
-   "good_when_fires": 0.775,
-   "good_otherwise": 0.583,
-   "drop_one": 0.0021,
-   "weight": 0.4522
-  },
-  {
-   "rank": 6,
-   "title": "Not both born under Neptune\u2013Pluto in Aries",
-   "tradition": "Mundane astrology \u2014 planetary cycles",
-   "fires": 6075,
-   "good_when_fires": 0.619,
-   "good_otherwise": 0.528,
-   "drop_one": 0.0012,
-   "weight": 0.1802
-  },
-  {
-   "rank": 7,
-   "title": "Both born in the LastQtr phase of Neptune\u2013Pluto",
-   "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
-   "fires": 641,
-   "good_when_fires": 0.758,
-   "good_otherwise": 0.584,
-   "drop_one": 0.0006,
-   "weight": 0.2674
-  },
-  {
-   "rank": 8,
-   "title": "The Neptune\u2013Pluto angle was within the same 10\u00b0 at both births",
-   "tradition": "Mundane astrology \u2014 planetary cycles",
-   "fires": 3584,
-   "good_when_fires": 0.614,
-   "good_otherwise": 0.584,
-   "drop_one": 0.0006,
-   "weight": 0.0867
-  },
-  {
-   "rank": 9,
-   "title": "Both births fall in the same 48th of the Neptune\u2013Pluto cycle",
-   "tradition": "Mundane astrology \u2014 planetary cycles",
-   "fires": 2825,
-   "good_when_fires": 0.616,
-   "good_otherwise": 0.588,
-   "drop_one": 0.0005,
-   "weight": 0.1063
-  }
- ]
+ "full_model_cv_logistic": null,
+ "pair_only": true,
+ "dropped_for_not_being_interactions": 9706,
+ "prev_model": {
+  "cv": 0.5969,
+  "test": 0.5872,
+  "note": "included midpoint quantities that do not change when the two births move apart"
+ },
+ "top": []
 }

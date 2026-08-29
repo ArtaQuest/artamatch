@@ -164,8 +164,9 @@ it will read your chart, then look for the birth dates that fit yours.</p>
 
 <section class="step" id="s1">
 <h2 style="margin-top:34px">Your sky</h2>
-<p class="sub">Noon on your birthday, in the sidereal zodiac the Indian tradition uses — it can sit one
-sign earlier than the newspaper.</p>
+<p class="sub">Noon on your birthday, in the sidereal zodiac the Indian tradition uses. The model reads
+nothing about you on your own — every statement in it compares two dates — so the cards below name what
+it will read once there is a second date to compare yours with.</p>
 <div id="wheelbox"><svg id="wheel" viewBox="0 0 420 420" role="img" aria-label="Your sidereal birth chart"></svg></div>
 <div class="pcards" id="cards"></div>
 <div style="text-align:center"><button class="cta" id="to2" style="display:none">Find the dates that fit →</button></div>
@@ -208,19 +209,26 @@ Pluto by sign — with the composite chart behind them. Ranked by what each is a
 cross-validated loss if it were removed, rather than its raw coefficient), one statement carries most of
 the model and the rest fill in around it; the full ranking, with how often each fires and how the
 marriages went when it did, is below.<br><br>
-<b>The final model, after four more waves of doctrine and twelve audit checks.</b> The bank grew to
-11,152 pair-only statements — numerology, Rudhyar's moon phases, the Chinese animal
-relations, the Navamsa, all eight kootas with the Guna Milan total, Mangal dosha, the Jaimini
-Darakaraka, the Bazi day pillar, Arabic parts, the Mayan Tzolkin and Dreamspell, Chandra and Surya
-lagna, Nine Star Ki, Tibetan Mewa and Parkha, the harmonic, draconic and antiscia charts, and the
-aspect patterns and cycle phases that carry most of the weight. Selection kept
-<b>9</b> of them, 4 read as their negation. On
-couples the model never saw it reaches <b>0.5872</b> —
-<b>+5.5 standard errors above chance</b>, and
-<b>+6.5</b> above the age-gap baseline of
-0.4853, which is the one comparator we measure against because it reads
-nothing but the same two dates. Cross-validated, the honest figure is
-<b>0.5969</b>.<br><br>
+<b>Every statement now reads BOTH dates — and enforcing that cost most of the score.</b> A statement
+was previously called pair-only if its NAME lacked a "his" or "her". That is a test of naming, not of
+behaviour, and it let through quantities that use two dates only as a midpoint: hold the midpoint fixed,
+move the two births apart by twenty years, and they do not change. They cannot be about a couple,
+because they say the same thing about every couple born around that year. Seven of the nine statements
+in the previous model were of that kind.<br><br>
+So each statement was tested rather than trusted: build synthetic couples on a grid of fixed midpoints
+and widening separations, and keep only those that actually respond
+(<a href="almanac/quality_interaction_scores.json">every score</a>). That removed
+<b>9,706</b> of them. What is left reaches
+<b>0.5217</b> on held-out couples — +1.4 standard
+errors above chance and <b>+2.3</b> above the age-gap baseline of
+0.4853, the one comparator we measure against. The earlier model scored
+0.5872, and the difference between those two numbers is the price of the honesty: most of what it knew
+was when you were born, not who you are.<br><br>
+It is a far better instrument for the actual job. The old model could express 54 distinct scores in
+total; this one expresses 7,251, so it can genuinely order candidate dates rather than sort them into a
+handful of ties. Its weight is spread across five kinds of reading — how your planets meet theirs, the
+chart the two of you make, Vedic matching, the slow cycles you share, and the rest — at 17 to 23% each,
+where the old model put 69% on a single generational angle.<br><br>
 <b>Half the doctrine had been unusable, and nobody had checked.</b> Every weight in this pipeline is
 non-negative by design, so a statement predicting an unhappy marriage could never be given a weight at
 all — 2,819 of 5,771 statements, including the strongest in the whole bank. Each is now formulated
@@ -514,28 +522,11 @@ def read_user(y,m,d):
     el=(C["moon"]-C["sun"])%360.0
     j=scorer.jdn(y,m,d); sx=(j+49)%60
     wheel={b:(round(C[b],2) if C[b]==C[b] else None) for b in scorer.BODIES}
-    # Only what the shipped model actually reads. Its nine statements name two bodies and nothing
-    # else: Neptune and Pluto — where each sits, and where the slow cycle between them stood.
-    SIGNMEAN={"Ari":"beginnings and nerve","Tau":"steadiness and the senses","Gem":"curiosity and talk",
-      "Can":"home and safekeeping","Leo":"warmth and display","Vir":"care and craft",
-      "Lib":"balance and partnership","Sco":"depth and what is hidden","Sag":"faith and horizon",
-      "Cap":"duty and building","Aqu":"freedom and breaking rank","Pis":"mercy and dissolving"}
-    PH=["New","Crescent","First Quarter","Gibbous","Full","Disseminating","Last Quarter","Balsamic"]
-    PHMEAN=["acting on instinct, before the shape is clear",
-      "pushing off from the past to make something new",
-      "building against resistance — the crisis of action",
-      "refining and questioning, just before the reveal",
-      "full illumination — seeing and being seen completely",
-      "sharing what has been learned",
-      "dismantling what no longer holds — the crisis of meaning",
-      "the closing dark: release, and seeds for what comes next"]
-    nep,plu=C["neptune"],C["pluto"]
-    npang=(nep-plu)%360.0
-    ns,ps=s(nep),s(plu); cs=s(npang); ph=int(npang//45.0)%8
-    return json.dumps({"wheel":wheel,
-      "nep":ns,"nepmean":SIGNMEAN[ns],"plu":ps,"plumean":SIGNMEAN[ps],
-      "cyc":cs,"cycmean":SIGNMEAN[cs],"ph":PH[ph],"phmean":PHMEAN[ph],
-      "npdeg":round(npang,1)})
+    # The model is now entirely pair statements — every one of them changes when the two birth dates
+    # move apart around a fixed midpoint. So there is nothing about ONE person for it to read, and no
+    # honest single-person card to show. The wheel below is the reader's own sky; the cards describe
+    # what the comparison will look at once a candidate date exists.
+    return json.dumps({"wheel":wheel})
 import datetime as _dt
 def scan_chunk(y,m,d,g,ci,total):
     """Score every real calendar date in the gendered window, chunk ci of total (by month index)."""
@@ -621,18 +612,15 @@ $("go").onclick=async()=>{
   state.me=[y,m,d];
   const u=JSON.parse(await state.py.runPythonAsync(`read_user(${y},${m},${d})`));
   drawWheel(u.wheel);
-  // Ordered by how much the model actually leans on each — the summed drop-one cross-validated loss
-  // of the statements that read it, not the order they were convenient to compute in.
+  // Every statement in this model reads BOTH dates, so none of them can be shown against one person.
+  // The cards name what the comparison will read, weighted by how much of the model each carries.
   const CW = await fetch("almanac/quality_card_weights.json").then(r=>r.json()).catch(()=>null);
-  const SH = {}; if(CW) CW.cards.forEach(c=>SH[c.key]=c);
-  const cards=[
-    ["nep","Your Neptune",SIGNF[u.nep],`Neptune is dreams, compassion and the blur between two people. Yours sits in ${SIGNF[u.nep]} — ${u.nepmean}.`],
-    ["plu","Your Pluto",SIGNF[u.plu],`Pluto is depth, power and what transforms a person. Yours sits in ${SIGNF[u.plu]} — ${u.plumean}.`],
-    ["ph","Neptune–Pluto phase",u.ph,`Neptune and Pluto circle each other over roughly 492 years. You were born in the ${u.ph} phase of that cycle: ${u.phmean}.`],
-    ["cyc","Neptune–Pluto in",SIGNF[u.cyc],`Where the cycle itself stood at your birth: Neptune and Pluto were ${u.npdeg}° apart, an angle that falls in ${SIGNF[u.cyc]} — ${u.cycmean}. This is the part of your reading you share with everyone born near you.`]]
-    .sort((a,b)=>((SH[b[0]]||{}).drop_one||0)-((SH[a[0]]||{}).drop_one||0));
-  $("cards").innerHTML=cards.map(c=>{const w=SH[c[0]];
-    const bar=w?`<div class="wbar" title="the model's reliance on this, measured by what it loses without it"><i style="width:${Math.round(w.share*100)}%"></i></div><div class="wnum">${Math.round(w.share*100)}% of what the model reads</div>`:"";
+  const cards = (CW ? CW.cards : []).map(c=>[c.key,c.label,
+    Math.round(c.share*100)+"%",
+    `${c.statements} statement${c.statements===1?"":"s"}. Every one of them changes when the two birth dates move apart, so this is about the pair and not about either of you alone.`]);
+  const SH = {}; (CW?CW.cards:[]).forEach(c=>SH[c.key]=c);
+  $("cards").innerHTML=cards.map(c=>{const w=SH[c[0]]||{};
+    const bar=`<div class="wbar"><i style="width:${Math.round((w.share||0)*100)}%"></i></div>`;
     return `<div class="pcard"><div class="k">${c[1]}</div><div class="v">${c[2]}</div>${bar}<div class="e">${c[3]}</div></div>`;}).join("");
   show(1);
   const els=[...document.querySelectorAll(".pcard")];

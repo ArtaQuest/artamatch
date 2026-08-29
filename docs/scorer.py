@@ -544,6 +544,241 @@ def features(his, her, CA=None, CB=None):
             F[f"cycle72_{_x}_{_y}_same_part"] = 1.0
         if int(_pa // 10.0) % 36 == int(_pb // 10.0) % 36:
             F[f"cyclesep10_{_x}_{_y}_same_band"] = 1.0
+    # ---- statements the pair-only model needs -----------------------------------------------------
+    # Every definition below is transcribed from the training builders. Where one looks odd it is
+    # reproduced anyway: the model was fitted on it.
+    _TEN = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
+    _ASP = [("conj",0,8),("opp",180,8),("trine",120,7),("square",90,6),("sext",60,5),
+            ("semisext",30,2),("quinc",150,3)]
+    _MOT27 = {"sun":0.9856,"moon":13.1764,"mercury":1.383,"venus":1.602,"mars":0.524,
+              "jupiter":0.0831,"saturn":0.0335,"uranus":0.0117,"neptune":0.0060,"pluto":0.0040}
+    _MOT = {"sun":0.9856474,"moon":13.1763966,"mercury":0.9856474,"venus":0.9856474,"mars":0.5240208,
+            "jupiter":0.0830853,"saturn":0.0334442,"uranus":0.0117252,"neptune":0.00598,"pluto":0.0039717}
+    _ELEM = ["Fire","Earth","Air","Water"]*3
+    _MODE = ["Cardinal","Fixed","Mutable"]*4
+    _RUL = {"mars":[0,7],"venus":[1,6],"mercury":[2,5],"moon":[3],"sun":[4],"jupiter":[8,11],
+            "saturn":[9,10]}
+    _EXA = {"sun":0,"moon":1,"mercury":5,"venus":11,"mars":9,"jupiter":3,"saturn":6}
+    _PH8 = ["New","Crescent","FirstQtr","Gibbous","Full","Disseminating","LastQtr","Balsamic"]
+    _dt2 = jdn(*her) - jdn(*his)
+    _fin = lambda v: v == v
+
+    def _mid(a, b):
+        return (a + ((b - a + 180.0) % 360.0 - 180.0) / 2.0) % 360.0
+
+    _C, _Dv, _Dv27 = {}, {}, {}
+    _half = _dt2 / 2.0
+    for _b in _TEN:
+        _ta, _tb = CA.get(_b, float("nan")), CB.get(_b, float("nan"))
+        if _fin(_ta) and _fin(_tb):
+            _C[_b] = _mid(_ta, _tb)
+            _raw = (_tb - _ta + 180.0) % 360.0 - 180.0
+            _k = round((_MOT[_b] * _dt2 - _raw) / 360.0)
+            _Dv[_b] = (_ta + (_raw + 360.0 * _k) / 2.0) % 360.0
+            # v27's construction: carry HIS position forward by mean motion to the midpoint date.
+            # Different from the wrap above in TWO ways, both of which matter: no whole-turn carry, and
+            # a different motion table — v27 gives Mercury and Venus their true mean motions where the
+            # original bank simplifies both to the Sun's. The elemental-balance statements were fitted
+            # on v27's, so that is what is reproduced here.
+            _Dv27[_b] = (_ta + _MOT27[_b] * _half) % 360.0
+
+    # aspects inside the two relationship charts, plus their elemental and modal balance
+    for _ch, _tag in ((_C, "comp"), (_Dv27, "dav")):
+        if len(_ch) < len(_TEN):
+            continue
+        _n = 0
+        for _i in range(len(_TEN)):
+            for _j in range(_i + 1, len(_TEN)):
+                _d = abs(((_ch[_TEN[_i]] - _ch[_TEN[_j]] + 180) % 360) - 180)
+                for _an, _ang, _orb in _ASP:
+                    if abs(_d - _ang) <= _orb:
+                        F[f"{_tag}X_{_TEN[_i]}_{_an}_{_TEN[_j]}"] = 1.0
+                        if _an in ("conj","opp","trine","square","sext"):
+                            _n += 1
+        F[f"{_tag}_aspect_density={min(_n//3,8)}"] = 1.0
+        _sg = {b: int(_ch[b] // 30) % 12 for b in _TEN}
+        for _lab, _tbl in (("elem", _ELEM), ("mode", _MODE)):
+            _cnt = {}
+            for b in _TEN:
+                _cnt[_tbl[_sg[b]]] = _cnt.get(_tbl[_sg[b]], 0) + 1
+            for _cls in set(_tbl):
+                F[f"{_tag}_{_lab}_{_cls}_count={min(_cnt.get(_cls,0),6)}"] = 1.0
+            _dom = max(sorted(set(_tbl)), key=lambda c: _cnt.get(c, 0))
+            F[f"{_tag}_dominant_{_lab}={_dom}"] = 1.0
+        _big = max(sum(1 for b in _TEN if _sg[b] == q) for q in range(12))
+        F[f"{_tag}_largest_sign_cluster={min(_big,6)}"] = 1.0
+        for b in ("sun","moon","mercury","venus","mars","jupiter","saturn"):
+            if _sg[b] in _RUL.get(b, []):
+                F[f"{_tag}_{b}_own_sign"] = 1.0
+            if _sg[b] == _EXA[b]:
+                F[f"{_tag}_{b}_exalted"] = 1.0
+            if _sg[b] == (_EXA[b] + 6) % 12:
+                F[f"{_tag}_{b}_in_fall"] = 1.0
+
+    # the Rudhyar phase of each outer pair, per person
+    for _x, _y in (("jupiter","saturn"),("saturn","uranus"),("saturn","neptune"),("saturn","pluto"),
+                   ("uranus","neptune"),("uranus","pluto"),("neptune","pluto")):
+        _ax,_bx,_ay,_by = CA.get(_x),CB.get(_x),CA.get(_y),CB.get(_y)
+        if None in (_ax,_bx,_ay,_by) or not all(_fin(v) for v in (_ax,_bx,_ay,_by)):
+            continue
+        _pa,_pb = (_ax-_ay)%360.0, (_bx-_by)%360.0
+        _fa,_fb = int(_pa//45.0)%8, int(_pb//45.0)%8
+        F[f"cyclephase_{_x}_{_y}={_PH8[_fa]}x{_PH8[_fb]}"] = 1.0
+        if _fa == _fb: F[f"cyclephase_{_x}_{_y}_same"] = 1.0
+        if (_fa-_fb)%8 == 4: F[f"cyclephase_{_x}_{_y}_opposed"] = 1.0
+
+    # the 5th, 7th and 9th harmonic charts, in synastry
+    # v21's harmonic bank uses a 7-degree square where v27's chart aspects use 6
+    _ASPH = [("conj",0,8),("opp",180,8),("trine",120,7),("square",90,7),("sext",60,5)]
+    for _h in (5,7,9):
+        for _x in ("sun","moon","mercury","venus","mars","jupiter","saturn"):
+            for _y in ("sun","moon","mercury","venus","mars","jupiter","saturn"):
+                _u,_v = CA.get(_x), CB.get(_y)
+                if not (_fin(_u) and _fin(_v)): continue
+                _d = abs((((_u*_h)%360 - (_v*_h)%360 + 180) % 360) - 180)
+                for _an,_ang,_orb in _ASPH:
+                    if abs(_d-_ang) <= _orb:
+                        F[f"h{_h}_his_{_x}_{_an}_her_{_y}"] = 1.0
+
+    # Ebertin midpoints, and the classical Lot of Marriage
+    for _src,_dst,_t in ((CA,CB,"midhis"),(CB,CA,"midher")):
+        for _nm,_x,_y in (("sunmoon","sun","moon"),("venusmars","venus","mars"),
+                          ("venusjupiter","venus","jupiter")):
+            if not (_fin(_src.get(_x,float("nan"))) and _fin(_src.get(_y,float("nan")))): continue
+            _m = _mid(_src[_x], _src[_y])
+            for _b in ("sun","moon","venus","mars","jupiter","saturn"):
+                if not _fin(_dst.get(_b,float("nan"))): continue
+                _d = abs(((_m - _dst[_b] + 180) % 360) - 180)
+                for _an,_ang,_orb in _ASP[:5]:
+                    if abs(_d-_ang) <= _orb:
+                        F[f"mid{_t[3:]}_his_{_nm}_{_an}_her_{_b}"] = 1.0
+    for _src,_dst,_t in ((CA,CB,"lotmarriage"),(CB,CA,"herlotmarriage")):
+        if not all(_fin(_src.get(k,float("nan"))) for k in ("sun","venus")): continue
+        _lot = (2*_src["sun"] + 180.0 - _src["venus"]) % 360.0
+        # the builder names EVERY lot aspect his_..._her_... regardless of which chart supplied the
+        # lot; only the tag distinguishes them. Reproduce the naming, not the intent.
+        for _b in ("sun","moon","venus","mars","jupiter","saturn"):
+            if not _fin(_dst.get(_b,float("nan"))): continue
+            _d = abs(((_lot - _dst[_b] + 180) % 360) - 180)
+            for _an,_ang,_orb in _ASP[:5]:
+                if abs(_d-_ang) <= _orb:
+                    F[f"{_t}_his_lot_marriage_{_an}_her_{_b}"] = 1.0
+
+    # Navamsa D9, Chandra lagna, and the Ashtakoota kootas
+    def _nav(lon):
+        _s = int(lon//30)%12; _p = int((lon%30)/(30.0/9.0))
+        _st = _s if _s%3==0 else ((_s+8)%12 if _s%3==1 else (_s+4)%12)
+        return (_st+_p)%12
+    for _b in ("moon","venus","jupiter"):
+        _u,_v = CA.get(_b), CB.get(_b)
+        if not (_fin(_u) and _fin(_v)): continue
+        _da,_db = _nav(_u), _nav(_v)
+        F[f"d9_{_b}pair={SIGNS[_da]}x{SIGNS[_db]}"] = 1.0
+        if _da==_db: F[f"d9_{_b}_same_sign"] = 1.0
+        if (_da-_db)%12==6: F[f"d9_{_b}_opposite"] = 1.0
+        if (_da-_db)%12%4==0: F[f"d9_{_b}_trine"] = 1.0
+    _KEN = {0,3,6,9}
+    for _lag,_tg in (("moon","chandra"),("sun","surya")):
+        _la,_lb = CA.get(_lag), CB.get(_lag)
+        if not (_fin(_la) and _fin(_lb)): continue
+        _lai,_lbi = int(_la//30)%12, int(_lb//30)%12
+        for _p in ("sun","moon","mercury","venus","mars","jupiter","saturn"):
+            _pa2,_pb2 = CA.get(_p), CB.get(_p)
+            if not (_fin(_pa2) and _fin(_pb2)): continue
+            _hab = ((int(_pa2//30)%12 - _lbi)%12)+1
+            _hba = ((int(_pb2//30)%12 - _lai)%12)+1
+            F[f"his_{_p}_in_her_{_tg}_house={_hab}"] = 1.0
+            F[f"her_{_p}_in_his_{_tg}_house={_hba}"] = 1.0
+            if (_hab-1) in _KEN: F[f"his_{_p}_kendra_from_her_{_tg}"] = 1.0
+            if _hab==7: F[f"his_{_p}_in_her_7th_{_tg}"] = 1.0
+            if _hba==7: F[f"her_{_p}_in_his_7th_{_tg}"] = 1.0
+    _NADI=[0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2,2,1,0,0,1,2]
+    _GANA=[0,1,2,1,0,1,0,0,2,2,1,1,0,2,0,2,0,2,2,1,1,0,2,2,1,1,0]
+    _YONI=[0,1,2,3,3,4,5,5,6,6,7,7,8,9,8,9,10,4,11,12,12,13,1,13,10,2,0]
+    _YEN={(0,8),(1,5),(2,11),(3,6),(4,9),(7,9),(10,12),(13,3)}
+    _LORD=[4,3,2,1,0,2,3,4,5,6,6,5]
+    _MAIT=[[2,2,1,0,2,2,0],[2,2,2,1,1,1,1],[2,0,2,2,1,1,2],[1,1,2,2,1,0,2],
+           [2,2,0,1,2,2,1],[2,1,0,2,2,2,1],[1,1,2,2,0,1,2]]
+    _VASH=[1,1,2,3,0,2,4,3,1,0,2,3]
+    _VBS=[1,2,3,0,1,2,3,0,1,2,3,0]
+    _ma,_mb = CA.get("moon"), CB.get("moon")
+    if _fin(_ma) and _fin(_mb):
+        _nka,_nkb = int(_ma//(360.0/27))%27, int(_mb//(360.0/27))%27
+        _sa2,_sb2 = int(_ma//30)%12, int(_mb//30)%12
+        _varna = 1 if _VBS[_sa2] >= _VBS[_sb2] else 0
+        _vashya = 2 if _VASH[_sa2]==_VASH[_sb2] else (1 if abs(_VASH[_sa2]-_VASH[_sb2])==1 else 0)
+        _cab,_cba = ((_nkb-_nka)%27)+1, ((_nka-_nkb)%27)+1
+        _tara = 3 if ((_cab%9) not in (3,5,7) and (_cba%9) not in (3,5,7)) else \
+                (1.5 if ((_cab%9) not in (3,5,7) or (_cba%9) not in (3,5,7)) else 0)
+        _ya,_yb2 = _YONI[_nka], _YONI[_nkb]
+        _yoni = 4 if _ya==_yb2 else (0 if (min(_ya,_yb2),max(_ya,_yb2)) in
+                {(min(x,y),max(x,y)) for x,y in _YEN} else 2)
+        _la2,_lb2 = _LORD[_sa2], _LORD[_sb2]
+        _mv = _MAIT[_la2][_lb2]
+        _maitri = 5 if _mv==2 else (3 if _mv==1 else 0)
+        _gana = 6 if _GANA[_nka]==_GANA[_nkb] else (5 if {_GANA[_nka],_GANA[_nkb]}=={0,1} else
+                (1 if {_GANA[_nka],_GANA[_nkb]}=={1,2} else 0))
+        _dist = ((_sb2-_sa2)%12)+1
+        _bha = 0 if _dist in (6,8,2,12,5,9) else 7
+        _nad = 0 if _NADI[_nka]==_NADI[_nkb] else 8
+        _tot = _varna+_vashya+_tara+_yoni+_maitri+_gana+_bha+_nad
+        for _nm,_v,_mx in (("varna",_varna,1),("vashya",_vashya,2),("tara",_tara,3),("yoni",_yoni,4),
+                           ("grahamaitri",_maitri,5),("gana",_gana,6),("bhakoot",_bha,7),("nadi",_nad,8)):
+            _vv = int(_v) if float(_v).is_integer() else _v
+            F[f"koota_{_nm}={_vv}"] = 1.0
+            if _v >= _mx: F[f"koota_{_nm}_full"] = 1.0
+        _band = 0
+        for _b2,_c in enumerate([12,18,24,28,32]):
+            if _tot >= _c: _band = _b2+1
+        F[f"guna_total_band={_band}"] = 1.0
+        if _tot >= 18: F["guna_total_ge18_traditional_pass"] = 1.0
+        if _tot >= 24: F["guna_total_ge24_very_good"] = 1.0
+        if _nad == 0: F["nadi_dosha"] = 1.0
+        if _bha == 0: F["bhakoot_dosha"] = 1.0
+        _NN=["Aadi","Madhya","Antya"]; _GN=["Deva","Manushya","Rakshasa"]
+        F[f"nadipair={_NN[_NADI[_nka]]}x{_NN[_NADI[_nkb]]}"] = 1.0
+        F[f"ganapair={_GN[_GANA[_nka]]}x{_GN[_GANA[_nkb]]}"] = 1.0
+
+    # Tibetan: the four qualities, from the year animal's element
+    _AEL = ["Water","Earth","Wood","Wood","Earth","Fire","Fire","Earth","Metal","Metal","Earth","Water"]
+    _EL5 = ["Wood","Fire","Earth","Metal","Water"]
+    _bra,_brb = (his[0]-4)%12, (her[0]-4)%12
+    _sa3,_sb3 = _EL5.index(_AEL[_bra]), _EL5.index(_AEL[_brb])
+    F[f"tib_srogpair={_AEL[_bra]}x{_AEL[_brb]}"] = 1.0
+    if _sa3==_sb3: F["tib_srog_same"] = 1.0
+    if (_sa3+1)%5==_sb3: F["tib_srog_he_feeds_her"] = 1.0
+    if (_sb3+1)%5==_sa3: F["tib_srog_she_feeds_him"] = 1.0
+    if (_sa3+2)%5==_sb3: F["tib_srog_he_harms_her"] = 1.0
+    if (_sb3+2)%5==_sa3: F["tib_srog_she_harms_him"] = 1.0
+    for _nm,_off in (("lus",1),("dbangthang",2),("klungrta",3)):
+        _l1,_l2 = (_sa3+_off)%5, (_sb3+_off)%5
+        if _l1==_l2: F[f"tib_{_nm}_same"] = 1.0
+        if (_l1+2)%5==_l2: F[f"tib_{_nm}_he_harms_her"] = 1.0
+        F[f"tib_{_nm}pair={_EL5[_l1]}x{_EL5[_l2]}"] = 1.0
+
+    # numerology: bridges and the shape of the written date
+    def _ds(v):
+        t = 0
+        while v: t += v%10; v//=10
+        return t
+    def _r1(v):
+        while v > 9: v = _ds(v)
+        return v
+    _lpa,_lpb = _r1(_r1(his[0])+_r1(his[1])+_r1(his[2])), _r1(_r1(her[0])+_r1(her[1])+_r1(her[2]))
+    F[f"bridge_lifepath={abs(_lpa-_lpb)}"] = 1.0
+    F[f"bridge_birthday={abs(_r1(his[2])-_r1(her[2]))}"] = 1.0
+    def _shape(y,m,d):
+        _t = f"{y:04d}{m:02d}{d:02d}"
+        _rep = max(_t.count(c) for c in set(_t))
+        _run=1; _best=1
+        for _i in range(1,len(_t)):
+            _run = _run+1 if int(_t[_i])==int(_t[_i-1])+1 else 1
+            _best = max(_best,_run)
+        return _rep, int(_t==_t[::-1]), _best
+    _A1,_B1 = _shape(*his), _shape(*her)
+    F[f"digit_repeatpair={_A1[0]}x{_B1[0]}"] = 1.0
+    F[f"digit_runpair={min(_A1[2],4)}x{min(_B1[2],4)}"] = 1.0
+    if _A1[1] or _B1[1]: F["digit_palindrome_either"] = 1.0
     return F
 
 

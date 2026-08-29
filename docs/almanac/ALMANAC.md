@@ -82,10 +82,10 @@ Scored one tradition at a time, each fitted on its own statements alone (2 SE = 
 
 **What this means for ranking dates.** The product's question is not the AUC — it is: given his birth
 date, order her candidate dates across +/-12 years. Measured on the artifact, sweeping
-80 real men across 289 candidate dates each: the model's score varies inside a
-window nearly as much as it varies between men (ratio 0.634),
-13 of 13 rules change state inside a window,
-and the best candidate lands on the window EDGE for 1% of men.
+60 real men across 289 candidate dates each: the model's score varies inside a
+window nearly as much as it varies between men (ratio 2.049),
+379 of 401 rules change state inside a window,
+and the best candidate lands on the window EDGE for 2% of men.
 
 An earlier seven-rule model failed that test outright: within-window spread with a median of **exactly
 zero**, and the best date on the window edge for **90%** of men — it was following a single monotone

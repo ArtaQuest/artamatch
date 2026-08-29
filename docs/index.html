@@ -224,6 +224,19 @@ all — 2,819 of 5,771 statements, including the strongest in the whole bank. Ea
 toward happy: where firing predicts unhappy we use its complement and say so, which is the same
 doctrine stated the other way round. Four of the nine surviving statements are read that way, and each
 was checked against its own raw direction before being trusted.<br><br>
+<b>We tried to beat it and could not, which is worth publishing too.</b> Six ways of choosing the
+statements were compared on identical folds — elastic net, adaptive Lasso, stability selection over
+bootstrap resamples, and more — along with eight ways of re-weighting them, and fifteen engineered
+compatibility tables that collapse a whole almanac grid into a single number. Taking each method at its own best setting, every one of them lands between <b>0.590 and 0.597</b>
+cross-validated. Elastic net was the one we expected to win and it merely tied;
+stability selection, the standard defence when there are more statements than couples, scored
+slightly lower, and adaptive Lasso lower still. The tables — a genuinely better way to read a twelve-by-twelve almanac — are selected only when
+shrunk so weakly that they overfit, and at the setting cross-validation prefers, none of the fifteen
+survives at all. So <b>0.597 is a ceiling, not a stopping point we chose</b>
+(<a href="almanac/quality_ceiling_study.json">the whole comparison</a>).<br><br>
+One control from that sweep is worth stating on its own: counting the surviving statements equally,
+with no fitting at all, scores 0.573. The fitted weights are therefore carrying real information rather
+than dressing up a list of conditions that happen to fire.<br><br>
 <b>One number here deserves a caution.</b> Along the way three regularisation settings tied on
 cross-validation while their single held-out reads spread over 1.5 standard errors. One test read
 is one sample; the cross-validated figure, averaged over folds and seeds, is the one to trust, and

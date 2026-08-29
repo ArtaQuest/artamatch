@@ -32,6 +32,7 @@ import v21_traditions as V21
 import v23_traditions as V23
 import v26_traditions as V26
 import v27_traditions as V27
+import v29_traditions as V29
 from v12_fit import side
 from denylist import clause_ok
 
@@ -41,6 +42,7 @@ FLOOR = int(os.environ.get("AQ_FLOOR_N", "40"))
 WITH_V23 = os.environ.get("AQ_V23", "1") == "1"   # the marriage-specific traditions
 WITH_V26 = os.environ.get("AQ_V26", "1") == "1"   # the lagna and compatibility systems
 WITH_V27 = os.environ.get("AQ_V27", "1") == "1"   # the deepening of the strongest families
+WITH_V29 = os.environ.get("AQ_V29", "1") == "1"   # aspect patterns, cycle phases, reception
 
 
 def build(df, Z, split):
@@ -60,6 +62,9 @@ def build(df, Z, split):
         parts.append(a); names += nm; ex |= set(nm)
     if WITH_V27:
         a, nm = V27.build(df, Z, split, ex, min_support=1)
+        parts.append(a); names += nm; ex |= set(nm)
+    if WITH_V29:
+        a, nm = V29.build(df, Z, split, ex, min_support=1)
         parts.append(a); names += nm
     return np.column_stack(parts).astype(np.float32), names
 

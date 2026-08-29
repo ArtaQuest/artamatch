@@ -33,6 +33,7 @@ def main():
     win = j("window_probe.json")
     dwin = j("window_probe_v18.json")          # the SHIPPED model, same window probe
     v21 = j("v21_summary.json")                # the expanded bank, and its three test reads
+    fsum = j("quality_summary.json")            # the audited final model summary
     if not (fin and inc):
         print("  missing result files — run finalize_quality.sh first"); sys.exit(1)
     csv = f"{DEV}/bio/marriage_quality_binary.csv"
@@ -179,35 +180,37 @@ procreation alone.<br><br>
 And the astrology. On that quality target these {fin['n_surviving']} statements reach
 <b>{doc:.3f}</b> on couples the model never saw — <b>{z_chance:+.1f} standard errors above chance</b>,
 against a baseline of <b>{base:.3f}</b> from the two-parameter age-gap model, which is the one
-comparator we measure against because it reads nothing but the same two dates. Scored one tradition at a time — synastry, composite, Davison, Vedic,
-Chinese, decans — not one clears the bar on its own. And the rules the selection keeps are still
-dominated by Neptune&ndash;Pluto phase and Pluto sign: a 492-year cycle, and a sign Pluto occupies for
-twenty years. Those are calendars, so most of what this model reads is the century a couple was born
-in — and the century is also what predicts how an encyclopedia writes about a marriage.<br><br>
-<b>A later, larger bank did not change the answer, and taught us something about our own
-reporting.</b> We added the traditions the model had been missing — numerology, Rudhyar's moon phases,
-the Chinese animal relations, the Navamsa D9, all eight kootas with the Guna Milan total, the Mayan
-Tzolkin, and the 5th, 7th and 9th harmonic charts — and dropped the support floor that had been
-structurally excluding them (a twelve-by-twelve pair table averages n/144 rows a cell, so numerology
-could never be selected no matter what it predicted). The bank grew to {v21.get('bank', 0):,} pair-only
-statements. Three regularisation settings then tied on cross-validation
-({v21.get('cv_range',[0,0])[0]:.4f}&ndash;{v21.get('cv_range',[0,0])[1]:.4f}) while their held-out scores
-ranged {v21.get('test_range',[0,0])[0]:.4f}&ndash;{v21.get('test_range',[0,0])[1]:.4f} —
-a spread of {v21.get('test_spread_se',0):.1f} standard errors. Quoting the best of those would have been
-picking a number, so: the honest estimate is the cross-validated <b>0.592</b>, the model we ship is the
-one with the most explainable content rather than the best score, and the doctrine's edge over the
-calendar is <b>not established</b>.<br><br>
-We then put the model behind the ranking below — a different one, fitted on {44249:,} marriages for
-divorce versus death — through the identical test, rather than reporting only the result that was
-comfortable. Same answer: <b>two birth decades score {dinc.get('era_auc', float('nan')):.3f}</b> on that
-target, and the doctrine adds <b>{dinc.get('increment', float('nan')):+.4f}</b> on top of them.<br><br>
-It does rank properly, though, and better than the quality model: its score varies
-<b>{dwin.get('ratio', float('nan')):.1f}&times; more inside one man's window than between different
-men</b>, {dwin.get('rules_that_flip','-')} of {dwin.get('rules_total','-')} rules change state inside a
-window, and the best date sits on the edge for only {dwin.get('best_on_edge_share',0):.0%} of men. So the
-order you see is real output, not a constant. But a ranking that moves is not a ranking that is right —
-the fast rules supply the movement and none of the measured skill, the slow ones supply the skill and are
-a calendar. Read it as a curiosity, not a forecast.</p></details>
+comparator we measure against because it reads nothing but the same two dates. The statements the selection keeps are dominated by the slow rhythms — Neptune&ndash;Pluto by phase and
+Pluto by sign — with the composite chart behind them. Ranked by what each is actually worth (the
+cross-validated loss if it were removed, rather than its raw coefficient), one statement carries most of
+the model and the rest fill in around it; the full ranking, with how often each fires and how the
+marriages went when it did, is below.<br><br>
+<b>The final model, after four more waves of doctrine and twelve audit checks.</b> The bank grew to
+{fsum.get('n_bank', 0):,} pair-only statements — numerology, Rudhyar's moon phases, the Chinese animal
+relations, the Navamsa, all eight kootas with the Guna Milan total, Mangal dosha, the Jaimini
+Darakaraka, the Bazi day pillar, Arabic parts, the Mayan Tzolkin and Dreamspell, Chandra and Surya
+lagna, Nine Star Ki, Tibetan Mewa and Parkha, the harmonic, draconic and antiscia charts, and the
+aspect patterns and cycle phases that carry most of the weight. Selection kept
+<b>{fsum.get('n_statements', 0)}</b> of them, {fsum.get('n_negated', 0)} read as their negation. On
+couples the model never saw it reaches <b>{fsum.get('test_auc', 0):.4f}</b> —
+<b>{fsum.get('over_chance_se', 0):+.1f} standard errors above chance</b>, and
+<b>{fsum.get('over_baseline_se', 0):+.1f}</b> above the age-gap baseline of
+{fsum.get('age_gap_auc', 0):.4f}, which is the one comparator we measure against because it reads
+nothing but the same two dates. Cross-validated, the honest figure is
+<b>{fsum.get('cv_auc', 0):.4f}</b>.<br><br>
+<b>Half the doctrine had been unusable, and nobody had checked.</b> Every weight in this pipeline is
+non-negative by design, so a statement predicting an unhappy marriage could never be given a weight at
+all — 2,819 of 5,771 statements, including the strongest in the whole bank. Each is now formulated
+toward happy: where firing predicts unhappy we use its complement and say so, which is the same
+doctrine stated the other way round. Four of the nine surviving statements are read that way, and each
+was checked against its own raw direction before being trusted.<br><br>
+<b>One number here deserves a caution.</b> Along the way three regularisation settings tied on
+cross-validation while their single held-out reads spread over 1.5 standard errors. One test read
+is one sample; the cross-validated figure, averaged over folds and seeds, is the one to trust, and
+it is the one quoted above.<br><br>
+One limit stays worth naming: the AUC measures ranking ACROSS couples, while the product ranks
+dates WITHIN one person's window. Those are different questions, and only the first is measured
+here. Read it as a curiosity, not a forecast.</p></details>
 {MARK1}"""
     p2 = f"{PAGES}/docs/index.html"
     h = open(p2).read()

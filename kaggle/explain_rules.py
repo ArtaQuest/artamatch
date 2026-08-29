@@ -144,6 +144,188 @@ def explain(name):
                 "reading": "Both conditions hold at once, which the doctrine treats as one combined "
                            "statement: " + " ".join(p["reading"] for p in parts)}
 
+    # ---------- v29: cycle phases, chart gestalts, reception, Tibetan four ----------
+    m = re.match(r"^cycle(\d+)_(\w+?)_(\w+?)_same_part$", n)
+    if m:
+        div, p1, p2 = m.groups()
+        n1 = BODY.get(p1, (p1, ""))[0]; n2 = BODY.get(p2, (p2, ""))[0]
+        return {"tradition": "Mundane astrology — planetary cycles",
+                "title": f"Both births fall in the same {div}th of the {n1}\u2013{n2} cycle",
+                "plain": f"Cut the {n1}\u2013{n2} cycle into {div} parts. Both of you were born inside "
+                         f"the same one.",
+                "reading": "A cycle this slow moves through a part over years, so sharing one means the "
+                           "two of you were born into the same narrow window of a very long rhythm."}
+    m = re.match(r"^cyclesep(\d+)_(\w+?)_(\w+?)_same_band$", n)
+    if m:
+        step, p1, p2 = m.groups()
+        n1 = BODY.get(p1, (p1, ""))[0]; n2 = BODY.get(p2, (p2, ""))[0]
+        return {"tradition": "Mundane astrology — planetary cycles",
+                "title": f"The {n1}\u2013{n2} angle was within the same {step}\u00b0 at both births",
+                "plain": f"Measure the angle from {n2} to {n1} at each birth; both fall in the same "
+                         f"{step}-degree band.",
+                "reading": "The raw separation, read directly rather than through a phase name — the "
+                           "two of you caught the same slow planets at the same distance apart."}
+    m = re.match(r"^cyclephase_(\w+?)_(\w+?)(=(\S+)|_same|_opposed)$", n)
+    if m:
+        p1, p2 = m.group(1), m.group(2)
+        n1 = BODY.get(p1, (p1, ""))[0]; n2 = BODY.get(p2, (p2, ""))[0]
+        tail = m.group(3)
+        if tail == "_same":
+            t = f"Both born in the same phase of the {n1}\u2013{n2} cycle"
+            pl = f"The {n1}\u2013{n2} cycle was in the same one of its eight phases at both births."
+        elif tail == "_opposed":
+            t = f"Born in opposite phases of the {n1}\u2013{n2} cycle"
+            pl = f"The two births fall across the {n1}\u2013{n2} cycle from each other."
+        else:
+            a, b = _pair(m.group(4))
+            t = (f"Both born in the {a} phase of {n1}\u2013{n2}" if a == b else
+                 f"He in the {a} phase of {n1}\u2013{n2}, she in the {b}")
+            pl = (f"Measure the angle from {n2} to {n1} and read it as a lunation: his birth falls in "
+                  f"the {a} phase, hers in the {b}.")
+        return {"tradition": "Mundane astrology — cycle phase (Rudhyar)", "title": t, "plain": pl,
+                "reading": "Rudhyar read every planetary pair as a cycle with the same eight phases the "
+                           "Moon has — new, crescent, first quarter, gibbous, full, disseminating, last "
+                           "quarter, balsamic. The phase says where in a long story a birth falls: the "
+                           "new phase begins something, the full illuminates it, the balsamic lets it go."}
+    m = re.match(r"^(comp|dav)_(grand_trine|t_square|grand_cross|yod|stellium3|stellium4)$", n)
+    if m:
+        ch, sh = m.groups()
+        W = "composite chart — the midpoint of the two charts, read as the relationship itself" \
+            if ch == "comp" else "Davison chart — a real chart for the midpoint in time between the births"
+        SH = {"grand_trine": ("A grand trine", "three bodies at 120\u00b0 to each other — a closed "
+                              "circuit of ease, gift that can become complacency"),
+              "t_square": ("A T-square", "an opposition with a third body square to both — the "
+                           "engine-room of a chart, tension that produces work"),
+              "grand_cross": ("A grand cross", "two oppositions squaring each other — four-way "
+                              "pressure, and the hardest shape a chart can carry"),
+              "yod": ("A yod", "two bodies sextile, both quincunx a third — the Finger of God, a "
+                      "pointed and awkward calling"),
+              "stellium3": ("A stellium of three", "three or more bodies crowded into one sign"),
+              "stellium4": ("A stellium of four", "four or more bodies crowded into one sign")}[sh]
+        return {"tradition": f"{'Composite' if ch=='comp' else 'Davison'} chart — aspect pattern",
+                "title": f"{SH[0]} in the {'composite' if ch=='comp' else 'Davison'}",
+                "plain": f"In the {W}, the bodies form {SH[0].lower()}.",
+                "reading": f"{SH[0]} is {SH[1]}. A pattern is the first thing a chart reader names, "
+                           f"before any single placement."}
+    m = re.match(r"^(comp|dav)_(largest_sign_cluster|aspect_density)=(\d+)$", n)
+    if m:
+        ch, kind, v = m.groups()
+        if kind == "largest_sign_cluster":
+            return {"tradition": f"{'Composite' if ch=='comp' else 'Davison'} chart",
+                    "title": f"{v} bodies gathered in one sign",
+                    "plain": f"The fullest sign of the relationship chart holds {v} of the ten bodies.",
+                    "reading": "A crowded sign concentrates a chart: much of the relationship's weight "
+                               "falls in one department of life."}
+        return {"tradition": f"{'Composite' if ch=='comp' else 'Davison'} chart",
+                "title": "How tightly the relationship chart is wired",
+                "plain": "The count of major aspects inside the chart, banded.",
+                "reading": "A densely aspected chart has everything talking to everything; a sparse one "
+                           "leaves its parts to run separately."}
+    m = re.match(r"^(comp|dav)_d9_(\w+)_sign=(\w+)$", n)
+    if m:
+        ch, body, sg = m.groups()
+        bn, bd = BODY.get(body, (body, ""))
+        return {"tradition": f"{'Composite' if ch=='comp' else 'Davison'} chart — Navamsa",
+                "title": f"{_the(bn, True)} in {SIGN.get(sg,sg)} in the relationship's D9",
+                "plain": f"Take the ninth-part chart OF the relationship chart; {_the(bn)} falls in "
+                         f"{SIGN.get(sg,sg)}.",
+                "reading": f"The navamsa is where Vedic astrology judges a marriage. Applied to the "
+                           f"composite it asks what the union itself becomes. {_the(bn, True)} is {bd}."}
+    m = re.match(r"^reception_his_(\w+)_her_(\w+)$", n)
+    if m:
+        p1, p2 = m.groups()
+        n1, d1 = BODY.get(p1, (p1, "")); n2, d2 = BODY.get(p2, (p2, ""))
+        return {"tradition": "Classical synastry — mutual reception",
+                "title": f"His {n1} and her {n2} are each other's guest",
+                "plain": f"His {n1} sits in the sign her {n2} rules, and her {n2} sits in the sign his "
+                         f"{n1} rules.",
+                "reading": "Mutual reception is one of the oldest judgements in the craft: two planets "
+                           "keeping each other's house, obliged to treat each other well. "
+                           f"{_the(n1, True)} is {d1}; {_the(n2)} is {d2}."}
+    m = re.match(r"^his_(\w+)_guest_of_(\w+)$", n)
+    if m:
+        p1, p2 = m.groups()
+        n1, d1 = BODY.get(p1, (p1, "")); n2, _ = BODY.get(p2, (p2, ""))
+        return {"tradition": "Classical astrology — dispositor",
+                "title": f"His {n1} is a guest of {n2}",
+                "plain": f"His {n1} sits in a sign ruled by {n2}, so {n2} is its host.",
+                "reading": f"A planet in another's sign is that planet's guest, and takes some of its "
+                           f"host's character. {_the(n1, True)} is {d1}."}
+    m = re.match(r"^tib_(srog|lus|dbangthang|klungrta)(pair=(\S+)|_same|_he_feeds_her|_she_feeds_him|"
+                 r"_he_harms_her|_she_harms_him)$", n)
+    if m:
+        q, tail = m.group(1), m.group(2)
+        Q = {"srog": ("srog", "the life-force — the first and heaviest of the four"),
+             "lus": ("lus", "the body — health and constitution"),
+             "dbangthang": ("dbang-thang", "power — standing and capability"),
+             "klungrta": ("klung-rta", "the wind-horse — luck and momentum")}[q]
+        if tail == "_same":
+            t, pl = f"The same {Q[0]} element", f"Both births carry the same {Q[0]} element."
+        elif "feeds" in tail:
+            who = "His" if "he_feeds" in tail else "Her"
+            t = f"{who} {Q[0]} feeds the other's"
+            pl = f"On the five-element cycle {who.lower()} {Q[0]} element produces the other's."
+        elif "harms" in tail:
+            who = "His" if "he_harms" in tail else "Her"
+            t = f"{who} {Q[0]} harms the other's"
+            pl = f"On the controlling cycle {who.lower()} {Q[0]} element overcomes the other's."
+        else:
+            a, b = _pair(m.group(3))
+            t, pl = f"{Q[0]}: {a} and {b}", f"His {Q[0]} element is {a}, hers {b}."
+        return {"tradition": "Tibetan astrology — the four qualities", "title": t, "plain": pl,
+                "reading": f"Tibetan practice compares four quantities when matching a couple; {Q[0]} is "
+                           f"{Q[1]}. Each is an element, and the elements feed or harm each other in a "
+                           f"fixed cycle."}
+    if n.startswith("ninestar_month") or n == "ninestar_year_meets_month":
+        return {"tradition": "Nine Star Ki (Japanese)",
+                "title": ("His yearly star is her monthly star, or the reverse"
+                          if n.endswith("meets_month") else
+                          "The same monthly star" if n.endswith("same") else "The pair of monthly stars"),
+                "plain": "Beside the yearly star, Nine Star Ki gives each birth a monthly star from the "
+                         "same nine.",
+                "reading": "The year star is read as the outer character and the month star as the "
+                           "inner one, so two people can meet on either."}
+    m = re.match(r"^bridge_(lifepath|birthday)=(\d+)$", n)
+    if m:
+        kind, v = m.groups()
+        return {"tradition": "Numerology — bridge number",
+                "title": f"A {kind} bridge of {v}",
+                "plain": f"The plain distance between the two {kind} numbers is {v}.",
+                "reading": "The bridge number is read as the work of translation between two people — "
+                           "zero means you speak the same language, a wide bridge means you must build "
+                           "one."}
+    if n.startswith("universalyearpair") or n.startswith("universaldaypair"):
+        a, b = _pair(n.split("=", 1)[1])
+        what = "year" if "year" in n else "day"
+        return {"tradition": "Numerology — universal numbers",
+                "title": f"Universal {what} {a} and {b}",
+                "plain": f"The universal {what} number is the whole world's number for that date, "
+                         f"before anything personal: his {a}, hers {b}.",
+                "reading": "Numerology reads a personal number against the universal one — the season "
+                           "the world was in when each of you arrived."}
+    if n.startswith("chaldean_compound"):
+        return {"tradition": "Numerology — Chaldean compound number",
+                "title": ("The same compound number" if n.endswith("same")
+                          else f"Compound number {n.split('=')[-1]}"),
+                "plain": "Chaldean numerology keeps the two-digit compound before reducing it, and reads "
+                         "each of the fifty-two as its own symbol.",
+                "reading": "The compound is held to carry the finer meaning, the single digit only the "
+                           "outline."}
+    if n.startswith("digit_"):
+        T = {"digit_palindrome_either": ("A birth date that reads the same backwards",
+                                         "One of the two dates is a palindrome."),
+             }.get(n)
+        if T:
+            return {"tradition": "Numerology — the shape of the date", "title": T[0], "plain": T[1],
+                    "reading": "Numerology reads the written date as a figure, not only as a sum: "
+                               "repetitions, mirrors and runs are held to mark it."}
+        a, b = _pair(n.split("=", 1)[1]) if "=" in n else ("", "")
+        kind = "repeated digits" if "repeat" in n else "consecutive runs"
+        return {"tradition": "Numerology — the shape of the date",
+                "title": f"{kind.capitalize()}: {a} and {b}",
+                "plain": f"His date shows {a} and hers {b} by that measure.",
+                "reading": "Numerology reads the written date as a figure as well as a sum."}
+
     # ---------- v26: lagna systems, compatibility systems, finer charts ----------
     m = re.match(r"^(his|her)_(\w+?)_in_(her|his)_(chandra|surya)_house=(\d+)$", n)
     if m:

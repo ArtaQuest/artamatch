@@ -49,9 +49,18 @@ def main():
     m = json.load(open(MODEL))
     w = m["weights"]
     tot = sum(w.values())
+    # importance is NOT the coefficient. A big weight on a statement that fires for 600 couples moves
+    # fewer people than a small one firing for 6,000, and two statements that duplicate each other each
+    # look worthless. The ranking shown is drop-one cross-validation loss: what the model loses if this
+    # statement is not there, which is the only measure that accounts for what the others already cover.
+    imp = {}
+    ip = MODEL.replace(".json", "_importance.json")
+    if os.path.exists(ip):
+        for r in json.load(open(ip))["ranked"]:
+            imp[r["rule"]] = r
     ex = []
     for k, v in w.items():
-        e = explain(k); e["rule"] = k; e["w"] = v
+        e = explain(k); e["rule"] = k; e["w"] = v; e["imp"] = imp.get(k, {})
         ex.append(e)
     by = collections.defaultdict(list)
     for e in ex:
@@ -65,6 +74,21 @@ def main():
              'every one of them uses <b>both</b> birth dates — nothing about one person alone can enter '
              'the model. Only the weighting was fitted; the statements themselves were written down long '
              'before us. This is the whole model, not a sample of it.</p>']
+    ranked = sorted(ex, key=lambda e: -(e["imp"].get("drop_one_cv_loss", 0)))
+    parts.append('<div class=trad><div class=tradh><span class=tradn>Ranked by what each is worth'
+                 '</span><span class=tradw>drop-one cross-validation loss</span></div>'
+                 '<div class=tbar><i style="width:100%"></i></div>')
+    for i, e in enumerate(ranked, 1):
+        q = e["imp"]
+        fires = q.get("fires", 0); gw = q.get("good_when_fires", 0); go = q.get("good_otherwise", 0)
+        parts.append(
+            '<div class=rcard><div class=rct><span style="color:var(--gold)">' + str(i) + '.</span> '
+            + html.escape(e["title"]) + '</div>'
+            f'<div class=rcr>Fires for <b>{fires:,}</b> of the 7,909 couples. Of those, '
+            f'<b>{gw:.0%}</b> went well against <b>{go:.0%}</b> of the rest'
+            + (f' &middot; removing it costs <b>{q.get("drop_one_cv_loss",0):+.4f}</b> of '
+               f'cross-validated AUC' if q else '') + '.</div></div>')
+    parts.append('</div>')
     for t in order:
         rules = sorted(by[t], key=lambda e: -e["w"])
         share = sum(e["w"] for e in rules) / tot

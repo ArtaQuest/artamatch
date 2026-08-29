@@ -130,16 +130,27 @@ def build(df, Z, split, exclude=frozenset(), min_support=40):
     for x, y in PAIRS:
         pa, pb = cyc(x, y)
         same = np.isfinite(pa) & np.isfinite(pb)
+        # NOTE: an "na" catch-all here would be a statement meaning "the two births differ", which is
+        # real but unreadable — and its negation shipped into a model once as
+        # NOT(cyclesep10_neptune_pluto=na). Name the shared-bin condition explicitly instead, and let
+        # the per-bin statements carry only rows that actually share that bin.
         for div in (48, 72):
             ka = np.floor(pa / (360.0 / div)).astype(int) % div
             kb = np.floor(pb / (360.0 / div)).astype(int) % div
-            _cats([f"{i}" if (o and i == j) else "na" for i, j, o in zip(ka, kb, same)],
-                  f"cycle{div}_{x}_{y}", names, cols, ms)
-        # the raw separation, in ten-degree steps, when both births share it
+            agree = same & (ka == kb)
+            _flag(cols, names, agree, f"cycle{div}_{x}_{y}_same_part", ms)
+            for v in pd.unique(ka[agree]) if agree.any() else []:
+                c = (agree & (ka == v)).astype(np.float32)
+                if c.sum() >= ms:
+                    cols.append(c); names.append(f"cycle{div}_{x}_{y}={v}")
         sa = np.floor(pa / 10.0).astype(int) % 36
         sb = np.floor(pb / 10.0).astype(int) % 36
-        _cats([f"{i}" if (o and i == j) else "na" for i, j, o in zip(sa, sb, same)],
-              f"cyclesep10_{x}_{y}", names, cols, ms)
+        agree = same & (sa == sb)
+        _flag(cols, names, agree, f"cyclesep10_{x}_{y}_same_band", ms)
+        for v in pd.unique(sa[agree]) if agree.any() else []:
+            c = (agree & (sa == v)).astype(np.float32)
+            if c.sum() >= ms:
+                cols.append(c); names.append(f"cyclesep10_{x}_{y}={v}")
 
     # ---------- SYMMETRISED pairs, for the doctrines that do not distinguish who is who ----------
     def _dsum(v):

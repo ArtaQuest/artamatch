@@ -70,6 +70,42 @@ def main():
         & np.array([side(n) == "AB" for n in names])
     X, Xt = X[:, keep], Xt[:, keep]
     names = [n for n, k in zip(names, keep) if k]
+
+    # Drop statements that are near-copies of one already in the bank. The composite chart (midpoint in
+    # SPACE) and the Davison (midpoint in TIME) necessarily agree on the slow planets — Pluto moves four
+    # thousandths of a degree a day — so comp_pluto_sign=Pis and dav_pluto_sign=Pis correlate at 0.997.
+    # Keeping both doubles their multiple-comparison cost, splits their weight, and makes each look
+    # worthless on a drop-one test because the other covers it. Worse, it shows a reader the same fact
+    # twice under two names. Columns are bucketed by support so this stays cheap; the first name in the
+    # bank wins, which keeps the composite (the exact construction) over the Davison (an approximation).
+    sup = X.sum(0)
+    order = np.argsort(-sup)
+    seen, drop, dropped_pairs = {}, np.zeros(len(names), bool), []
+    for i in order:
+        b = int(sup[i])
+        # a RELATIVE window: two columns correlated at 0.95+ can still differ in support by more than a
+        # couple of rows. An absolute +/-2 window let comp_pluto_sign=Pis (609) and dav_pluto_sign=Pis
+        # (606) past each other at r=0.997, because they differ by three.
+        wnd = max(3, int(0.05 * b))
+        cand = [j for k in range(b - wnd, b + wnd + 1) for j in seen.get(k, [])]
+        xi = X[:, i]
+        for j in cand:
+            xj = X[:, j]
+            inter = float(np.minimum(xi, xj).sum())
+            union = float(np.maximum(xi, xj).sum())
+            if union > 0 and inter / union > 0.95:
+                drop[i] = True
+                dropped_pairs.append((names[i], names[j], inter / union))
+                break
+        if not drop[i]:
+            seen.setdefault(b, []).append(i)
+    if drop.any():
+        print(f"  dropped {int(drop.sum())} near-duplicate statements "
+              f"(Jaccard > 0.95 with one already kept)")
+        for a_, b_, r_ in dropped_pairs[:4]:
+            print(f"    {a_[:46]:<48} ~ {b_[:40]:<42} {r_:.3f}")
+        X, Xt = X[:, ~drop], Xt[:, ~drop]
+        names = [n for n, d in zip(names, drop) if not d]
     gid = groups(ids)
     print(f"  {os.path.basename(D)}: train {len(tr):,} ({yi.mean():.1%} good) · test {len(te):,}")
     print(f"  bank {X.shape[1]:,} pair-only doctrine statements, every one choosable once oriented\n",

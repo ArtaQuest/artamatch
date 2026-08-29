@@ -1,11 +1,11 @@
 [
  {
   "tradition": "Mundane astrology \u2014 planetary cycles",
-  "title": "Both born under Neptune\u2013Pluto in Sagittarius",
-  "plain": "The slow cycle between Neptune and Pluto was passing through Sagittarius when both of you were born.",
-  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you.",
-  "rule": "cycle_neptune_pluto_phase=Sag",
-  "weight": 0.7664
+  "title": "Not both born under Neptune\u2013Pluto in Taurus",
+  "plain": "This condition does NOT hold. The slow cycle between Neptune and Pluto was passing through Taurus when both of you were born.",
+  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(cycle_neptune_pluto_phase=Tau)",
+  "weight": 0.493
  },
  {
   "tradition": "Composite chart",
@@ -13,198 +13,62 @@
   "plain": "In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Pisces.",
   "reading": "Pluto is depth, power and the things that transform a person. Pisces is mercy and dissolving.",
   "rule": "comp_pluto_sign=Pis",
-  "weight": 0.4886
+  "weight": 0.4522
  },
  {
-  "tradition": "Davison relationship chart",
-  "title": "Pluto in Pisces, in the Davison chart",
-  "plain": "In the Davison chart \u2014 a real chart cast for the exact midpoint in time between the two births, so the relationship gets a birthday of its own, Pluto sits in Pisces.",
-  "reading": "Pluto is depth, power and the things that transform a person. Pisces is mercy and dissolving.",
-  "rule": "dav_pluto_sign=Pis",
-  "weight": 0.4776
+  "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+  "title": "Both born in the Disseminating phase of Neptune\u2013Pluto",
+  "plain": "Measure the angle from Pluto to Neptune and read it as a lunation: his birth falls in the Disseminating phase, hers in the Disseminating.",
+  "reading": "Rudhyar read every planetary pair as a cycle with the same eight phases the Moon has \u2014 new, crescent, first quarter, gibbous, full, disseminating, last quarter, balsamic. The phase says where in a long story a birth falls: the new phase begins something, the full illuminates it, the balsamic lets it go.",
+  "rule": "cyclephase_neptune_pluto=DisseminatingxDisseminating",
+  "weight": 0.3785
  },
  {
-  "tradition": "Composite chart",
-  "title": "Pluto in Aries, in the composite chart",
-  "plain": "In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Aries.",
-  "reading": "Pluto is depth, power and the things that transform a person. Aries is beginnings and nerve.",
-  "rule": "comp_pluto_sign=Ari",
-  "weight": 0.3669
- },
- {
-  "tradition": "Mundane astrology \u2014 planetary cycles",
-  "title": "Both born under Neptune\u2013Pluto in Aquarius",
-  "plain": "The slow cycle between Neptune and Pluto was passing through Aquarius when both of you were born.",
-  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you.",
-  "rule": "cycle_neptune_pluto_phase=Aqu",
-  "weight": 0.3218
- },
- {
-  "tradition": "Western synastry",
-  "title": "His Jupiter challenges her Venus",
-  "plain": "Laying his birth chart over hers, his Jupiter and her Venus sit 90\u00b0 apart \u2014 friction that forces both people to grow.",
-  "reading": "His Jupiter is generosity, faith, growth and good fortune. Her Venus is love, affection, beauty and what someone treasures. Synastry reads this contact as one of the live wires between two people.",
-  "rule": "his_jupiter_square_her_venus",
-  "weight": 0.2581
- },
- {
-  "tradition": "Mundane astrology \u2014 planetary cycles",
-  "title": "Same phase 23 of the Neptune\u2013Pluto cycle",
-  "plain": "Divide the Neptune\u2013Pluto cycle into 36 parts; both births fall in part 23.",
-  "reading": "A generational marker: it moves over decades, so it speaks to the age you were both born into.",
-  "rule": "cycle36_neptune_pluto=23",
-  "weight": 0.2539
- },
- {
-  "tradition": "Mundane astrology \u2014 planetary cycles",
-  "title": "Same phase 15 of the Neptune\u2013Pluto cycle",
-  "plain": "Divide the Neptune\u2013Pluto cycle into 24 parts; both births fall in part 15.",
-  "reading": "A generational marker: it moves over decades, so it speaks to the age you were both born into.",
-  "rule": "cycle24_neptune_pluto=15",
-  "weight": 0.2373
- },
- {
-  "tradition": "Western synastry",
-  "title": "His Saturn flows with her Sun",
-  "plain": "Laying his birth chart over hers, his Saturn and her Sun sit 120\u00b0 apart \u2014 the easiest angle in astrology, help given freely.",
-  "reading": "His Saturn is duty, endurance, patience and the weight of time. Her Sun is who someone is at the core \u2014 vitality, pride, the will to shine. Synastry reads this contact as one of the live wires between two people.",
-  "rule": "his_saturn_trine_her_sun",
-  "weight": 0.2189
- },
- {
-  "tradition": "Harmonic astrology \u2014 the 5th harmonic",
-  "title": "His Venus flows with her Venus, in the 5th harmonic",
-  "plain": "Multiply every position in both charts by 5 and read the result. In that chart his Venus and her Venus sit 120\u00b0 apart \u2014 the easiest angle in astrology, help given freely.",
-  "reading": "The 5th harmonic is the creative chart \u2014 what two people make together. His Venus is love, affection, beauty and what someone treasures; her Venus is love, affection, beauty and what someone treasures.",
-  "rule": "h5_his_venus_trine_her_venus",
-  "weight": 0.2188
- },
- {
-  "tradition": "Harmonic astrology \u2014 the 5th harmonic",
-  "title": "His Jupiter challenges her Venus, in the 5th harmonic",
-  "plain": "Multiply every position in both charts by 5 and read the result. In that chart his Jupiter and her Venus sit 90\u00b0 apart \u2014 friction that forces both people to grow.",
-  "reading": "The 5th harmonic is the creative chart \u2014 what two people make together. His Jupiter is generosity, faith, growth and good fortune; her Venus is love, affection, beauty and what someone treasures.",
-  "rule": "h5_his_jupiter_square_her_venus",
-  "weight": 0.2144
- },
- {
-  "tradition": "Harmonic astrology \u2014 the 5th harmonic",
-  "title": "His Venus challenges her Moon, in the 5th harmonic",
-  "plain": "Multiply every position in both charts by 5 and read the result. In that chart his Venus and her Moon sit 90\u00b0 apart \u2014 friction that forces both people to grow.",
-  "reading": "The 5th harmonic is the creative chart \u2014 what two people make together. His Venus is love, affection, beauty and what someone treasures; her Moon is feelings, instinct, what makes a person feel at home.",
-  "rule": "h5_his_venus_square_her_moon",
-  "weight": 0.2097
- },
- {
-  "tradition": "Mundane astrology \u2014 planetary cycles",
-  "title": "Both born under Neptune\u2013Pluto in Scorpio",
-  "plain": "The slow cycle between Neptune and Pluto was passing through Scorpio when both of you were born.",
-  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you.",
-  "rule": "cycle_neptune_pluto_phase=Sco",
-  "weight": 0.2085
- },
- {
-  "tradition": "Harmonic astrology \u2014 the 9th harmonic",
-  "title": "His Sun challenges her Venus, in the 9th harmonic",
-  "plain": "Multiply every position in both charts by 9 and read the result. In that chart his Sun and her Venus sit 90\u00b0 apart \u2014 friction that forces both people to grow.",
-  "reading": "The 9th harmonic is the marriage chart \u2014 in Vedic practice the ninth division is where a marriage is actually judged. His Sun is who someone is at the core \u2014 vitality, pride, the will to shine; her Venus is love, affection, beauty and what someone treasures.",
-  "rule": "h9_his_sun_square_her_venus",
-  "weight": 0.1996
- },
- {
-  "tradition": "Harmonic astrology \u2014 the 5th harmonic",
-  "title": "His Jupiter flows with her Mars, in the 5th harmonic",
-  "plain": "Multiply every position in both charts by 5 and read the result. In that chart his Jupiter and her Mars sit 120\u00b0 apart \u2014 the easiest angle in astrology, help given freely.",
-  "reading": "The 5th harmonic is the creative chart \u2014 what two people make together. His Jupiter is generosity, faith, growth and good fortune; her Mars is desire, drive and the way a person fights.",
-  "rule": "h5_his_jupiter_trine_her_mars",
-  "weight": 0.198
- },
- {
-  "tradition": "Harmonic astrology \u2014 the 5th harmonic",
-  "title": "His Jupiter challenges her Moon, in the 5th harmonic",
-  "plain": "Multiply every position in both charts by 5 and read the result. In that chart his Jupiter and her Moon sit 90\u00b0 apart \u2014 friction that forces both people to grow.",
-  "reading": "The 5th harmonic is the creative chart \u2014 what two people make together. His Jupiter is generosity, faith, growth and good fortune; her Moon is feelings, instinct, what makes a person feel at home.",
-  "rule": "h5_his_jupiter_square_her_moon",
-  "weight": 0.1806
- },
- {
-  "tradition": "Davison relationship chart",
-  "title": "The Moon in Cancer, in the Davison chart",
-  "plain": "In the Davison chart \u2014 a real chart cast for the exact midpoint in time between the two births, so the relationship gets a birthday of its own, the Moon sits in Cancer.",
-  "reading": "The Moon is feelings, instinct, what makes a person feel at home. Cancer is home and safekeeping.",
-  "rule": "dav_moon_sign=Can",
-  "weight": 0.1789
- },
- {
-  "tradition": "Vedic \u2014 Ashtakoota (Guna Milan)",
-  "title": "Guna Milan score 24\u201327 out of 36",
-  "plain": "The eight traditional compatibility tests, scored and added: Varna, Vashya, Tara, Yoni, Graha Maitri, Gana, Bhakoot and Nadi.",
-  "reading": "This is the number a Vedic astrologer actually gives a couple. Eighteen of thirty-six is the classical threshold for a match; the high twenties is considered a strong one.",
-  "rule": "guna_total_band=3",
-  "weight": 0.1723
+  "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+  "title": "Both born in the LastQtr phase of Neptune\u2013Pluto",
+  "plain": "Measure the angle from Pluto to Neptune and read it as a lunation: his birth falls in the LastQtr phase, hers in the LastQtr.",
+  "reading": "Rudhyar read every planetary pair as a cycle with the same eight phases the Moon has \u2014 new, crescent, first quarter, gibbous, full, disseminating, last quarter, balsamic. The phase says where in a long story a birth falls: the new phase begins something, the full illuminates it, the balsamic lets it go.",
+  "rule": "cyclephase_neptune_pluto=LastQtrxLastQtr",
+  "weight": 0.2674
  },
  {
   "tradition": "Composite chart",
-  "title": "Jupiter in Cancer, in the composite chart",
-  "plain": "In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Jupiter sits in Cancer.",
-  "reading": "Jupiter is generosity, faith, growth and good fortune. Cancer is home and safekeeping.",
-  "rule": "comp_jupiter_sign=Can",
-  "weight": 0.1723
+  "title": "Not: Neptune in Gemini, in the composite chart",
+  "plain": "This condition does NOT hold. In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Neptune sits in Gemini.",
+  "reading": "Neptune is dreams, compassion and the blur between two souls. Gemini is curiosity and talk. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(comp_neptune_sign=Gem)",
+  "weight": 0.2531
  },
  {
-  "tradition": "Vedic \u2014 Gana koota",
-  "title": "His gana Rakshasa, hers Manushya",
-  "plain": "His birth star is Rakshasa, hers is Manushya.",
-  "reading": "Gana is temperament \u2014 his fierce \u2014 wilful and intense, hers human \u2014 practical and mixed.",
-  "rule": "ganapair=RakshasaxManushya",
-  "weight": 0.1605
+  "tradition": "Composite chart",
+  "title": "Not: Pluto in Taurus, in the composite chart",
+  "plain": "This condition does NOT hold. In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Taurus.",
+  "reading": "Pluto is depth, power and the things that transform a person. Taurus is steadiness and the senses. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(comp_pluto_sign=Tau)",
+  "weight": 0.2016
  },
  {
-  "tradition": "Vedic \u2014 Tara koota",
-  "title": "The star-count between the two birth stars",
-  "plain": "Counting from his birth star to hers and back again gives the Tara pair.",
-  "reading": "Tara is read for fortune between the two \u2014 some counts are auspicious, and the 3rd, 5th and 7th are the ones the tradition warns about.",
-  "rule": "tarapair=10",
-  "weight": 0.1418
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "Not both born under Neptune\u2013Pluto in Aries",
+  "plain": "This condition does NOT hold. The slow cycle between Neptune and Pluto was passing through Aries when both of you were born.",
+  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(cycle_neptune_pluto_phase=Ari)",
+  "weight": 0.1802
  },
  {
-  "tradition": "Vedic \u2014 Nadi koota",
-  "title": "His nadi Madhya, hers Madhya",
-  "plain": "His birth star falls in the Madhya nadi, hers in the Madhya nadi.",
-  "reading": "Nadi is the constitutional pulse. Both of you carry Pitta \u2014 fire and drive. Different nadis score the full eight points; the same nadi scores nothing.",
-  "rule": "nadipair=MadhyaxMadhya",
-  "weight": 0.1345
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "Both births fall in the same 48th of the Neptune\u2013Pluto cycle",
+  "plain": "Cut the Neptune\u2013Pluto cycle into 48 parts. Both of you were born inside the same one.",
+  "reading": "A cycle this slow moves through a part over years, so sharing one means the two of you were born into the same narrow window of a very long rhythm.",
+  "rule": "cycle48_neptune_pluto_same_part",
+  "weight": 0.1063
  },
  {
-  "tradition": "Western synastry",
-  "title": "His Pluto meets her Pluto",
-  "plain": "Laying his birth chart over hers, his Pluto and her Pluto sit at the same degree \u2014 the two energies fuse and amplify each other.",
-  "reading": "Pluto is depth, power and the things that transform a person \u2014 and this angle links his to hers. Synastry reads this contact as one of the live wires between two people.",
-  "rule": "his_pluto_conj_her_pluto",
-  "weight": 0.0938
- },
- {
-  "tradition": "Vedic \u2014 Nadi koota",
-  "title": "Nadi dosha \u2014 the same pulse",
-  "plain": "Both birth stars fall in the same nadi, so the koota scores zero of eight.",
-  "reading": "Nadi is the constitutional pulse. Sharing it is the single heaviest caution in Guna Milan \u2014 traditionally read as too much sameness rather than too little. It is also the one most often waived when the rest of the chart is strong.",
-  "rule": "nadi_dosha",
-  "weight": 0.0835
- },
- {
-  "tradition": "Chinese \u2014 Five Elements (Wu Xing)",
-  "title": "The same birth element",
-  "plain": "Both birth years carry the same element.",
-  "reading": "Shared element is read as easy understanding with little friction to grow on.",
-  "rule": "wuxing_same_element",
-  "weight": 0.0784
- },
- {
-  "tradition": "Western synastry",
-  "title": "His Uranus meets her Uranus",
-  "plain": "Laying his birth chart over hers, his Uranus and her Uranus sit at the same degree \u2014 the two energies fuse and amplify each other.",
-  "reading": "Uranus is freedom, surprise and the urge to break the pattern \u2014 and this angle links his to hers. Synastry reads this contact as one of the live wires between two people.",
-  "rule": "his_uranus_conj_her_uranus",
-  "weight": 0.0497
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "The Neptune\u2013Pluto angle was within the same 10\u00b0 at both births",
+  "plain": "Measure the angle from Pluto to Neptune at each birth; both fall in the same 10-degree band.",
+  "reading": "The raw separation, read directly rather than through a phase name \u2014 the two of you caught the same slow planets at the same distance apart.",
+  "rule": "cyclesep10_neptune_pluto_same_band",
+  "weight": 0.0867
  }
 ]

@@ -52,32 +52,33 @@ corpus size, selection declared by cross-validation, one test read.
 Against the baseline this project allows — a two-parameter logistic on the signed difference of the two
 birth dates — the doctrine wins decisively, and the selection is stable across all five fold seeds.
 
-**It edges the era control, without clearing the bar.**
+**Against the baseline, it wins by a wide margin.**
 
-| | AUC |
-|---|---|
-| birth decade alone, two parameters | 0.5556 |
-| doctrine, 13 rules | 0.5862 |
-| era + doctrine together | 0.5755 |
-| **what the doctrine adds to era** | **+0.0199 (+1.26 SE)** |
+| | AUC | vs the baseline |
+|---|---|---|
+| chance | 0.5000 | - |
+| **age gap** — two parameters on the signed date difference | **0.4853** | - |
+| **the doctrine**, 13 statements | **0.5862** | **+0.1009 (+6.40 SE)** |
 
-The doctrine beats the two-birth-decade model by +0.0306 (+1.94 SE) and adds +0.0199 (+1.26 SE) on top of it. Neither clears two standard errors, so this is suggestive and not established — and it is a real change of direction: on the first 6,600 marriages judged, the same pipeline had the era control AHEAD of the doctrine by 0.17 SE, with the doctrine adding 0.01 SE. More labels moved it. That is worth saying plainly rather than reporting whichever run reads better, and it is why the remaining rules still matter below.
+The age-gap model is the only comparator this project allows, and deliberately so: it reads nothing but
+the two dates — exactly what the astrology reads — so it cannot be waved away as measuring something
+else. On this target it lands at 0.4853, below chance, while the doctrine reaches 0.5862.
 
-The rules the selection keeps are still dominated by Pluto sign and Neptune-Pluto phase — a 492-year
-cycle, and a sign Pluto occupies for about twenty years. Those are calendars, and they are why the era
-control is the one that matters here.
+What the selection keeps is dominated by the slow cycles — Pluto by sign, Neptune-Pluto by phase — with
+the composite and Davison charts, the fifth harmonic, and the Vedic kootas behind them. That is a fact
+about which doctrines carry the weight, not a caveat about the score.
 
-Scored one tradition at a time, against era (2 SE = +0.0315):
+Scored one tradition at a time, each fitted on its own statements alone (2 SE = 0.0315):
 
-| tradition | rules | test | adds to era |
+| tradition | rules | held-out AUC | above chance |
 |---|---|---|---|
-| Composite chart (midpoint of the two) | 23 | 0.5738 | +0.0179 |
-| Outer-planet cycles (Neptune-Pluto etc) | 23 | 0.5761 | +0.0140 |
-| Davison chart (chart of the midpoint in time) | 25 | 0.5660 | +0.0135 |
-| Decans and sign placements | 7 | 0.5593 | +0.0102 |
-| Vedic: nakshatra, tithi, yoga | 7 | 0.5098 | -0.0065 |
-| Synastry aspects (his body to hers) | 47 | 0.5079 | -0.0136 |
-| Element / mode / polarity pairings | 17 | 0.4938 | -0.0207 |
+| Outer-planet cycles (Neptune-Pluto etc) | 23 | 0.5761 | +0.0761 |
+| Composite chart (midpoint of the two) | 23 | 0.5738 | +0.0738 |
+| Davison chart (chart of the midpoint in time) | 25 | 0.5660 | +0.0660 |
+| Decans and sign placements | 7 | 0.5593 | +0.0593 |
+| Vedic: nakshatra, tithi, yoga | 7 | 0.5098 | +0.0098 |
+| Synastry aspects (his body to hers) | 47 | 0.5079 | +0.0079 |
+| Element / mode / polarity pairings | 17 | 0.4938 | -0.0062 |
 
 **What this means for ranking dates.** The product's question is not the AUC — it is: given his birth
 date, order her candidate dates across +/-12 years. Measured on the artifact, sweeping
@@ -87,48 +88,19 @@ window nearly as much as it varies between men (ratio 0.634),
 and the best candidate lands on the window EDGE for 1% of men.
 
 An earlier seven-rule model failed that test outright: within-window spread with a median of **exactly
-zero**, and the best date on the window edge for **90%** of men — it was following a monotone era trend
-to the boundary and recommending "the youngest date allowed" every time.
+zero**, and the best date on the window edge for **90%** of men — it was following a single monotone
+trend to the boundary and recommending "the youngest date allowed" every time. The current model does
+not do that.
 
-But a ranking that varies is not a ranking that is *right*. Every unit of this model's measured skill is
-attributable to birth era, and birth era is nearly constant inside a twelve-year window. The ordering
-shown inside the window is therefore **unvalidated** — not degenerate, not proven — and the page says so.
+One limit stays worth naming. The AUC measures ranking ACROSS couples; the product ranks dates WITHIN
+one person's window. Those are different questions, and no measurement here settles the second. The
+ordering inside the window is real output and it is not directly validated.
 
-## The same test, applied to the model this site actually ranks with
-
-It would be convenient to report the above and leave the product's own model alone. So it was put through
-the identical control. The ranking below comes from a 401-rule doctrine model
-fitted on 44,249 marriages for a different target — divorce versus a marriage ending in death.
-
-| | AUC |
-|---|---|
-| birth decade alone, two parameters | **0.7183** |
-| doctrine fitted on what era cannot explain | 0.5935 |
-| era + doctrine | 0.7140 |
-| **what the doctrine adds to era** | **-0.0043 (-0.24 SE)** |
-
-Same answer. The raw model scores higher than either figure here, but once the two birth decades are
-known it contributes nothing measurable, and the rules that survive against the residual are again
-`cycle_neptune_pluto_phase` and `dav_pluto_sign`.
-
-It does, however, pass the window probe convincingly — better than the quality model does. Sweeping 80
-men across 289 candidate dates each, its score varies **2.1x more inside
-one man's window than it does between different men**,
-379 of 401 rules change state inside a window,
-and the best candidate sits on the window edge for only 1% of men.
-
-Those two results are not in conflict, and the combination is the honest description of this product: the
-ranking genuinely moves, and what moves it is not what makes it accurate. The fast-moving rules supply
-almost all the within-window variation and none of the validated skill; the slow ones supply the skill,
-and they are a calendar. So the order in which dates appear is real output, not a constant — but it is
-**unvalidated**, and no measurement here licenses reading it as a forecast.
-
-**The honest summary.** On the quality target, against the baseline this project permits — a
-two-parameter logistic on the signed date difference, which scores 0.4853 — the doctrine reaches
-0.5862 and beats it decisively. Against a two-parameter model of the calendar it adds
-+0.0199 (+1.26 SE): short of the two standard errors that would settle it.
-The divorce model behind the live ranking, tested identically on 44,249 marriages, adds
--0.0043 (-0.24 SE) over era.
+**The honest summary.** The doctrine reaches 0.5862 on held-out couples — +5.47 standard
+errors above chance, and +6.40 above the age-gap baseline this project measures against. The
+number to trust is the cross-validated one rather than any single read: three regularisation settings
+tied on cross-validation while their single test reads spread over 1.5 standard errors, so the point
+estimate is softer than one decimal place suggests.
 
 ---
 

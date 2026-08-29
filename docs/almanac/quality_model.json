@@ -1,0 +1,29 @@
+{
+ "model": "ArtaMatch quality \u2014 oriented toward happy, Lasso-selected, non-negative",
+ "signed": false,
+ "alpha": 0.007,
+ "cv_auc": 0.5969,
+ "test_auc": 0.5872,
+ "intercept": -0.6381117892056043,
+ "n_bank": 11152,
+ "n_surviving": 9,
+ "n_negated": 4,
+ "benchmark": {
+  "target": "quality_good",
+  "n_test": 1395,
+  "pos_rate": 0.5978494623655914,
+  "age_gap_auc": 0.4853475508363363,
+  "auc_se": 0.01576840007011145
+ },
+ "weights": {
+  "NOT(cycle_neptune_pluto_phase=Ari)": 0.18015976751440899,
+  "NOT(cycle_neptune_pluto_phase=Tau)": 0.4930145114234635,
+  "NOT(comp_neptune_sign=Gem)": 0.25307718479741637,
+  "NOT(comp_pluto_sign=Tau)": 0.2015978449514057,
+  "comp_pluto_sign=Pis": 0.4522197260124563,
+  "cycle48_neptune_pluto_same_part": 0.10631698644344223,
+  "cyclesep10_neptune_pluto_same_band": 0.086654656808753,
+  "cyclephase_neptune_pluto=DisseminatingxDisseminating": 0.37846236962190405,
+  "cyclephase_neptune_pluto=LastQtrxLastQtr": 0.26739157917309886
+ }
+}

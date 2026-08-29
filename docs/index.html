@@ -475,9 +475,23 @@ def read_user(y,m,d):
     el=(C["moon"]-C["sun"])%360.0
     j=scorer.jdn(y,m,d); sx=(j+49)%60
     wheel={b:(round(C[b],2) if C[b]==C[b] else None) for b in scorer.BODIES}
+    # --- the Maya almanac: the 260-day Tzolkin, the 365-day Haab, and the nine Lords of the Night ---
+    TZ=["Imix","Ik","Akbal","Kan","Chicchan","Cimi","Manik","Lamat","Muluc","Oc","Chuen","Eb",
+        "Ben","Ix","Men","Cib","Caban","Etznab","Cauac","Ahau"]
+    HB=["Pop","Wo","Sip","Sotz","Sek","Xul","Yaxkin","Mol","Chen","Yax","Sak","Keh","Mak",
+        "Kankin","Muwan","Pax","Kayab","Kumku","Wayeb"]
+    kin=(j+159)%260
+    tzs=TZ[kin%20]; tzt=kin%13+1
+    trec=TZ[(kin-(kin%13))%20]                       # the day sign that opens this thirteen-day run
+    lc=j-584283                                      # Long Count, GMT correlation
+    hb=(lc+348)%365
+    lord=(lc%9)+1
+    colr=["Red","White","Blue","Yellow"][(kin%20)%4]
     return json.dumps({"sun":s(C["sun"]),"moon":s(C["moon"]),"nak":int((C["moon"]%360)//NAK),
       "tithi":int(el//12.0)+1,"stem":scorer.STEMS[sx%10],"branch":scorer.BRANCH[sx%12],
-      "animal":scorer.BRANCH[(y-4)%12],"lp":scorer.lifepath(y,m,d),"wheel":wheel})
+      "animal":scorer.BRANCH[(y-4)%12],"lp":scorer.lifepath(y,m,d),
+      "tzsign":tzs,"tztone":tzt,"tzkin":kin+1,"trecena":trec,"tzcolor":colr,
+      "haab":f"{hb%20} {HB[min(hb//20,18)]}","lord":f"G{lord}","wheel":wheel})
 import datetime as _dt
 def scan_chunk(y,m,d,g,ci,total):
     """Score every real calendar date in the gendered window, chunk ci of total (by month index)."""
@@ -551,7 +565,13 @@ nak:"The Moon's lunar mansion — the 27 nakṣatras are the backbone of Vedic m
 tithi:"The Moon-phase day you were born on (1–30) — one of the five limbs of the Indian almanac.",
 stem:"Your Chinese day pillar's “day master” — the element BaZi reads a person by.",
 animal:"Your Chinese year animal — the twelve-year cycle everyone knows from the zodiac placemats.",
-lp:"Your numerology life path: all the digits of your birth date, reduced to one number."};
+lp:"Your numerology life path: all the digits of your birth date, reduced to one number.",
+  tzsign:"Your day sign in the 260-day Tzolkin — the Maya sacred calendar, and the closest thing their astrology has to a sun sign.",
+  tztone:"The galactic tone, 1 to 13 — the pitch a day is played at, under its sign.",
+  trecena:"The day sign that opened your thirteen-day run. A Maya day is read through its trecena as much as itself.",
+  tzkin:"Your kin: which of the 260 named days you were born on. The Tzolkin repeats every 260 days and never stops.",
+  haab:"Your date in the Haab, the 365-day solar year of eighteen twenty-day months plus five nameless days.",
+  lord:"One of the nine Lords of the Night, a cycle the Maya ran alongside the other two."};
 $("go").onclick=async()=>{
   const [y,m,d]=$("dob").value.split("-").map(Number);
   state.me=[y,m,d];
@@ -560,7 +580,10 @@ $("go").onclick=async()=>{
   const cards=[["Sun sign",SIGNF[u.sun],EXPL.sun],["Moon sign",SIGNF[u.moon],EXPL.moon],
     ["Nakṣatra",NAKN[u.nak],EXPL.nak],["Birth tithi",u.tithi,EXPL.tithi],
     ["Day master",u.stem.replace(/([A-Z])/g," $1").trim(),EXPL.stem],
-    ["Year animal",u.animal,EXPL.animal],["Life path",u.lp,EXPL.lp]];
+    ["Year animal",u.animal,EXPL.animal],["Life path",u.lp,EXPL.lp],
+    ["Maya day sign",u.tzsign,EXPL.tzsign],["Galactic tone",u.tztone,EXPL.tztone],
+    ["Trecena",u.trecena,EXPL.trecena],["Maya kin",u.tzkin+" of 260",EXPL.tzkin],
+    ["Haab date",u.haab,EXPL.haab],["Lord of the Night",u.lord,EXPL.lord]];
   $("cards").innerHTML=cards.map(c=>`<div class="pcard"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="e">${c[2]}</div></div>`).join("");
   show(1);
   const els=[...document.querySelectorAll(".pcard")];

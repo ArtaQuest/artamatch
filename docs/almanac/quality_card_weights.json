@@ -1,41 +1,54 @@
 {
  "ranked_by": "summed absolute weight of the statements in each group",
- "note": "every statement here changes when the two birth dates move apart around a fixed midpoint",
+ "note": "every statement here reads both birth dates, and more than half of its variance comes from how far apart the two births are rather than from when they happened",
+ "n_statements": 110,
+ "cv_auc": 0.5612,
+ "test_auc": 0.5276,
  "cards": [
   {
-   "key": "synastry",
-   "label": "How your planets meet theirs",
-   "statements": 4,
-   "share": 0.23,
-   "mean_interaction": 0.496
-  },
-  {
    "key": "cycles",
-   "label": "The slow cycles you were both born under",
-   "statements": 6,
-   "share": 0.216,
-   "mean_interaction": 0.599
+   "label": "The sky you were both born under",
+   "blurb": "Rudhyar's cycle phases \u2014 where a pair of slow planets stood in their own cycle at each birth.",
+   "statements": 29,
+   "weight": 6.3013,
+   "mean_interaction": 0.702,
+   "share": 0.281
   },
   {
-   "key": "vedic",
-   "label": "What Vedic matching says",
-   "statements": 8,
-   "share": 0.199,
-   "mean_interaction": 0.894
+   "key": "daily",
+   "label": "How you meet day to day",
+   "blurb": "Sun, Mercury and Mars contacts \u2014 presence, talk and friction.",
+   "statements": 31,
+   "weight": 5.6902,
+   "mean_interaction": 0.95,
+   "share": 0.254
   },
   {
-   "key": "other",
-   "label": "Everything else the model reads",
-   "statements": 6,
-   "share": 0.185,
-   "mean_interaction": 0.653
+   "key": "feeling",
+   "label": "How your feelings meet theirs",
+   "blurb": "Moon and Venus contacts \u2014 the two bodies every tradition reads for affection.",
+   "statements": 19,
+   "weight": 4.1581,
+   "mean_interaction": 0.957,
+   "share": 0.186
   },
   {
-   "key": "relchart",
-   "label": "The chart the two of you make",
-   "statements": 7,
-   "share": 0.17,
-   "mean_interaction": 0.646
+   "key": "deep",
+   "label": "The contacts you do not choose",
+   "blurb": "Uranus, Neptune and Pluto contacts \u2014 the slow planets, read as what a couple is handed.",
+   "statements": 15,
+   "weight": 3.3706,
+   "mean_interaction": 0.733,
+   "share": 0.151
+  },
+  {
+   "key": "holding",
+   "label": "What holds you and what opens you",
+   "blurb": "Saturn and Jupiter contacts \u2014 the binding planet and the expanding one.",
+   "statements": 16,
+   "weight": 2.8735,
+   "mean_interaction": 0.868,
+   "share": 0.128
   }
  ]
 }

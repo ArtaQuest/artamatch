@@ -1,0 +1,403 @@
+{
+ "baseline_age_gap_cv_auc": 0.5122,
+ "min_interaction": 0.5,
+ "n_couples": 7909,
+ "systems": [
+  {
+   "system": "Rudhyar cycle phases",
+   "origin": "modern",
+   "blurb": "where two slow planets stand in their own cycle",
+   "statements": 532,
+   "alpha": 0.001,
+   "cv_auc": 0.5601,
+   "rules": 136
+  },
+  {
+   "system": "Western synastry aspects",
+   "origin": "Europe",
+   "blurb": "the angles between one chart's planets and the other's",
+   "statements": 682,
+   "alpha": 0.002,
+   "cv_auc": 0.5521,
+   "rules": 110
+  },
+  {
+   "system": "Maya Tzolkin and the oracle",
+   "origin": "Maya",
+   "blurb": "the 260-day count and its oracle",
+   "statements": 523,
+   "alpha": 0.0005,
+   "cv_auc": 0.5164,
+   "rules": 228
+  },
+  {
+   "system": "Ashtakoota / Guna Milan",
+   "origin": "North India",
+   "blurb": "the eight kootas scored out of thirty-six",
+   "statements": 37,
+   "alpha": 0.003,
+   "cv_auc": 0.516,
+   "rules": 10
+  },
+  {
+   "system": "Tarot birth cards",
+   "origin": "Tarot",
+   "blurb": "the trump the birth date reduces to",
+   "statements": 80,
+   "alpha": 0.0005,
+   "cv_auc": 0.5153,
+   "rules": 43
+  },
+  {
+   "system": "Nadi and Bhakoot",
+   "origin": "India",
+   "blurb": "the two kootas that carry a veto of their own",
+   "statements": 17,
+   "alpha": 0.002,
+   "cv_auc": 0.5142,
+   "rules": 7
+  },
+  {
+   "system": "Ten Porutham",
+   "origin": "Tamil Nadu / Sri Lanka",
+   "blurb": "the counts between the two birth stars: Dina, Mahendra, Stree-Deergha, Vedha, Rajju",
+   "statements": 117,
+   "alpha": 0.003,
+   "cv_auc": 0.5131,
+   "rules": 6
+  },
+  {
+   "system": "Kabbalah: 72 Names",
+   "origin": "Kabbalah",
+   "blurb": "the wheel of seventy-two names, five degrees each",
+   "statements": 23,
+   "alpha": 0.001,
+   "cv_auc": 0.513,
+   "rules": 15
+  },
+  {
+   "system": "Monomoiria",
+   "origin": "Hellenistic",
+   "blurb": "the planet ruling the single degree",
+   "statements": 150,
+   "alpha": 0.0005,
+   "cv_auc": 0.5121,
+   "rules": 97
+  },
+  {
+   "system": "Numerology: life path",
+   "origin": "Pythagorean",
+   "blurb": "the birth date reduced to one digit",
+   "statements": 249,
+   "alpha": 0.0005,
+   "cv_auc": 0.511,
+   "rules": 70
+  },
+  {
+   "system": "Na Yin element",
+   "origin": "China",
+   "blurb": "the sixty-fold sound-element of the pillar",
+   "statements": 28,
+   "alpha": 0.002,
+   "cv_auc": 0.5089,
+   "rules": 7
+  },
+  {
+   "system": "Javanese Weton (Primbon jodoh)",
+   "origin": "Java",
+   "blurb": "the two birthdays' neptu numbers are added and read off the Pegat/Ratu/Jodoh table",
+   "statements": 101,
+   "alpha": 0.001,
+   "cv_auc": 0.5085,
+   "rules": 41
+  },
+  {
+   "system": "Numerology: pinnacles",
+   "origin": "Pythagorean",
+   "blurb": "the four pinnacles and four challenges",
+   "statements": 564,
+   "alpha": 0.001,
+   "cv_auc": 0.5081,
+   "rules": 96
+  },
+  {
+   "system": "Couple's I Ching hexagram",
+   "origin": "China",
+   "blurb": "plum-blossom: his number makes the upper trigram, hers the lower",
+   "statements": 168,
+   "alpha": 0.003,
+   "cv_auc": 0.5071,
+   "rules": 5
+  },
+  {
+   "system": "Numerology: Chaldean",
+   "origin": "Chaldean",
+   "blurb": "the older reduction, which keeps compound numbers",
+   "statements": 150,
+   "alpha": 0.0005,
+   "cv_auc": 0.5069,
+   "rules": 86
+  },
+  {
+   "system": "Navamsa D9 cross-contacts",
+   "origin": "India",
+   "blurb": "the ninth-harmonic chart, which is the marriage chart",
+   "statements": 438,
+   "alpha": 0.002,
+   "cv_auc": 0.5065,
+   "rules": 5
+  },
+  {
+   "system": "Davison relationship chart",
+   "origin": "Europe",
+   "blurb": "the chart of the midpoint in time",
+   "statements": 812,
+   "alpha": 0.001,
+   "cv_auc": 0.5058,
+   "rules": 361
+  },
+  {
+   "system": "Harmonic charts",
+   "origin": "Europe",
+   "blurb": "the 5th, 7th, 9th and 12th harmonics",
+   "statements": 739,
+   "alpha": 0.003,
+   "cv_auc": 0.5056,
+   "rules": 29
+  },
+  {
+   "system": "Geomantic Judge (ilm al-raml)",
+   "origin": "Arab world / Europe",
+   "blurb": "two figures added line by line, which is what a Judge is",
+   "statements": 79,
+   "alpha": 0.0005,
+   "cv_auc": 0.5054,
+   "rules": 42
+  },
+  {
+   "system": "Papasamya (malefic balance)",
+   "origin": "India",
+   "blurb": "not who is afflicted but whether the two are afflicted equally",
+   "statements": 23,
+   "alpha": 0.003,
+   "cv_auc": 0.505,
+   "rules": 2
+  },
+  {
+   "system": "Arabic parts / lots",
+   "origin": "Arab world",
+   "blurb": "the Lot of Marriage and its companions",
+   "statements": 284,
+   "alpha": 0.0005,
+   "cv_auc": 0.505,
+   "rules": 107
+  },
+  {
+   "system": "Nine Star Ki / Kua",
+   "origin": "Japan / China",
+   "blurb": "the nine-year star and the Feng Shui number",
+   "statements": 316,
+   "alpha": 0.0005,
+   "cv_auc": 0.5046,
+   "rules": 115
+  },
+  {
+   "system": "Balinese Pawukon",
+   "origin": "Bali",
+   "blurb": "ten week-cycles of different lengths running at once across a 210-day round",
+   "statements": 214,
+   "alpha": 0.002,
+   "cv_auc": 0.5024,
+   "rules": 15
+  },
+  {
+   "system": "Mangal / Kuja dosha",
+   "origin": "India",
+   "blurb": "Mars in the houses that trouble a marriage, and whether both carry it",
+   "statements": 4,
+   "alpha": 0.003,
+   "cv_auc": 0.5021,
+   "rules": 2
+  },
+  {
+   "system": "Korean Gunghap",
+   "origin": "Korea",
+   "blurb": "the outer animal reading and the inner element reading",
+   "statements": 12,
+   "alpha": 0.003,
+   "cv_auc": 0.5017,
+   "rules": 2
+  },
+  {
+   "system": "Tibetan srog / lus / dbang / klung",
+   "origin": "Tibet",
+   "blurb": "the four forces of the Tibetan almanac",
+   "statements": 111,
+   "alpha": 0.003,
+   "cv_auc": 0.5017,
+   "rules": 4
+  },
+  {
+   "system": "Biorhythm",
+   "origin": "modern",
+   "blurb": "the 23, 28 and 33-day cycles, whose only published use is compatibility",
+   "statements": 30,
+   "alpha": 0.005,
+   "cv_auc": 0.5008,
+   "rules": 1
+  },
+  {
+   "system": "Draconic charts",
+   "origin": "Europe",
+   "blurb": "the chart measured from the Moon's node",
+   "statements": 80,
+   "alpha": 0.003,
+   "cv_auc": 0.5004,
+   "rules": 4
+  },
+  {
+   "system": "Ebertin midpoints",
+   "origin": "Europe",
+   "blurb": "the Sun/Moon and Venus/Mars marriage axes",
+   "statements": 180,
+   "alpha": 0.005,
+   "cv_auc": 0.5002,
+   "rules": 1
+  },
+  {
+   "system": "Jaimini karakas",
+   "origin": "India",
+   "blurb": "the Darakaraka, the planet that signifies the spouse",
+   "statements": 242,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Chinese six relations",
+   "origin": "China",
+   "blurb": "San He, Liu He, Liu Chong, Liu Hai, Xiang Xing, Xiang Po",
+   "statements": 13,
+   "alpha": 0.003,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Bazi pillars and stems",
+   "origin": "China",
+   "blurb": "the day pillar's stem and branch, and their combinations and clashes",
+   "statements": 254,
+   "alpha": 0.008,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Burmese Mahabote",
+   "origin": "Myanmar",
+   "blurb": "the eight houses, weekday against the Burmese year",
+   "statements": 53,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Composite chart",
+   "origin": "Europe",
+   "blurb": "the chart of the midpoints, read as a third entity",
+   "statements": 1055,
+   "alpha": 0.008,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Antiscia",
+   "origin": "Europe",
+   "blurb": "reflections across the solstice axis",
+   "statements": 101,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Progressions and solar arc",
+   "origin": "Europe",
+   "blurb": "the chart advanced a day for a year",
+   "statements": 72,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Sabian symbols",
+   "origin": "modern",
+   "blurb": "the 360 images, one to a degree",
+   "statements": 7,
+   "alpha": 0.002,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Dodekatemoria",
+   "origin": "Hellenistic",
+   "blurb": "the sign a 2.5-degree twelfth points to",
+   "statements": 408,
+   "alpha": 0.003,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Sefer Yetzirah letters",
+   "origin": "Kabbalah",
+   "blurb": "the letters given to sign and element",
+   "statements": 286,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Panchanga: tithi, yoga, karana",
+   "origin": "India",
+   "blurb": "the five limbs of the day",
+   "statements": 111,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Aztec Tonalpohualli",
+   "origin": "Aztec",
+   "blurb": "the same count in its Aztec form, with the day lords",
+   "statements": 144,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Norse runic half-months",
+   "origin": "Norse",
+   "blurb": "the twenty-four runes over the year",
+   "statements": 11,
+   "alpha": 0.008,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Egyptian (Nile) zodiac",
+   "origin": "Egypt",
+   "blurb": "the twelve deities and their scattered dates",
+   "statements": 122,
+   "alpha": 0.005,
+   "cv_auc": 0.5,
+   "rules": 0
+  },
+  {
+   "system": "Celtic tree calendar",
+   "origin": "Celtic",
+   "blurb": "the thirteen trees",
+   "statements": 111,
+   "alpha": 0.002,
+   "cv_auc": 0.5,
+   "rules": 0
+  }
+ ]
+}

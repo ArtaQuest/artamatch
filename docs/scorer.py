@@ -525,9 +525,13 @@ def features(his, her, CA=None, CB=None):
             _k = round((_nm * _dt - _raw) / 360.0)                # Davison: carry the whole turns
             _dav = (_ta + (_raw + 360.0 * _k) / 2.0) % 360.0
             F[f"dav_{_b}_sign={SIGNS[int(_dav // 30)]}"] = 1.0
+    # The trailing four are v27's SLOW_PAIRS. Leaving them out did not raise an error — it made every
+    # statement about them silently FALSE in the browser while the model still carried a weight for it,
+    # so the page quietly scored three of its own statements as never firing.
     for _x, _y in (("jupiter", "saturn"), ("saturn", "uranus"), ("saturn", "neptune"),
                    ("saturn", "pluto"), ("uranus", "neptune"), ("uranus", "pluto"),
-                   ("neptune", "pluto")):
+                   ("neptune", "pluto"), ("jupiter", "uranus"), ("jupiter", "neptune"),
+                   ("jupiter", "pluto"), ("mars", "saturn")):
         _ax, _bx, _ay, _by = CA.get(_x), CB.get(_x), CA.get(_y), CB.get(_y)
         if None in (_ax, _bx, _ay, _by) or any(v != v for v in (_ax, _bx, _ay, _by)):
             continue
@@ -538,12 +542,17 @@ def features(his, her, CA=None, CB=None):
         F[f"cyclephase_{_x}_{_y}={_PH8[_fa]}x{_PH8[_fb]}"] = 1.0
         if _fa == _fb:
             F[f"cyclephase_{_x}_{_y}_same"] = 1.0
-        if int(_pa // 7.5) % 48 == int(_pb // 7.5) % 48:
-            F[f"cycle48_{_x}_{_y}_same_part"] = 1.0
-        if int(_pa // 5.0) % 72 == int(_pb // 5.0) % 72:
-            F[f"cycle72_{_x}_{_y}_same_part"] = 1.0
-        if int(_pa // 10.0) % 36 == int(_pb // 10.0) % 36:
+        # Both the "they share a part" flag and the per-part statement naming WHICH part. The builder
+        # emits the numbered form only when the two agree, so it is nested here the same way.
+        for _div, _w in ((48, 7.5), (72, 5.0)):
+            _ka, _kb = int(_pa // _w) % _div, int(_pb // _w) % _div
+            if _ka == _kb:
+                F[f"cycle{_div}_{_x}_{_y}_same_part"] = 1.0
+                F[f"cycle{_div}_{_x}_{_y}={_ka}"] = 1.0
+        _sa, _sb = int(_pa // 10.0) % 36, int(_pb // 10.0) % 36
+        if _sa == _sb:
             F[f"cyclesep10_{_x}_{_y}_same_band"] = 1.0
+            F[f"cyclesep10_{_x}_{_y}={_sa}"] = 1.0
     # ---- statements the pair-only model needs -----------------------------------------------------
     # Every definition below is transcribed from the training builders. Where one looks odd it is
     # reproduced anyway: the model was fitted on it.

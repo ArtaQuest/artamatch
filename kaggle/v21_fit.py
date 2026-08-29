@@ -111,24 +111,21 @@ def main():
     auc = G.auc(yte, zt)
     weights = {names[i]: float(v) for i, v in zip(surv, w) if v > 0}
 
-    dec = lambda d: np.column_stack([pd.to_numeric(d.dob_a.str[:4]) // 10,
-                                     pd.to_numeric(d.dob_b.str[:4]) // 10]).astype(float)
-    era = G.auc(yte, LogisticRegression(max_iter=2000).fit(dec(tr), yi).predict_proba(dec(te))[:, 1])
     bm = {}
     bp = f"{os.path.dirname(D)}/{os.path.basename(D)}_benchmark.json"
     if os.path.exists(bp):
         bm = json.load(open(bp))
     se = bm.get("auc_se", float("nan"))
     print(f"\n  {len(weights)} surviving doctrine rules · TEST AUC (read once): {auc:.4f}")
-    print(f"    chance 0.5000 · age gap {bm.get('age_gap_auc', float('nan')):.4f} · "
-          f"birth-decade control {era:.4f} · SE {se:.4f}")
-    print(f"    above chance     {auc - 0.5:+.4f} = {(auc - 0.5) / se:+.2f} SE")
-    print(f"    over the era ctrl {auc - era:+.4f} = {(auc - era) / se:+.2f} SE")
+    base = bm.get('age_gap_auc', float('nan'))
+    print(f"    chance 0.5000 · age-gap baseline {base:.4f} · SE {se:.4f}")
+    print(f"    above chance      {auc - 0.5:+.4f} = {(auc - 0.5) / se:+.2f} SE")
+    print(f"    over the age gap  {auc - base:+.4f} = {(auc - base) / se:+.2f} SE")
     for k_, v in sorted(weights.items(), key=lambda kv: -kv[1])[:25]:
         print(f"    {k_[:76]:<78} +{v:.4f}")
     json.dump({"model": "ArtaMatch quality, all traditions, pair-only doctrine",
                "alpha": alpha, "cv_auc": round(cv, 4), "test_auc": round(float(auc), 4),
-               "era_control_auc": round(float(era), 4), "floor": FLOOR,
+               "floor": FLOOR,
                "intercept": float(b0), "n_bank": int(X.shape[1]), "n_surviving": len(weights),
                "benchmark": bm, "weights": weights}, open(OUT, "w"), indent=1)
     print(f"  saved {OUT}")

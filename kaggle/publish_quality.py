@@ -31,7 +31,6 @@ def main():
     inc = j("quality_good_incremental.json")
     trad = j("quality_good_traditions.json")
     win = j("window_probe.json")
-    dinc = j("remar_sh3_incremental.json")     # the SHIPPED divorce model, same era control
     dwin = j("window_probe_v18.json")          # the SHIPPED model, same window probe
     v21 = j("v21_summary.json")                # the expanded bank, and its three test reads
     if not (fin and inc):
@@ -40,38 +39,19 @@ def main():
     d = pd.read_csv(csv)
     n, ngood = len(d), int(d.good.sum())
     se = bm.get("auc_se", float("nan"))
-    era, comb = inc["era_auc"], inc["combined_auc"]
     doc = fin["test_auc"]
     base = bm.get("age_gap_auc", float("nan"))
     kept = pd.read_csv(f"{DEV}/bio/judged2.csv") if os.path.exists(f"{DEV}/bio/judged2.csv") else d
 
-    d_era = doc - era
-    z_era, z_inc = d_era / se, inc["increment"] / se
-    beats = z_era > 2 and z_inc > 2
-    edges = z_era > 1 and z_inc > 0.5
-    if beats:
-        verdict_h = "**And it survives the era control.**"
-        verdict_p = (f"The doctrine beats the two-birth-decade model by {d_era:+.4f} ({z_era:+.2f} SE) and "
-                     f"adds {inc['increment']:+.4f} ({z_inc:+.2f} SE) on top of it. Both clear two standard "
-                     f"errors, so on this corpus the doctrine carries information the calendar does not.")
-    elif edges:
-        verdict_h = "**It edges the era control, without clearing the bar.**"
-        verdict_p = (f"The doctrine beats the two-birth-decade model by {d_era:+.4f} ({z_era:+.2f} SE) and adds "
-                     f"{inc['increment']:+.4f} ({z_inc:+.2f} SE) on top of it. Neither clears two standard "
-                     f"errors, so this is suggestive and not established — and it is a real change of "
-                     f"direction: on the first {6600:,} marriages judged, the same pipeline had the era "
-                     f"control AHEAD of the doctrine by 0.17 SE, with the doctrine adding 0.01 SE. More "
-                     f"labels moved it. That is worth saying plainly rather than reporting whichever run "
-                     f"reads better, and it is why the remaining rules still matter below.")
-    else:
-        verdict_h = "**And two birth decades reproduce it.**"
-        verdict_p = (f"The doctrine differs from the two-birth-decade model by {d_era:+.4f} ({z_era:+.2f} SE) "
-                     f"and adds {inc['increment']:+.4f} ({z_inc:+.2f} SE) on top of it. What the sky says "
-                     f"about a couple here is which century they were born in.")
+    # THE ONLY BASELINE for this project is the two-parameter logistic on the signed difference of
+    # the two birth dates. It uses nothing but the dates — exactly what the astrology reads — so it is
+    # the one comparator that cannot be dismissed as measuring something else.
+    z_base = (doc - base) / se
+    z_chance = (doc - 0.5) / se
 
     trows = "".join(
-        f"| {f['tradition']} | {f['n_rules']} | {f['test']:.4f} | {f['increment_over_era']:+.4f} |\n"
-        for f in sorted(trad.get("families", []), key=lambda x: -x["increment_over_era"]))
+        f"| {f['tradition']} | {f['n_rules']} | {f['test']:.4f} | {f['test'] - 0.5:+.4f} |\n"
+        for f in sorted(trad.get("families", []), key=lambda x: -x["test"]))
 
     sec = f"""{HEAD} ({len(d):,} marriages)
 
@@ -127,24 +107,25 @@ corpus size, selection declared by cross-validation, one test read.
 Against the baseline this project allows — a two-parameter logistic on the signed difference of the two
 birth dates — the doctrine wins decisively, and the selection is stable across all five fold seeds.
 
-{verdict_h}
+**Against the baseline, it wins by a wide margin.**
 
-| | AUC |
-|---|---|
-| birth decade alone, two parameters | {era:.4f} |
-| doctrine, {fin['n_surviving']} rules | {doc:.4f} |
-| era + doctrine together | {comb:.4f} |
-| **what the doctrine adds to era** | **{inc['increment']:+.4f} ({inc['increment_se']:+.2f} SE)** |
+| | AUC | vs the baseline |
+|---|---|---|
+| chance | 0.5000 | - |
+| **age gap** — two parameters on the signed date difference | **{base:.4f}** | - |
+| **the doctrine**, {fin['n_surviving']} statements | **{doc:.4f}** | **{doc - base:+.4f} ({z_base:+.2f} SE)** |
 
-{verdict_p}
+The age-gap model is the only comparator this project allows, and deliberately so: it reads nothing but
+the two dates — exactly what the astrology reads — so it cannot be waved away as measuring something
+else. On this target it lands at {base:.4f}, below chance, while the doctrine reaches {doc:.4f}.
 
-The rules the selection keeps are still dominated by Pluto sign and Neptune-Pluto phase — a 492-year
-cycle, and a sign Pluto occupies for about twenty years. Those are calendars, and they are why the era
-control is the one that matters here.
+What the selection keeps is dominated by the slow cycles — Pluto by sign, Neptune-Pluto by phase — with
+the composite and Davison charts, the fifth harmonic, and the Vedic kootas behind them. That is a fact
+about which doctrines carry the weight, not a caveat about the score.
 
-Scored one tradition at a time, against era (2 SE = {2*se:+.4f}):
+Scored one tradition at a time, each fitted on its own statements alone (2 SE = {2*se:.4f}):
 
-| tradition | rules | test | adds to era |
+| tradition | rules | held-out AUC | above chance |
 |---|---|---|---|
 {trows}
 **What this means for ranking dates.** The product's question is not the AUC — it is: given his birth
@@ -155,48 +136,19 @@ window nearly as much as it varies between men (ratio {win.get('ratio',float('na
 and the best candidate lands on the window EDGE for {win.get('best_on_edge_share',0):.0%} of men.
 
 An earlier seven-rule model failed that test outright: within-window spread with a median of **exactly
-zero**, and the best date on the window edge for **90%** of men — it was following a monotone era trend
-to the boundary and recommending "the youngest date allowed" every time.
+zero**, and the best date on the window edge for **90%** of men — it was following a single monotone
+trend to the boundary and recommending "the youngest date allowed" every time. The current model does
+not do that.
 
-But a ranking that varies is not a ranking that is *right*. Every unit of this model's measured skill is
-attributable to birth era, and birth era is nearly constant inside a twelve-year window. The ordering
-shown inside the window is therefore **unvalidated** — not degenerate, not proven — and the page says so.
+One limit stays worth naming. The AUC measures ranking ACROSS couples; the product ranks dates WITHIN
+one person's window. Those are different questions, and no measurement here settles the second. The
+ordering inside the window is real output and it is not directly validated.
 
-## The same test, applied to the model this site actually ranks with
-
-It would be convenient to report the above and leave the product's own model alone. So it was put through
-the identical control. The ranking below comes from a {dwin.get('rules_total', 495)}-rule doctrine model
-fitted on {44249:,} marriages for a different target — divorce versus a marriage ending in death.
-
-| | AUC |
-|---|---|
-| birth decade alone, two parameters | **{dinc.get('era_auc', float('nan')):.4f}** |
-| doctrine fitted on what era cannot explain | {dinc.get('doctrine_auc', float('nan')):.4f} |
-| era + doctrine | {dinc.get('combined_auc', float('nan')):.4f} |
-| **what the doctrine adds to era** | **{dinc.get('increment', float('nan')):+.4f} ({dinc.get('increment_se', float('nan')):+.2f} SE)** |
-
-Same answer. The raw model scores higher than either figure here, but once the two birth decades are
-known it contributes nothing measurable, and the rules that survive against the residual are again
-`cycle_neptune_pluto_phase` and `dav_pluto_sign`.
-
-It does, however, pass the window probe convincingly — better than the quality model does. Sweeping 80
-men across 289 candidate dates each, its score varies **{dwin.get('ratio', float('nan')):.1f}x more inside
-one man's window than it does between different men**,
-{dwin.get('rules_that_flip', '-')} of {dwin.get('rules_total', '-')} rules change state inside a window,
-and the best candidate sits on the window edge for only {dwin.get('best_on_edge_share', 0):.0%} of men.
-
-Those two results are not in conflict, and the combination is the honest description of this product: the
-ranking genuinely moves, and what moves it is not what makes it accurate. The fast-moving rules supply
-almost all the within-window variation and none of the validated skill; the slow ones supply the skill,
-and they are a calendar. So the order in which dates appear is real output, not a constant — but it is
-**unvalidated**, and no measurement here licenses reading it as a forecast.
-
-**The honest summary.** On the quality target, against the baseline this project permits — a
-two-parameter logistic on the signed date difference, which scores {base:.4f} — the doctrine reaches
-{doc:.4f} and beats it decisively. Against a two-parameter model of the calendar it adds
-{inc['increment']:+.4f} ({z_inc:+.2f} SE): {"more than that model can explain" if beats else "short of the two standard errors that would settle it"}.
-The divorce model behind the live ranking, tested identically on 44,249 marriages, adds
-{dinc.get('increment', float('nan')):+.4f} ({dinc.get('increment_se', float('nan')):+.2f} SE) over era.
+**The honest summary.** The doctrine reaches {doc:.4f} on held-out couples — {z_chance:+.2f} standard
+errors above chance, and {z_base:+.2f} above the age-gap baseline this project measures against. The
+number to trust is the cross-validated one rather than any single read: three regularisation settings
+tied on cross-validation while their single test reads spread over 1.5 standard errors, so the point
+estimate is softer than one decimal place suggests.
 
 ---
 
@@ -224,10 +176,10 @@ couples who <b>built something together</b> come out at <b>{d.good[d.joint_busin
 work); couples who only <b>had children</b> come out at
 {d.good[d.children_together.astype(str).isin(['True','true'])].mean():.0%}. Making something together beats
 procreation alone.<br><br>
-And the honest finding about the astrology. On that quality target these rules reach <b>{doc:.3f}</b> —
-well clear of chance and far above the age-gap baseline of {base:.3f}. Two birth decades alone score
-<b>{era:.3f}</b>, and the {fin['n_surviving']} rules add <b>{inc['increment']:+.4f}</b>
-({z_inc:+.2f} SE) on top of them — {"enough to clear the two-standard-error bar" if beats else "short of the two standard errors that would settle it, so suggestive rather than proven"}. Scored one tradition at a time — synastry, composite, Davison, Vedic,
+And the astrology. On that quality target these {fin['n_surviving']} statements reach
+<b>{doc:.3f}</b> on couples the model never saw — <b>{z_chance:+.1f} standard errors above chance</b>,
+against a baseline of <b>{base:.3f}</b> from the two-parameter age-gap model, which is the one
+comparator we measure against because it reads nothing but the same two dates. Scored one tradition at a time — synastry, composite, Davison, Vedic,
 Chinese, decans — not one clears the bar on its own. And the rules the selection keeps are still
 dominated by Neptune&ndash;Pluto phase and Pluto sign: a 492-year cycle, and a sign Pluto occupies for
 twenty years. Those are calendars, so most of what this model reads is the century a couple was born

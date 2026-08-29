@@ -89,8 +89,52 @@ def _pair(v):
     return v.split("x", 1) if "x" in v else (v, v)
 
 
+NEG_TITLE = [
+    ("Both born under ", "Not both born under "),
+    ("One of the six ", "Not one of the six "),
+    ("In the same ", "Not in the same "),
+    ("The same ", "Not the same "),
+    ("Born under the same ", "Not born under the same "),
+]
+
+
+def _negate_title(t):
+    """say the ABSENCE of a statement in English, not as a logical operator"""
+    for a, b in NEG_TITLE:
+        if t.startswith(a):
+            return b + t[len(a):]
+    if t.startswith("His ") or t.startswith("Her "):
+        return t[:4] + t[4:].replace(" meets ", " does not meet ", 1) \
+                              .replace(" faces ", " does not face ", 1) \
+                              .replace(" flows with ", " does not flow with ", 1) \
+                              .replace(" challenges ", " does not challenge ", 1) \
+                              .replace(" opens to ", " does not open to ", 1) \
+            if any(k in t for k in (" meets ", " faces ", " flows with ", " challenges ", " opens to ")) \
+            else "Not: " + t
+    if " scores " in t:
+        return t.replace(" scores ", " does not score ", 1)
+    if t.startswith("Guna Milan score"):
+        return t.replace("Guna Milan score", "Guna Milan is NOT", 1)
+    if t.startswith("Guna Milan reaches"):
+        return t.replace("reaches", "falls short of", 1)
+    if t.startswith("Nadi dosha"):
+        return "No nadi dosha — the two pulses differ"
+    if t.startswith("Bhakoot dosha"):
+        return "No bhakoot dosha — the moons sit at an easy distance"
+    return "Not: " + t
+
+
 def explain(name):
     n = name
+    # a statement used as its NEGATION: the same doctrine, stated the other way round, so that a
+    # non-negative model can carry it. See v22_nnls.py for why this exists.
+    if n.startswith("NOT(") and n.endswith(")"):
+        inner = explain(n[4:-1])
+        return {"tradition": inner["tradition"],
+                "title": _negate_title(inner["title"]),
+                "plain": "This condition does NOT hold. " + inner["plain"],
+                "reading": inner["reading"] + " Here it is its ABSENCE that the model reads, which is "
+                           "the same doctrine stated the other way round."}
     # --- conjunctions of two statements ---
     if " AND " in n:
         parts = [explain(p.strip()) for p in n.split(" AND ")]
@@ -100,6 +144,42 @@ def explain(name):
                 "reading": "Both conditions hold at once, which the doctrine treats as one combined "
                            "statement: " + " ".join(p["reading"] for p in parts)}
 
+    # ---------- v26: lagna systems, compatibility systems, finer charts ----------
+    m = re.match(r"^(his|her)_(\w+?)_in_(her|his)_(chandra|surya)_house=(\d+)$", n)
+    if m:
+        w1, body, w2, lag, h = m.groups()
+        bn, bd = BODY.get(body, (body, ""))
+        L = "Moon" if lag == "chandra" else "Sun"
+        return {"tradition": f"Vedic — {'Chandra' if lag=='chandra' else 'Surya'} lagna",
+                "title": f"{'His' if w1=='his' else 'Her'} {bn} falls in the {h}th house of "
+                         f"{'her' if w2=='her' else 'his'} chart",
+                "plain": f"Reading {'her' if w2=='her' else 'his'} chart from the {L} as the ascendant — "
+                         f"what a Vedic astrologer does when no birth time is known — "
+                         f"{'his' if w1=='his' else 'her'} {bn} lands in the {h}th house.",
+                "reading": f"{_the(bn, True)} is {bd}. The house says which part of life it touches; the "
+                           f"7th is the house of marriage itself."}
+    m = re.match(r"^(his|her)_(\w+?)_in_(her|his)_7th_(chandra|surya)$", n)
+    if m:
+        w1, body, w2, lag = m.groups()
+        bn, bd = BODY.get(body, (body, ""))
+        return {"tradition": f"Vedic — {'Chandra' if lag=='chandra' else 'Surya'} lagna",
+                "title": f"{'His' if w1=='his' else 'Her'} {bn} sits in "
+                         f"{'her' if w2=='her' else 'his'} house of marriage",
+                "plain": f"Counting from the {'Moon' if lag=='chandra' else 'Sun'} as ascendant, "
+                         f"{'his' if w1=='his' else 'her'} {bn} falls in the 7th house of "
+                         f"{'her' if w2=='her' else 'his'} chart.",
+                "reading": f"The 7th is the house of the spouse. {_the(bn, True)} is {bd}."}
+    m = re.match(r"^(his|her)_(\w+?)_kendra_from_(her|his)_(chandra|surya)$", n)
+    if m:
+        w1, body, w2, lag = m.groups()
+        bn, bd = BODY.get(body, (body, ""))
+        return {"tradition": f"Vedic — {'Chandra' if lag=='chandra' else 'Surya'} lagna",
+                "title": f"{'His' if w1=='his' else 'Her'} {bn} stands on an angle of "
+                         f"{'her' if w2=='her' else 'his'} chart",
+                "plain": f"{'His' if w1=='his' else 'Her'} {bn} falls in the 1st, 4th, 7th or 10th house "
+                         f"of {'her' if w2=='her' else 'his'} {'Moon' if lag=='chandra' else 'Sun'} chart.",
+                "reading": "The kendras are the four angles — the strongest, most visible houses in a "
+                           f"chart. {_the(bn, True)} is {bd}."}
     # --- harmonic / draconic / antiscia synastry ---
     m = re.match(r"^h([579])_his_(\w+?)_(\w+?)_her_(\w+)$", n)
     if m:
@@ -151,8 +231,8 @@ def explain(name):
                 "title": f"{'His' if w1=='his' else 'Her'} {an} falls in {'his' if w2=='his' else 'her'} {h}th house",
                 "plain": f"Placed in {'his' if w2=='his' else 'her'} chart, {'his' if w1=='his' else 'her'} "
                          f"{an} lands in the {h}th house.",
-                "reading": f"The house says which room of life the contact happens in. {an.capitalize()} "
-                           f"brings {ad} into it."}
+                "reading": f"The house says which room of life the contact happens in. "
+                           f"{_the(an, True)} brings {ad} into it."}
 
     # --- composite / davison ---
     m = re.match(r"^(comp|dav)_(\w+?)_(sign|decan|tithi|nakshatra)=(\w+)$", n)
@@ -575,6 +655,164 @@ def explain(name):
                 "title": f"{'His' if w=='his' else 'Her'} {bn}: {rest.replace('_',' ')}",
                 "plain": f"{'His' if w=='his' else 'Her'} {bn} — {rest.replace('_',' ')}.",
                 "reading": f"{bn.capitalize()} is {bd}."}
+
+    if n.startswith("ninestar"):
+        T = {"ninestar_same": ("The same nine-star number",
+                               "Both birth years reduce to the same star, one to nine."),
+             "ninestar_same_element": ("The same nine-star element", "Both stars share an element."),
+             "ninestar_he_produces_her": ("His star feeds hers",
+                                          "On the five-element cycle his star produces hers."),
+             "ninestar_she_produces_him": ("Her star feeds his",
+                                           "On the five-element cycle her star produces his."),
+             "ninestar_he_controls_her": ("His star checks hers",
+                                          "On the controlling cycle his star restrains hers."),
+             "ninestar_she_controls_him": ("Her star checks his",
+                                           "On the controlling cycle her star restrains his.")}
+        if n in T:
+            return {"tradition": "Nine Star Ki (Japanese)", "title": T[n][0], "plain": T[n][1],
+                    "reading": "Nine Star Ki is used in Japan for compatibility specifically — the "
+                               "birth year gives a star, and the stars stand in producing or "
+                               "controlling relations to each other."}
+        if "=" in n:
+            a, b = _pair(n.split("=", 1)[1])
+            kind = "elements" if "elem" in n else "numbers"
+            return {"tradition": "Nine Star Ki (Japanese)",
+                    "title": f"Nine-star {kind}: {a} and {b}",
+                    "plain": f"His nine-star {kind[:-1]} is {a}, hers {b}.",
+                    "reading": "The Japanese nine-star system, read for how two people's years meet."}
+    if n.startswith("mewa"):
+        return {"tradition": "Tibetan astrology — Mewa",
+                "title": ("The same Mewa number" if n == "mewa_same"
+                          else f"Mewa {n.split('=')[-1].replace('x', ' with ')}"),
+                "plain": "The Mewa is one of nine numbers on the Tibetan magic square, taken from the "
+                         "birth year.",
+                "reading": "Tibetan practice reads the Mewa for the texture of a life, and compares two "
+                           "of them when matching people."}
+    if n.startswith("parkha"):
+        return {"tradition": "Tibetan astrology — Parkha",
+                "title": ("The same Parkha trigram" if n == "parkha_same"
+                          else f"Parkha {n.split('=')[-1].replace('x', ' with ')}"),
+                "plain": "The Parkha is one of the eight trigrams, taken from the birth year.",
+                "reading": "The eight trigrams of the I Ching, used in Tibetan astrology to place a "
+                           "person and to test a pairing."}
+    if n.startswith("jieqi"):
+        if n == "jieqi_same":
+            t, pl = "Born in the same solar term", "Both births fall in the same one of the 24 jieqi."
+        elif n == "jieqi_opposite":
+            t, pl = "Born in opposite solar terms", "The two terms sit across the year from each other."
+        else:
+            a, b = _pair(n.split("=", 1)[1])
+            t, pl = f"{a} and {b}", f"His birth falls in {a}, hers in {b}."
+        return {"tradition": "Chinese solar calendar — the 24 jieqi", "title": t, "plain": pl,
+                "reading": "The jieqi cut the solar year into twenty-four; they govern the Chinese "
+                           "agricultural calendar and set when each zodiac year truly begins."}
+    m = re.match(r"^d(3|7|12)_(\w+?)(pair=(\w+)|_same_sign|_opposite)$", n)
+    if m:
+        dv, body = m.group(1), m.group(2)
+        DN = {"3": ("Drekkana (D3)", "the third-part chart, read for siblings, courage and the body"),
+              "7": ("Saptamsa (D7)", "the seventh-part chart, the one read for children"),
+              "12": ("Dwadasamsa (D12)", "the twelfth-part chart, read for what came from the parents")}[dv]
+        bn, bd = BODY.get(body, (body, ""))
+        if n.endswith("_same_sign"):
+            t = f"Both {bn}s in the same sign of the {DN[0]}"
+        elif n.endswith("_opposite"):
+            t = f"The two {bn}s opposite in the {DN[0]}"
+        else:
+            a, b = _pair(m.group(4))
+            t = f"His {bn} in {SIGN.get(a,a)}, hers in {SIGN.get(b,b)} — in the {DN[0]}"
+        return {"tradition": f"Vedic — {DN[0]}", "title": t,
+                "plain": f"Divide each sign into {dv} and re-read the chart; that is the {DN[0]}.",
+                "reading": f"The {DN[0]} is {DN[1]}. {_the(bn, True)} is {bd}."}
+    m = re.match(r"^(gajakesari|chandramangala|budhaaditya|kalasarpa)_(both|one|neither)$", n)
+    if m:
+        yg, who = m.groups()
+        Y = {"gajakesari": ("Gaja Kesari yoga", "Jupiter standing on an angle from the Moon — the "
+                            "elephant-and-lion yoga, read for standing and good judgement"),
+             "chandramangala": ("Chandra Mangala yoga", "Moon and Mars together or facing — read for "
+                                "drive, and for a temper that has to be spent somewhere"),
+             "budhaaditya": ("Budha Aditya yoga", "Mercury with the Sun — read for a quick and "
+                             "articulate mind"),
+             "kalasarpa": ("Kala Sarpa yoga", "every planet penned between Rahu and Ketu — read as a "
+                           "life under unusual pressure and unusual concentration")}[yg]
+        W = {"both": "Both charts carry", "one": "One chart carries", "neither": "Neither chart carries"}
+        return {"tradition": "Vedic — named yogas", "title": f"{W[who]} {Y[0]}",
+                "plain": f"{W[who]} the classical configuration called {Y[0]}.",
+                "reading": f"{Y[0]} is {Y[1]}."}
+    m = re.match(r"^star_(\w+)_(\w+)_(both|one)$", n)
+    if m:
+        st, body, who = m.groups()
+        bn, bd = BODY.get(body, (body, ""))
+        SR = {"Regulus": "the heart of the Lion — honour, and a fall if it is misused",
+              "Spica": "the sheaf of wheat — the most fortunate star in the sky",
+              "Aldebaran": "the Watcher of the East — success bought with integrity",
+              "Antares": "the Watcher of the West — courage, obsession and risk",
+              "Algol": "the Demon Star — the most feared fixed star of all",
+              "Sirius": "the Dog Star — brilliance and heat",
+              "Fomalhaut": "the Watcher of the South — vision, or delusion"}
+        return {"tradition": "Fixed stars",
+                "title": f"{'Both have' if who=='both' else 'One has'} {bn} on {st}",
+                "plain": f"{'Both charts place' if who=='both' else 'One chart places'} {_the(bn)} within "
+                         f"two degrees of the fixed star {st}.",
+                "reading": f"{st} is {SR.get(st,'a named fixed star')}. {_the(bn, True)} is {bd}."}
+    if n.startswith("manzil"):
+        return {"tradition": "Arabic lunar mansions (manazil)",
+                "title": ("The same lunar mansion" if n == "manzil_same" else "The pair of lunar mansions"),
+                "plain": "The Moon's path divides into 28 mansions; this is where each Moon falls.",
+                "reading": "The manazil are the Arabic counterpart of the nakshatras — twenty-eight "
+                           "stations rather than twenty-seven, used for timing and for matching."}
+    m = re.match(r"^sa_(his|her)_?(\w+?)_(conj|opp)_(\w+)$", n) or \
+        re.match(r"^sa_(his|her)_(\w+?)_(conj|opp)_(\w+)$", n)
+    if m:
+        who, x, asp, y_ = m.groups()
+        an, ad = BODY.get(x, (x, "")); bn, bd = BODY.get(y_, (y_, ""))
+        av, adesc = ASPECT.get(asp, (asp, "form an angle"))
+        return {"tradition": "Solar arc directions",
+                "title": f"{'His' if who=='his' else 'Her'} directed {an} {av} "
+                         f"{'her' if who=='his' else 'his'} {bn}",
+                "plain": f"Advance the whole chart one degree for each year between the two births — a "
+                         f"solar arc direction. The directed {an} and the natal {bn} {adesc}.",
+                "reading": f"Solar arc asks what one chart had become by the time the other was born. "
+                           f"{_the(an, True)} is {ad}; {_the(bn)} is {bd}."}
+    m = re.match(r"^(critdeg|anaretic)_(\w+)_(both|one)$", n)
+    if m:
+        kind, body, who = m.groups()
+        bn, bd = BODY.get(body, (body, ""))
+        if kind == "critdeg":
+            return {"tradition": "Critical degrees",
+                    "title": f"{'Both have' if who=='both' else 'One has'} {bn} on a critical degree",
+                    "plain": f"{_the(bn, True)} falls on one of the classical critical degrees — 0, 13 "
+                             f"or 26 of a cardinal sign, 8-9 or 21-22 of a fixed one, 4 or 17 of a "
+                             f"mutable one.",
+                    "reading": f"A planet on a critical degree is read as emphasised, for good or ill. "
+                               f"{_the(bn, True)} is {bd}."}
+        return {"tradition": "The anaretic degree",
+                "title": f"{'Both have' if who=='both' else 'One has'} {bn} at the 29th degree",
+                "plain": f"{_the(bn, True)} sits in the last degree of its sign.",
+                "reading": "The 29th is the degree of finishing — a matter at its last moment, urgent "
+                           f"and unresolved. {_the(bn, True)} is {bd}."}
+    m = re.match(r"^contrantiscia_his_(\w+?)_(\w+?)_her_(\w+)$", n)
+    if m:
+        x, asp, y_ = m.groups()
+        an, ad = BODY.get(x, (x, "")); bn, bd = BODY.get(y_, (y_, ""))
+        return {"tradition": "Contra-antiscia (classical)",
+                "title": f"His {an} mirrors her {bn} across the equinox",
+                "plain": f"Reflect his chart across the Aries-Libra axis; the mirror of his {an} meets "
+                         f"her {bn}.",
+                "reading": "The contra-antiscion is the second classical mirror — two points that share "
+                           f"the same night rather than the same day. {_the(an, True)} is {ad}."}
+    if n.startswith("composite_moonphase"):
+        v = n.split("=")[-1]
+        return {"tradition": "Composite chart — lunation",
+                "title": f"The relationship's own Moon phase: {v}",
+                "plain": "Take the midpoint Sun and midpoint Moon of the two charts and read the phase "
+                         "between them.",
+                "reading": f"The composite has a lunation of its own. {v}: {PHASE_READ.get(v, '')}"}
+    if n.startswith("hijrimonth"):
+        return {"tradition": "Islamic lunar calendar",
+                "title": ("Born in the same Hijri month" if n == "hijrimonth_same"
+                          else "The pair of Hijri months"),
+                "plain": "The Islamic calendar is purely lunar, so its months drift against the seasons.",
+                "reading": "A lunar-calendar reading of the two births, independent of the solar year."}
 
     return {"tradition": "Doctrine", "title": name.replace("_", " "),
             "plain": f"The statement `{name}`, computed from both birth dates.",

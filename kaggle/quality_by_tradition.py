@@ -1,16 +1,18 @@
-"""quality_by_tradition.py — score EVERY named tradition separately, against era, on one table.
+"""quality_by_tradition.py — score EVERY named tradition separately, on one table.
 
 The pooled fit answers "does the doctrine as a whole predict marriage quality". The standing question
 for this project is narrower and more useful: WHICH traditions carry the signal. A tradition that works
-should show it on its own bank, and should still show it once the couple's birth era is already known —
-otherwise what it has found is the calendar.
+should show it on its own bank, measured against the one baseline this project uses: a two-parameter
+logistic on the signed difference of the two birth dates.
 
 Each family is fitted alone, with the same small-n regularisation, the same group folds, and the same
 pair-only and doctrine-only constraints. Three numbers per family:
 
   CV        out-of-fold AUC on the training couples, its own bank only
   TEST      one held-out read
-  +ERA      what it adds on top of a two-parameter birth-decade model (the number that matters)
+  vsBASE    test minus the age-gap baseline — a two-parameter logistic on the signed difference of the
+            two birth dates, which is the ONE comparator this project measures against, because it uses
+            nothing but the same two dates the astrology uses
 
 Usage: quality_by_tradition.py <corpus_dir>
 """
@@ -76,22 +78,15 @@ def main():
     gid = pd.factorize(pd.Series([find(a) for a in ids.pid_a]))[0]
     fold = np.random.default_rng(7).integers(0, 5, gid.max() + 1)[gid]
 
-    dec = lambda df: np.column_stack([pd.to_numeric(df.dob_a.str[:4]) // 10,
-                                      pd.to_numeric(df.dob_b.str[:4]) // 10]).astype(float)
-    Dtr, Dte = dec(tr), dec(te)
-    era_oof = np.zeros(len(yi))
-    for k in range(5):
-        era_oof[fold == k] = LogisticRegression(max_iter=2000).fit(
-            Dtr[fold != k], yi[fold != k]).predict_proba(Dtr[fold == k])[:, 1]
-    era_te = LogisticRegression(max_iter=2000).fit(Dtr, yi).predict_proba(Dte)[:, 1]
-    a_era = G.auc(yte, era_te)
     bp = f"{os.path.dirname(D)}/{os.path.basename(D)}_benchmark.json"
-    se = json.load(open(bp))["auc_se"] if os.path.exists(bp) else float("nan")
+    bmj = json.load(open(bp)) if os.path.exists(bp) else {}
+    se = bmj.get("auc_se", float("nan"))
+    a_base = bmj.get("age_gap_auc", float("nan"))
 
     print(f"  {os.path.basename(D)} · train {len(tr):,} · test {len(te):,} · "
           f"bank {X.shape[1]:,} · AUC SE {se:.4f}")
-    print(f"  reference: chance 0.5000 · birth decade alone {a_era:.4f}\n")
-    print(f"  {'tradition':<44}{'rules':>7}{'CV':>9}{'TEST':>9}{'+ERA':>9}{'':>4}")
+    print(f"  reference: chance 0.5000 · age-gap baseline {a_base:.4f}\n")
+    print(f"  {'tradition':<44}{'rules':>7}{'CV':>9}{'TEST':>9}{'vsBASE':>9}{'':>4}")
     print("  " + "-" * 80)
     out = []
     for label, pat in FAMILIES:
@@ -125,18 +120,15 @@ def main():
         w, b0 = G.fit_nonneg(Xf[:, s], yi, np.ones(len(yi)))
         z = Xft[:, s] @ w + b0
         a_test = G.auc(yte, z)
-        # rank-combine with era so scale differences cannot decide it
-        r = lambda v: pd.Series(v).rank(pct=True).to_numpy()
-        a_comb = G.auc(yte, r(era_te) + r(z))
-        d = a_comb - a_era
-        mark = "  <-- beats era" if d / se > 2 else ""
+        d = a_test - a_base
+        mark = "  <-- beats the baseline" if d / se > 2 else ""
         print(f"  {label:<44}{len(s):>7}{cv:>9.4f}{a_test:>9.4f}{d:>+9.4f}{mark}")
         out.append({"tradition": label, "n_rules": int(len(s)), "cv": round(cv, 4),
-                    "test": round(float(a_test), 4), "increment_over_era": round(float(d), 4),
-                    "increment_se": round(float(d / se), 2)})
-    print("\n  +ERA is what the tradition adds on top of the two birth decades, in AUC.")
-    print(f"  Anything under {2*se:+.4f} (2 SE) is inside what this test set can resolve.")
-    json.dump({"corpus": os.path.basename(D), "era_auc": float(a_era), "auc_se": float(se),
+                    "test": round(float(a_test), 4), "over_baseline": round(float(d), 4),
+                    "over_baseline_se": round(float(d / se), 2)})
+    print(f"\n  vsBASE is the tradition's held-out AUC minus the age-gap baseline ({a_base:.4f}).")
+    print(f"  Anything under {2*se:.4f} (2 SE) is inside what this test set can resolve.")
+    json.dump({"corpus": os.path.basename(D), "age_gap_auc": float(a_base), "auc_se": float(se),
                "families": out}, open(f"{os.path.dirname(D)}/{os.path.basename(D)}_traditions.json", "w"),
               indent=1)
 

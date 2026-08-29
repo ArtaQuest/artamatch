@@ -28,6 +28,10 @@ from denylist import clause_ok
 D = os.path.expanduser(sys.argv[1])
 OUT = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/.artamatch-dev/quality_v24.json")
 FLOOR = int(os.environ.get("AQ_FLOOR_N", "40"))
+# A statement must be about TWO PEOPLE, not about when they were born. `side()` tests the NAME; this
+# tests the behaviour: hold the midpoint date fixed, move the two births apart, and a real interaction
+# changes while a midpoint quantity does not. Scores come from interaction_filter.py.
+MIN_INTER = float(os.environ.get("AQ_MIN_INTERACTION", "0"))
 ALPHAS = tuple(float(x) for x in os.environ.get(
     "AQ_ALPHAS", "0.0010,0.0020,0.0030,0.0040,0.0050,0.0070").split(","))
 SEEDS = (7, 23, 101)
@@ -68,6 +72,15 @@ def main():
     Xt = np.column_stack([Xt[:, pos[k]] if k in pos else np.zeros(len(te), np.float32) for k in names])
     keep = np.array([clause_ok(n) for n in names]) & (X.sum(0) >= FLOOR) \
         & np.array([side(n) == "AB" for n in names])
+    if MIN_INTER > 0:
+        ip = os.path.expanduser("~/.artamatch-dev/interaction_scores.json")
+        sc = json.load(open(ip)) if os.path.exists(ip) else {}
+        inter = np.array([min((sc.get(p, 0.0) for p in n.split(" AND ")), default=0.0)
+                          for n in names])
+        dropped = int((keep & (inter < MIN_INTER)).sum())
+        keep = keep & (inter >= MIN_INTER)
+        print(f"  interaction filter at {MIN_INTER:.2f}: dropped {dropped:,} statements that do not "
+              f"change when the two births move apart around a fixed midpoint")
     X, Xt = X[:, keep], Xt[:, keep]
     names = [n for n, k in zip(names, keep) if k]
 

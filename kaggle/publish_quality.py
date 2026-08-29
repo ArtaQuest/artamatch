@@ -185,25 +185,45 @@ Pluto by sign — with the composite chart behind them. Ranked by what each is a
 cross-validated loss if it were removed, rather than its raw coefficient), one statement carries most of
 the model and the rest fill in around it; the full ranking, with how often each fires and how the
 marriages went when it did, is below.<br><br>
-<b>The final model, after four more waves of doctrine and twelve audit checks.</b> The bank grew to
-{fsum.get('n_bank', 0):,} pair-only statements — numerology, Rudhyar's moon phases, the Chinese animal
-relations, the Navamsa, all eight kootas with the Guna Milan total, Mangal dosha, the Jaimini
-Darakaraka, the Bazi day pillar, Arabic parts, the Mayan Tzolkin and Dreamspell, Chandra and Surya
-lagna, Nine Star Ki, Tibetan Mewa and Parkha, the harmonic, draconic and antiscia charts, and the
-aspect patterns and cycle phases that carry most of the weight. Selection kept
-<b>{fsum.get('n_statements', 0)}</b> of them, {fsum.get('n_negated', 0)} read as their negation. On
-couples the model never saw it reaches <b>{fsum.get('test_auc', 0):.4f}</b> —
-<b>{fsum.get('over_chance_se', 0):+.1f} standard errors above chance</b>, and
-<b>{fsum.get('over_baseline_se', 0):+.1f}</b> above the age-gap baseline of
-{fsum.get('age_gap_auc', 0):.4f}, which is the one comparator we measure against because it reads
-nothing but the same two dates. Cross-validated, the honest figure is
-<b>{fsum.get('cv_auc', 0):.4f}</b>.<br><br>
+<b>Every statement now reads BOTH dates — and enforcing that cost most of the score.</b> A statement
+was previously called pair-only if its NAME lacked a "his" or "her". That is a test of naming, not of
+behaviour, and it let through quantities that use two dates only as a midpoint: hold the midpoint fixed,
+move the two births apart by twenty years, and they do not change. They cannot be about a couple,
+because they say the same thing about every couple born around that year. Seven of the nine statements
+in the previous model were of that kind.<br><br>
+So each statement was tested rather than trusted: build synthetic couples on a grid of fixed midpoints
+and widening separations, and keep only those that actually respond
+(<a href="almanac/quality_interaction_scores.json">every score</a>). That removed
+<b>{fsum.get('dropped_for_not_being_interactions', 0):,}</b> of them. What is left reaches
+<b>{fsum.get('test_auc', 0):.4f}</b> on held-out couples — {fsum.get('over_chance_se', 0):+.1f} standard
+errors above chance and <b>{fsum.get('over_baseline_se', 0):+.1f}</b> above the age-gap baseline of
+{fsum.get('age_gap_auc', 0):.4f}, the one comparator we measure against. The earlier model scored
+0.5872, and the difference between those two numbers is the price of the honesty: most of what it knew
+was when you were born, not who you are.<br><br>
+It is a far better instrument for the actual job. The old model could express 54 distinct scores in
+total; this one expresses 7,251, so it can genuinely order candidate dates rather than sort them into a
+handful of ties. Its weight is spread across five kinds of reading — how your planets meet theirs, the
+chart the two of you make, Vedic matching, the slow cycles you share, and the rest — at 17 to 23% each,
+where the old model put 69% on a single generational angle.<br><br>
 <b>Half the doctrine had been unusable, and nobody had checked.</b> Every weight in this pipeline is
 non-negative by design, so a statement predicting an unhappy marriage could never be given a weight at
 all — 2,819 of 5,771 statements, including the strongest in the whole bank. Each is now formulated
 toward happy: where firing predicts unhappy we use its complement and say so, which is the same
 doctrine stated the other way round. Four of the nine surviving statements are read that way, and each
 was checked against its own raw direction before being trusted.<br><br>
+<b>We tried to beat it and could not, which is worth publishing too.</b> Six ways of choosing the
+statements were compared on identical folds — elastic net, adaptive Lasso, stability selection over
+bootstrap resamples, and more — along with eight ways of re-weighting them, and fifteen engineered
+compatibility tables that collapse a whole almanac grid into a single number. Taking each method at its own best setting, every one of them lands between <b>0.590 and 0.597</b>
+cross-validated. Elastic net was the one we expected to win and it merely tied;
+stability selection, the standard defence when there are more statements than couples, scored
+slightly lower, and adaptive Lasso lower still. The tables — a genuinely better way to read a twelve-by-twelve almanac — are selected only when
+shrunk so weakly that they overfit, and at the setting cross-validation prefers, none of the fifteen
+survives at all. So <b>0.597 is a ceiling, not a stopping point we chose</b>
+(<a href="almanac/quality_ceiling_study.json">the whole comparison</a>).<br><br>
+One control from that sweep is worth stating on its own: counting the surviving statements equally,
+with no fitting at all, scores 0.573. The fitted weights are therefore carrying real information rather
+than dressing up a list of conditions that happen to fire.<br><br>
 <b>One number here deserves a caution.</b> Along the way three regularisation settings tied on
 cross-validation while their single held-out reads spread over 1.5 standard errors. One test read
 is one sample; the cross-validated figure, averaged over folds and seeds, is the one to trust, and

@@ -114,7 +114,11 @@ def build(df, Z, split, exclude=frozenset(), min_support=40):
             for k in set(table):
                 counts[k] = np.sum([np.isin(sg[:, CI[b]], [q for q, t in enumerate(table) if t == k])
                                     for b in TEN], axis=0)
-            dom = np.array([max(counts, key=lambda k: counts[k][r]) for r in range(n)])
+            # Ties are common — ten bodies across four elements — and `max` over a dict built from a
+            # set walks it in hash order, which Python randomises per process. That made the dominant
+            # element NON-REPRODUCIBLE between runs. Break ties alphabetically instead.
+            keys = sorted(counts)
+            dom = np.array([max(keys, key=lambda k: (counts[k][r], )) for r in range(n)])
             _cats(dom, f"{tag}_dominant_{lab}", names, cols, ms)
             for k in sorted(set(table)):
                 _cats(np.clip(counts[k], 0, 6), f"{tag}_{lab}_{k}_count", names, cols, ms)

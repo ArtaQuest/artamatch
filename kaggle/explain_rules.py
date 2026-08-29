@@ -200,6 +200,80 @@ def explain(name):
                 "plain": f"The Maya statement `{n}`, computed from both birth dates.",
                 "reading": "One of the interlocking counts the Maya kept at once."}
 
+    # ---------- elemental and modal balance of a relationship chart ----------
+    m = re.match(r"^(comp|dav)_(elem|mode)_(\w+)_count=(\d+)$", n)
+    if m:
+        ch, kind, cls, cnt = m.groups()
+        CH = "composite" if ch == "comp" else "Davison"
+        MEAN = {"Fire": "drive and enthusiasm", "Earth": "solidity and the practical",
+                "Air": "thought and exchange", "Water": "feeling and instinct",
+                "Cardinal": "starting things", "Fixed": "holding on", "Mutable": "adapting"}
+        return {"tradition": f"{CH.capitalize()} chart — elemental balance",
+                "title": f"{cnt} bodies in {cls} in the {CH} chart",
+                "plain": f"Of the ten bodies in the relationship's own chart, {cnt} fall in {cls}.",
+                "reading": f"Counting the elements is the first thing a reader does with any chart. "
+                           f"{cls} is {MEAN.get(cls, 'one of the four temperaments')}; a chart heavy or "
+                           f"empty in one of them is read as leaning that way."}
+    m = re.match(r"^(comp|dav)_dominant_(elem|mode)=(\w+)$", n)
+    if m:
+        ch, kind, cls = m.groups()
+        CH = "composite" if ch == "comp" else "Davison"
+        MEAN = {"Fire": "drive and enthusiasm", "Earth": "solidity and the practical",
+                "Air": "thought and exchange", "Water": "feeling and instinct",
+                "Cardinal": "starting things", "Fixed": "holding on", "Mutable": "adapting"}
+        return {"tradition": f"{CH.capitalize()} chart — elemental balance",
+                "title": f"The relationship's chart is mostly {cls}",
+                "plain": f"{cls} holds more of the ten bodies than any other in the {CH} chart.",
+                "reading": f"The dominant element sets a chart's temper. {cls} is "
+                           f"{MEAN.get(cls,'one of the temperaments')}."}
+    m = re.match(r"^(her|his)?lotmarriage_(his|her)_lot_marriage_(\w+?)_(?:her|his)_(\w+)$", n)
+    if m:
+        _, who, asp, b = m.groups()
+        bn, bd = BODY.get(b, (b, ""))
+        av, adesc = ASPECT.get(asp, (asp, "form an angle"))
+        W = "His" if who == "his" else "Her"
+        O = "her" if who == "his" else "his"
+        return {"tradition": "Classical astrology — the Lot of Marriage",
+                "title": f"{W} Lot of Marriage {av} {O} {bn}",
+                "plain": f"The Lot of Marriage is cast from the ascendant, its opposite point and "
+                         f"Venus. {W} lot and {O} {bn} {adesc}.",
+                "reading": f"The Arabic parts are computed points rather than bodies, and the Lot of "
+                           f"Marriage is the one classical astrology reads a union from. "
+                           f"{_the(bn, True)} is {bd}."}
+
+    # ---------- aspects INSIDE a relationship chart, and Ebertin midpoints ----------
+    m = re.match(r"^(comp|dav)X_(\w+?)_(\w+?)_(\w+)$", n)
+    if m:
+        ch, a, asp, b = m.groups()
+        an, ad = BODY.get(a, (a, "")); bn, bd = BODY.get(b, (b, ""))
+        av, adesc = ASPECT.get(asp, (asp, "form an angle"))
+        W = ("composite chart — the midpoint of the two birth charts, read as the relationship itself"
+             if ch == "comp" else
+             "Davison chart — a real chart for the midpoint in time between the two births")
+        return {"tradition": f"{'Composite' if ch=='comp' else 'Davison'} chart — internal aspect",
+                "title": f"{_the(an, True)} {av} {_the(bn)} within the relationship's own chart",
+                "plain": f"In the {W}, {_the(an)} and {_the(bn)} {adesc}.",
+                "reading": f"{_the(an, True)} is {ad}; {_the(bn)} is {bd}. This is an aspect the "
+                           f"RELATIONSHIP carries, not one either person brought to it."}
+    m = re.match(r"^mid(his|her)_(\w+?)_(\w+?)_(?:her|his)_(\w+)$", n)
+    if m:
+        who, mid, asp, b = m.groups()
+        PAIR = {"sunmoon": ("Sun/Moon", "the marriage axis of cosmobiology — the point Ebertin read a "
+                            "union from"),
+                "venusmars": ("Venus/Mars", "desire and affection meeting — the attraction midpoint"),
+                "venusjupiter": ("Venus/Jupiter", "warmth and generosity together — the midpoint of "
+                                 "good fortune in love")}.get(mid, (mid, "a midpoint of two bodies"))
+        bn, bd = BODY.get(b, (b, ""))
+        av, adesc = ASPECT.get(asp, (asp, "form an angle"))
+        W = "His" if who == "his" else "Her"
+        O = "her" if who == "his" else "his"
+        return {"tradition": "Cosmobiology — Ebertin midpoints",
+                "title": f"{W} {PAIR[0]} midpoint {av} {O} {bn}",
+                "plain": f"Take the midpoint between {W.lower()} {PAIR[0].replace('/', ' and ')}; it "
+                         f"and {O} {bn} {adesc}.",
+                "reading": f"Ebertin's cosmobiology reads midpoints rather than planets. {PAIR[0]} is "
+                           f"{PAIR[1]}. {_the(bn, True)} is {bd}."}
+
     # ---------- v29: cycle phases, chart gestalts, reception, Tibetan four ----------
     m = re.match(r"^cycle(\d+)_(\w+?)_(\w+?)_same_part$", n)
     if m:

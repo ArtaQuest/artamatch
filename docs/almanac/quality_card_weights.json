@@ -1,0 +1,37 @@
+{
+ "ranked_by": "drop-one cross-validated loss, summed over the statements that read it",
+ "cards": [
+  {
+   "key": "cyc",
+   "label": "Neptune\u2013Pluto in",
+   "statements": 4,
+   "drop_one": 0.0253,
+   "share": 0.686,
+   "weight": 0.8661
+  },
+  {
+   "key": "plu",
+   "label": "Your Pluto",
+   "statements": 2,
+   "drop_one": 0.0053,
+   "share": 0.143,
+   "weight": 0.6538
+  },
+  {
+   "key": "ph",
+   "label": "Neptune\u2013Pluto phase",
+   "statements": 2,
+   "drop_one": 0.0034,
+   "share": 0.093,
+   "weight": 0.6459
+  },
+  {
+   "key": "nep",
+   "label": "Your Neptune",
+   "statements": 1,
+   "drop_one": 0.0029,
+   "share": 0.078,
+   "weight": 0.2531
+  }
+ ]
+}

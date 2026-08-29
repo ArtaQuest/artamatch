@@ -74,6 +74,9 @@ input[type=date]:focus{outline:none;border-color:var(--gold);background:rgba(12,
 .pcard .k{color:var(--mut);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
 .pcard .v{font-family:var(--serif);font-size:24px;color:var(--gold);margin:4px 0}
 .pcard .e{color:var(--mut);font-size:12.5px}
+.wbar{height:3px;border-radius:3px;background:var(--line);overflow:hidden;margin:10px 0 5px}
+.wbar>i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--blue-l))}
+.wnum{color:var(--mut);font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
 .flow{display:flex;align-items:center;gap:10px;justify-content:center;margin:20px 0;color:var(--mut);font-size:13px;flex-wrap:wrap}
 .flow b{color:var(--ink)}
 .flow .arr{color:var(--blue-l)}
@@ -511,23 +514,28 @@ def read_user(y,m,d):
     el=(C["moon"]-C["sun"])%360.0
     j=scorer.jdn(y,m,d); sx=(j+49)%60
     wheel={b:(round(C[b],2) if C[b]==C[b] else None) for b in scorer.BODIES}
-    # --- the Maya almanac: the 260-day Tzolkin, the 365-day Haab, and the nine Lords of the Night ---
-    TZ=["Imix","Ik","Akbal","Kan","Chicchan","Cimi","Manik","Lamat","Muluc","Oc","Chuen","Eb",
-        "Ben","Ix","Men","Cib","Caban","Etznab","Cauac","Ahau"]
-    HB=["Pop","Wo","Sip","Sotz","Sek","Xul","Yaxkin","Mol","Chen","Yax","Sak","Keh","Mak",
-        "Kankin","Muwan","Pax","Kayab","Kumku","Wayeb"]
-    kin=(j+159)%260
-    tzs=TZ[kin%20]; tzt=kin%13+1
-    trec=TZ[(kin-(kin%13))%20]                       # the day sign that opens this thirteen-day run
-    lc=j-584283                                      # Long Count, GMT correlation
-    hb=(lc+348)%365
-    lord=(lc%9)+1
-    colr=["Red","White","Blue","Yellow"][(kin%20)%4]
-    return json.dumps({"sun":s(C["sun"]),"moon":s(C["moon"]),"nak":int((C["moon"]%360)//NAK),
-      "tithi":int(el//12.0)+1,"stem":scorer.STEMS[sx%10],"branch":scorer.BRANCH[sx%12],
-      "animal":scorer.BRANCH[(y-4)%12],"lp":scorer.lifepath(y,m,d),
-      "tzsign":tzs,"tztone":tzt,"tzkin":kin+1,"trecena":trec,"tzcolor":colr,
-      "haab":f"{hb%20} {HB[min(hb//20,18)]}","lord":f"G{lord}","wheel":wheel})
+    # Only what the shipped model actually reads. Its nine statements name two bodies and nothing
+    # else: Neptune and Pluto — where each sits, and where the slow cycle between them stood.
+    SIGNMEAN={"Ari":"beginnings and nerve","Tau":"steadiness and the senses","Gem":"curiosity and talk",
+      "Can":"home and safekeeping","Leo":"warmth and display","Vir":"care and craft",
+      "Lib":"balance and partnership","Sco":"depth and what is hidden","Sag":"faith and horizon",
+      "Cap":"duty and building","Aqu":"freedom and breaking rank","Pis":"mercy and dissolving"}
+    PH=["New","Crescent","First Quarter","Gibbous","Full","Disseminating","Last Quarter","Balsamic"]
+    PHMEAN=["acting on instinct, before the shape is clear",
+      "pushing off from the past to make something new",
+      "building against resistance — the crisis of action",
+      "refining and questioning, just before the reveal",
+      "full illumination — seeing and being seen completely",
+      "sharing what has been learned",
+      "dismantling what no longer holds — the crisis of meaning",
+      "the closing dark: release, and seeds for what comes next"]
+    nep,plu=C["neptune"],C["pluto"]
+    npang=(nep-plu)%360.0
+    ns,ps=s(nep),s(plu); cs=s(npang); ph=int(npang//45.0)%8
+    return json.dumps({"wheel":wheel,
+      "nep":ns,"nepmean":SIGNMEAN[ns],"plu":ps,"plumean":SIGNMEAN[ps],
+      "cyc":cs,"cycmean":SIGNMEAN[cs],"ph":PH[ph],"phmean":PHMEAN[ph],
+      "npdeg":round(npang,1)})
 import datetime as _dt
 def scan_chunk(y,m,d,g,ci,total):
     """Score every real calendar date in the gendered window, chunk ci of total (by month index)."""
@@ -613,14 +621,19 @@ $("go").onclick=async()=>{
   state.me=[y,m,d];
   const u=JSON.parse(await state.py.runPythonAsync(`read_user(${y},${m},${d})`));
   drawWheel(u.wheel);
-  const cards=[["Sun sign",SIGNF[u.sun],EXPL.sun],["Moon sign",SIGNF[u.moon],EXPL.moon],
-    ["Nakṣatra",NAKN[u.nak],EXPL.nak],["Birth tithi",u.tithi,EXPL.tithi],
-    ["Day master",u.stem.replace(/([A-Z])/g," $1").trim(),EXPL.stem],
-    ["Year animal",u.animal,EXPL.animal],["Life path",u.lp,EXPL.lp],
-    ["Maya day sign",u.tzsign,EXPL.tzsign],["Galactic tone",u.tztone,EXPL.tztone],
-    ["Trecena",u.trecena,EXPL.trecena],["Maya kin",u.tzkin+" of 260",EXPL.tzkin],
-    ["Haab date",u.haab,EXPL.haab],["Lord of the Night",u.lord,EXPL.lord]];
-  $("cards").innerHTML=cards.map(c=>`<div class="pcard"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="e">${c[2]}</div></div>`).join("");
+  // Ordered by how much the model actually leans on each — the summed drop-one cross-validated loss
+  // of the statements that read it, not the order they were convenient to compute in.
+  const CW = await fetch("almanac/quality_card_weights.json").then(r=>r.json()).catch(()=>null);
+  const SH = {}; if(CW) CW.cards.forEach(c=>SH[c.key]=c);
+  const cards=[
+    ["nep","Your Neptune",SIGNF[u.nep],`Neptune is dreams, compassion and the blur between two people. Yours sits in ${SIGNF[u.nep]} — ${u.nepmean}.`],
+    ["plu","Your Pluto",SIGNF[u.plu],`Pluto is depth, power and what transforms a person. Yours sits in ${SIGNF[u.plu]} — ${u.plumean}.`],
+    ["ph","Neptune–Pluto phase",u.ph,`Neptune and Pluto circle each other over roughly 492 years. You were born in the ${u.ph} phase of that cycle: ${u.phmean}.`],
+    ["cyc","Neptune–Pluto in",SIGNF[u.cyc],`Where the cycle itself stood at your birth: Neptune and Pluto were ${u.npdeg}° apart, an angle that falls in ${SIGNF[u.cyc]} — ${u.cycmean}. This is the part of your reading you share with everyone born near you.`]]
+    .sort((a,b)=>((SH[b[0]]||{}).drop_one||0)-((SH[a[0]]||{}).drop_one||0));
+  $("cards").innerHTML=cards.map(c=>{const w=SH[c[0]];
+    const bar=w?`<div class="wbar" title="the model's reliance on this, measured by what it loses without it"><i style="width:${Math.round(w.share*100)}%"></i></div><div class="wnum">${Math.round(w.share*100)}% of what the model reads</div>`:"";
+    return `<div class="pcard"><div class="k">${c[1]}</div><div class="v">${c[2]}</div>${bar}<div class="e">${c[3]}</div></div>`;}).join("");
   show(1);
   const els=[...document.querySelectorAll(".pcard")];
   els.forEach((el,i)=>setTimeout(()=>el.classList.add("show"),reduced?0:350*i));

@@ -1,0 +1,22 @@
+{
+ "total": 10000,
+ "per": 500,
+ "shards": 20,
+ "good": 5909,
+ "bad": 4091,
+ "reasons": {
+  "children": 3177,
+  "divorce": 1830,
+  "thin_record": 1317,
+  "collaboration": 1108,
+  "lasted_to_death": 925,
+  "affection": 424,
+  "infidelity": 402,
+  "adversity": 259,
+  "other": 195,
+  "conflict": 133,
+  "coercion": 121,
+  "abuse": 109
+ },
+ "csv": "marriage_quality_binary.csv"
+}

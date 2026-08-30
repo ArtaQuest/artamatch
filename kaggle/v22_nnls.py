@@ -36,6 +36,8 @@ import v29_traditions as V29
 import v30_maya as V30
 import v35_midpoints as V35
 import v36_worldmatch as V36
+import v41_finevarga as V41
+import v43_natal as V43
 from v12_fit import side
 from denylist import clause_ok
 
@@ -49,6 +51,8 @@ WITH_V29 = os.environ.get("AQ_V29", "1") == "1"   # aspect patterns, cycle phase
 WITH_V30 = os.environ.get("AQ_V30", "1") == "1"   # the Maya almanac in full
 WITH_V35 = os.environ.get("AQ_V35", "1") == "1"   # midpoint compatibility: composite-to-natal
 WITH_V36 = os.environ.get("AQ_V36", "1") == "1"   # the world's named marriage-matching algorithms
+WITH_V41 = os.environ.get("AQ_V41", "0") == "1"   # divisional charts + finer cycle cuts (ERA-heavy)
+WITH_V43 = os.environ.get("AQ_V43", "0") == "1"   # each partner's natal chart: signs, groups, shape
 
 
 def build(df, Z, split):
@@ -80,6 +84,12 @@ def build(df, Z, split):
         parts.append(a); names += nm; ex |= set(nm)
     if WITH_V36:
         a, nm = V36.build(df, Z, split, ex, min_support=1)
+        parts.append(a); names += nm; ex |= set(nm)
+    if WITH_V41:
+        a, nm = V41.build(df, Z, split, ex, min_support=1)
+        parts.append(a); names += nm; ex |= set(nm)
+    if WITH_V43:
+        a, nm = V43.build(df, Z, split, ex, min_support=1)
         parts.append(a); names += nm
     return np.column_stack(parts).astype(np.float32), names
 

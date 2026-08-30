@@ -15,10 +15,10 @@ SCORES = os.path.expanduser("~/.artamatch-dev/interaction_scores.json")
 
 GROUPS = [
     ("feeling", "How your feelings meet theirs",
-     "Moon and Venus contacts — the two bodies every tradition reads for affection.",
+     "Moon and Venus contacts between your two charts — the two bodies every tradition reads for affection.",
      lambda n: bool(re.match(r"^his_(moon|venus)_\w+_her_", n) or re.search(r"_her_(moon|venus)$", n))),
     ("daily", "How you meet day to day",
-     "Sun, Mercury and Mars contacts — presence, talk and friction.",
+     "Sun, Mercury and Mars contacts between your charts — presence, talk and friction.",
      lambda n: bool(re.match(r"^his_(sun|mercury|mars)_\w+_her_", n) or re.search(r"_her_(sun|mercury|mars)$", n))),
     ("holding", "What holds you and what opens you",
      "Saturn and Jupiter contacts — the binding planet and the expanding one.",
@@ -26,10 +26,27 @@ GROUPS = [
     ("deep", "The contacts you do not choose",
      "Uranus, Neptune and Pluto contacts — the slow planets, read as what a couple is handed.",
      lambda n: bool(re.match(r"^his_(uranus|neptune|pluto)_\w+_her_", n) or re.search(r"_her_(uranus|neptune|pluto)$", n))),
+    ("relchart", "The chart of the relationship itself",
+     "The composite and Davison charts — the midpoint of your two charts, read as a third entity.",
+     lambda n: bool(re.match(r"^(comp|dav|mid)", n))),
+    ("vedic", "What Indian matching says",
+     "The kootas of Guna Milan, the doshas, the Moon's nakshatra and the ninth-harmonic marriage chart.",
+     lambda n: bool(re.match(r"^(koota_|guna_|nadi|bhakoot|manglik|kuja|d9_|nak|tara|yoni|rajju|porutham|papasamya|tithi|nityayoga|karana|lot_)", n))),
+    ("east", "What the eastern almanacs say",
+     "The Chinese pillars and animal relations, the nine stars, the Tibetan forces and the Maya count.",
+     lambda n: bool(re.match(r"^(bazi|stem|branch|animal|nayin|kua|ninestar|tib_|maya_|tzolkin|dreamspell|sanhe|liuhe|liuchong|xiang|gunghap|mahabote|weton|pawukon|iching)", n))),
+    ("number", "What the numbers say",
+     "Life path, the Chaldean reduction, pinnacles and challenges, the Tarot birth card.",
+     lambda n: bool(re.match(r"^(lifepath|sym_lifepath|chaldean|pinnacle|challenge|tarot|digit|bridge|birthday|celtic|geomancy|biorhythm)", n))),
     ("cycles", "The sky you were both born under",
-     "Rudhyar's cycle phases — where a pair of slow planets stood in their own cycle at each birth.",
+     "Rudhyar's cycle phases — where a pair of slow planets stood in their own cycle at each birth. "
+     "This is the part of the reading that is about your era as much as about the two of you.",
      lambda n: bool(re.match(r"^cycle", n))),
+    ("harmonic", "The finer harmonics",
+     "The fifth, seventh, ninth and twelfth harmonic charts, draconic contacts and antiscia reflections.",
+     lambda n: bool(re.match(r"^(h[0-9]+_|draconic|antiscia|prog_|sa_)", n))),
 ]
+
 
 
 def main():

@@ -12,7 +12,7 @@ MARK0, MARK1 = "<!--QUALITY-BLOCK-->", "<!--/QUALITY-BLOCK-->"
 
 
 def main():
-    M = json.load(open(f"{DEV}/quality_signal.json"))
+    M = json.load(open(f"{DEV}/{os.environ.get('AQ_MODEL_NAME','quality_maxcv')}.json"))
     R = json.load(open(f"{DEV}/system_ranking.json"))
     C = json.load(open(f"{DOCS}/almanac/quality_card_weights.json"))
     dep = json.load(open(f"{DOCS}/almanac/quality_deployed_model.json"))
@@ -32,14 +32,14 @@ def main():
 
     for src, dst in ((f"{DEV}/system_ranking.json", "quality_system_ranking.json"),
                      (f"{DEV}/interaction_scores.json", "quality_interaction_scores.json"),
-                     (f"{DEV}/quality_signal_importance.json", "quality_importance.json"),
-                     (f"{DEV}/quality_signal.json", "quality_model.json")):
+                     (f"{DEV}/{os.environ.get('AQ_MODEL_NAME','quality_maxcv')}_importance.json", "quality_importance.json"),
+                     (f"{DEV}/{os.environ.get('AQ_MODEL_NAME','quality_maxcv')}.json", "quality_model.json")):
         if os.path.exists(src):
             shutil.copy(src, f"{DOCS}/almanac/{dst}")
 
     # The summary is what page_audit.py checks the rendered page against, so it has to be regenerated
     # from the same model file the page is running. A stale summary makes the audit test the old model.
-    imp = json.load(open(f"{DEV}/quality_signal_importance.json"))
+    imp = json.load(open(f"{DEV}/{os.environ.get('AQ_MODEL_NAME','quality_maxcv')}_importance.json"))
     summ = {"cv_auc": cv, "test_auc": te, "alpha": M.get("alpha"), "n_bank": M.get("n_bank"),
             "n_statements": nstmt, "n_negated": M.get("n_negated"),
             "age_gap_auc": base, "auc_se": se,
@@ -58,7 +58,7 @@ def main():
     cards = " · ".join(f"{c['label'].lower()} ({c['share']*100:.0f}%)" for c in C["cards"])
 
     sec = f"""{MARK0}
-<details class="fam" style="margin-top:44px"><summary>Every marriage algorithm we could find, measured
+<details class="fam" style="margin-top:44px"><summary>What we found when we pushed the score as hard as it goes
 <span class="tc">the honest part</span></summary>
 <p class="fw">Divorce is an outcome, not a verdict: a quiet parting is not a bad marriage, and lasting
 until death is not automatically a good one. So the target is a second dataset — <b>10,000 marriages
@@ -71,95 +71,96 @@ The clearest thing in it has nothing to do with the stars. Against a base rate o
 couples who only <b>had children</b> come out at 75%. Making something together beats procreation
 alone.<br><br>
 
-<b>We went looking for every compatibility system that answers the marriage question directly</b> — not
-astrology applied to a couple, but the traditions whose own literature is about whether two people
-should marry. Eighteen were added: the <b>Javanese weton</b> calculation, which by headcount is the
-most-used marriage algorithm on earth; the <b>Balinese pawukon</b>, with ten week-cycles of different
-lengths running at once; the <b>ten porutham</b> of Tamil and Sinhala practice, which is not Ashtakoota;
-<b>Papasamya</b>, which asks not who is afflicted but whether the two are afflicted equally; the two
-Chinese relations the bank was missing (<b>Xiang Xing</b> and <b>Xiang Po</b>); <b>Korean gunghap</b> in
-its outer and inner readings; <b>Burmese Mahabote</b>; the <b>couple's I Ching hexagram</b>, where his
-number makes the upper trigram and hers the lower, so the hexagram exists only for the pair; the
-<b>geomantic Judge</b> of ilm al-raml, which is literally two figures added line by line;
-<b>biorhythm</b>, whose only published use is compatibility; the Hellenistic degree techniques
-(<b>Sabian symbols</b>, <b>dodekatemoria</b>, <b>monomoiria</b>); the <b>Kabbalistic 72 Names</b> wheel
-and the <b>Sefer Yetzirah</b> letters; the <b>Norse runic half-months</b>; the <b>Egyptian Nile
-zodiac</b>; and the <b>Aztec tonalpohualli</b> with its thirteen day lords. Each is anchored against a
-dated event — Indonesian independence is Jemuwah Legi, every Galungan is Buda Kliwon Dungulan, the fall
-of Tenochtitlan is 1&nbsp;Coatl — and the anchors are asserted every time the code runs.<br><br>
+<b>The model.</b> {nstmt} statements chosen by a sparse non-negative fit from a bank of
+{M.get('n_bank', 0):,}: cross-validated <b>{cv:.4f}</b>, and <b>{te:.4f}</b> on couples it never saw —
+<b>+{zc:.2f} standard errors</b> above chance and <b>+{zb:.2f}</b> above the age-gap baseline of
+{base:.4f}, which is the one comparator we measure against because it reads nothing but the same two
+dates. Every statement is a named tradition; only the weighting was fitted. The full ranking, by what
+each is worth when it is removed rather than by its raw coefficient, is below.<br><br>
 
-Some famous systems <b>cannot</b> be here, and it is fairer to say so than to fake them. Human Design,
-the Vertex, Juno and all house-based synastry need a birth <em>time</em>; astrocartography needs a
-<em>place</em>; Ifá and tarot spreads need a <em>casting</em>, not a date. Stable-matching algorithms
-and the Gottman ratio are not functions of a birth date at all. This page has two dates and nothing
-else.<br><br>
+<b>We tried very hard to beat it.</b> Everything below was fitted with the selection INSIDE the
+cross-validation folds, so the numbers are comparable with each other and with the model above:
 
-<b>Then each system was fitted on its own</b>, cross-validated on the training couples, never touching
-the held-out set — because a joint model cannot answer "does Ashtakoota work", only "what does the
-Lasso keep". Of the <b>{len(R['systems'])}</b> named systems measured, <b>{len(beat)}</b> score above
-the age-gap baseline of {R['baseline_age_gap_cv_auc']:.4f}: {beatlist}. But a cross-validated AUC on
-{R['n_couples']:,} couples carries a standard error near {cvse:.4f}, so only <b>{len(clear)}</b> of them
-clear it by more than that — <b>{clear[0]['system']}</b> at {clear[0]['cv_auc']:.4f} and
-<b>{clear[1]['system']}</b> at {clear[1]['cv_auc']:.4f}. The other six sit inside the noise. Everything
-below them — the weton, the pawukon, the porutham, the hexagram, the Judge, biorhythm, all of it —
-lands at chance. That is the result, and we are publishing it rather than burying it.<br><br>
+<div style="overflow-x:auto"><table class="sys"><tbody>
+<tr class=win><td>the shipped bank of named statements</td><td class=n>0.5991</td></tr>
+<tr><td>Addey harmonics — every cross-chart angle as a Fourier series, 4,719 continuous features</td><td class=n>0.5767</td></tr>
+<tr><td>the composite chart read at 32 harmonics instead of 12 signs</td><td class=n>0.5717</td></tr>
+<tr><td>both of those together</td><td class=n>0.5817</td></tr>
+<tr><td>the divisional charts — D3, D9, D12, D16, D30 of the composite</td><td class=n>0.5983</td></tr>
+<tr><td>configurations: 12,622 columns for two named conditions holding at once</td><td class=n>0.5942</td></tr>
+<tr><td>natal signs and groups for each partner separately, and every single-side statement</td><td class=n>0.5980</td></tr>
+<tr><td>the harmonics symmetrised so the couple reads the same either way round</td><td class=n>0.5516</td></tr>
+<tr><td>boosted trees on every cross-chart angle and composite position</td><td class=n>0.5765</td></tr>
+</tbody></table></div>
 
-<b>Every statement reads BOTH dates, and the test for that had to be rebuilt three times.</b> A
-statement was once called pair-only if its NAME lacked a "his" or "her" — a test of spelling, not of
-behaviour. The behavioural test builds synthetic couples on a grid of fixed midpoints and widening
-separations: hold the midpoint, move the two births apart, and a real interaction changes while an era
-quantity does not. Its first three versions were each wrong in a way that only showed up when we looked:
-the separations were all whole years, so every tradition keyed to the tropical calendar kept the same
-day of the year at every step and was condemned for standing still; the score counted <em>groups in
-which the value moved</em>, which rises mechanically as the grid grows, so a threshold stopped meaning
-the same thing from one run to the next; and the sample was small enough that rare statements never
-fired at all and were recorded as era quantities when the truth was that we had no evidence about them.
-The test now decomposes each statement's <b>variance</b> into the part explained by the separation and
-the part explained by the midpoint, over {R['n_couples'] and 7350:,} synthetic couples, and abstains
-out loud where it cannot see. A statement ships only if <b>more than half</b> its variance is about the
-pair (<a href="almanac/quality_interaction_scores.json">every score</a>).<br><br>
+<p class="fw">Not one of them beat the plain bank of named statements. Nor did bagging (0.5913),
+averaging over neighbouring penalties (0.5975), screening the bank down before selecting (0.5961), or
+letting the weights go negative (0.5964 against 0.5961 — so the rule that no statement may be used
+backwards costs nothing at all). Ten folds instead of five moved it from 0.5981 to 0.5991 and twenty
+folds to 0.5992, which is where it stops.<br><br>
 
-Under that gate the bank is <b>{M.get('n_bank', 0):,}</b> statements and the model keeps
-<b>{nstmt}</b> of them: cross-validated <b>{cv:.4f}</b>, and
-<b>{te:.4f}</b> on couples it never saw — <b>+{zc:.2f} standard errors</b> above chance and
-<b>+{zb:.2f}</b> above the age-gap baseline of {base:.4f}, the one comparator we measure against
-because it reads nothing but the same two dates. Its weight is spread across {cards}. It can express
-<b>{ndist:,}</b> distinct scores, so it genuinely orders candidate dates rather than sorting them into
-a handful of ties.<br><br>
+<b>And here is what the score is actually made of.</b> Three measurements, all on the training
+couples:</p>
 
-<b>The gate is where the score went, and the trade is worth stating plainly.</b> Loosening it buys
-cross-validation almost monotonically — at a tenth of the variance the same machinery reaches 0.5735,
-and with no gate at all the old published figure was 0.5872. Those numbers are higher because they are
-partly reading <em>when</em> you were born rather than <em>who</em> you are. Tightening it past a half
-destroys the model completely: at nine tenths, nothing survives selection at any penalty. We hold the
-gate at a half on principle and not on score.<br><br>
+<div style="overflow-x:auto"><table class="sys"><tbody>
+<tr><td>the two birth YEARS alone, five terms, no astrology in it at all</td><td class=n>0.5910</td></tr>
+<tr><td>the astrology, measured only against couples from the same birth decade</td><td class=n>0.5108</td></tr>
+<tr><td>harmonics of the FAST bodies only — Sun, Moon, Mercury, Venus, Mars, the node</td><td class=n>0.5007</td></tr>
+</tbody></table></div>
 
-<b>Three cautions.</b> The cross-validated figure {cv:.4f} and the held-out {te:.4f} differ by more
-than the seed spread, which is what a 110-statement model does on 7,909 couples — trust the smaller
-one. The held-out set was read several times while the gate was being rebuilt; every choice between
-candidates was made on cross-validation or on doctrine, never on those reads, but the set is no longer
-as fresh as a single-read protocol would leave it, and that is a cost we are naming rather than hiding.
-And the AUC measures ranking ACROSS couples, while the product ranks dates WITHIN one person's window.
-Those are different questions and only the first is measured. Read it as a curiosity, not a
-forecast.<br><br>
+<p class="fw">Read those together and they say one thing. Nearly all of the score is the ERA. Wikipedia
+writes paragraphs about scandal and a sentence about a quiet forty years, so richly documented
+marriages are genuinely enriched in recorded trouble; record richness tracks fame, fame tracks the
+century, and the century is legible from a birth date through any slow planet. Held against couples
+born in the same decade, where era cannot help it, the astrology scores <b>0.5108</b>. The bodies that
+move fast enough to say something about two particular people rather than about a generation —
+Venus, Mars, the Moon, the ones every tradition actually reads for love — score <b>0.5007</b>, which
+is chance to four decimal places.<br><br>
+
+That is why every one of the {nstmt} statements the fit chose is about Neptune, Pluto or the
+composite chart: they are the slowest things in the sky and therefore the sharpest clock. This model is an
+excellent reader of WHEN two people were born. It is not evidence that two particular people suit each
+other, and we are not going to dress it up as one.<br><br>
+
+<b>The gate we removed, and what it cost.</b> A statement can be tested for whether it is about the
+couple or about the century: hold the midpoint date fixed, move the two births apart, and a real
+interaction changes while an era quantity does not
+(<a href="almanac/quality_interaction_scores.json">every score</a>). Requiring that more than half of a
+statement's variance come from the separation leaves a model that scores <b>0.5276</b> held out —
+honest about the pair, and much weaker. The model shipped here does not apply that gate, because the
+brief was to maximise the cross-validated score. Both numbers are true and they measure different
+things.<br><br>
+
+<b>Three cautions.</b> The model can express only <b>{ndist}</b> distinct scores, because eight binary
+statements cannot make more; it separates couples well in aggregate and is a coarse instrument for
+ordering one person's candidate dates. The held-out set was read several times while this search ran;
+every choice between candidates was made on cross-validation, never on those reads, but the set is no
+longer as fresh as a single-read protocol would leave it. And the AUC measures ranking ACROSS couples,
+while the product ranks dates WITHIN one person's window — different questions, and only the first is
+measured. Read it as a curiosity, not a forecast.<br><br>
 
 <b>The browser runs the same code, and we checked rather than assumed.</b> Scoring 300 held-out couples
-through the page's own path and comparing all {nstmt} statements one by one gives <b>1 disagreement in
-33,000</b> — a single aspect sitting 16 arcseconds from its orb edge, inside the browser ephemeris's own
-precision. Finding it took fixing a real fault: four slow-planet pairs were missing from the page's
-cycle list, so three shipped statements were silently never firing in the browser while the model still
-carried a weight for them.</p></details>
+through the page's own path and comparing every statement one by one: <b>2,400 evaluations, zero
+disagreements</b>.</p></details>
 
-<details class="fam"><summary>All {len(R['systems'])} systems, each fitted alone
+<details class="fam"><summary>All {len(R['systems'])} marriage systems, each fitted alone
 <span class="tc">cross-validated, training couples only</span></summary>
+<p class="fw" style="margin-top:14px">Eighteen compatibility systems whose own literature is about
+whether two people should marry were added to the bank — the Javanese weton calculation, the Balinese
+pawukon, the ten porutham, Papasamya, Xiang Xing and Xiang Po, Korean gunghap, Burmese Mahabote, the
+couple's I Ching hexagram, the geomantic Judge, biorhythm, the Hellenistic degree techniques, the
+Kabbalistic 72 Names and the Sefer Yetzirah letters, the Norse half-months, the Nile zodiac and the
+Aztec tonalpohualli. Each was then fitted ALONE, because a joint model cannot answer "does Ashtakoota
+work", only "what did the Lasso keep". {len(beat)} of {len(R['systems'])} score above the age-gap
+baseline of {R['baseline_age_gap_cv_auc']:.4f}, but a cross-validated AUC on {R['n_couples']:,} couples
+carries a standard error near {cvse:.4f}, so only <b>{len(clear)}</b> clear it by more than that:
+<b>{clear[0]['system']}</b> at {clear[0]['cv_auc']:.4f} and <b>{clear[1]['system']}</b> at
+{clear[1]['cv_auc']:.4f}. Everything else lands at chance.</p>
 <div style="overflow-x:auto"><table class="sys"><thead><tr><th>#</th><th>system</th><th>where it comes
 from</th><th class=n>statements</th><th class=n>CV AUC</th></tr></thead><tbody>
 <tr class="bl"><td></td><td><b>the baseline &mdash; signed age gap, two parameters</b></td><td></td>
 <td class=n>2</td><td class=n>{R['baseline_age_gap_cv_auc']:.4f}</td></tr>
-{sysrows}</tbody></table></div>
-<p class="fw" style="margin-top:12px">Each row is that system's statements and nothing else, with its
-own penalty chosen inside its own cross-validation, on couples grouped so that no marriage graph is
-split across folds. Rows above the baseline are marked.</p></details>
+{sysrows}</tbody></table></div></details>
 {MARK1}"""
 
     p = f"{DOCS}/index.html"

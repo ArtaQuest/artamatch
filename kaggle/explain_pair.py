@@ -417,7 +417,8 @@ def main():
         print("    UNTRANSLATED:", u)
     json.dump({"meta": {k: ART[k] for k in ("model","alpha","cv_auc","test_auc_research","trained_on",
                                             "base_rate","intercept")},
-               "calibration_deciles": ART["calibration_deciles"], "rules": out},
+               "calibration_isotonic": ART.get("calibration_isotonic"),
+               "calibration_deciles": ART.get("calibration_deciles"), "rules": out},
               open(sys.argv[2], "w"), indent=1)
     print(f"  saved {sys.argv[2]}")
 

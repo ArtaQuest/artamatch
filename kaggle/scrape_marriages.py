@@ -21,6 +21,8 @@ OUT = os.path.expanduser(os.environ.get("AQ_MAR", "~/.artamatch-dev/marriages"))
 LO, HI, STEP = int(os.environ.get("AQ_LO", "1500")), int(os.environ.get("AQ_HI", "1950")), 10
 UA = "ArtaMatch research (https://artaquest.com; arash@artaquest.org)"
 EP = "https://query.wikidata.org/sparql"
+import socket
+socket.setdefaulttimeout(180)   # a dead keep-alive socket must not hang a pass
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:6.0f}s]", *a, flush=True)
 

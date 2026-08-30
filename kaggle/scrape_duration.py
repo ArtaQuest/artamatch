@@ -1039,6 +1039,11 @@ GENDERLESS = os.environ.get("AQ_ORDER", "") == "none"
 # pairs (counted aloud) and puts the MAN first; the files keep the a/b column names with a = the man, one row per
 # couple (no both-orders duplication).
 GENDERED_AB = os.environ.get("AQ_ORDER", "") == "sex"
+# DATES ONLY (operator 2026-08-22: "completely remove location data. only 3 dates dataset"): the birthplace is
+# neither required nor published. Dropping the requirement ADMITS the held-out couples that were previously
+# removed for lacking a coordinate, so the test half grows; every chart is then cast at 12:00 UT with no place,
+# which is the honest convention when no place is known (no ascendant, no houses — stated, not faked).
+DATES_ONLY = os.environ.get("AQ_DATES_ONLY", "") == "1"
 _order = order_genderless if GENDERLESS else order_by_sex
 test_c = _order(test_l, "test half")
 train_c = _order(train_l, "train half")
@@ -1146,9 +1151,13 @@ test = test_u[test_u["_later"] > CUT].reset_index(drop=True)
 # THE PLACE, required in the held-out half. The whole point of this edition is a chart cast at 09:00 LOCAL, and
 # there is no local time without a place. Counted aloud, because it is the largest single filter on the test half.
 no_place = test["lat_dad"].isna() | test["lat_mom"].isna()
-print(f"  {int(no_place.sum()):,} of {len(test):,} held-out couples lack a birthplace for a partner — removed "
-      f"(the training half keeps such rows, with the place empty)")
-test = test[~no_place].reset_index(drop=True)
+if DATES_ONLY:
+    print(f"  AQ_DATES_ONLY: the birthplace is not required — {int(no_place.sum()):,} held-out couples that would "
+          f"have been removed for lacking one are KEPT ({len(test):,} in the held-out half)")
+else:
+    print(f"  {int(no_place.sum()):,} of {len(test):,} held-out couples lack a birthplace for a partner — removed "
+          f"(the training half keeps such rows, with the place empty)")
+    test = test[~no_place].reset_index(drop=True)
 # THE CEILING, applied to the held-out half only. Every held-out couple is dead by CEIL, so a relationship that
 # began after CEIL - MIN_YEARS cannot have lasted MIN_YEARS: its label is 0 by arithmetic, not by anything a
 # model could learn. Left in, such rows are free points for whoever notices and noise for whoever does not, and
@@ -1296,7 +1305,7 @@ for name, frame in (("test", test), ("train", train)):
         assert (sy[known] >= yr[known]).all(), f"{name}: a relationship starts before the {col} birth"
 assert (test["start_year"] <= CEIL - MIN_YEARS).all(), \
     f"a held-out couple began after {CEIL - MIN_YEARS}: its label is 0 by arithmetic and it must not be scored"
-for side in ("dad", "mom"):
+for side in (() if DATES_ONLY else ("dad", "mom")):
     assert test[f"lat_{side}"].notna().all() and test[f"lon_{side}"].notna().all(), f"test.{side} lacks a place"
     assert test[f"lat_{side}"].between(-90, 90).all() and test[f"lon_{side}"].between(-180, 180).all()
     ok = train[f"lat_{side}"].isna() | (train[f"lat_{side}"].between(-90, 90) & train[f"lon_{side}"].between(-180, 180))
@@ -1362,12 +1371,15 @@ if GENDERLESS:
 elif GENDERED_AB:
     REN = {"dob_dad": "dob_a", "dob_mom": "dob_b", "lat_dad": "lat_a", "lon_dad": "lon_a", "lat_mom": "lat_b", "lon_mom": "lon_b"}
     train = train.rename(columns=REN); test = test.rename(columns=REN); COLS = [REN.get(c, c) for c in COLS]
+    if DATES_ONLY:
+        COLS = [c for c in COLS if not c.startswith(("lat_", "lon_"))]
+        print(f"  DATES ONLY: the published columns are {COLS} — no coordinate of any kind")
     print(f"  GENDERED: one row per couple, column a IS the man (P21), column b the woman — "
           f"{len(train):,} train rows, {len(test):,} test rows")
     train[COLS].to_csv(os.path.join(OUT, "train.csv"), index=False, float_format="%.4f")
     test["id"] = [f"m{i:06d}" for i in range(len(test))]
-    test[["id", "dob_a", "dob_b", "lat_a", "lon_a", "lat_b", "lon_b", "start"]]\
-        .to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
+    tcols = ["id", "dob_a", "dob_b", "start"] if DATES_ONLY else ["id", "dob_a", "dob_b", "lat_a", "lon_a", "lat_b", "lon_b", "start"]
+    test[tcols].to_csv(os.path.join(OUT, "test.csv"), index=False, float_format="%.4f")
     rng = np.random.default_rng(20260817)
     sol = test[["id", LABEL]].copy()
     sol["Usage"] = np.where(rng.random(len(test)) < 0.30, "Public", "Private")

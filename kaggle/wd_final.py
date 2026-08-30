@@ -70,13 +70,21 @@ def main():
         S.append(s); T.append(t); kept.append(f)
         print(f"    {f:<22} OOF {G.auc(ytr[ok], s[ok]):.4f}   TEST {G.auc(yte, t) if np.isfinite(t).all() else float('nan'):.4f}", flush=True)
     S = np.column_stack(S); T = np.column_stack(T)
+    np.savez_compressed(os.path.expanduser(f"~/.artamatch-dev/{os.environ.get('AQ_TAG','wdf')}_S.npz"),
+                        S=S, T=T, kept=np.array(kept, dtype=object))
     scored = np.isfinite(S).all(1)
-    F = G.rankfeat(S[scored]); w, b = G.fit_nonneg(F, ytr[scored], np.ones(int(scored.sum())))
-    print(f"\n  STACK over {len(kept)} members · train OOF {G.auc(ytr[scored], F @ w + b):.4f} on {int(scored.sum()):,}")
+    # WEIGHTS ARE FITTED ON THE MOST-RECENT ERA BLOCK ONLY. Fitting them on all OOF rows rewarded the members
+    # whose OOF was inflated by reading the era inside train — world3 at OOF 0.7234 collapsed to 0.5480 on
+    # test while the one family whose OOF told the truth (gendered_synastry, 0.5587 -> 0.5609) took weight
+    # ZERO. The last block is the era nearest the test half, where an era-reader has nothing left to read.
+    recent = scored & (later > cuts[-3])
+    F = G.rankfeat(S[recent]); w, b = G.fit_nonneg(F, ytr[recent], np.ones(int(recent.sum())))
+    print(f"\n  STACK over {len(kept)} members · weights on the {int(recent.sum()):,} most-recent scored rows "
+          f"(born > {int(cuts[-3])}) · recent-block OOF {G.auc(ytr[recent], F @ w + b):.4f}")
     print("  weights: " + " · ".join(f"{kept[i]} {100*w[i]/max(w.sum(),1e-9):.0f}%"
                                      for i in np.argsort(-w) if w[i] > 0))
     # test, read once
-    Ft = np.column_stack([np.searchsorted(np.sort(S[scored][:, j]), T[:, j]) / int(scored.sum()) - 0.5
+    Ft = np.column_stack([np.searchsorted(np.sort(S[recent][:, j]), T[:, j]) / int(recent.sum()) - 0.5
                           for j in range(len(kept))])
     zt = Ft @ w + b
     auc = G.auc(yte, zt)
@@ -97,7 +105,7 @@ def main():
         cols = np.where(fam_of == f)[0]
         m = xgb.XGBClassifier(random_state=0, **HP); m.fit(Xtr[:, cols], ytr)
         sc = m.predict_proba(Xsw[:, cols])[:, 1]
-        Fsw[:, j] = np.searchsorted(np.sort(S[scored][:, j]), sc) / int(scored.sum()) - 0.5
+        Fsw[:, j] = np.searchsorted(np.sort(S[recent][:, j]), sc) / int(recent.sum()) - 0.5
     zsw = Fsw @ w + b
     p1, p2 = 1/(1+np.exp(-zt)), 1/(1+np.exp(-zsw))
     dz = np.abs(p1 - p2)

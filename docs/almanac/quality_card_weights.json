@@ -1,54 +1,27 @@
 {
  "ranked_by": "summed absolute weight of the statements in each group",
  "note": "every statement here reads both birth dates, and more than half of its variance comes from how far apart the two births are rather than from when they happened",
- "n_statements": 110,
- "cv_auc": 0.5612,
- "test_auc": 0.5276,
+ "n_statements": 8,
+ "cv_auc": 0.5987,
+ "test_auc": 0.5858,
  "cards": [
   {
    "key": "cycles",
    "label": "The sky you were both born under",
-   "blurb": "Rudhyar's cycle phases \u2014 where a pair of slow planets stood in their own cycle at each birth.",
-   "statements": 29,
-   "weight": 6.3013,
-   "mean_interaction": 0.702,
-   "share": 0.281
+   "blurb": "Rudhyar's cycle phases \u2014 where a pair of slow planets stood in their own cycle at each birth. This is the part of the reading that is about your era as much as about the two of you.",
+   "statements": 5,
+   "weight": 1.4564,
+   "mean_interaction": 0.21,
+   "share": 0.617
   },
   {
-   "key": "daily",
-   "label": "How you meet day to day",
-   "blurb": "Sun, Mercury and Mars contacts \u2014 presence, talk and friction.",
-   "statements": 31,
-   "weight": 5.6902,
-   "mean_interaction": 0.95,
-   "share": 0.254
-  },
-  {
-   "key": "feeling",
-   "label": "How your feelings meet theirs",
-   "blurb": "Moon and Venus contacts \u2014 the two bodies every tradition reads for affection.",
-   "statements": 19,
-   "weight": 4.1581,
-   "mean_interaction": 0.957,
-   "share": 0.186
-  },
-  {
-   "key": "deep",
-   "label": "The contacts you do not choose",
-   "blurb": "Uranus, Neptune and Pluto contacts \u2014 the slow planets, read as what a couple is handed.",
-   "statements": 15,
-   "weight": 3.3706,
-   "mean_interaction": 0.733,
-   "share": 0.151
-  },
-  {
-   "key": "holding",
-   "label": "What holds you and what opens you",
-   "blurb": "Saturn and Jupiter contacts \u2014 the binding planet and the expanding one.",
-   "statements": 16,
-   "weight": 2.8735,
-   "mean_interaction": 0.868,
-   "share": 0.128
+   "key": "relchart",
+   "label": "The chart of the relationship itself",
+   "blurb": "The composite and Davison charts \u2014 the midpoint of your two charts, read as a third entity.",
+   "statements": 3,
+   "weight": 0.9043,
+   "mean_interaction": 0.037,
+   "share": 0.383
   }
  ]
 }

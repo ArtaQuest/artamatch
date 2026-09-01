@@ -321,9 +321,13 @@ json.dump({"nested_auc": round(auc_nested, 4), "per_fold": per_fold,
                                              "max_wdiff": round(wdiff, 4)}},
            "rl_sweep": {str(k): round(v, 4) for k, v in sw.items()},
            "terms": terms, "bias": round(float(beta_cf[-1]), 4)},
-          open(f"{D_}/report_nested.json", "w"), indent=1)
+          open(f"{D_}/report_nested_k{KMAX}.json", "w"), indent=1)
 json.dump({"met": [{"kind": MET[c]["kind"], "i": MET[c]["i"], "j": MET[c]["j"], "k": MET[c]["k"],
                     "label": MET[c]["label"], "fam": MET[c]["fam"]} for c in sel],
            "rl": rl_star, "cv": round(auc_nested, 4)},
-          open(f"{D_}/maxout_terms.json", "w"), indent=1)
-log("saved report_nested.json + maxout_terms.json")
+          open(f"{D_}/maxout_terms_k{KMAX}.json", "w"), indent=1)
+# KMAX-STAMPED FILENAMES. The K=64 run silently overwrote the K=32 artifacts under the shared
+# names, so the exporter would have shipped the WORSE model (nested 0.6783 vs 0.6794) — the same
+# two-runs-one-filename failure that once put a wrong number on the live page. The name now carries
+# the run's identity, and the exporter names the file it ships from.
+log(f"saved report_nested_k{KMAX}.json + maxout_terms_k{KMAX}.json")

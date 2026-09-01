@@ -37,9 +37,11 @@ assert abs(inner7["best"] - inner5["best"]) > 1e-6, \
 # because the fixed-structure CV of a structure chosen on all folds is leak-inflated (measured: the
 # prefix scan of the agreement list creeps monotonically and never turns over).
 mx = rn = None
-if os.path.exists(f"{D_}/maxout_terms.json"):
-    mx = json.load(open(f"{D_}/maxout_terms.json"))
-    rn = json.load(open(f"{D_}/report_nested.json"))
+TERMS_FILE = os.environ.get("AQ_TERMS", "maxout_terms_k32.json")
+NESTED_FILE = TERMS_FILE.replace("maxout_terms", "report_nested")
+if os.path.exists(f"{D_}/{TERMS_FILE}"):
+    mx = json.load(open(f"{D_}/{TERMS_FILE}"))
+    rn = json.load(open(f"{D_}/{NESTED_FILE}"))
     phas = [{**t, "folds": None} for t in mx["met"]]
     K = len(phas)
     log(f"{K} phasors from the nested deploy pass · nested AUC {rn['nested_auc']:.4f}")

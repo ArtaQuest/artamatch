@@ -582,141 +582,128 @@ And the standing caveat, which is part of the method: there is no known mechanis
 could work. These are old, internally consistent ways of talking about people — reported faithfully,
 calibrated honestly, and predicting nothing.
 
-## Edition V — Till Death Do Us Part (2026-09-01)
+## Edition V — What the record remembers (2026-09-01)
 
-A second reading on the page, from a different corpus and a different model family to everything
-above. It answers the opposite question: not *does this last* but *did it come apart*.
+A model of **five numbers**, and an account of why it is worth less than its AUC suggests.
+
+### The question
+
+Not "will this marriage last" — that target turned out to be unanswerable here (see *What the
+targets did*, below). The shipped question is narrower and is stated on the page in those words:
+**does the historical record list children for a couple like this?**
 
 ### The corpus
 
-**175,155 marriages** between people with recorded birth dates, harvested from Wikidata
-(`P26` spouse statements, every birth decade 1500–1990) and Wikipedia prose. A marriage counts as
-having come apart — **9,682 of them, 5.53%** — when
-the record says so explicitly, by any of six routes:
+**91,146 finished marriages**, 45,343 of them (49.7%)
+with children recorded. Built from Wikidata `P26` spouse statements and Wikipedia prose, and filtered
+hard:
 
-| evidence | pairs |
-|---|---|
-| remarriage while the other partner was still living | 5,377 |
-| an explicit `P1534` end cause (divorce, annulment, separation) | 2,739 |
-| a couple-bound phrase in the prose ("they divorced", "their separation") | 2,196 |
-| an end date more than a year from either death | 2,069 |
-| a per-couple judgement of the article text | 1,813 |
-| recorded infidelity | 573 |
+- **finished only** — a recorded death or an explicit end cause, so the child count is final. A
+  marriage still running has not had its children yet.
+- **real recorded days only** — 78% of raw Wikidata birth timestamps read `1 January`, which is how a
+  year-precision date renders. Every one is demoted to year precision and then excluded, along with
+  every other partial date. A year-only date puts the Moon anywhere in the zodiac, and the fast
+  bodies are precisely what the central test below depends on. This cost 74,016 couples.
+- excluded too: 47 died-before-born, pairs >60 years apart, self-pairs, and 25 whose two Wikidata
+  items contradict each other about how the marriage ended.
 
-Everything else is a negative: presumed till-death. Couples enter only when the marriage is
-*provably over* — both born before 1950, or both deaths recorded — so a marriage still running is
-never counted as one that held. 22 pairs whose records contradict each other were dropped rather
-than resolved by a coin toss. Partial birth dates are kept, imputed to the middle of the known
-window (78,830 of them); the slow bodies that dominate the model are barely moved
-by a few months, and the fast terms simply attenuate.
+Charts are sidereal (Lahiri) at 12:00 UT from Kerykeion, **verified against pyswisseph to 0.0103°
+worst case** over 1,014 positions — every planet inside 0.0012°, the Sun inside 0.00002°.
 
 ### The model
 
-```
-score = bias + Σ w · cos(angle)  +  w · sin(angle)          p = sigmoid(score)
-```
+    score = bias + Σ over phasors of  a·cos(k·θ) + c·sin(k·θ)
+    p     = sigmoid(score)
 
-**64 terms** over 13 sidereal bodies (Lahiri, noon UT), in three families — and every one of them
-needs **both** birth charts. No placement, aspect or midpoint belonging to a single person is
-admissible, because such a feature is not evidence about a couple:
+Two phasors, five numbers:
 
-- `diff  man[i] − woman[i]` — the same-body synastry aspect
-- `sum   man[i] + woman[i]` — the couple's midpoint axis for that body
-- `xdiff man[i] − woman[j]` — the cross-body synastry grid
-
-Each term is one cosine or one sine of one named angle, at the fundamental harmonic only. The score
-is `bias + Σ wₜ·trigₜ(angleₜ)`, through a sigmoid. Fitted by the closed-form solver: three explicit
-Newton steps on balanced BCE, the first of which is the weighted least-squares solution.
-
-**Ten-fold grouped cross-validated AUC 0.7366**, folds cut by connected component of the marriage
-graph so a person never appears on both sides of a split, averaged over three fold seeds.
-
-### The number that matters, and it is not the AUC
-
-The operator's two baselines are the same model fitted on **one** partner's chart alone, given the
-complete solo algebra — placements, own aspects, own midpoint axes — on this corpus and these folds:
-
-| model | AUC |
+| | weight |
 |---|---|
-| **the pair-only model (64 terms)** | **0.7366** |
-| her chart alone (339 params) | 0.7362 |
-| his chart alone (339 params) | 0.7309 |
-| signed birth-date gap (2 params, sanity only) | 0.5422 |
+| `cos(her Neptune − her Pluto)` | -0.6708 |
+| `sin(her Neptune − her Pluto)` | -0.5589 |
+| `cos(3·(his Neptune − her Neptune))` | +0.4122 |
+| `sin(3·(his Neptune − her Neptune))` | -0.4459 |
+| bias | -0.1039 |
 
-Reading **both** charts together buys **+0.0004** over reading one of them. That is not a small
-effect; on 9,682 positives it is indistinguishable from nothing. The corpus can tell a 1650 marriage
-from a 1950 one and it can rank a person, but two charts read as a pair say no more than one chart
-read alone. This is the finding, and the page prints it beside every reading rather than showing the
-percentile on its own.
+Each phasor pairs a cosine with a sine of the same angle, so its amplitude and phase are both free
+(`a·cos + c·sin = A·cos(θ − φ)`). Every feature is a sinusoid of an integer harmonic of a named
+angle; there is not one indicator, bucket or threshold in the model, and `web/verify_docs.py` refuses
+a file containing one.
 
-An earlier edition of this model reached 0.7430 — by including his placements, her natal aspects and
-her midpoint axes. It beat one partner's chart by 0.005 while claiming to read a pair, which is why
-single-person families are now banned outright and `web/verify_docs.py` refuses to publish a model
-containing one.
+**Ten-fold grouped cross-validated AUC 0.6764**, folds cut by connected component of
+the marriage graph so no person appears on both sides of a split. One partner's chart alone, given
+its complete solo algebra (339 parameters), reaches 0.6625.
 
-### What each term is worth, one at a time
+### How it was found
 
-Every one of the 64 terms was removed on its own and the whole ten-fold fit re-run without it. The
-contribution is what the model loses by not having it, on identical folds:
+Every feature is an angle between two of the 26 bodies of the two charts:
 
-| term | leave-one-out contribution |
-|---|---|
-| `cos(mid pluto)` | +0.00155 |
-| `cos(his pluto-her neptune)` | +0.00121 |
-| `sin(his neptune-her uranus)` | +0.00116 |
-| `sin(mid neptune)` | +0.00111 |
-| `cos(his neptune-her pluto)` | +0.00097 |
-| `cos(his neptune-her mercury)` | +0.00094 |
-| `cos(D saturn)` | +0.00070 |
-| `cos(his uranus-her neptune)` | +0.00064 |
-| `cos(his pluto-her uranus)` | +0.00063 |
-| `sin(his venus-her neptune)` | +0.00063 |
-| `sin(mid pluto)` | +0.00062 |
-| `sin(his pluto-her saturn)` | +0.00053 |
+    XY  man[i] − woman[j]   all i,j, same body included    169 angles
+    XX  man[i] − man[j]     i < j                           78
+    YY  woman[i] − woman[j] i < j                           78
 
-**48 of 64 terms contribute positively**; the rest are correlated shadows of terms already
-present. The three whose removal actually helps:
+at harmonics k ∈ {1..10, 12, 27, 36} — the aspect itself, then the sign (30° is the 12th harmonic),
+the nakshatra (27th) and the decan (36th). 4,225 candidate phasors. Forward stepwise selection by the
+two-degree-of-freedom score statistic, refitted at each step by a closed-form solver (three Newton
+steps, the first of which is the weighted least-squares solution), **with the selection done inside
+every fold on training rows only** — so the AUC at each size is what a stranger reproduces, not what
+ranking 4,225 candidates on all the data would flatter us into believing.
 
-| term | leave-one-out contribution |
-|---|---|
-| `sin(his node-her mercury)` | -0.00005 |
-| `cos(his sun-her pluto)` | -0.00006 |
-| `cos(mid neptune)` | -0.00012 |
+### THE RESULT THAT MATTERS: most of this is a calendar
 
-The base for these differences is the **fixed-term** model on the same seed, 0.7370.
-That is worth stating because the first run of this table subtracted from the pruning curve's value
-at 64 terms (0.7333) — a model that re-chooses its terms
-inside every fold, and therefore a different and lower-scoring thing. The 0.0037 gap made all 64
-terms appear harmful. The ranking was never affected, being a constant shift; the signs were wrong
-and are corrected here.
+The same search, restricted to bodies that cannot encode a century, and then to bodies that cannot
+encode a decade:
 
-Note also what the largest contribution is: **+0.0016**. No single angle in this model is load-bearing.
+| bodies | slowest cycle | AUC | above chance |
+|---|---|---|---|
+| all 13 | 492 yr (Neptune–Pluto) | 0.6812 | 0.181 |
+| Sun–Saturn (7) | 29 yr | 0.5193 | 0.019 |
+| Sun–Mars (5) | 687 d | 0.5193 | 0.019 |
+| *birth-date gap, 2 parameters* | — | *0.5494* | *0.049* |
 
-### What was tried and rejected
+**About 89% of what this model knows is when the two people were born.** Neptune takes 165 years to
+circle the zodiac and Pluto 248, so their positions are a statement about the decade. Strip them and
+the model falls to 0.5193; strip Jupiter and Saturn too and it reaches
+0.5193 — **less than the 0.5494 that two numbers of
+birth-date difference achieve on their own**. Every angle Venus, Mars, Mercury, the Moon and the Sun
+can form between two charts, at thirteen harmonics, in differences and midpoints, is worth less than
+knowing how far apart the two birthdays are.
 
-Under the pair-only rule, backward elimination dropped **cross-body couple midpoints**
-(`man[i] + woman[j]`, removing them *helped* by 0.0018) and **composite-internal aspects**
-(`(man[i]+woman[i]) − (man[j]+woman[j])`, no cost). Of the survivors, the cross-body grid carries
-most of the signal: removing it costs 0.0200, against 0.0017 for the same-body differences and
-0.0004 for the couple midpoints.
+Leave-one-body-out says the same thing in one line. Of thirteen bodies, **two are worth keeping —
+Neptune and Pluto** — and eleven pay nothing: Uranus, Sun, Moon, Mercury, Venus, Mars, Jupiter, node,
+Lilith, Chiron, Saturn. Venus, the planet the tradition would nominate first, costs 0.0000 to remove.
 
-Rejected earlier, each measured rather than assumed: every harmonic above the fundamental (the
-classical aspect ladder — trine as the 3rd, square as the 4th — adds nothing on this target); the
-complete quadratic mixing of the basis (5,565 parameters, worse); and all four three-body families,
-Ebertin's midpoint contacts and the Hellenistic lots among them. Out of reach with date-only data,
-and recorded rather than silently skipped: houses, angles, declinations and planetary speeds.
+The page prints this decomposition inside every reading rather than in a footnote.
+
+### What the targets did
+
+Five targets were built and measured. The pattern is the finding:
+
+| target | label comes from | rows | best AUC | one chart alone |
+|---|---|---|---|---|
+| P1534 divorce | Wikidata field | 165,589 | 0.8652 | 0.8637 |
+| came apart (mixed evidence) | mixed | 175,407 | 0.7937 | 0.7877 |
+| **children listed** | Wikidata field | 91,146 | 0.6812 | 0.6625 |
+| happy, judged from prose | an LLM reading | 1,590 | 0.53 | 0.53 |
+| infidelity, judged from prose | an LLM reading | 9,924 | 0.53 | 0.53 |
+
+Every target with a high AUC is a **Wikidata structured field**, and such fields are present or
+absent according to how thoroughly a person was documented — which a birth date can identify through
+era and prominence. Both targets whose labels come from *reading a description*, and which therefore
+owe nothing to record depth, sit at chance. The divorce target reached 0.86 while gaining just
+**+0.0015** from the second chart; removing Neptune alone cost it 0.0541.
+
+The children target is the one worth shipping precisely because it is the hardest of the three
+structured ones (0.68, not 0.86) and gains the most from reading both charts (+0.0139 to +0.0189).
 
 ### Honest limits
 
-- **Term pruning chose 64 by looking at the curve**, so 0.7366 carries a little selection optimism;
-  the family-level figure before pruning was 0.7316.
-- **Which separations it sees.** Sliced by evidence, out of fold: P1534 0.781 · end-date 0.713 ·
-  judge 0.808 · text 0.757 · infidelity 0.666 · remarriage 0.747. It reads a documented divorce far
-  better than a documented infidelity.
-- **A harder target.** Trained and scored on the confident core only — explicit separation against
-  explicit till-death — five-seed AUC was **0.7165** for the earlier model family. Both numbers are
-  real; the stricter one is what to quote against a sceptic.
-- **The corpus is wider than the page.** 168,541 of the 175,155 couples fall inside the shipped
-  1598–2200 ayanamsa span; the fit used precomputed positions, so the remainder trained the model
-  but cannot be reproduced in the browser.
-- **What it cannot do.** It reads two birth dates. It knows nothing of the people.
+- **The label is not fertility.** Wikidata lists children mainly when a notable person descends from
+  the couple, so "no children recorded" blends genuine childlessness with thin documentation.
+- **The term count was chosen by looking at the curve**, so the shipped figure carries a little
+  selection optimism. It is the fixed-term CV (0.6764), not the frontier's
+  within-fold value (0.6732), which would flatter the file.
+- **Cross-corpus AUCs are not comparable.** Each filtering step changed the population; both solo
+  baselines rose ~0.05 when unfinished marriages were excluded, which made the corpus cleaner *and*
+  easier.
+- **What it cannot do.** It reads two birth dates. It knows nothing about the people.

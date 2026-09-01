@@ -28,7 +28,14 @@ from build_tilldeath import BOUND, ukey, yr4
 BIO = os.path.expanduser("~/.artamatch-dev/bio")
 SLICES = os.path.expanduser("~/.artamatch-dev/aq9c/_dslices")
 SEXCSV = os.path.expanduser("~/.artamatch-dev/aq9c/_sex.csv")
-OUT = os.path.expanduser("~/.artamatch-dev/tilldeath_max")
+# AQ_TARGET picks what y means, and each target gets its own directory so switching never
+# overwrites another target's charts:
+#   children  y=1 the record lists children for the couple      (default)
+#   p1534     y=1 an explicit P1534 cause says they ended it
+TARGET = os.environ.get("AQ_TARGET", "children")
+AQ_FULLPREC = os.environ.get("AQ_FULLPREC", "1") == "1"
+OUT = os.path.expanduser({"children": "~/.artamatch-dev/tilldeath_max",
+                          "p1534": "~/.artamatch-dev/p1534"}[TARGET])
 MISSING = "0000-00-00"
 MALE, FEM = "Q6581097", "Q6581072"
 
@@ -127,6 +134,20 @@ def main():
     jinf = {ukey(a, b) for a, b, f in zip(jj.pid_a, jj.pid_b, jj.infidelity)
             if str(f).lower() in ("true", "1", "1.0", "yes")}
     jinf |= {ukey(a, b) for a, b, r in zip(j.pid_a, j.pid_b, j.reason) if r == "infidelity"}
+    jabuse = {ukey(a, b) for a, b, f in zip(jj.pid_a, jj.pid_b, jj.abuse)
+              if str(f).lower() in ("true", "1", "1.0", "yes")}
+    jabuse |= {ukey(a, b) for a, b, r in zip(j.pid_a, j.pid_b, j.reason) if r == "abuse"}
+    # children per couple, from the count-verified harvest
+    kids = {}
+    _kf = f"{BIO}/children.csv"
+    if os.path.exists(_kf):
+        _k = pd.read_csv(_kf)
+        for _pr, _n in zip(_k.pair, _k.n):
+            if isinstance(_pr, str) and "|" in _pr:
+                _x, _y = _pr.split("|")[:2]
+                kids[ukey(_x, _y)] = int(_n)
+    print(f"  children.csv: {len(kids):,} pairs · "
+          f"{sum(1 for v in kids.values() if v == 0):,} with none recorded", flush=True)
     t = pd.read_csv(f"{BIO}/marriages.csv")
     thit = {ukey(a, b) for a, b, d in zip(t.pid_a, t.pid_b, t.description.fillna(""))
             if BOUND.search(d)}
@@ -141,8 +162,10 @@ def main():
         return any(t > this_start and t < other_death
                    for t in person.get(pid, {}).get("starts", ()))
 
-    rows, dropped, skipped = [], 0, {"dob": 0, "sex": 0, "pop": 0}
-    n_src = {"P1534": 0, "end-date": 0, "judge": 0, "text": 0, "infid": 0, "remarry": 0}
+    rows, dropped, skipped = [], 0, {"imputed": 0, "dob": 0, "sex": 0, "no_evidence": 0, "shady_only": 0,
+                                    "no_children_row": 0, "self": 0, "died_before_born": 0,
+                                    "gap60": 0}
+    n_src = {"childless": 0, "P1534": 0}
     for (a, b), r in pairs.items():
         pa, pb = person.get(a, {}), person.get(b, {})
         da_, db_ = pa.get("dob", MISSING), pb.get("dob", MISSING)
@@ -153,9 +176,22 @@ def main():
             skipped["sex"] += 1; continue
         ya, yb = int(da_[:4]), int(db_[:4])
         dea, deb = pa.get("death", np.nan), pb.get("death", np.nan)
-        ended = (ya < 1950 and yb < 1950) or (np.isfinite(dea) and np.isfinite(deb))
-        if not ended:
-            skipped["pop"] += 1; continue
+        # ── WHICH MARRIAGES HAVE AN OUTCOME AT ALL (operator 2026-09-01)
+        # The old rule admitted any couple both born before 1950, which quietly labelled ONGOING
+        # marriages as "till death": two people born in 1945, both alive, still married, counted as
+        # a negative. That was 44,493 rows — 27% of every negative in the corpus, and about 90% of
+        # the couples born in the 1910s to 1940s.
+        #
+        # A marriage has a known outcome only if:
+        #   it came apart          -> the separation evidence below says so, and it is a positive
+        #   somebody died          -> it ended at that death, and it is a negative
+        #   both are certainly dead -> born early enough that no one could still be living
+        # Anything else is a marriage still running, or one whose end nobody recorded, and it is
+        # excluded rather than guessed at. Absence of a death date is NOT evidence of life for a
+        # person born in 1650, so CERTAIN_DEAD carries that case on the calendar instead.
+        CERTAIN_DEAD = 1905                      # born by then and you cannot be alive in 2026
+        any_death = np.isfinite(dea) or np.isfinite(deb)
+        certainly_dead = ya <= CERTAIN_DEAD and yb <= CERTAIN_DEAD
         art = bool(r["causes"] & ARTIFICIAL)
         nat = bool(r["causes"] & NATURAL)
         if art and nat:
@@ -175,23 +211,97 @@ def main():
         if nat and not art:
             # an explicit natural end silences the PROSE sources, never the judge's infidelity flag
             srcs = [s for s in srcs if s in ("P1534", "infid")]
+        # ── THE TARGET: DID THIS COUPLE HAVE CHILDREN? (operator 2026-09-01)
+        # The divorce, infidelity and abuse classes are dropped — each was a few hundred to a few
+        # thousand rows against tens of thousands, and the per-source slice showed the model read
+        # them very unevenly. What is left is one balanced question with one answer per couple:
+        #
+        #   y = 1   children are recorded for the pair        (prospered, in the operator's framing)
+        #   y = 0   none are                                   (did not)
+        #
+        # THE POPULATION IS STILL FINISHED MARRIAGES ONLY — a recorded death, or an explicit end
+        # cause. A marriage still running has not had its children yet, and calling it childless
+        # would be a statement about its age rather than about the couple.
+        #
+        # SAID ONCE, PLAINLY, AND IT IS THE THING TO KNOW ABOUT THIS TARGET: Wikidata lists children
+        # mainly when a notable person descends from the couple. So `no children recorded` blends
+        # genuine childlessness with thin documentation, and a model that predicts it is reading both.
+        # That is the operator's chosen target; it is built as asked and reported with this attached.
+        nkid = kids.get((a, b), kids.get((b, a)))
+        if TARGET == "children":
+            if nkid is None:
+                skipped["no_children_row"] += 1; continue
+            if not (art or nat or any_death):
+                skipped["no_evidence"] += 1; continue    # unfinished: the count is not final
+            srcs = [] if nkid >= 1 else ["childless"]
+        else:
+            # P1534 ONLY: a recorded cause saying the two of them ended it, against marriages that
+            # ended in a recorded death. Rows whose only sign of trouble is weaker than P1534 are
+            # excluded — calling them till-death would be the same mistake in the other direction.
+            nkid = -1 if nkid is None else nkid
+            AMB = {"end-date", "judge", "text", "remarry", "infid"}
+            if art:
+                srcs = ["P1534"]
+            elif [x for x in srcs if x in AMB]:
+                skipped["shady_only"] += 1; continue
+            elif nat or any_death:
+                srcs = []
+            else:
+                skipped["no_evidence"] += 1; continue
+
+        # ── SANITY, on the dates themselves
+        if a == b:
+            skipped["self"] += 1; continue
+        for who, dob_y, dth in ((a, ya, dea), (b, yb, deb)):
+            pass
+        if (np.isfinite(dea) and dea < ya) or (np.isfinite(deb) and deb < yb):
+            skipped["died_before_born"] += 1; continue
+        if abs(ya - yb) > 60:
+            skipped["gap60"] += 1; continue
         for s in srcs: n_src[s] += 1
         him, her = (a, b) if sa == MALE else (b, a)
         dh, dw = (da_, db_) if sa == MALE else (db_, da_)
         fullprec = int(("-00" not in dh) and ("-00" not in dw))
+        # FULL-PRECISION DATES ONLY (operator 2026-09-01). A year-only birth date was being imputed to
+        # 1 July, which places the Moon anywhere in the zodiac and Mercury nearly so — 45% of the rows
+        # were carrying fast bodies that are pure noise. Since the fast bodies are the whole point of
+        # testing whether this model reads anything but the birth century, an imputed row cannot be in
+        # the corpus at all.
+        if AQ_FULLPREC and not fullprec:
+            skipped["imputed"] += 1; continue
         # natural: an explicitly-recorded till-death ending — P1534 natural cause, or an end date
         # within a year of a known death. The strict target trains sep-vs-THIS.
         endnat = any(deaths and any(abs(e - d) <= 1 for d in deaths) for e in r["ends"])
+        dth_h, dth_w = (dea, deb) if sa == MALE else (deb, dea)
         rows.append({"pid_a": him, "pid_b": her, "dob_a": impute(dh), "dob_b": impute(dw),
                      "true_dob_a": dh, "true_dob_b": dw, "fullprec": fullprec,
-                     "y": 1 if srcs else 0, "src": "+".join(srcs),
+                     "death_a": dth_h, "death_b": dth_w,
+                     "outcome": ("failed:" + "+".join(srcs)) if srcs else "prospered",
+                     "n_children": nkid,
+                     # y = 1 means it PROSPERED (operator 2026-09-01): it ended in a death, it had
+                     # children, and nothing in the record says divorce, infidelity or abuse. The
+                     # model therefore predicts flourishing, not failure, and the page reads that way.
+                     "y": 0 if srcs else 1, "src": "+".join(srcs) or "prospered",
                      "natural": int((nat or endnat) and not srcs)})
     d = pd.DataFrame(rows)
     print(f"\n  {len(d):,} couples ({int(d.fullprec.sum()):,} full-precision · "
-          f"{len(d) - int(d.fullprec.sum()):,} imputed) · "
-          f"{int(d.y.sum()):,} explicit separations ({d.y.mean():.2%})")
-    print(f"  skipped: no dob {skipped['dob']:,} · not M+F {skipped['sex']:,} · "
-          f"not provably ended {skipped['pop']:,} · contradictions {dropped}")
+          f"{len(d) - int(d.fullprec.sum()):,} imputed)")
+    print(f"  target '{TARGET}' · y=1: {int(d.y.sum()):,} ({d.y.mean():.2%})   "
+          f"y=0: {int((d.y == 0).sum()):,} ({1 - d.y.mean():.2%})")
+    print(f"  children per couple among y=1: median {int(d[d.y == 1].n_children.median())} "
+          f"· max {int(d.n_children.max())}")
+    print(f"  skipped: imputed date {skipped['imputed']:,} · no dob {skipped['dob']:,} · not M+F {skipped['sex']:,} · "
+          f"no evidence either way {skipped['no_evidence']:,} · weaker-than-P1534 evidence only "
+          f"{skipped['shady_only']:,} · no children record {skipped['no_children_row']:,} · "
+          f"self-pair {skipped['self']:,} · "
+          f"died before born {skipped['died_before_born']:,} · gap>60y {skipped['gap60']:,} · "
+          f"contradictions {dropped}")
+    oc = d.outcome.value_counts()
+    print("  how each surviving marriage is known to have ended: "
+          + " · ".join(f"{k} {v:,}" for k, v in oc.items()))
+    dup = d.duplicated(["pid_a", "pid_b"]).sum()
+    print(f"  duplicate pairs remaining: {dup}")
+    assert dup == 0, "a pair appears twice"
     print("  sources: " + " · ".join(f"{k} {v:,}" for k, v in n_src.items()), flush=True)
 
     d["start"] = MISSING

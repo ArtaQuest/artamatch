@@ -390,9 +390,16 @@ const tdOut = await ev(`(async () => {
   btn.click();
   for (let i = 0; i < 180; i++) {
     const t = readable();
-    if (t.includes("percentile among all")) {
+    // GATE ON A MARKER, NOT ON COPY. This used to poll for a phrase in the reading's own prose, so
+    // rewording the page broke the gate and the failure looked like a broken page rather than a
+    // stale test. The page sets data-td-ready when it has rendered.
+    if (document.querySelector('#td-out [data-td-ready]')) {
       const el = document.getElementById("td-out");
+      // THE EXPECTED ROW COUNT COMES FROM THE MODEL, never a constant: this once hardcoded 8 and
+      // failed the moment the model went from 8 terms to 4, which reads as a broken page rather
+      // than a stale gate.
       return { shown: true, rows: el.querySelectorAll("tbody tr").length,
+               expect: ((window.__td || {}).terms || []).length,
                names: t.includes("cos(") || t.includes("sin(") };
     }
     await wait(1000);
@@ -467,8 +474,9 @@ const checks = [
     && Number(phone.btnOpacity) >= 0.9), `cursor ${phone.btnCursor}, opacity ${phone.btnOpacity}`],
   ["no console or runtime errors", errors.length === 0],
   ["the till-death reading renders when a reader presses its button", !!tdOut.shown, tdOut.why || ""],
-  ["and it names the angles rather than showing a bare number",
-   !!tdOut.shown && tdOut.rows === 8 && !!tdOut.names, `${tdOut.rows} rows`],
+  ["and it names one row per term in the shipped model",
+   !!tdOut.shown && tdOut.rows > 0 && tdOut.rows === tdOut.expect && !!tdOut.names,
+   `${tdOut.rows} rows for ${tdOut.expect} terms`],
 ];
 console.log("");
 let ok = true;

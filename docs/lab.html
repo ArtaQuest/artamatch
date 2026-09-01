@@ -685,17 +685,18 @@ async function scoreTillDeath(a, b) {
     `<tr><td>${d.label}</td><td class="n">${d.contribution >= 0 ? "+" : ""}${d.contribution.toFixed(3)}</td>
      <td>${d.contribution >= 0 ? "toward coming apart" : "toward lasting"}</td></tr>`).join("");
   tdBox().innerHTML = `
-    <h3 style="margin:30px 0 4px">Till Death Do Us Part</h3>
-    <p class="note" style="margin:0 0 12px">A separate model, on a separate corpus: ${td.n_corpus.toLocaleString()}
-      marriages from Wikidata and Wikipedia, of which ${td.n_positive.toLocaleString()} are recorded as having
-      come apart — a divorce, an annulment, a separation, an infidelity, or a remarriage while the other
-      partner was still living. Every angle it reads needs BOTH charts — ${td.terms.length} of them, and no
-      placement or aspect belonging to one partner alone. Ten-fold cross-validated AUC
-      ${td.cv_auc_broad.toFixed(4)}; one chart alone scores
-      ${Math.max(td.baseline_him_only, td.baseline_her_only).toFixed(4)} on the same folds, so reading the pair
-      buys ${(td.cv_auc_broad - Math.max(td.baseline_him_only, td.baseline_her_only)).toFixed(4)} — which is to
-      say almost nothing. That comparison is the point of the exercise, so it is printed here rather than
-      left out.</p>
+    <div data-td-ready="1"></div>
+    <h3 style="margin:30px 0 4px">What the record remembers</h3>
+    <p class="note" style="margin:0 0 12px">A separate model on a separate corpus: ${td.n_corpus.toLocaleString()}
+      finished marriages, every birth date a real recorded day. It answers one narrow question —
+      whether the record lists children for a couple like this — and it is ${td.n_phasors} phasors,
+      ${td.n_weights} numbers, cross-validated AUC ${td.cv_auc_broad.toFixed(4)} against
+      ${Math.max(td.baseline_him_only, td.baseline_her_only).toFixed(4)} for one chart alone.
+      <b>What that number is made of:</b> drop the slow bodies whose positions say when a person was born
+      and it falls to ${td.decomposition.fast_7_bodies_sun_to_saturn.toFixed(3)}; drop Jupiter and Saturn
+      too and it reaches ${td.decomposition.fast_5_bodies_sun_to_mars.toFixed(3)}, below the
+      ${td.baseline_age_gap.toFixed(3)} that the gap between two birthdays reaches on its own. About 89%
+      of it is the birth century.</p>
     <p style="margin:10px 0 4px"><span class="big">${(100 * r.percentile).toFixed(0)}<span
       style="font-size:.5em">th</span></span></p>
     <p class="note" style="margin:0 0 14px">percentile among all ${td.n_corpus.toLocaleString()} couples —

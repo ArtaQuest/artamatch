@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 import fit_phasor_torch as P
 from closed_newton import newton_fold, RLAMS, DEV
 
-D_ = os.path.expanduser("~/.artamatch-dev/tilldeath_max")
+D_ = os.path.expanduser(os.environ.get("AQ_DIR", "~/.artamatch-dev/tilldeath_max"))
 full = pd.read_csv(f"{D_}/full.csv")
 y = full.y.to_numpy().astype(np.float32)
 Z = np.load(f"{D_}/phases.npz", allow_pickle=True)
@@ -73,8 +73,11 @@ a_her = cv(her, "her only (complete solo algebra)")
 a_pair = cv(shipped, "the shipped families (D+NM+NW+AW+MW)")
 
 # the cynic's number: signed birth-date difference, 2 parameters
-ya = pd.to_datetime(full.true_dob_a.str.replace("-00", "-01", regex=False), errors="coerce")
-yb = pd.to_datetime(full.true_dob_b.str.replace("-00", "-01", regex=False), errors="coerce")
+# the happy corpus has no true_dob_* columns (its dates are all full precision); fall back to dob_*
+_ca = "true_dob_a" if "true_dob_a" in full.columns else "dob_a"
+_cb = "true_dob_b" if "true_dob_b" in full.columns else "dob_b"
+ya = pd.to_datetime(full[_ca].astype(str).str.replace("-00", "-01", regex=False), errors="coerce")
+yb = pd.to_datetime(full[_cb].astype(str).str.replace("-00", "-01", regex=False), errors="coerce")
 gap = ((ya - yb).dt.days / 365.25).fillna(0).to_numpy().reshape(-1, 1)
 oof = np.zeros(n)
 for k in range(P.NFOLD):

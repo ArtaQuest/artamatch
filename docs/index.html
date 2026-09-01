@@ -195,8 +195,9 @@ remembers. <span id="honestnum">What this ranks on: whether the marriage went we
 
   <div class="panel" id="tdsec" style="margin-top:26px">
     <h3 style="margin:0 0 6px;font-size:1.15em">Someone in particular?</h3>
-    <p class="sub" style="margin:0 0 14px">Enter their birthday. This reads the two charts as a
-    pair — nothing about either of you alone.</p>
+    <p class="sub" style="margin:0 0 14px">Enter their birthday and this reads the two charts
+    together. It answers one narrow question — <b>did the record list children for couples like
+    you</b> — over 91,146 finished marriages. Read what comes back with the note underneath it.</p>
     <div class="field"><label for="tddob">Their date of birth</label>
       <input type="date" id="tddob" min="1900-01-01" max="2026-12-31" value=""></div>
     <button class="cta" id="tdgo" disabled>Read us together</button>
@@ -679,31 +680,47 @@ async function tdRead(){
     tdBox().innerHTML='<p class="sub" style="margin-top:14px">That pair could not be read: '+String(e&&e.message||e).split("\n")[0].slice(0,140)+'</p>';return;
   }
   // The model predicts COMING APART. Reading it the other way round is the kinder sentence and the
-  // same number: a pair at the 30th percentile of coming apart is steadier than 70 in a hundred.
-  const steadier=100-Math.round(100*r.percentile);
+  // The model scores the chance the record lists children. The percentile is the honest unit: it
+  // places this pair among the 91,146 the model was fitted on, without implying a probability about
+  // any particular couple.
+  const pctl=Math.round(100*r.percentile);
   const top=r.drivers.slice().sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution))[0];
   const lean=top.contribution>=0?"is the note that gives the record pause":"is what the record liked best";
   const rows=r.drivers.map(d=>'<tr><td>'+tdPhrase(d.label)+'</td><td style="text-align:right">'
     +(d.contribution>=0?"+":"")+d.contribution.toFixed(3)+'</td><td>'
     +(d.contribution>=0?"toward parting":"toward lasting")+'</td></tr>').join("");
+  // A STABLE MARKER FOR THE GATE. The browser check used to poll for a phrase in this copy, so
+  // rewording the reading broke the gate and looked like a broken page. Prose is not an interface;
+  // this attribute is.
   tdBox().innerHTML=
-    '<p style="margin:18px 0 2px;font-size:2.3em;font-weight:700;line-height:1">'+steadier
+    '<div data-td-ready="1"></div>'
+    +'<p style="margin:18px 0 2px;font-size:2.3em;font-weight:700;line-height:1">'+pctl
     +'<span style="font-size:.42em;font-weight:400">%</span></p>'
-    +'<p style="margin:0 0 10px">steadier than that share of the marriages in the record.</p>'
-    +'<p class="sub" style="margin:0 0 12px">Of '+td.n_corpus.toLocaleString()+' marriages the record '
-    +'remembers, yours reads calmer than '+steadier+' in every hundred. '
-    +'<b>'+tdPhrase(top.label).replace(/^./,c=>c.toUpperCase())+'</b> '+lean+'.</p>'
+    +'<p style="margin:0 0 10px">of couples in the record scored lower than yours on this question.</p>'
+    +'<p class="sub" style="margin:0 0 12px">Of '+td.n_corpus.toLocaleString()+' marriages in the '
+    +'record, yours sits above '+pctl+' in every hundred. '
+    +'<b>'+tdPhrase(top.label).replace(/^./,c=>c.toUpperCase())+'</b> moved it most.</p>'
+    +'<p class="sub" style="margin:0 0 12px;padding:10px 12px;border-left:2px solid var(--gold,#E8B923)">'
+    +'<b>What this number is made of.</b> Take away the slow bodies — Uranus, Neptune, Pluto, the '
+    +'node, Chiron, Lilith — whose positions say <i>when</i> a person was born, and the model falls '
+    +'from '+td.decomposition.all_13_bodies.toFixed(3)+' to '
+    +td.decomposition.fast_7_bodies_sun_to_saturn.toFixed(3)+'. Take away Jupiter and Saturn too and '
+    +'it reaches '+td.decomposition.fast_5_bodies_sun_to_mars.toFixed(3)+' — less than the '
+    +td.baseline_age_gap.toFixed(3)+' you get from the gap between two birthdays alone. About 89% of '
+    +'what this reading knows is which decades you were both born in.</p>'
     +'<details style="margin-top:4px"><summary class="sub">the numbers behind it</summary>'
     +'<table style="width:100%;border-collapse:collapse;margin-top:8px"><tbody>'+rows+'</tbody></table>'
     +'<p class="sub" style="margin:10px 0 0">Every angle here needs <i>both</i> charts — no placement '
     +'or aspect belonging to one of you is allowed in. '+td.terms.length+' weights on a cosine or a '
     +'sine, cross-validated AUC '+td.cv_auc_broad.toFixed(4)+' over '+td.n_corpus.toLocaleString()
     +' marriages of which '+td.n_positive.toLocaleString()+' came apart.</p>'
-    +'<p class="sub" style="margin:8px 0 0"><b>And the honest part:</b> one chart alone scores '
-    +Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4)+' on the same folds. Reading both '
-    +'charts together buys '+(td.cv_auc_broad-Math.max(td.baseline_him_only,td.baseline_her_only)).toFixed(4)
-    +' — which is to say almost nothing. Take the number above as a curiosity, not a verdict. '
-    +'The model itself is <a href="tilldeath.json">tilldeath.json</a>.</p></details>';
+    +'<p class="sub" style="margin:8px 0 0">'+td.n_phasors+' phasors, '+td.n_weights+' numbers in all, '
+    +'each one a cosine and a sine of a named angle between the two charts. Ten-fold cross-validated '
+    +'AUC '+td.cv_auc_broad.toFixed(4)+'; one chart alone reaches '
+    +Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4)+' on the same folds, so the second '
+    +'chart adds '+(td.cv_auc_broad-Math.max(td.baseline_him_only,td.baseline_her_only)).toFixed(4)+'. '
+    +'Every birth date here is a real recorded day — no year-only dates, which would put the Moon '
+    +'anywhere. The model is <a href="tilldeath.json">tilldeath.json</a>.</p></details>';
 }
 function tdWire(){
   const i=$("tddob"), b=$("tdgo");

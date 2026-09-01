@@ -620,6 +620,22 @@ for (const id of ["#f-self", "#f-from", "#f-to"]) {
   if (el) el.addEventListener("change", () => { el.value = clampISO(el.value, el.value); });
 }
 
+// THE SECTION OWNS ITS CONTAINER. It used to write into a #td-out declared in the static markup, and
+// when that element was not in the document the reading could not even report its own absence — every
+// write threw before anything was painted. Resolving it here, and creating it beside #pair-out when it
+// is missing, means the reading can always say something, whatever else is wrong with the page.
+function tdBox() {
+  let el = $("#td-out");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "td-out";
+    const anchor = $("#pair-out");
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(el, anchor.nextSibling);
+    else document.body.appendChild(el);
+  }
+  return el;
+}
+
 // ── Till Death Do Us Part ─────────────────────────────────────────────────────────────────────────
 // A SECOND, INDEPENDENT reading of the same two dates, from a different corpus and a different model
 // family. It answers the opposite question to the one above: not "does this last" but "did it come
@@ -631,17 +647,17 @@ async function scoreTillDeath(a, b) {
   // identical empty div, and one CI round trip was spent not knowing which.
   window.__tdCalls = (window.__tdCalls || 0) + 1;
   window.__tdArgs = [a, b];
-  $("#td-out").innerHTML = `<p class="note" style="margin-top:22px">computing the Till Death reading…</p>`;
+  tdBox().innerHTML = `<p class="note" style="margin-top:22px">computing the Till Death reading…</p>`;
   const td = window.__td;
   if (!td) {
-    $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death model file
+    tdBox().innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death model file
       did not load, so this reading is unavailable.</p>`;
     return;
   }
   const yr = (d) => parseInt(String(d).slice(0, 4), 10);
   const [lo, hi] = td.servable_span;
   if (!(yr(a) >= lo && yr(b) >= lo && yr(a) <= hi && yr(b) <= hi)) {
-    $("#td-out").innerHTML = `<p class="note" style="margin-top:22px">The Till Death reading needs both
+    tdBox().innerHTML = `<p class="note" style="margin-top:22px">The Till Death reading needs both
       birth years inside ${lo}–${hi}, the span of the shipped ephemeris asset.</p>`;
     return;
   }
@@ -649,7 +665,7 @@ async function scoreTillDeath(a, b) {
   // the <option>. Testing for the dash let "1940-00-00" through to a chart for a day nobody recorded.
   const partial = (d) => !/^\d{4}-\d{2}-\d{2}$/.test(d) || /-00/.test(String(d).slice(4));
   if (partial(a) || partial(b)) {
-    $("#td-out").innerHTML = `<p class="note" style="margin-top:22px">The Till Death reading was fitted on
+    tdBox().innerHTML = `<p class="note" style="margin-top:22px">The Till Death reading was fitted on
       full birth dates and needs the day of both, so it is not shown for a partly-known date.</p>`;
     return;
   }
@@ -660,14 +676,14 @@ async function scoreTillDeath(a, b) {
   } catch (e) {
     // A SILENT BLANK IS THE WORST OUTCOME: the reading simply would not appear and nothing said why.
     window.__tdErr = String(e && e.message || e).slice(0, 300);
-    $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading could not be
+    tdBox().innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading could not be
       computed for these dates: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
     return;
   }
   const rows = r.drivers.map(d =>
     `<tr><td>${d.label}</td><td class="n">${d.contribution >= 0 ? "+" : ""}${d.contribution.toFixed(3)}</td>
      <td>${d.contribution >= 0 ? "toward coming apart" : "toward lasting"}</td></tr>`).join("");
-  $("#td-out").innerHTML = `
+  tdBox().innerHTML = `
     <h3 style="margin:30px 0 4px">Till Death Do Us Part</h3>
     <p class="note" style="margin:0 0 12px">A separate model, on a separate corpus: ${td.n_corpus.toLocaleString()}
       marriages from Wikidata and Wikipedia, of which ${td.n_positive.toLocaleString()} are recorded as having
@@ -698,7 +714,7 @@ $("#go-pair").onclick = async () => {
   if (!r.ok) { $("#pair-out").innerHTML = `<p class="note">${r.why}</p>`; return; }
   scoreTillDeath(a, b).catch(e => {
     window.__tdErr = String(e && e.message || e).slice(0, 300);
-    $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading
+    tdBox().innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading
       failed: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
   });
   const bt = Object.entries(r.by_tradition).sort((x, y) => y[1] - x[1]);

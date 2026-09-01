@@ -19,6 +19,12 @@ The angle kinds, all at the fundamental harmonic:
     xdiff man[i] - woman[j]      the cross-body synastry aspect
     xsum  man[i] + woman[j]      the cross-body couple midpoint
     camp  (man[i]+woman[i]) - (man[j]+woman[j])   an aspect inside the composite chart
+    ddm   d_i - d_j    ddp  d_i + d_j    ssp  s_i + s_j    dsm  d_i - s_j    dsp  d_i + s_j
+          where d_i = man[i] - woman[i] and s_i = man[i] + woman[i]
+
+Every term also carries a HARMONIC k (absent means 1): the feature is cos(k*angle) or sin(k*angle).
+k=12 is the 30-degree sign structure, k=27 the nakshatra, k=36 the decan — so the whole tradition is
+expressed sinusoidally and no indicator column is ever needed.
 
 `verify()` replays the couples shipped inside tilldeath.json and is what CI runs: a scorer that
 drifts from the fit would otherwise show numbers the corpus never produced.
@@ -73,6 +79,12 @@ def _angle(t, bodies, A, B):
     if k == "xdiff": return A[i] - B[j]
     if k == "xsum":  return A[i] + B[j]
     if k == "camp":  return (A[i] + B[i]) - (A[j] + B[j])
+    # The rest of the two-body pair space, in terms of d = man - woman and s = man + woman.
+    if k == "ddm":   return (A[i] - B[i]) - (A[j] - B[j])
+    if k == "ddp":   return (A[i] - B[i]) + (A[j] - B[j])
+    if k == "ssp":   return (A[i] + B[i]) + (A[j] + B[j])
+    if k == "dsm":   return (A[i] - B[i]) - (A[j] + B[j])
+    if k == "dsp":   return (A[i] - B[i]) + (A[j] + B[j])
     raise ValueError(k)
 
 
@@ -84,7 +96,10 @@ def score(model, man_iso, woman_iso):
     s = model["bias"]
     parts = []
     for t in model["terms"]:
-        a = _angle(t, bodies, A, B)
+        # THE HARMONIC. k=1 is the aspect itself; k=12 is the 30-degree sign structure, k=27 the
+        # nakshatra, k=36 the decan. Absent means 1, so a model written before harmonics existed
+        # still scores identically through this path.
+        a = _angle(t, bodies, A, B) * t.get("k", 1)
         c = t["w"] * (math.cos(a) if t["trig"] == "cos" else math.sin(a))
         s += c
         parts.append((abs(c), t["label"], c))

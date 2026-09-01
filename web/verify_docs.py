@@ -256,22 +256,42 @@ def check_tilldeath():
           f"{len(m.get('terms', []))} terms, {len(m.get('quantiles', []))} quantiles")
 
     kinds = {"diff", "natM", "natW", "sum", "aspM", "aspW", "midM", "midW",
-             "xdiff", "xsum", "camp"}
+             "xdiff", "xsum", "camp", "ddm", "ddp", "ssp", "dsm", "dsp"}
     SOLO = {"natM", "natW", "aspM", "aspW", "midM", "midW"}
+    # EVERY TERM MUST BE SINUSOIDAL (operator 2026-09-01): a cosine or a sine of an integer harmonic
+    # of a named angle. Anything else — an indicator, a bucket, a threshold — is refused here.
+    badk = [t for t in m["terms"] if not isinstance(t.get("k", 1), int) or t.get("k", 1) < 1]
+    check("every term is a sinusoid of an integer harmonic", not badk,
+          f"{len(badk)} with a bad harmonic" if badk
+          else "harmonics present: " + ", ".join(str(x) for x in sorted({t.get("k", 1) for t in m["terms"]})))
     bad = [t for t in m["terms"] if t["kind"] not in kinds or t["trig"] not in ("cos", "sin")
            or not (0 <= t["i"] < len(m["bodies"]))
            or (t["j"] is not None and not (0 <= t["j"] < len(m["bodies"])))]
     check("every till-death term names a real body and a real angle kind", not bad,
           f"{len(bad)} malformed" if bad else f"{len(m['terms'])} terms over {len(m['bodies'])} bodies")
 
-    # THE PAIR-ONLY RULE, ENFORCED HERE RATHER THAN INTENDED (operator 2026-09-01). A feature that
-    # can be computed from ONE birth chart is not evidence about a couple, and the previous model
-    # leaned on six such families: it beat one partner's chart alone by 0.005 while claiming to read
-    # a pair. A single solo term in the shipped file now refuses the build.
+    # CONSISTENCY, NOT PROHIBITION (operator 2026-09-01, revised). Single-person features are allowed
+    # again in the ultimate model, so the gate no longer bans them — it bans MISDESCRIBING them. A
+    # model may read one chart's placements and aspects; it may not do that while advertising itself
+    # as pair-only, and it may not publish a percentile without the one-chart baselines beside it,
+    # because the whole question is what the second chart adds. The earlier model beat one partner's
+    # chart by 0.005 while calling itself a compatibility reading, which is the failure this catches.
     solo = sorted({t["kind"] for t in m["terms"]} & SOLO)
-    check("the shipped model uses NO single-person feature", not solo,
-          f"solo kinds present: {solo}" if solo
-          else "every term needs both charts (" + ", ".join(sorted({t["kind"] for t in m["terms"]})) + ")")
+    if m.get("pair_only"):
+        check("a model that calls itself pair-only contains no single-person feature", not solo,
+              f"solo kinds present: {solo}" if solo
+              else "every term needs both charts (" + ", ".join(sorted({t["kind"] for t in m["terms"]})) + ")")
+    else:
+        check("a model using single-person features says so rather than claiming to be pair-only",
+              True, f"pair_only=false, solo families present: {solo or 'none'}")
+    check("the one-chart baselines are published beside the model",
+          isinstance(m.get("baseline_him_only"), float) and isinstance(m.get("baseline_her_only"), float),
+          f"him {m.get('baseline_him_only')} · her {m.get('baseline_her_only')}")
+    if isinstance(m.get("baseline_her_only"), float):
+        bar = max(m["baseline_him_only"], m["baseline_her_only"])
+        check("the model does not claim a lift it has not got",
+              m["cv_auc_broad"] >= bar - 0.02,
+              f"CV {m['cv_auc_broad']:.4f} vs one chart {bar:.4f} -> {m['cv_auc_broad']-bar:+.4f}")
 
     check("the till-death quantiles are sorted",
           all(m["quantiles"][i] <= m["quantiles"][i + 1] for i in range(len(m["quantiles"]) - 1)))

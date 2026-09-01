@@ -21,8 +21,16 @@ log = lambda *a: print(f"[{time.time()-T0:6.1f}s]", *a, flush=True)
 
 rp = json.load(open(f"{D_}/report_final.json"))
 bl = json.load(open(f"{D_}/report_baselines_max.json"))
-inner7 = json.load(open(f"{D_}/report_inner.json"))
-inner5 = json.load(open(f"{D_}/report_inner5.json")) if os.path.exists(f"{D_}/report_inner5.json") else None
+# READ THE NAMED FILES, AND PROVE THEY ARE DIFFERENT RUNS. fit_inner.py and fit_inner5.py both used
+# to write report_inner.json, so the 5-body result silently overwrote the 7-body one and this file
+# shipped 0.5193 for both. A one-off patch fixed the artefact and the next export undid it, which is
+# what a fix outside the mechanism always does.
+inner7 = json.load(open(f"{D_}/report_inner7.json"))
+inner5 = json.load(open(f"{D_}/report_inner5.json"))
+assert len(inner7["inner"]) == 7 and len(inner5["inner"]) == 5, \
+    f"body counts wrong: {inner7['inner']} vs {inner5['inner']}"
+assert abs(inner7["best"] - inner5["best"]) > 1e-6, \
+    f"the two restricted runs report the SAME AUC ({inner7['best']}) — one overwrote the other"
 phas = rp["frequency"][:K]
 log(f"{K} phasors, agreed by {phas[0]['folds']}..{phas[-1]['folds']} of 10 folds")
 

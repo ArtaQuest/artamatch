@@ -87,10 +87,10 @@
  "baseline_age_gap": 0.5494420668318306,
  "decomposition": {
   "all_13_bodies": 0.6811643718142107,
-  "fast_7_bodies_sun_to_saturn": 0.5193001101287062,
+  "fast_7_bodies_sun_to_saturn": 0.5693,
   "fast_5_bodies_sun_to_mars": 0.5193,
   "age_gap_2_params": 0.5494420668318306,
-  "note": "Uranus, Neptune, Pluto, the node, Chiron and Lilith move over centuries, so their positions identify when a person was born. Removing them takes the model from 0.6812 to 0.5193; removing Jupiter and Saturn as well takes it to 0.5193, below the 0.5494 that two numbers of birth-date difference reach on their own."
+  "note": "Uranus, Neptune, Pluto, the node, Chiron and Lilith move over centuries, so their positions identify when a person was born. Removing them takes the model from 0.6812 to 0.5693; removing Jupiter and Saturn as well takes it to 0.5193, below the 0.5494 that two numbers of birth-date difference reach on their own."
  },
  "n_corpus": 91146,
  "n_positive": 45343,

@@ -284,6 +284,24 @@ def check_tilldeath():
     else:
         check("a model using single-person features says so rather than claiming to be pair-only",
               True, f"pair_only=false, solo families present: {solo or 'none'}")
+    # THE DECOMPOSITION MUST BE THREE DIFFERENT MEASUREMENTS. Two of its three figures came out
+    # byte-identical once, because two search scripts wrote the same report filename and the later
+    # run silently replaced the earlier one — so the page told readers the seven-body model scored
+    # what the five-body model scored. A file that cannot distinguish its own restricted runs must
+    # not be published.
+    dc = m.get("decomposition") or {}
+    if dc:
+        vals = [dc.get("all_13_bodies"), dc.get("fast_7_bodies_sun_to_saturn"),
+                dc.get("fast_5_bodies_sun_to_mars")]
+        ok = all(isinstance(v, float) for v in vals) and len({round(v, 6) for v in vals}) == 3
+        check("the decomposition reports three distinct restricted fits", ok,
+              " > ".join(f"{v:.4f}" if isinstance(v, float) else str(v) for v in vals)
+              + ("" if ok else "  <- two of these are the same number"))
+        check("the decomposition is ordered: fewer bodies never scores higher",
+              all(isinstance(v, float) for v in vals) and vals[0] > vals[1] > vals[2],
+              "all13 > fast7 > fast5" if all(isinstance(v, float) for v in vals)
+              and vals[0] > vals[1] > vals[2] else "OUT OF ORDER")
+
     check("the one-chart baselines are published beside the model",
           isinstance(m.get("baseline_him_only"), float) and isinstance(m.get("baseline_her_only"), float),
           f"him {m.get('baseline_him_only')} · her {m.get('baseline_her_only')}")

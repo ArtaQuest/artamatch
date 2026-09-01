@@ -369,7 +369,11 @@ const tdOut = await ev(`(async () => {
     const set = (id, v) => { const e = document.getElementById(id);
       e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); };
     const g = document.getElementById("gm"); if (g) g.click();
-    set("dob", "1940-03-14"); set("tddob", "1944-11-02");
+    // the card carries its own date fields now; fill them directly, the way a reader who scrolled
+    // straight to it would (the wizard fields are also set, exercising the prefill path)
+    set("dob", "1940-03-14");
+    if (document.getElementById("tdme")) set("tdme", "1940-03-14");
+    set("tddob", "1944-11-02");
     btn = document.getElementById("tdgo");
   } else if (document.getElementById("go-pair")) {             // the lab page
     const setFull = (sel, y, m, d) => {
@@ -398,8 +402,10 @@ const tdOut = await ev(`(async () => {
       // THE EXPECTED ROW COUNT COMES FROM THE MODEL, never a constant: this once hardcoded 8 and
       // failed the moment the model went from 8 terms to 4, which reads as a broken page rather
       // than a stale gate.
+      // THE SCORER CAPS ITS DRIVERS AT EIGHT (tilldeath.py parts[:8]), so the expected count is
+      // min(8, terms) — reading terms.length alone broke the moment the model outgrew eight terms.
       return { shown: true, rows: el.querySelectorAll("tbody tr").length,
-               expect: ((window.__td || {}).terms || []).length,
+               expect: Math.min(8, ((window.__td || {}).terms || []).length),
                names: t.includes("cos(") || t.includes("sin(") };
     }
     await wait(1000);

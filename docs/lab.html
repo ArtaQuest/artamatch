@@ -695,14 +695,15 @@ async function scoreTillDeath(a, b) {
       <b>What that number is made of:</b> drop the slow bodies whose positions say when a person was born
       and it falls to ${td.decomposition.fast_7_bodies_sun_to_saturn.toFixed(3)}; drop Jupiter and Saturn
       too and it reaches ${td.decomposition.fast_5_bodies_sun_to_mars.toFixed(3)}, below the
-      ${td.baseline_age_gap.toFixed(3)} that the gap between two birthdays reaches on its own. About 89%
+      ${td.baseline_age_gap.toFixed(3)} that the gap between two birthdays reaches on its own. About
+      ${Math.round(100 * (1 - (td.decomposition.fast_5_bodies_sun_to_mars - 0.5) / (td.decomposition.all_13_bodies - 0.5)))}%
       of it is the birth century.</p>
     <p style="margin:10px 0 4px"><span class="big">${(100 * r.percentile).toFixed(0)}<span
       style="font-size:.5em">th</span></span></p>
     <p class="note" style="margin:0 0 14px">percentile among all ${td.n_corpus.toLocaleString()} couples —
-      higher means this pair looks more like the marriages that came apart. The model's own probability is
-      ${(100 * r.p).toFixed(1)}%, but a percentile is the honest unit: ${(100 * td.n_positive / td.n_corpus).toFixed(1)}%
-      of the corpus is a recorded separation, so a probability out of context reads as worse news than it is.</p>
+      higher means this pair looks more like the marriages whose record lists children. The model's own
+      probability is ${(100 * r.p).toFixed(1)}%, but a percentile is the honest unit: ${(100 * td.n_positive / td.n_corpus).toFixed(1)}%
+      of the corpus has children in the record, so the number only means anything against its neighbours.</p>
     <div class="scroll"><table><thead><tr><th>The angles that moved this pair</th><th>Weight</th><th></th>
       </tr></thead><tbody>${rows}</tbody></table></div>
     <p class="note" style="margin:10px 0 0">Every row is a named angle: <b>D</b> is his body against hers,

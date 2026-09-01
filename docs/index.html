@@ -193,13 +193,27 @@ it will read once there is a second date to compare yours with.</p>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
 remembers. <span id="honestnum">What this ranks on: whether the marriage went well, judged from 10,000 historical records. Held-out AUC 0.587 against an age-gap baseline of 0.485 — a real edge, and a modest one. Dates with the same score are shown as ties, because the model has nine statements and cannot tell them apart.</span></p>
 
+  </div>
+</section>
+
+<!-- ITS OWN SECTION, VISIBLE BY SCROLLING. This card lived inside step 3, which meant a reader
+     only reached it after pressing through two other steps — the page looked unchanged to anyone
+     who simply scrolled ("its not deployed properly"). It does not go back above the primary
+     control either: a second date field under "Read my chart" competes with it. Here, between the
+     wizard and the rules, it is found by reading down the page and interrupts nothing. (The rules
+     section is inserted BEFORE, not after: #rules never closes — it runs to end of file.) -->
+<section class="step on" id="tdsec-wrap" style="display:block">
   <div class="panel" id="tdsec" style="margin-top:26px">
     <h3 style="margin:0 0 6px;font-size:1.15em">Someone in particular?</h3>
-    <p class="sub" style="margin:0 0 14px">Enter their birthday and this reads the two charts
-    together. It answers one narrow question — <b>did the record list children for couples like
-    you</b> — over 91,146 finished marriages. Read what comes back with the note underneath it.</p>
+    <p class="sub" style="margin:0 0 14px">Two birthdays, two charts, read together. One narrow
+    question — <b>did the record list children for couples like you</b> — asked of 91,146 finished
+    marriages. Read what comes back with the note beneath it.</p>
+    <div class="field"><label for="tdme">Your date of birth</label>
+      <input type="date" id="tdme" min="1900-01-01" max="2026-12-31" value=""></div>
     <div class="field"><label for="tddob">Their date of birth</label>
       <input type="date" id="tddob" min="1900-01-01" max="2026-12-31" value=""></div>
+    <div class="field"><label for="tdwho">You are the</label>
+      <select id="tdwho"><option value="groom">groom</option><option value="bride">bride</option></select></div>
     <button class="cta" id="tdgo" disabled>Read us together</button>
     <div id="td-out"></div>
   </div>
@@ -656,17 +670,23 @@ function tdPhrase(label){
   return label;
 }
 function tdPick(){
+  // THE CARD STANDS ALONE. It used to require the wizard's own date and gender, so a reader who
+  // scrolled straight to it found a dead button with no explanation. Its own two dates are all it
+  // needs; the wizard, when used, only prefills them.
   const b=$("tdgo"); if(!b) return;
-  b.disabled=!($("tddob").value&&$("dob").value&&state.g&&window.__AM_READY);
+  const me=($("tdme")&&$("tdme").value)||$("dob").value;
+  b.disabled=!(me&&$("tddob").value&&window.__AM_READY);
 }
 async function tdRead(){
   window.__tdCalls=(window.__tdCalls||0)+1;
   tdBox().innerHTML='<p class="sub" style="margin-top:14px">reading both charts…</p>';
   const td=window.__td;
   if(!td){tdBox().innerHTML='<p class="sub" style="margin-top:14px">That reading is unavailable — its model file did not load.</p>';return;}
-  const me=$("dob").value, them=$("tddob").value;
-  // MAN FIRST, as the corpus was built. The page already knows which the reader is.
-  const him=state.g==="m"?me:them, her=state.g==="m"?them:me;
+  const me=($("tdme")&&$("tdme").value)||$("dob").value, them=$("tddob").value;
+  // MAN FIRST, as the corpus was built. The card's own control says which the reader is; the
+  // wizard's gender only sets its default.
+  const who=($("tdwho")&&$("tdwho").value)||(state.g==="f"?"bride":"groom");
+  const him=who==="groom"?me:them, her=who==="groom"?them:me;
   const lo=td.servable_span[0], hi=td.servable_span[1], yr=d=>parseInt(String(d).slice(0,4),10);
   if(!(yr(him)>=lo&&yr(her)>=lo&&yr(him)<=hi&&yr(her)<=hi)){
     tdBox().innerHTML='<p class="sub" style="margin-top:14px">Both birthdays need to fall inside '+lo+'–'+hi+'.</p>';return;
@@ -685,10 +705,12 @@ async function tdRead(){
   // any particular couple.
   const pctl=Math.round(100*r.percentile);
   const top=r.drivers.slice().sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution))[0];
-  const lean=top.contribution>=0?"is the note that gives the record pause":"is what the record liked best";
-  const rows=r.drivers.map(d=>'<tr><td>'+tdPhrase(d.label)+'</td><td style="text-align:right">'
+  // SIGN. The score is of the record LISTING children (y=1), so a positive contribution pushes
+  // toward that — the old copy said "toward parting", which was the retired target's direction.
+  const rows=r.drivers.map(d=>'<tr><td>'+tdPhrase(d.label)
+    +'<br><span style="opacity:.55;font-size:.85em">'+d.label+'</span></td><td style="text-align:right">'
     +(d.contribution>=0?"+":"")+d.contribution.toFixed(3)+'</td><td>'
-    +(d.contribution>=0?"toward parting":"toward lasting")+'</td></tr>').join("");
+    +(d.contribution>=0?"toward children in the record":"away from it")+'</td></tr>').join("");
   // A STABLE MARKER FOR THE GATE. The browser check used to poll for a phrase in this copy, so
   // rewording the reading broke the gate and looked like a broken page. Prose is not an interface;
   // this attribute is.
@@ -706,25 +728,35 @@ async function tdRead(){
     +'from '+td.decomposition.all_13_bodies.toFixed(3)+' to '
     +td.decomposition.fast_7_bodies_sun_to_saturn.toFixed(3)+'. Take away Jupiter and Saturn too and '
     +'it reaches '+td.decomposition.fast_5_bodies_sun_to_mars.toFixed(3)+' — less than the '
-    +td.baseline_age_gap.toFixed(3)+' you get from the gap between two birthdays alone. About 89% of '
-    +'what this reading knows is which decades you were both born in.</p>'
+    +td.baseline_age_gap.toFixed(3)+' you get from the gap between two birthdays alone. About '
+    +Math.round(100*(1-(td.decomposition.fast_5_bodies_sun_to_mars-0.5)/(td.decomposition.all_13_bodies-0.5)))
+    +'% of what this reading knows is which decades you were both born in.</p>'
     +'<details style="margin-top:4px"><summary class="sub">the numbers behind it</summary>'
     +'<table style="width:100%;border-collapse:collapse;margin-top:8px"><tbody>'+rows+'</tbody></table>'
-    +'<p class="sub" style="margin:10px 0 0">Every angle here needs <i>both</i> charts — no placement '
-    +'or aspect belonging to one of you is allowed in. '+td.terms.length+' weights on a cosine or a '
-    +'sine, cross-validated AUC '+td.cv_auc_broad.toFixed(4)+' over '+td.n_corpus.toLocaleString()
-    +' marriages of which '+td.n_positive.toLocaleString()+' came apart.</p>'
-    +'<p class="sub" style="margin:8px 0 0">'+td.n_phasors+' phasors, '+td.n_weights+' numbers in all, '
-    +'each one a cosine and a sine of a named angle between the two charts. Ten-fold cross-validated '
-    +'AUC '+td.cv_auc_broad.toFixed(4)+'; one chart alone reaches '
-    +Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4)+' on the same folds, so the second '
-    +'chart adds '+(td.cv_auc_broad-Math.max(td.baseline_him_only,td.baseline_her_only)).toFixed(4)+'. '
+    +'<p class="sub" style="margin:10px 0 0">'
+    +(td.terms.length>2*r.drivers.length?'The '+r.drivers.length+' strongest movers of ':'All of ')
+    +td.n_phasors+' phasors — '+td.n_weights+' numbers, each a cosine or a sine of a named angle '
+    +'between or within your two charts, every planet from the Sun to Pluto carrying weight. '
+    +'Nested ten-fold cross-validated AUC '+td.cv_auc_broad.toFixed(4)+' — the choice of terms was '
+    +'re-made inside every fold, so that number never saw its own test couples. One chart alone '
+    +'reaches '+Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4)+' on the same folds, '
+    +'so the second chart adds '
+    +(td.cv_auc_broad-Math.max(td.baseline_him_only,td.baseline_her_only)).toFixed(4)+'. '
     +'Every birth date here is a real recorded day — no year-only dates, which would put the Moon '
-    +'anywhere. The model is <a href="tilldeath.json">tilldeath.json</a>.</p></details>';
+    +'anywhere. The whole model is <a href="tilldeath.json">tilldeath.json</a>.</p></details>';
 }
 function tdWire(){
-  const i=$("tddob"), b=$("tdgo");
+  const i=$("tddob"), b=$("tdgo"), m=$("tdme"), wsel=$("tdwho");
   if(i) i.oninput=tdPick;
+  if(m) m.oninput=()=>{m.dataset.touched="1";tdPick();};
+  if(wsel) wsel.onchange=()=>{wsel.dataset.touched="1";};
+  // the wizard, when it was used first, hands its date and gender down as defaults
+  const dobEl=$("dob");
+  if(dobEl&&m) dobEl.addEventListener("input",()=>{if(!m.dataset.touched&&dobEl.value){m.value=dobEl.value;tdPick();}});
+  const sync=g=>{if(wsel&&!wsel.dataset.touched)wsel.value=g==="f"?"bride":"groom";};
+  const gmEl=$("gm"), gfEl=$("gf");
+  if(gmEl) gmEl.addEventListener("click",()=>sync("m"));
+  if(gfEl) gfEl.addEventListener("click",()=>sync("f"));
   if(b) b.onclick=()=>{tdRead().catch(e=>{
     window.__tdErr=String(e&&e.message||e).slice(0,300);
     tdBox().innerHTML='<p class="sub" style="margin-top:14px">That reading failed: '+String(e&&e.message||e).split("\n")[0].slice(0,140)+'</p>';});};

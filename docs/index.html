@@ -191,7 +191,11 @@ it will read once there is a second date to compare yours with.</p>
 <details id="more" style="display:none"><summary>The full ranking, every date scanned</summary>
 <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;margin-top:8px"><table><tbody id="t100"></tbody></table></div></details>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
-remembers. <span id="honestnum">What this ranks on: whether the marriage went well, judged from 10,000 historical records. Held-out AUC 0.587 against an age-gap baseline of 0.485 — a real edge, and a modest one. Dates with the same score are shown as ties, because the model has nine statements and cannot tell them apart.</span></p>
+remembers. <span id="honestnum">What this ranks on: whether the historical record lists children for couples like
+you, over 91,146 finished marriages — the same 32-phasor model as the reading below, nested
+cross-validated AUC 0.6794 against 0.6625 for one chart alone. About 89% of what it knows is when the
+two of you were born, so inside this window the differences are small and honest — they come from the
+fast bodies, and they are exactly as thin as the measurement says.</span></p>
 
   </div>
 </section>
@@ -552,53 +556,54 @@ async function boot(){
   $("boot").textContent="loading numpy + the star tables…";
   await py.loadPackage(["numpy","astropy"]);
   for(const f of ["sweshim.py","scorer.py","tilldeath.py"]) py.FS.writeFile("/"+f,await (await fetch(f)).text());
-  const [asset,tables,mj,rj]=await Promise.all([fetch("ephem4.bin").then(r=>r.arrayBuffer()),
-    fetch("tables.json").then(r=>r.text()),fetch("almanac/quality_deployed_model.json").then(r=>r.text()),
-    fetch("almanac/quality_deployed_rules.json").then(r=>r.json())]);
+  const [asset,tables]=await Promise.all([fetch("ephem4.bin").then(r=>r.arrayBuffer()),
+    fetch("tables.json").then(r=>r.text())]);
   py.FS.writeFile("/asset.bin",new Uint8Array(asset));
   py.FS.writeFile("/tables.json",tables);
-  py.FS.writeFile("/am_model.json",mj);
   const tdj=await (await fetch("tilldeath.json")).text();
   py.FS.writeFile("/tilldeath.json",tdj);
   window.__td=JSON.parse(tdj);
-  window.HMAP={};for(const r of rj.rules)HMAP[r.name]=r.human;
   await py.runPythonAsync(`
 import sys,json; sys.path.insert(0,"/")
 import sweshim as SW
 SW.load("/asset.bin","/tables.json"); SW.set_sid_mode(SW.SIDM_LAHIRI)
 import scorer; scorer.init(SW)
-_ART=json.load(open("/am_model.json")); _CO=_ART["weights"]; _B0=_ART["intercept"]
-_CAL=_ART.get("calibration_deciles"); _ISO=_ART.get("calibration_isotonic")
-import bisect as _bi
-def _share(sc):
-    if _ISO:
-        xs,ys=_ISO["x"],_ISO["y"]
-        i=_bi.bisect_right(xs,sc)
-        if i<=0: return ys[0]
-        if i>=len(xs): return ys[-1]
-        x0,x1,y0,y1=xs[i-1],xs[i],ys[i-1],ys[i]
-        return y0+(y1-y0)*(sc-x0)/(x1-x0) if x1>x0 else y0
-    return next((c["share"] for c in _CAL if c["lo"]<=sc<c["hi"]),_CAL[-1]["share"])
-_RS=[(n,n.split(" AND "),w) for n,w in _CO.items()]
-def _fires(p,F):
-    # NOT(x) fires exactly when x does not: the same doctrine stated the other way round
-    return (p[4:-1] not in F) if (p.startswith("NOT(") and p.endswith(")")) else (p in F)
-def _score(his,her):
-    F=scorer.features(his,her)
-    fired=[(n,w) for n,parts,w in _RS if all(_fires(p,F) for p in parts)]
-    fired.sort(key=lambda t:-t[1])
-    return _B0+sum(w for _,w in fired),fired
+
+# ONE MODEL ON THIS PAGE. The date scan used to run the retired quality model — eight one-hot sign
+# statements, all of them slow-body buckets that never change inside a twelve-year dating window, so
+# EVERY candidate date scored the same number (measured: 4,384 dates, all exactly 53.8%, the same
+# four shadows on each). A ranking that cannot rank is not a ranking. The scan now scores with the
+# same shipped 32-phasor sinusoidal model as the reading card below: its Saturn and fast-body terms
+# genuinely move inside the window, and its slow terms carry the (honestly disclosed) calendar.
+import tilldeath as _TD
+import bisect as _bi, math as _m
+_TDM=_TD.load(); _TDQ=_TDM["quantiles"]; _NQ=len(_TDQ)-1; _TDB=_TDM["bodies"]
+_CCH={}
+def _chart_c(t):
+    if t not in _CCH: _CCH[t]=_TD.chart("%04d-%02d-%02d"%t,_TDB)
+    return _CCH[t]
+def _td_pair(his,her):
+    """same arithmetic as tilldeath.score, on cached charts (the reader's chart is scanned 4,384x).
+    Drivers are aggregated PER PHASOR — a phasor's cos and sin are one effect with one amplitude
+    and one phase, and reporting them separately painted two identically-named chips with two
+    different numbers, which reads as a bug rather than as trigonometry."""
+    A=_chart_c(his); B=_chart_c(her)
+    sc=_TDM["bias"]; agg={}
+    for t in _TDM["terms"]:
+        a=_TD._angle(t,_TDB,A,B)*t.get("k",1)
+        c=t["w"]*(_m.cos(a) if t["trig"]=="cos" else _m.sin(a))
+        sc+=c
+        k=(t["kind"],t["i"],t["j"],t.get("k",1))
+        if k in agg: agg[k][1]+=c
+        else: agg[k]=[t["label"],c]
+    parts=sorted(((abs(v),lb,v) for lb,v in agg.values()),reverse=True)
+    return sc,_bi.bisect_left(_TDQ,sc)/_NQ,parts
+
 def read_user(y,m,d):
-    C=scorer.chart(y,m,d); NAK=360.0/27.0
-    s=lambda v: scorer.SIGNS[int(v//30)%12]
-    el=(C["moon"]-C["sun"])%360.0
-    j=scorer.jdn(y,m,d); sx=(j+49)%60
+    C=scorer.chart(y,m,d)
     wheel={b:(round(C[b],2) if C[b]==C[b] else None) for b in scorer.BODIES}
-    # The model is now entirely pair statements — every one of them changes when the two birth dates
-    # move apart around a fixed midpoint. So there is nothing about ONE person for it to read, and no
-    # honest single-person card to show. The wheel below is the reader's own sky; the cards describe
-    # what the comparison will look at once a candidate date exists.
     return json.dumps({"wheel":wheel})
+
 import datetime as _dt
 def scan_chunk(y,m,d,g,ci,total):
     """Score every real calendar date in the gendered window, chunk ci of total (by month index)."""
@@ -624,9 +629,12 @@ def scan_chunk(y,m,d,g,ci,total):
             if cd<lo_dt or cd>hi_dt: continue
             cand=(yy,mm,dd)
             his,her=(me,cand) if g=="m" else (cand,me)
-            sc,fired=_score(his,her)
-            share=_share(sc)
-            out.append((f"{yy:04d}-{mm:02d}-{dd:02d}",sc,fired[:4],len(fired),share))
+            sc,pct,parts=_td_pair(his,her)
+            # chips = the four strongest movers; shadows = movers among the top eight that pull
+            # AWAY from the record listing children
+            chips=[[lb,round(c,3)] for _,lb,c in parts[:4]]
+            shad=sum(1 for _,__,c in parts[:8] if c<0)
+            out.append((f"{yy:04d}-{mm:02d}-{dd:02d}",-sc,chips,shad,pct))
     return json.dumps(out)
 `);
   state.py=py;
@@ -656,17 +664,18 @@ function tdPhrase(label){
   const td=window.__td, t=(td.terms||[]).find(x=>x.label===label);
   if(!t) return label;
   const B=i=>TD_NICE[td.bodies[i]]||td.bodies[i];
-  if(t.kind==="diff")  return "his "+B(t.i)+" to her "+B(t.i);
-  if(t.kind==="xdiff") return "his "+B(t.i)+" to her "+B(t.j);
-  if(t.kind==="sum")   return "your shared "+B(t.i);
-  if(t.kind==="xsum")  return "his "+B(t.i)+" with her "+B(t.j);
-  if(t.kind==="camp")  return B(t.i)+" and "+B(t.j)+" in your composite chart";
-  if(t.kind==="natM")  return "his "+B(t.i);
-  if(t.kind==="natW")  return "her "+B(t.i);
-  if(t.kind==="aspW")  return "her "+B(t.i)+" and "+B(t.j);
-  if(t.kind==="aspM")  return "his "+B(t.i)+" and "+B(t.j);
-  if(t.kind==="midW")  return "her "+B(t.i)+"/"+B(t.j)+" midpoint";
-  if(t.kind==="midM")  return "his "+B(t.i)+"/"+B(t.j)+" midpoint";
+  const H=t.k>1?" \u00d7"+t.k:"";
+  if(t.kind==="diff")  return ("his "+B(t.i)+" to her "+B(t.i))+H;
+  if(t.kind==="xdiff") return ("his "+B(t.i)+" to her "+B(t.j))+H;
+  if(t.kind==="sum")   return ("your shared "+B(t.i))+H;
+  if(t.kind==="xsum")  return ("his "+B(t.i)+" with her "+B(t.j))+H;
+  if(t.kind==="camp")  return (B(t.i)+" and "+B(t.j)+" in your composite chart")+H;
+  if(t.kind==="natM")  return ("his "+B(t.i))+H;
+  if(t.kind==="natW")  return ("her "+B(t.i))+H;
+  if(t.kind==="aspW")  return ("her "+B(t.i)+" and "+B(t.j))+H;
+  if(t.kind==="aspM")  return ("his "+B(t.i)+" and "+B(t.j))+H;
+  if(t.kind==="midW")  return ("her "+B(t.i)+"/"+B(t.j)+" midpoint")+H;
+  if(t.kind==="midM")  return ("his "+B(t.i)+"/"+B(t.j)+" midpoint")+H;
   return label;
 }
 function tdPick(){
@@ -811,15 +820,19 @@ $("go").onclick=async()=>{
   state.me=[y,m,d];
   const u=JSON.parse(await state.py.runPythonAsync(`read_user(${y},${m},${d})`));
   drawWheel(u.wheel);
-  // Every statement in this model reads BOTH dates, so none of them can be shown against one person.
-  // The cards name what the comparison will read, weighted by how much of the model each carries.
-  const CW = await fetch("almanac/quality_card_weights.json").then(r=>r.json()).catch(()=>null);
-  const cards = (CW ? CW.cards : []).map(c=>[c.key,c.label,
-    Math.round(c.share*100)+"%",
-    `${c.statements} statement${c.statements===1?"":"s"}. Every one of them changes when the two birth dates move apart, so this is about the pair and not about either of you alone.`]);
-  const SH = {}; (CW?CW.cards:[]).forEach(c=>SH[c.key]=c);
-  $("cards").innerHTML=cards.map(c=>{const w=SH[c[0]]||{};
-    const bar=`<div class="wbar"><i style="width:${Math.round((w.share||0)*100)}%"></i></div>`;
+  // The cards describe the model that actually runs the scan, computed from its own shipped file —
+  // family shares by summed |weight|, so the page cannot drift from tilldeath.json.
+  const td=window.__td, W={XY:0,XX:0,YY:0}; let WT=0;
+  td.terms.forEach(t=>{const f=t.kind==="xdiff"?"XY":(t.kind==="aspM"?"XX":"YY");W[f]+=Math.abs(t.w);WT+=Math.abs(t.w);});
+  const nph=f=>new Set(td.terms.filter(t=>(t.kind==="xdiff"?"XY":(t.kind==="aspM"?"XX":"YY"))===f).map(t=>t.kind+t.i+"_"+t.j+"_"+t.k)).size;
+  const cards=[
+    ["xy","His sky against hers",Math.round(100*W.XY/WT)+"%",nph("XY")+" angles read across the two charts — his planet to hers. This is where most of the model lives."],
+    ["yy","Inside her own chart",Math.round(100*W.YY/WT)+"%",nph("YY")+" angles inside one chart — hers. The strongest single term in the model is one of these."],
+    ["xx","Inside his own chart",Math.round(100*W.XX/WT)+"%",nph("XX")+" angles inside his chart, most of them fast bodies at high harmonics."],
+    ["cal","The calendar underneath","≈89%","Most of what the model knows is when the two of you were born — the slow bodies are a date stamp. The scan below shows what is left after saying so."]];
+  const shares={xy:W.XY/WT,yy:W.YY/WT,xx:W.XX/WT,cal:0.89};
+  $("cards").innerHTML=cards.map(c=>{
+    const bar=`<div class="wbar"><i style="width:${Math.round((shares[c[0]]||0)*100)}%"></i></div>`;
     return `<div class="pcard"><div class="k">${c[1]}</div><div class="v">${c[2]}</div>${bar}<div class="e">${c[3]}</div></div>`;}).join("");
   show(1);
   const els=[...document.querySelectorAll(".pcard")];
@@ -832,19 +845,21 @@ $("go").onclick=async()=>{
 function renderTop(all,P){
   $("top10").innerHTML=all.slice(0,10).map((r,i)=>{
     const gap=Math.abs(state.me[0]-+r[0].slice(0,4));
-    const chips=(r[3]===0?`<span class="chip">the sky finds no objection</span>`
-      :r[2].map(c=>`<span class="chip bad">${(window.HMAP&&HMAP[c[0]])||human(c[0])} <b>+${c[1].toFixed(3)}</b></span>`).join(""));
-    const pw=Math.min(100,100*r[4]/0.12);   // shadow share of the bar; success fills the rest
+    // chips are the model's strongest movers for THIS pair: gold when they pull toward the record
+    // listing children, "bad" when away. The bar paints the percentile itself — it used to divide
+    // the displayed number by 0.12, saturate, and render every bar empty.
+    const chips=r[2].map(c=>`<span class="chip${c[1]<0?" bad":""}">${tdPhrase(c[0])} <b>${c[1]>=0?"+":""}${c[1].toFixed(3)}</b></span>`).join("");
     return `<div class="match" onclick="this.classList.toggle('open')">
       <div class="mtop"><span class="mrk">${i+1}</span><span class="mdt">${r[0]}</span>
       <span class="mgap">${(state.g==="m"
         ? `She'd be ${gap===0?"about your age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"younger":"older")}`
         : `You'd be ${gap===0?"about the same age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"older":"younger")}`)} · ${r[3]===0?"not one shadow":r[3]+" small shadows"}</span>
-      <span class="mbar"><i style="width:${(100-pw).toFixed(0)}%"></i></span><span class="mp">${(100*r[4]).toFixed(1)}%</span></div>
+      <span class="mbar"><i style="width:${(100*r[4]).toFixed(0)}%"></i></span><span class="mp">${(100*r[4]).toFixed(1)}%</span></div>
       <div class="chips">${chips}</div>
-      <div class="why">The percentage is how often matches like this one <b>held for life</b>, among five
-      centuries of recorded marriages. The chips are the few old rules this pairing stirs — every one is
-      spelled out at the bottom of the page.</div></div>`;
+      <div class="why">The percentage is where this pairing sits among <b>91,146 recorded marriages</b>, on
+      one narrow question — did the record list children for couples like this. The chips are the angles
+      that moved it most. Most of the score is simply when you were both born; the reading further down
+      the page takes that apart honestly.</div></div>`;
   }).join("");
 }
 async function toMatches(){

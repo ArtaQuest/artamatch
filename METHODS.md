@@ -654,6 +654,44 @@ her midpoint axes. It beat one partner's chart by 0.005 while claiming to read a
 single-person families are now banned outright and `web/verify_docs.py` refuses to publish a model
 containing one.
 
+### What each term is worth, one at a time
+
+Every one of the 64 terms was removed on its own and the whole ten-fold fit re-run without it. The
+contribution is what the model loses by not having it, on identical folds:
+
+| term | leave-one-out contribution |
+|---|---|
+| `cos(mid pluto)` | +0.00155 |
+| `cos(his pluto-her neptune)` | +0.00121 |
+| `sin(his neptune-her uranus)` | +0.00116 |
+| `sin(mid neptune)` | +0.00111 |
+| `cos(his neptune-her pluto)` | +0.00097 |
+| `cos(his neptune-her mercury)` | +0.00094 |
+| `cos(D saturn)` | +0.00070 |
+| `cos(his uranus-her neptune)` | +0.00064 |
+| `cos(his pluto-her uranus)` | +0.00063 |
+| `sin(his venus-her neptune)` | +0.00063 |
+| `sin(mid pluto)` | +0.00062 |
+| `sin(his pluto-her saturn)` | +0.00053 |
+
+**48 of 64 terms contribute positively**; the rest are correlated shadows of terms already
+present. The three whose removal actually helps:
+
+| term | leave-one-out contribution |
+|---|---|
+| `sin(his node-her mercury)` | -0.00005 |
+| `cos(his sun-her pluto)` | -0.00006 |
+| `cos(mid neptune)` | -0.00012 |
+
+The base for these differences is the **fixed-term** model on the same seed, 0.7370.
+That is worth stating because the first run of this table subtracted from the pruning curve's value
+at 64 terms (0.7333) — a model that re-chooses its terms
+inside every fold, and therefore a different and lower-scoring thing. The 0.0037 gap made all 64
+terms appear harmful. The ranking was never affected, being a constant shift; the signs were wrong
+and are corrected here.
+
+Note also what the largest contribution is: **+0.0016**. No single angle in this model is load-bearing.
+
 ### What was tried and rejected
 
 Under the pair-only rule, backward elimination dropped **cross-body couple midpoints**

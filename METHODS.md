@@ -668,8 +668,10 @@ fold was chosen using the other folds' data, and it is why the shipped number is
 fixed-structure; **(2)** three fixed Newton steps, enough at 2 phasors, silently underfit at 35
 (train 0.6413 vs the true 0.6859) — convergence must be measured, not assumed; **(3)** an undamped
 Newton step on a deep design can overshoot into saturation and paint one constant — one outer fold
-scored 0.4996, exactly chance, until the steps were damped. Pushing the search deeper (K up to 64)
-made the procedure *worse* under the nested estimate, so 32 stands.
+scored 0.4996, exactly chance, until the steps were damped. Pushing the search deeper was measured
+twice: K=64 with the damped solver holds every fold sane and still comes out **worse** under the
+nested estimate (0.6783 against 0.6794) while its leak-prone fixed-structure reference *rises* to
+0.6861 — thirty-two more phasors buying optimism, not signal. So 32 stands, as a measurement.
 
 ### THE RESULT THAT MATTERS: most of this is a calendar
 

@@ -130,6 +130,7 @@
   <p style="margin:16px 0 0"><button id="go-pair" disabled>Score this pair</button></p>
   <p class="why" id="pair-window"></p>
   <div id="pair-out"></div>
+  <div id="td-out"></div>
 </div>
 
 <div class="card">
@@ -269,21 +270,24 @@ async function boot() {
     const t = await (await fetch("bundle/" + f)).text();
     py.FS.writeFile("/bundle/" + f, t);
   }));
-  for (const f of ["sweshim.py", "predictor.py", "runner.py", "worked.py"]) {
+  for (const f of ["sweshim.py", "predictor.py", "runner.py", "worked.py", "tilldeath.py"]) {
     py.FS.writeFile("/" + f, await (await fetch(f)).text());
   }
 
   log("fetching the ephemeris…");
-  const [asset, tables, mjson, mnpz] = await Promise.all([
+  const [asset, tables, mjson, mnpz, tdjson] = await Promise.all([
     fetch("ephem4.bin").then(r => r.arrayBuffer()),
     fetch("tables.json").then(r => r.text()),
     fetch("model.json").then(r => r.text()),
     fetch("model.npz").then(r => r.arrayBuffer()),
+    fetch("tilldeath.json").then(r => r.text()),
   ]);
   py.FS.writeFile("/asset.bin", new Uint8Array(asset));
   py.FS.writeFile("/model.npz", new Uint8Array(mnpz));
   py.FS.writeFile("/tables.json", tables);
   py.FS.writeFile("/model.json", mjson);
+  py.FS.writeFile("/tilldeath.json", tdjson);
+  window.__td = JSON.parse(tdjson);
 
   log("computing — importing the tradition modules…");
   const info = await py.runPythonAsync(`
@@ -617,6 +621,90 @@ for (const id of ["#f-self", "#f-from", "#f-to"]) {
   if (el) el.addEventListener("change", () => { el.value = clampISO(el.value, el.value); });
 }
 
+// THE SECTION OWNS ITS CONTAINER. It used to write into a #td-out declared in the static markup, and
+// when that element was not in the document the reading could not even report its own absence — every
+// write threw before anything was painted. Resolving it here, and creating it beside #pair-out when it
+// is missing, means the reading can always say something, whatever else is wrong with the page.
+function tdBox() {
+  let el = $("#td-out");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "td-out";
+    const anchor = $("#pair-out");
+    if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(el, anchor.nextSibling);
+    else document.body.appendChild(el);
+  }
+  return el;
+}
+
+// ── Till Death Do Us Part ─────────────────────────────────────────────────────────────────────────
+// A SECOND, INDEPENDENT reading of the same two dates, from a different corpus and a different model
+// family. It answers the opposite question to the one above: not "does this last" but "did it come
+// apart", learned from 175,155 wiki marriages where coming apart is on the record.
+async function scoreTillDeath(a, b) {
+  // FIRST THING, BEFORE ANY WORK: an empty section and a section still computing looked exactly the
+  // same, in the browser gate and to a reader. Paint the state immediately, and leave a trace on
+  // window so a gate can tell "never entered" from "entered and stalled" — the two produced the
+  // identical empty div, and one CI round trip was spent not knowing which.
+  window.__tdCalls = (window.__tdCalls || 0) + 1;
+  window.__tdArgs = [a, b];
+  tdBox().innerHTML = `<p class="note" style="margin-top:22px">computing the Till Death reading…</p>`;
+  const td = window.__td;
+  if (!td) {
+    tdBox().innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death model file
+      did not load, so this reading is unavailable.</p>`;
+    return;
+  }
+  const yr = (d) => parseInt(String(d).slice(0, 4), 10);
+  const [lo, hi] = td.servable_span;
+  if (!(yr(a) >= lo && yr(b) >= lo && yr(a) <= hi && yr(b) <= hi)) {
+    tdBox().innerHTML = `<p class="note" style="margin-top:22px">The Till Death reading needs both
+      birth years inside ${lo}–${hi}, the span of the shipped ephemeris asset.</p>`;
+    return;
+  }
+  // readDate() spells an unknown month or day as "00" — NOT an em-dash, which is only the label in
+  // the <option>. Testing for the dash let "1940-00-00" through to a chart for a day nobody recorded.
+  const partial = (d) => !/^\d{4}-\d{2}-\d{2}$/.test(d) || /-00/.test(String(d).slice(4));
+  if (partial(a) || partial(b)) {
+    tdBox().innerHTML = `<p class="note" style="margin-top:22px">The Till Death reading was fitted on
+      full birth dates and needs the day of both, so it is not shown for a partly-known date.</p>`;
+    return;
+  }
+  let r;
+  try {
+    r = JSON.parse(await py.runPythonAsync(
+      `import json, tilldeath; json.dumps(tilldeath.score(tilldeath.load(), ${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
+  } catch (e) {
+    // A SILENT BLANK IS THE WORST OUTCOME: the reading simply would not appear and nothing said why.
+    window.__tdErr = String(e && e.message || e).slice(0, 300);
+    tdBox().innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading could not be
+      computed for these dates: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
+    return;
+  }
+  const rows = r.drivers.map(d =>
+    `<tr><td>${d.label}</td><td class="n">${d.contribution >= 0 ? "+" : ""}${d.contribution.toFixed(3)}</td>
+     <td>${d.contribution >= 0 ? "toward coming apart" : "toward lasting"}</td></tr>`).join("");
+  tdBox().innerHTML = `
+    <h3 style="margin:30px 0 4px">Till Death Do Us Part</h3>
+    <p class="note" style="margin:0 0 12px">A separate model, on a separate corpus: ${td.n_corpus.toLocaleString()}
+      marriages from Wikidata and Wikipedia, of which ${td.n_positive.toLocaleString()} are recorded as having
+      come apart — a divorce, an annulment, a separation, an infidelity, or a remarriage while the other
+      partner was still living. It reads ${td.terms.length} named angles between the two sidereal charts and
+      nothing else. Ten-fold cross-validated AUC ${td.cv_auc_broad.toFixed(4)}.</p>
+    <p style="margin:10px 0 4px"><span class="big">${(100 * r.percentile).toFixed(0)}<span
+      style="font-size:.5em">th</span></span></p>
+    <p class="note" style="margin:0 0 14px">percentile among all ${td.n_corpus.toLocaleString()} couples —
+      higher means this pair looks more like the marriages that came apart. The model's own probability is
+      ${(100 * r.p).toFixed(1)}%, but a percentile is the honest unit: ${(100 * td.n_positive / td.n_corpus).toFixed(1)}%
+      of the corpus is a recorded separation, so a probability out of context reads as worse news than it is.</p>
+    <div class="scroll"><table><thead><tr><th>The angles that moved this pair</th><th>Weight</th><th></th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+    <p class="note" style="margin:10px 0 0">Every row is a named angle: <b>D</b> is his body against hers,
+      <b>her x–y</b> is an aspect inside her own chart, <b>her mid x/y</b> a midpoint axis in it. Nothing here
+      is a black box — the whole model is ${td.terms.length} weights on a cosine or a sine, and
+      <a href="tilldeath.json">tilldeath.json</a> is the model itself.</p>`;
+}
+
 $("#go-pair").onclick = async () => {
   if (!ready) return;
   const a = readDate($("#a-dob")), b = readDate($("#b-dob"));
@@ -625,6 +713,10 @@ $("#go-pair").onclick = async () => {
   const r = JSON.parse(await py.runPythonAsync(
     `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
   if (!r.ok) { $("#pair-out").innerHTML = `<p class="note">${r.why}</p>`; return; }
+  scoreTillDeath(a, b).catch(e => {
+    window.__tdErr = String(e && e.message || e).slice(0, 300);
+    tdBox().innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading failed: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
+  });
   const bt = Object.entries(r.by_tradition).sort((x, y) => y[1] - x[1]);
   const mx = Math.max(...bt.map(x => x[1]));
   $("#pair-out").innerHTML = `

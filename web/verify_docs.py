@@ -264,6 +264,16 @@ def check_tilldeath():
     check("the till-death page reproduces its own fit through the shipped shim", worst < 1e-3,
           f"worst |diff| {worst:.2e} over {n} couples")
 
+    for page in ("index.html", "lab.html"):
+        fp = os.path.join(DOCS, page)
+        if not os.path.exists(fp):
+            continue
+        html = open(fp, encoding="utf-8", errors="replace").read()
+        check(f"{page} wires the till-death module, model and container",
+              all(t in html for t in ("tilldeath.py", "tilldeath.json", 'id="td-out"')),
+              " ".join(t for t in ("tilldeath.py", "tilldeath.json", 'id="td-out"') if t not in html)
+              or "all three present")
+
     lo, hi = m["servable_span"]
     outside = [v for v in m["verify"]
                if not (lo <= int(v["dob_a"][:4]) <= hi and lo <= int(v["dob_b"][:4]) <= hi)]

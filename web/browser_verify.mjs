@@ -176,66 +176,6 @@ const modernScore = await ev(`(async () => {
 console.log(`  1994x1998 : scored ${modernScore.pct || "(nothing)"}, ` +
             `extrapolation warning ${modernScore.warned ? "shown" : "MISSING"}`);
 
-// THE TILL-DEATH READING renders in the same click, from a different corpus and a different model. It needs
-// FULL dates on both sides, so this sets day and month too — the pass above sets only the year, and with a
-// month left unknown the reading correctly declines to show. Checking that it declines is not enough: the
-// failure that matters is a section that silently renders nothing at all.
-const tdOut = await ev(`(async () => {
-  const setFull = (sel, y, m, d) => {
-    const h = document.querySelector(sel);
-    const yy = h.querySelector(".dy"), mm = h.querySelector(".dm"), dd = h.querySelector(".dd");
-    yy.value = String(y); yy.dispatchEvent(new Event("input", { bubbles: true }));
-    // the option VALUES are zero-padded ("03"), and an unpadded "3" matches nothing: the select
-    // silently keeps "00" and the pair arrives as a partly-known date
-    const pad = (v) => String(v).padStart(2, "0");
-    mm.value = pad(m); mm.dispatchEvent(new Event("change", { bubbles: true }));
-    dd.value = pad(d); dd.dispatchEvent(new Event("change", { bubbles: true }));
-    if (mm.value !== pad(m) || dd.value !== pad(d)) throw new Error("date parts did not take");
-  };
-  setFull("#a-dob", 1940, 3, 14); setFull("#b-dob", 1944, 11, 2);
-  // the button is owned by showPairValidity(): clicking it while disabled does nothing at all, and
-  // the symptom is an empty section rather than an error
-  const btn = document.querySelector("#go-pair");
-  for (let i = 0; i < 60 && btn.disabled; i++) await new Promise(r => setTimeout(r, 500));
-  if (btn.disabled) return { shown: false, text: "the button stayed disabled for 1940x1944" };
-  btn.click();
-  for (let i = 0; i < 180; i++) {
-    const el = document.querySelector("#td-out");
-    const t = el ? el.textContent || "" : "";
-    if (/percentile among all/.test(t)) {
-      const big = el.querySelector(".big");
-      return { shown: true, head: big ? big.textContent.trim() : null,
-               rows: el.querySelectorAll("tbody tr").length,
-               names: t.includes("cos(") || t.includes("sin(") };
-    }
-    await new Promise(r => setTimeout(r, 1000));
-  }
-  // NO NESTED BACKTICKS: this whole block is itself a template literal, and an inner backtick ends it.
-  const el = document.querySelector("#td-out");
-  const cut = (x, n) => JSON.stringify(String(x || "").slice(0, n));
-  // THREE-WAY: is it in the bytes the server sent, in the parsed document, or removed since?
-  let served = "?";
-  try {
-    const txt = await (await fetch(location.href, { cache: "no-store" })).text();
-    served = String(txt.includes('id="td-out"')) + "/len" + txt.length;
-  } catch (e) { served = "fetchfail:" + e.message; }
-  return { shown: false,
-           text: "servedHasDiv=" + served
-                 + " domHasDiv=" + document.documentElement.outerHTML.includes("td-out")
-                 + " ids=" + document.querySelectorAll("[id]").length
-                 + " calls=" + (window.__tdCalls || 0)
-                 + " args=" + JSON.stringify(window.__tdArgs || null)
-                 + " err=" + cut(window.__tdErr, 160)
-                 + " tdExists=" + !!el
-                 + " td-out=" + cut((el || {}).textContent, 70)
-                 + " pair=" + cut(document.querySelector("#pair-out").textContent, 40)
-                 + " y=" + document.querySelector("#a-dob .dy").value
-                 + " md=" + document.querySelector("#a-dob .dm").value
-                 + "/" + document.querySelector("#a-dob .dd").value };
-})()`) || {};
-console.log(`  till-death : ${tdOut.shown ? `${tdOut.head} percentile, ${tdOut.rows} named drivers`
-                                          : "NOT RENDERED — " + (tdOut.text || "")}`);
-
 // A PHONE-WIDTH PASS. Every check above ran at the default headless size, so a control that took three
 // full-width rows per date — pushing the button off the screen — passed all of them. Layout is measured here,
 // not eyeballed: the date control must occupy ONE row, nothing may spill its parent except the tables that are
@@ -410,6 +350,61 @@ const fHi = Number(String(finder.max || "2026-12-31").slice(0, 4));
 const inWin = v => /^(\d{4})-/.test(v || "")
                    && Number(String(v).slice(0, 4)) >= fLo && Number(String(v).slice(0, 4)) <= fHi;
 
+
+// THE TILL-DEATH READING is a second model on the page, with its own corpus and its own section. It is
+// driven exactly as a reader drives it — a gate that only loads a page proves nothing about a control,
+// and this section rendered nothing in CI while passing locally for four runs because nothing clicked it.
+//
+// TWO PAGES CARRY IT and this harness is pointed at one of them by the workflow: lab.html has the pair
+// scorer (#go-pair, both dates in one control), index.html is the reader-facing page (#dob + #tddob +
+// #tdgo). Probing for whichever exists is the difference between a gate and a guess.
+const tdOut = await ev(`(async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const readable = () => {
+    const el = document.getElementById("td-out");
+    return el ? el.textContent || "" : "";
+  };
+  let btn;
+  if (document.getElementById("tdgo")) {                       // the reader-facing page
+    const set = (id, v) => { const e = document.getElementById(id);
+      e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); };
+    const g = document.getElementById("gm"); if (g) g.click();
+    set("dob", "1940-03-14"); set("tddob", "1944-11-02");
+    btn = document.getElementById("tdgo");
+  } else if (document.getElementById("go-pair")) {             // the lab page
+    const setFull = (sel, y, m, d) => {
+      const h = document.querySelector(sel), pad = v => String(v).padStart(2, "0");
+      const yy = h.querySelector(".dy"), mm = h.querySelector(".dm"), dd = h.querySelector(".dd");
+      yy.value = String(y); yy.dispatchEvent(new Event("input", { bubbles: true }));
+      mm.value = pad(m); mm.dispatchEvent(new Event("change", { bubbles: true }));
+      dd.value = pad(d); dd.dispatchEvent(new Event("change", { bubbles: true }));
+      if (mm.value !== pad(m) || dd.value !== pad(d)) throw new Error("date parts did not take");
+    };
+    setFull("#a-dob", 1940, 3, 14); setFull("#b-dob", 1944, 11, 2);
+    btn = document.getElementById("go-pair");
+  } else {
+    return { shown: false, why: "neither #tdgo nor #go-pair is in this page" };
+  }
+  for (let i = 0; i < 120 && btn.disabled; i++) await wait(500);
+  if (btn.disabled) return { shown: false, why: "the button never became enabled" };
+  btn.click();
+  for (let i = 0; i < 180; i++) {
+    const t = readable();
+    if (t.includes("percentile among all")) {
+      const el = document.getElementById("td-out");
+      return { shown: true, rows: el.querySelectorAll("tbody tr").length,
+               names: t.includes("cos(") || t.includes("sin(") };
+    }
+    await wait(1000);
+  }
+  return { shown: false,
+           why: "timed out; td-out=" + JSON.stringify(readable().slice(0, 90))
+                + " calls=" + (window.__tdCalls || 0)
+                + " err=" + JSON.stringify(String(window.__tdErr || "").slice(0, 140)) };
+})()`) || {};
+console.log(`  till-death : ${tdOut.shown ? `rendered with ${tdOut.rows} named drivers`
+                                          : "NOT RENDERED — " + (tdOut.why || "")}`);
+
 const checks = [
   ["the search inputs stay inside the computable range",
    inWin(finder.self) && inWin(finder.from) && inWin(finder.to),
@@ -471,8 +466,8 @@ const checks = [
   ["an enabled button looks enabled", phone.btnDisabled || (phone.btnCursor === "pointer"
     && Number(phone.btnOpacity) >= 0.9), `cursor ${phone.btnCursor}, opacity ${phone.btnOpacity}`],
   ["no console or runtime errors", errors.length === 0],
-  ["the till-death reading renders for a full-date pair", !!tdOut.shown, tdOut.text || ""],
-  ["it names its drivers rather than showing a bare number",
+  ["the till-death reading renders when a reader presses its button", !!tdOut.shown, tdOut.why || ""],
+  ["and it names the angles rather than showing a bare number",
    !!tdOut.shown && tdOut.rows === 8 && !!tdOut.names, `${tdOut.rows} rows`],
 ];
 console.log("");

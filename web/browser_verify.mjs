@@ -193,8 +193,13 @@ const tdOut = await ev(`(async () => {
     if (mm.value !== pad(m) || dd.value !== pad(d)) throw new Error("date parts did not take");
   };
   setFull("#a-dob", 1940, 3, 14); setFull("#b-dob", 1944, 11, 2);
-  document.querySelector("#go-pair").click();
-  for (let i = 0; i < 90; i++) {
+  // the button is owned by showPairValidity(): clicking it while disabled does nothing at all, and
+  // the symptom is an empty section rather than an error
+  const btn = document.querySelector("#go-pair");
+  for (let i = 0; i < 60 && btn.disabled; i++) await new Promise(r => setTimeout(r, 500));
+  if (btn.disabled) return { shown: false, text: "the button stayed disabled for 1940x1944" };
+  btn.click();
+  for (let i = 0; i < 180; i++) {
     const el = document.querySelector("#td-out");
     const t = el ? el.textContent || "" : "";
     if (/percentile among all/.test(t)) {
@@ -205,7 +210,14 @@ const tdOut = await ev(`(async () => {
     }
     await new Promise(r => setTimeout(r, 1000));
   }
-  return { shown: false, text: ((document.querySelector("#td-out") || {}).textContent || "").slice(0, 120) };
+  // NO NESTED BACKTICKS: this whole block is itself a template literal, and an inner backtick ends it.
+  const el = document.querySelector("#td-out");
+  const cut = (x, n) => JSON.stringify(String(x || "").slice(0, n));
+  return { shown: false,
+           text: "td-out=" + cut((el || {}).textContent, 90)
+                 + " pair-out=" + cut(document.querySelector("#pair-out").textContent, 60)
+                 + " dates=" + document.querySelector("#a-dob .dm").value
+                 + "/" + document.querySelector("#a-dob .dd").value };
 })()`) || {};
 console.log(`  till-death : ${tdOut.shown ? `${tdOut.head} percentile, ${tdOut.rows} named drivers`
                                           : "NOT RENDERED — " + (tdOut.text || "")}`);

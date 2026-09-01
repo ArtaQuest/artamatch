@@ -625,7 +625,15 @@ for (const id of ["#f-self", "#f-from", "#f-to"]) {
 // family. It answers the opposite question to the one above: not "does this last" but "did it come
 // apart", learned from 175,155 wiki marriages where coming apart is on the record.
 async function scoreTillDeath(a, b) {
+  // FIRST THING, BEFORE ANY WORK: an empty section and a section still computing looked exactly the
+  // same, in the browser gate and to a reader. Paint the state immediately.
+  $("#td-out").innerHTML = `<p class="note" style="margin-top:22px">computing the Till Death reading…</p>`;
   const td = window.__td;
+  if (!td) {
+    $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death model file
+      did not load, so this reading is unavailable.</p>`;
+    return;
+  }
   const yr = (d) => parseInt(String(d).slice(0, 4), 10);
   const [lo, hi] = td.servable_span;
   if (!(yr(a) >= lo && yr(b) >= lo && yr(a) <= hi && yr(b) <= hi)) {
@@ -683,7 +691,10 @@ $("#go-pair").onclick = async () => {
   const r = JSON.parse(await py.runPythonAsync(
     `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
   if (!r.ok) { $("#pair-out").innerHTML = `<p class="note">${r.why}</p>`; return; }
-  scoreTillDeath(a, b);
+  scoreTillDeath(a, b).catch(e => {
+    $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading
+      failed: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
+  });
   const bt = Object.entries(r.by_tradition).sort((x, y) => y[1] - x[1]);
   const mx = Math.max(...bt.map(x => x[1]));
   $("#pair-out").innerHTML = `

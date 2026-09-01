@@ -176,6 +176,40 @@ const modernScore = await ev(`(async () => {
 console.log(`  1994x1998 : scored ${modernScore.pct || "(nothing)"}, ` +
             `extrapolation warning ${modernScore.warned ? "shown" : "MISSING"}`);
 
+// THE TILL-DEATH READING renders in the same click, from a different corpus and a different model. It needs
+// FULL dates on both sides, so this sets day and month too — the pass above sets only the year, and with a
+// month left unknown the reading correctly declines to show. Checking that it declines is not enough: the
+// failure that matters is a section that silently renders nothing at all.
+const tdOut = await ev(`(async () => {
+  const setFull = (sel, y, m, d) => {
+    const h = document.querySelector(sel);
+    const yy = h.querySelector(".dy"), mm = h.querySelector(".dm"), dd = h.querySelector(".dd");
+    yy.value = String(y); yy.dispatchEvent(new Event("input", { bubbles: true }));
+    // the option VALUES are zero-padded ("03"), and an unpadded "3" matches nothing: the select
+    // silently keeps "00" and the pair arrives as a partly-known date
+    const pad = (v) => String(v).padStart(2, "0");
+    mm.value = pad(m); mm.dispatchEvent(new Event("change", { bubbles: true }));
+    dd.value = pad(d); dd.dispatchEvent(new Event("change", { bubbles: true }));
+    if (mm.value !== pad(m) || dd.value !== pad(d)) throw new Error("date parts did not take");
+  };
+  setFull("#a-dob", 1940, 3, 14); setFull("#b-dob", 1944, 11, 2);
+  document.querySelector("#go-pair").click();
+  for (let i = 0; i < 90; i++) {
+    const el = document.querySelector("#td-out");
+    const t = el ? el.textContent || "" : "";
+    if (/percentile among all/.test(t)) {
+      const big = el.querySelector(".big");
+      return { shown: true, head: big ? big.textContent.trim() : null,
+               rows: el.querySelectorAll("tbody tr").length,
+               names: t.includes("cos(") || t.includes("sin(") };
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  return { shown: false, text: ((document.querySelector("#td-out") || {}).textContent || "").slice(0, 120) };
+})()`) || {};
+console.log(`  till-death : ${tdOut.shown ? `${tdOut.head} percentile, ${tdOut.rows} named drivers`
+                                          : "NOT RENDERED — " + (tdOut.text || "")}`);
+
 // A PHONE-WIDTH PASS. Every check above ran at the default headless size, so a control that took three
 // full-width rows per date — pushing the button off the screen — passed all of them. Layout is measured here,
 // not eyeballed: the date control must occupy ONE row, nothing may spill its parent except the tables that are
@@ -411,6 +445,9 @@ const checks = [
   ["an enabled button looks enabled", phone.btnDisabled || (phone.btnCursor === "pointer"
     && Number(phone.btnOpacity) >= 0.9), `cursor ${phone.btnCursor}, opacity ${phone.btnOpacity}`],
   ["no console or runtime errors", errors.length === 0],
+  ["the till-death reading renders for a full-date pair", !!tdOut.shown, tdOut.text || ""],
+  ["it names its drivers rather than showing a bare number",
+   !!tdOut.shown && tdOut.rows === 8 && !!tdOut.names, `${tdOut.rows} rows`],
 ];
 console.log("");
 let ok = true;

@@ -2,342 +2,683 @@
 
 Everything the page computes, how each piece was verified, and where every embedded number comes
 from. The [README](README.md) is the summary; this is the reference. Nothing here is needed to *use*
-the page — it exists so that any claim on the page can be checked by a stranger.
+the page — it exists so that any claim on the page can be checked, or contradicted, by a stranger.
+
+Every quantity below is tagged **[measured]** (computed here, and reproducible with the commands in
+§18), **[derived]** (algebra, true before anything was run) or **[paper]** (taken from the source the
+model comes from). Nothing else is in the model.
 
 ---
 
-## 1 · The positions
+## 1 · The positions, and how they are verified
 
-A dependency-free ephemeris (`src/engine/ephemeris.ts`) places the Sun, Moon and eight planets on
-the ecliptic for any date between 1800 and 2100, in the constellation-aligned (sidereal, Lahiri)
-frame the Moon-score tradition uses.
+A dependency-free ephemeris (`src/engine/ephemeris.ts`) places the Sun, Moon and eight planets on the
+ecliptic for any date between 1800 and 2100, in the constellation-aligned **sidereal (Lahiri)** frame.
 
 | Piece | Method | Source |
 |---|---|---|
-| Moon | 45-term truncated ELP-2000/82 series + nutation | Meeus, *Astronomical Algorithms*, ch. 47 |
-| Planets | Keplerian elements, Table 1 | JPL/Standish, *Approximate Positions of the Planets* |
-| Zodiac offset | Quadratic fit to Swiss Ephemeris SIDM_LAHIRI | `tools/fit-ayanamsa.py` |
-
-**Verification** is against the Swiss Ephemeris (`pyswisseph`), the reference implementation used by
-professional software — twice, with independent samples:
-
-- `tests/golden.json`: 1,975 dates, every 37 days, 1900–2100, plus hourly Moon positions across
-  whole days. Runs in CI on every push (`tests/ephemeris.test.ts`).
-- A second, unseen sample (step 43, offset start, different Moon days, including 2050) was run
-  during review and passed every tolerance.
-
-Measured worst-case error, in arcminutes: Sun 0.8, **Moon 1.4**, Mercury 1.2, Venus 1.4, Mars 3.1,
-Jupiter 10.4, Saturn 22.3, Uranus 3.8, Neptune 1.9, Pluto 1.3. The zodiac offset reproduces Swiss
-Ephemeris to 1e-8°. JPL's longer-range Table 2a was tried for the outer planets and **measured
-worse** over 1900–2100 (`tools/compare-elements.mjs`) — it is fitted across six millennia and is
-looser inside any one century.
-
-Only the Moon's accuracy bears on the score — the eight tests read nothing else. Mars and Venus are
-computed because they feed one of the three warnings. At 1.4′ the Moon is some 280× finer than the
-±6.6° the missing birth time costs, which is the whole reason the uncertainty model matters more
-than the ephemeris does.
-
-## 2 · What a date alone can and cannot say
-
-The Moon moves 11.8–15.4° a day; a birth star is 13°20′ wide and a sign 30°. Without a birth time
-(taken as a UT day — the zone is unknown too, and saying so is part of the method):
-
-| Quantity | Chance the noon guess is wrong |
-|---|---|
-| Moon sign | ~11% |
-| Birth star | ~25% |
-| Finer divisions | not attempted — the error swallows them |
-
-Instead of guessing, `src/engine/uncertainty.ts` finds every (birth star, sign, mid-sign half) state
-the Moon occupies during the day — at most four; `1965-07-27` reaches the ceiling — by hourly scan
-plus bisection to the second. Each state's share of the day **is** its probability under a flat
-prior, so the page enumerates every possible reading exactly, with its chance.
-
-**This is exact, and it was checked against brute force.** The eight tests read the Moon *only*
-through those three quantities, so the ≤16 state combinations are the whole distribution. Compared
-against sweeping the actual hour grid, the exact method agrees with a 240×240 sweep (57,600 hour
-pairs) to within **0.15 percentage points** — while a 24×24 sweep is off by up to **1.3 points**,
-because 24 samples per day straddle the boundaries rather than finding them. The page therefore
-computes the interval exactly and *draws* the 24×24 hour grid as the explanation, rather than
-sampling the grid to get the number.
-
-Every prediction carries the result: the **expected** score (the probability-weighted mean, and the
-right thing to rank on), the **narrowest 90% interval**, the **full support**, and the single **most
-likely** reading with its probability. There is one code path — a `detailed` flag once let ranking
-skip the distribution, which meant the ranking and the report could quietly disagree. The displayed chart is taken at
-the middle of the most likely state, *not* at noon: measured over 7,200 dates, noon disagrees with
-the most likely reading on about 6% of days (the birth star alone on roughly 3%, the star-or-sign on
-roughly 6%), which once made the page show one birth star and score another.
-
-The rising point ("ascendant") moves a sign every two hours; nothing that needs it is computed, ever
-— it is refused rather than defaulted.
-
-## 3 · The Moon score (out of 36)
-
-The traditional eight-test system, `src/engine/kuta.ts`. Each test returns its points, the exact
-values it read, and the rule that produced them. The reference tables were reconstructed three times
-independently, reconciled against primary sources (Saravali, BPHS, the Muhurta Chintamani lineage,
-Drik Panchang), and are pinned by structural invariants in `tests/nakshatra.test.ts` — nine stars
-per temperament, the period-6 constitution cycle, the animal census (13 pairs + one unpaired), the
-seven canonical enemy pairs. That process caught a real transcription error worth 4 of the 36 points
-(see README, "What triple-checking found").
-
-Three of the eight tests are asymmetric in the tradition (written for a groom and a bride). Both
-orderings are always computed and the mean used, because a ranked list must be symmetric —
-`score(A,B) = score(B,A)` is asserted over hundreds of random pairs.
-
-The first test ranks four temperaments in an order inherited from a caste hierarchy. It is named
-plainly, worth 1 point, and can be switched off — in which case the score is compared against a
-**separately calibrated** 35-point distribution, not the 36-point one.
-
-## 4 · Calibration — what a score is worth
-
-Every raw score is placed against the distribution of 20,000 random date pairs
-(`tools/calibrate.mjs`, fixed seed, reproducible to the digit). This is the page's central honesty
-device: the traditional "pass mark" of 18 is cleared by **71%** of random pairs, and the median pair
-scores **21**, so "you passed" would be flattery. Percentile bands ("Above average", "High") are set
-on the measured distribution. A drift test (in `tests/score.test.ts`) recomputes a 2,000-pair sample
-in CI and fails if the embedded numbers go stale.
-
-## 5 · The two charts, and the score between them
-
-### 5.1 · One person's chart (`src/engine/natal.ts`)
-
-A full natal chart has three layers: which **sign** each planet is in, which **house** it is in, and
-which sign was **rising**. Only the first survives a missing birth time — houses and the rising sign
-turn a full circle every 24 hours, so from a date alone they are not approximate, they are *unknown*.
-This file draws the layer that survives, and the page says the other two are missing rather than
-quietly defaulting them to sunrise, which is the usual dodge. This matters more than it sounds:
-conventional synastry weights contacts with the rising sign and the midheaven **most heavily of
-all**, so a date-only reading is missing the tradition's own top-weighted factor entirely.
-
-Even the surviving layer has edges: a planet near a boundary at midnight is in two signs that day. So
-every body reports the signs it could be in **and the share of the day it spent in each**, found
-exactly — an hourly scan for a change, then bisection inside the hour that changed. The Moon does
-this on about two days in five; Mercury moves at most ~2.2° in a day and Saturn ~0.13°, so theirs is
-settled unless the date lands on the crossing itself.
-
-**Five bodies get a paragraph** — Sun, Moon, Mercury, Venus, Mars. Jupiter holds a sign for about a
-year and Saturn for two and a half, so a *reading* of them would describe everyone born that year;
-they are drawn, they are scored, and they get a stated placement rather than a character sketch.
-Uranus, Neptune and Pluto (7, 14 and 12–30 years to a sign) get their windows named and nothing else,
-and are excluded from scoring entirely.
-
-### 5.2 · The score (`src/engine/affinity.ts`)
-
-    ease, friction  =  Σ_{i,j,a}  [v_a]±  ·  w_ij  ·  exp( −(Δ_ij − t_a)² / 2 S²_ij )
-    w_ij            =  imp_i · imp_j · √( s²_ij / S²_ij )
-    S²_ij           =  s²_ij + σ²_ij
-    Δ_ij, σ_ij      =  circular mean and deviation of the angle over all 24×24 = 576 birth-hour pairs
-
-The same functional form as the sky→topics forward model of the AstroAttention paper
-(`analysis/adstopics/astro_forward.py`): a Gaussian kernel on a **seam-free wrapped** angular
-difference, non-negative weights, summed. Four house rules are carried over verbatim — circular
-readouts are always `atan2` of a resultant vector and never a scalar mean of angles; weights are
-positive but **not normalised** (the recorded softmax ablation there is worse); ablations are
-reported even when they undercut the model, as that paper reports its own centring worth "only
-~0.003 AUC"; and **the ceiling is reported as a result**. Two deliberate departures: the paper's
-phases are *fitted* per topic and here they are the tradition's five fixed angles, because there is
-nothing to fit to; and its kernel is `exp(−Δ²)` with Δ in radians — an implicit width near 40°, right
-for a broad seasonal phase and far too wide for an aspect — so the width here comes from the orb.
-
-**Why the weight is not an invention.** The estimand is the average compatibility over every birth
-hour the two dates leave open. For a Gaussian kernel and θ ~ N(μ, σ²),
-
-    E[ exp( −(θ−t)²/2s² ) ]  =  √( s²/(s²+σ²) ) · exp( −(μ−t)² / (2(s²+σ²)) )
-
-which factorises into an amplitude depending only on how well the angle is pinned down, times a
-widened kernel at the mean angle. "Weight by the variance of the angle estimate, score at the mean
-phase difference" is not a heuristic — it is what taking the expectation does.
-
-**What is shown is the plain average of the 576 charts**, not the closed form. The closed form is
-computed alongside as the *decomposition*, and the gap is printed on every reading. Measured over
-500 random pairs: **median 9.8 × 10⁻⁶, worst 6.1 × 10⁻⁵** — about a thousandth of a percentile
-point. It has to be that small, because the ranked list prints the closed form while the reading
-prints the average, and at the earlier 2.4 × 10⁻³ the same two people could be shown two different
-integers on two screens.
-
-Getting there needed the **exact** expectation rather than a moment-matched bell. Over the grid the
-angle is θ = δ + X − Y with X, Y uniform over each body's daily travel — a trapezoid, and when one
-body barely moves (six of the seven) a **rectangle**, the furthest-from-Gaussian shape there is. The
-bell over-states every on-aspect hit (a uniform's centre density is 0.289/σ against 0.399/σ) and is
-worst exactly where it matters: Moon-against-a-slow-body sits at σ/s ≈ 0.9, and those are the
-heaviest rows. `expectTrapezoid` integrates against the true law in closed form; the swap cut the
-gap **30-fold**.
-
-**Every term is centred.** Two bodies at a completely random angle still score something under this
-arithmetic, and how much is a property of the valence table, not of the couple. That amount is
-`(Σ_a v_a · n_a) · s · √(2π)/360` — exact, and independent of the spread — and it is subtracted from
-every row. Two things this fixed, both live before it:
-
-* rows carried a **head start**: Jupiter-with-Venus opened at +0.0015 and Saturn-with-Mars at
-  −0.0015, on rows whose whole size is about ±0.01 — roughly a seventh of every "explanation";
-* and, far worse, **the reader's switch flattered everybody**. Reading the opposite angle as easy
-  moved the population mean from +0.0015 to **+0.052** — nine tenths of a standard deviation — so
-  ticking a box moved the *average stranger* from the 51st percentile to the 76th, against a table
-  calibrated in the other state. After centring both readings sit at zero by construction
-  (measured: −0.0003 and −0.0009 over 20,000 pairs each). Their spreads still differ by 8%, so each
-  reading ships **its own calibration table**: a percentile must be measured in the state it is
-  displayed in.
-
-Per-pair contributions are the exact 576-chart averages, centred, so the five reasons the page shows
-plus the stated remainder sum to the score with a residual under 10⁻¹² — the explanation *is* the
-arithmetic. Note `net` is therefore **not** `ease − friction`: the two piles are reported raw and the
-score has the baseline taken out, and the page says so rather than letting a reader subtract them.
-
-### 5.3 · Constants: what is citable and what is chosen
-
-| | value | provenance |
-|---|---|---|
-| orbs | Sun 15°, Moon 12°, Mercury 7°, Venus 7°, Mars 8°, Jupiter 9°, Saturn 9°; a pair is allowed the **average of the two** | [tradition] Lilly, *Christian Astrology* (1647). Sources vary 1–3°. Orbs belong to the **body**, not the angle — the older of the two systems, and the only one with a citable table |
-| kernel width | s = orb/2, so a pair on the traditional edge still counts for exp(−2) ≈ 14% | [convention] the tradition supplies only "tighter is stronger" |
-| angle valences | sixth +0.5, third +1, quarter −1, opposite −1 | [tradition] for the *signs* (Tetrabiblos I). [convention] for the magnitudes |
-| same-place valence | the mean of the two bodies' natures | [tradition] near-total consensus that the conjunction has no valence of its own and takes it from the bodies joined |
-| body natures | Jupiter +1, Venus +0.5, Sun/Moon/Mercury 0, Mars −0.5, Saturn −1 | [tradition] the classical benefic/malefic ranking — 7 numbers, not a 49-cell table |
-| body importance | Sun 1, Moon 1, Venus 0.9, Mars 0.8, Mercury 0.6, Jupiter 0.5, Saturn 0.5 | [convention] the sources rank these; none numbers them |
-| the percentile | 20,000 random pairs, seed 13579 | **[measured]** — the only honest number in the model |
-
-### 5.4 · Ablations and robustness (`tools/calibrate-affinity.mjs`)
-
-Rank correlation with the model as shipped, 1,500 random pairs:
-
-| ablation | Spearman |
-|---|---|
-| exchange rate ×0.5 / ×0.75 / ×1.5 / ×2.0 | 0.947 / 0.988 / 0.969 / 0.921 |
-| a sixth counted as much as a third | 0.958 |
-| every body weighted equally | 0.944 |
-| the same-place contact fixed at +1 | 0.884 |
-| **the opposite angle read as easy** | **0.677** |
-
-**And two that undercut the model rather than flatter it**, reported because the paper this borrows
-its shape from reports its own centring as worth "only ~0.003 AUC":
-
-| ablation | result |
-|---|---|
-| the variance weighting — the mathematical centrepiece — switched off | **r = 0.994, Spearman 0.993** |
-| the whole score reconstructed from five aspect *counts* (no kernel, no weights, no hours) | **R² = 0.733** |
-
-The first says the weighting is nearly **inert**. That is not because it is wrong — it is what taking
-the average over the unknown hours literally *is* — but because there is little for it to do: six of
-the seven bodies are pinned to within a degree by the date alone, and only the Moon is genuinely
-uncertain (mean confidence 0.80 against 0.96–0.98 for the rest). It stays because it is correct, not
-because it earns its keep in the ordering. The second says a crude tally of how many angles fall
-inside their orb already reproduces three quarters of the variance; everything else in the model is
-the remaining quarter. Both belong on the record.
-
-And the check that the model reads the whole chart rather than only the bodies it can pin down —
-the weighting damps the Moon hardest, so this is the place it could quietly become a Sun-only score:
-
-| body | mean confidence | share of the answer |
-|---|---|---|
-| Sun | 0.980 | 23.0% |
-| **Moon** | **0.799** | **19.9%** |
-| Venus | 0.964 | 14.8% |
-| Mars | 0.969 | 13.8% |
-| Mercury | 0.963 | 9.7% |
-| Jupiter | 0.971 | 9.4% |
-| Saturn | 0.971 | 9.4% |
-
-Two bugs this reporting caught, both silent: `ease` and `friction` returned **zero** rather than a
-missing value on the fast path, so the calibration reported an ease forty times too small without
-complaining; and an ablation that mutated a table the code had stopped reading dutifully reported a
-perfect **1.000** — an ablation which has stopped testing anything looks exactly like a component
-that does not matter.
-
-### 5.5 · The ceiling, reported as a result
-
-Population spread of the score: **σ = 0.0566**. Median width of the 90% band one pair spans across
-its own 576 charts: **0.0481**. Ratio **0.85**.
-
-Not knowing the two birth times costs almost as much as the entire difference between one couple and
-another. Two pairs whose bands overlap cannot be told apart from dates alone by *any* model; only
-about two in five randomly chosen pairs can be separated at all. Every compatibility percentage
-computed from dates alone and printed without a band is claiming a precision the input cannot carry.
-
-### 5.6 · The empirical null
-
-Voas (2007), ~10 million married couples from the 2001 England and Wales census: **no**
-sign-compatibility effect, bounded below roughly one couple in a thousand; an apparent same-sign
-excess turned out to be census form-filling error. There is therefore no outcome to fit to, and any
-model claiming to have *learned* compatibility would be lying. Nothing here is fitted.
-
-### 5.7 · Two scores, and why both stay
-
-The eight-test Moon score (§3) and the fit (§5.2) read the same two dates and correlate at **0.01**.
-Only one is called *the score* — the page may show many numbers but only one may carry that name —
-and the older one rides along in every ranked row so a reader can watch them part company. Hiding
-one to avoid the awkwardness would be the dishonest move.
-
-## 5.4 · Removed experiments
-
-All worked, all were verified, all were deleted. They are in the git history.
-
-**The ensemble.** Three other date-only traditions (date-digit numerology, the twelve-year animal
-cycle, Sun-sign elements), each calibrated the same way, averaged into one percentile. Removed
-because four half-explained numbers teach less than one fully explained one.
-
-**The first aspect layer.** Written readings for all 55 body pairs in four configurations, sitting
-beside the score as unscored commentary. Removed because it invited "is 19 connections good?" and
-could not answer it.
-
-**The connection layer that replaced it.** Every connection between two charts with an exact
-probability, computed in closed form from a difference of two uniforms and verified against a
-240×240 brute-force sweep to 0.06 percentage points. It worked. It is gone anyway: §5.2 reads the
-same angles, weights each by how firmly the dates pin it down, and produces a number whose parts sum
-to it exactly. Keeping the older list beside it would have put two overlapping accounts of the same
-thing on one page — the failure this project has already made once. `src/engine/synastry.ts` shrank
-from 380 lines to 97.
-
-**The sky ruler.** A linear 360° band with both Moons and their daily arcs. Cut because the *score*
-depends only on the relationship between the two Moons, never on where they sit absolutely, so it
-drew data no test reads. The chart in §5.1 is a different object with a different job: it shows every
-planet, for the reading rather than for the score, and both people at once.
-
-## 6 · The words
-
-All rendered prose lives in `src/data/corpus.json` (31 KB: 27 birth stars, 12 Moon signs, and 60
-chart readings — five bodies × twelve signs) and in `src/engine/interpret.ts` (what each test means
-at full, partial and no marks) — written to a fixed voice: plain, non-fatalistic, no predictions.
-
-**Connection sentences are assembled, not stored.** Each is built from a body phrase ("how Ada
-feels"), a joining phrase ("sits in the same place as") and a meaning — so all 7 × 7 × 5 = 245
-possible sentences are correct by construction, with no table to fall out of step. What an angle
-*means* is printed the first time it appears in a reading and not again: six paragraphs ending in the
-same stock sentence read as a form letter, and the reader stops seeing the part that is about them.
-
-**The vocabulary rule:** the only specialist terms allowed on screen are the 12 zodiac sign names.
-Everything else — Sanskrit star names, the tradition's category names, symbols and glyphs — is
-replaced by plain titles ("The quick starter"). Two tests enforce it: one walks the **rendered
-page**, one walks **every string the engine can produce** whether or not the UI currently shows it.
-The second exists because a string stops being covered by the first the moment the UI stops
-rendering it — which happened once, and shipped stale wording for a week.
-
-## 7 · Privacy
-
-Manual entries live in `localStorage` and are never transmitted; there is no server. Public entries
-come read-only from profiles whose owners already publish their birthday. Share links carry only
-names and dates — the receiving browser recomputes everything. Messaging deep-links into ArtaQuest's
-existing end-to-end-encrypted chat rather than reimplementing one.
-
-## 8 · Reproducing every number in this document
-
-```bash
-npm test                                   # 100 tests: ephemeris vs golden, rules, symmetry,
-                                           # uncertainty, the score vs longhand brute force,
-                                           # the ceiling scan vs matchPair, jargon guards, drift
-python3 tools/golden.py                    # regenerate golden.json (needs pyswisseph + ephemeris files)
-npx esbuild src/engine/score.ts --format=esm --bundle --outfile=/tmp/score.mjs
-node tools/calibrate.mjs /tmp/score.mjs                    # the percentile table + its summary
-echo 'export * from "./src/engine/affinity"; export * from "./src/engine/score";' |
-  npx esbuild --bundle --format=esm --loader:.ts=ts --sourcefile=e.ts --outfile=/tmp/aff.mjs
-node tools/calibrate-affinity.mjs /tmp/aff.mjs             # §5.3–5.5: the percentile table,
-                                                           # the ablations, the per-body shares,
-                                                           # and the ceiling
-node tools/compare-elements.mjs tests/golden.json          # the Table 1 vs 2a decision
-node tools/contrast.mjs                                    # WCAG contrast, every ink/surface pair
-node tools/screenshot.mjs dist shots/                      # 35-state visual audit, five widths
+| Moon | 45-term truncated ELP-2000/82 series + nutation in longitude | Meeus, *Astronomical Algorithms*, ch. 47 |
+| Sun … Pluto | Keplerian elements, Table 1 | JPL/Standish, *Approximate Positions of the Planets* |
+| Zodiac offset (ayanamsa) | quadratic fit to Swiss Ephemeris `SIDM_LAHIRI` | `tools/fit-ayanamsa.py` |
+
+Everything in the file is pure and deterministic — no clock, no I/O, no network — which is what makes
+a reading reproducible by someone who wants to disagree with it.
+
+**Verification** is against the Swiss Ephemeris (`pyswisseph`), the reference implementation
+professional software uses. `tests/golden.json` holds 1,975 sample dates spanning 1900–2100 plus
+hourly Moon positions across whole days, and it is committed, so the comparison runs in CI without
+the 300 MB ephemeris files: a regression in the positions fails the build rather than shipping
+quietly.
+
+Worst-case error, in arcminutes [measured]: **Sun 0.8 · Moon 1.4 · Mars 3.1 · Jupiter 10.4 ·
+Saturn 22.3**. The per-body tolerances asserted in `tests/ephemeris.test.ts` are those measured
+values with a little headroom, not aspirational numbers — if a change makes any body worse, the test
+fails. The ayanamsa is reproduced to better than 10⁻⁵ degrees [measured].
+
+The ephemeris is the least uncertain thing in the model, by a wide margin: the missing birth hour
+costs hundreds of times more than 1.4′ does. That is the whole reason §8 exists.
+
+## 2 · What a date of birth can and cannot say
+
+A date fixes a **day**, not an instant, and the place of birth is not given either, so a date is read
+as a **universal-time day**. That is stated rather than smoothed over: a real local day can begin as
+much as 12 hours before, or 14 hours after, the day measured here.
+
+Three things follow, and the model handles each differently rather than pretending they are the same
+problem:
+
+- **The bodies that a day almost pins down.** Six of the seven scored bodies move so little in a day
+  that the date settles their angle to a fraction of a degree. The residual is not ignored, it is
+  *weighted* — §5.
+- **The Moon.** It moves 11.77 to 15.37 degrees a day, so it is the only scored body a date leaves
+  materially open. It appears in 13 of the 49 cells, and the averaging in §4 is mostly about it.
+- **The houses and the rising sign.** They turn a full circle every day, so from a date alone they
+  are not approximate, they are unknown. They are refused rather than defaulted to sunrise, which is
+  the usual dodge. But the *arithmetic* does not delete the rising sign, and the honest number for
+  what it is worth is in §7 — it is not zero.
+
+For one person's own chart (`src/engine/natal.ts`), the same discipline applies one layer down: a
+planet near a sign boundary at midnight is in two signs that day, so every body reports every sign
+the date allows and the share of the day it spent in each — found by scanning for the change and
+bisecting inside the hour that changed, never by sampling. Conventional synastry weights the rising
+sign and the midheaven most heavily of all, so a date-only reading is missing the tradition's own
+top-weighted factor entirely. That is a limit of the input, and it is said out loud rather than
+papered over.
+
+## 3 · The model, and where it comes from
+
+Arash Ashrafnejad, *"The zodiac's compatibility rules are a two-phase stability test"*, **Journal of
+Seasonality**, 4 July 2026, CC BY 4.0 — the author's own paper.
+
+Two signs are modelled as two **phases of one cycle**. The doctrine's soft/hard grading is then
+recovered by asking a single control-theory question — is the combined two-phase system stable? For a
+pair separated by phi [paper]:
+
+```
+    tau   = lambda_1 + lambda_2 = cos( 2 phi )               the sum of the two growth rates
+    delta = lambda_1 * lambda_2 = BASELINE + cos( 2 phi )    their product
 ```
 
-And the standing caveat, which is part of the method: there is no known mechanism by which any of
-this could work. These are old, internally consistent ways of talking about people — reported
-faithfully, calibrated honestly, and predicting nothing.
+and the verdict is two sign-checks. **delta < 0** is a saddle — one rate grows while the other decays,
+a genuine **contest**. Otherwise the pair shares one rate, tau/2, and it either spirals inward
+(tau < 0, it **settles**) or outward (tau > 0, it **strains**).
+
+**Why cos(2 phi) and nothing else.** An aspect has a built-in symmetry: phi and 360 − phi name the
+same aspect, and the pattern repeats every 180 degrees. cos(2 phi) is the lowest wave with that
+shape, so it is the only harmonic in the model [derived]. That single fact is what makes §4 an
+identity rather than an approximation.
+
+### 3.1 · The score: the stability margin
+
+The score is the paper's verdict read as a continuous number — m = −max(Re lambda₁, Re lambda₂),
+positive when every disturbance dies away. `margin()` in `src/engine/stability.ts`, and its shape is
+the claim that contradicts every compatibility site there is:
+
+| trace | margin | class |
+|---|---|---|
+| tau > 0 | −tau/2 < 0 | strains |
+| BRANCH < tau < 0 | −tau/2 > 0 | settles |
+| tau = BRANCH = 2 − √7 = −0.645751 | **PEAK = (√7 − 2)/2 = 0.322876** | the best a pair can be |
+| tau < −0.75 | < 0 | contest |
+
+Named values, all [derived] and all asserted in `tests/stability.test.ts`: a sextile scores 0.25, a
+square −(√2 − 1)/2, and being in the same place or directly opposite both score −0.5. **The margin
+does not rise with opposition.** It peaks in the interior and falls away below the peak, so the
+maximally anti-aligned pair is not the best match — it is a contest. Measured over the census, the
+most anti-aligned pairing that exists (tau = −0.8658) scores −0.118, below average [measured].
+
+**Two zeros that mean opposite things, so a score never travels without its class.** The tempting shorthand "m = 0 at the
+contest boundary" is false: m vanishes at tau = −0.75, where the *product* of the two rates is zero,
+**and** at tau = 0, where their *sum* is. Those mean opposite things and the margin alone cannot tell
+them apart, which is why every reading carries the class shares beside the score [derived, tested].
+
+One numerical detail, because the page prints the ceiling: the discriminant is factored through its
+two roots rather than evaluated term by term. Written out, its three terms cancel to about 10⁻¹⁶ at
+the peak — a double root is where a square root is least accurate — and `sqrt` turns that into an
+error near 10⁻⁸, eight digits lost at exactly the value shown as the ceiling. Factored,
+`margin(BRANCH)` returns `PEAK` exactly, and a test asserts it.
+
+### 3.2 · The one constant, and the limit of the uniqueness result
+
+**BASELINE = 0.75** [paper]. It sets where a pair stops merely straining and becomes a contest. The
+paper shows every value in (0.5, 1) puts that cut between the trine's cos 2phi = −0.5 and the square's
+−1, so the square is singled out across the whole band; §14 re-measures the ordering across that band
+rather than taking it on trust.
+
+`tests/stability.test.ts` reproduces the paper's published results on the twelve whole-sign offsets:
+only the two squares drive the product negative; the 144-cell census comes out **48 settles, 24
+contest, 72 strains**; and every sign has the identical profile of **4 settles, 2 contests, 6
+strains**. The soft aspects land in the settling class, the square is the one contested aspect, and
+being in the same place is filed with the hard ones — the paper's own noted exception.
+
+**The scope of that uniqueness, stated so the page cannot overclaim it.** "Only the square is a
+contest" is a fact about twelve equally spaced signs, not about the continuous circle. Read at the
+degree, which is what a real chart forces, delta < 0 wherever cos(2 phi) < −0.75 — a window **41.4
+degrees wide**, so **any separation from 69.3 to 110.7 degrees is a contest** [derived].
+
+### 3.3 · The paper's own evidence
+
+Reported as the paper reports it, and not restated more strongly: rank correlation **0.63** against an
+author-assigned harmony ranking, at n = 7; and **100%** of 40,000 tradition-faithful rankings agreeing
+in direction, with a median of 0.51 [paper].
+
+### 3.4 · What is measured, what is derived, what was chosen
+
+| | |
+|---|---|
+| **[measured]** | every position (§1) · every body's concentration (§5) · the whole census (§12) · the band (§12) · every ablation (§14) · the frame's size (§10) · the season (§11) |
+| **[derived]** | the weight of a body pair, \|z_i\| \|z_j\| — it is what the average over the unknown hours equals (§4) · the mean separation · BRANCH · PEAK · the width of the contest window |
+| **[paper]** | the two-phase model · the verdict rule · the margin · BASELINE = 0.75 |
+| **chosen** | seven bodies rather than ten — but chosen *on a measurement*, §6 · the reference window and its epoch, §12 · a flat prior over the 24 hours of the day · the sidereal Lahiri frame, §10 · reading a date as a universal-time day, §2 |
+
+There is no orb, no kernel width, no aspect list, no valence table, no per-body importance, no
+exchange rate between easy and hard, and no reader's switch. That list is the point of the rewrite.
+
+## 4 · The collapse: why the decomposition is an identity
+
+A birth date fixes a day, so each chart is drawn 24 times and each pair 24 × 24 = **576** times.
+Define for each body its **second-harmonic resultant** over the day's hours,
+
+```
+    z_b = (1/24) * SUM over the day's 24 hours of exp( 2i * L_b(hour) )
+```
+
+so |z_b| in [0, 1] measures how tightly the date pins that body's phase down, and arg(z_b)/2 is its
+effective longitude. Because the 576-chart grid is **by construction** the Cartesian product of A's 24
+hours with B's 24 hours, the double sum factorises, exactly:
+
+```
+    (1/576) SUM over the 576 charts of cos( 2 phi_ij )  ===  Re( z_j^B * conj(z_i^A) )
+                                                       ===  |z_i| |z_j| cos( 2 Delta_ij )
+```
+
+That is not an approximation of the average over the unknown birth hours. It **is** that average, to
+floating point. Held against the brute-force double sum in `tests/stability.test.ts`: worst
+discrepancy per cell **2.4 × 10⁻¹⁵**, and for a whole chart **2.8 × 10⁻¹⁶** [measured]. So "weight
+each body pair by how firmly the dates pin its angle down, and score it at its mean angle" is not a
+modelling choice at all — it is what the expectation equals. The engine this replaces needed a
+Gaussian kernel, a trapezoid integration and a printed error bar (median 9.8 × 10⁻⁶) to get near the
+same place; here the explanation and the number are the same arithmetic.
+
+Summing the cells collapses one step further. With Z = SUM over bodies of z_b,
+
+```
+    tau_bar = (1/N^2) * Re( Z_B * conj(Z_A) ) = ( |Z_A| |Z_B| / N^2 ) * cos( 2 Delta_AB )
+```
+
+so a whole chart reduces to **one complex number**, and the compatibility of two people is the cosine
+of the angle between their two vectors.
+
+**Stated precisely, because the loose version is easy to falsify.** The 49-cell matrix is exactly
+**rank 2** — it is the outer product Re(z_j conj z_i), so it has two singular values and
+then nothing above the floating-point floor [measured]. So the grid contains no information beyond
+the two charts themselves, and the score contains nothing beyond |Z| and arg(Z), two real numbers per
+person. It is *not* true that the grid reduces to two numbers per person; it reduces to each person's
+seven body angles, and the score reduces further. This is disclosed rather than buried, because a
+score with two parameters per person cannot hide a thumb on the scale — that is the trade, taken
+deliberately.
+
+**The one precondition.** The collapse assumes nothing about constant speed, Gaussian anything, or
+independence between bodies. It assumes exactly one thing: that the 576 charts are a **Cartesian
+product** — the two people's unknown birth hours are separate unknowns. That is load-bearing, it is
+the right assumption, and it can fail: force the two hours to be equal and the identity breaks by
+**2.6 × 10⁻⁴**, which is 10¹¹ times the floating-point error [measured]. Any separable per-person
+prior over the hour keeps the collapse; a joint prior over the two destroys it.
+
+And the ablation that undercuts this section rather than flattering it is in §14.1: the 576-chart grid
+barely moves the score.
+
+## 5 · The weights
+
+Each body pair's weight is |z_i| |z_j|, and every one of those numbers is measured rather than set.
+
+| body | concentration \|z\| [measured] | note |
+|---|---|---|
+| **Moon** | **0.9912** | range 0.98806 at 15.37 °/day to 0.99299 at 11.77 °/day — the only scored body a date leaves materially open |
+| Sun | 0.99995 | |
+| Mercury | 0.99991 | minimum 0.99975 |
+| Venus | 0.99994 | |
+| Mars | 0.99998 | |
+| Jupiter | 0.9999988 | |
+| Saturn | 0.9999997 | |
+| Uranus, Neptune, Pluto | > 0.9999999 | pinned down *more* precisely than anything else — see §6 |
+
+A phase spread perfectly uniformly round the circle has |z| = 0 exactly, and a test asserts that. The
+important consequence of this table is the honest one: with every scored |z| at 0.988 or better, there
+is very little for the averaging in §4 to do, which is exactly what §14.1 measures.
+
+Two house rules travel with these: a circular average is always `atan2` of a resultant vector and
+never a scalar mean of angles, so no readout can be broken by a wrap through 360; and the weights are
+positive but never normalised.
+
+## 6 · Why seven bodies and not ten, on the measurement
+
+Uranus, Neptune and Pluto are pinned by a birth date more precisely than anything else, so a weight
+built from concentration alone counts them **heaviest of all**. That is exactly why they had to be
+measured out rather than argued out. Over every one of the 97,259,044 pairs in the reference window
+[measured]:
+
+| bodies | r vs age gap | population mean | population spread |
+|---|---|---|---|
+| the three outers **alone** | **+0.954** | −0.0859 | 0.0957 |
+| all ten | +0.222 | −0.0092 | 0.0499 |
+| **the seven shipped** | **+0.021** | −0.0002 | 0.0742 |
+| the personal five | +0.002 | −0.0008 | 0.1138 |
+
+The three outer planets alone are an **age-gap meter with an astrology label**, at r = 0.95. The
+direction is worth stating because it is not the obvious one: two people born a few months apart have
+all three sitting on top of each other, the model reads that as being in the same place, and that is
+filed with the hard aspects. So including them **penalises being the same age** — mean −0.179 at a gap
+of zero, rising to −0.040 by twelve years — and it flattens the spread from 0.074 to 0.050, costing a
+third of the score's power to tell anybody apart in exchange for a fact about the calendar.
+
+Dropped, the population centres itself: mean −0.0002 with no centring device anywhere in the code,
+which is why the file has none. The engine it replaces needed one, and its absence here is a result
+rather than an omission.
+
+Jupiter and Saturn stay. Their residual signal oscillates with their own periods instead of decaying
+with the gap, so it is a cycle rather than a proxy for having been born in the same decade.
+
+## 7 · The rising sign: 0.0430, not zero
+
+The tempting claim is that the arithmetic deletes the rising sign and the houses for free: a phase
+spread uniformly round the circle has |z| = 0, so the weight would be zero and no editor would have
+to exclude anything.
+
+**That claim is false, and the true one is better.** An ascendant does not sweep the circle uniformly
+— it rises fast through some signs and slowly through others — and the residual second harmonic is
+
+```
+    |z_ASC| = tan^2( eps / 2 ) = 0.0430
+```
+
+where eps is the obliquity of the ecliptic [derived]. It is the **same value at every latitude from 0
+to 60 degrees north**, and independent of the birthplace longitude. Even a perfectly uniform ascendant
+would leave 2.8 × 10⁻³ on a grid of solar hours, because the sky turns 360.98 degrees in one. So the
+rising sign is worth about 4% of a real body, not nothing.
+
+What the arithmetic does instead is **flatten** it: arg(z_ASC) points the same way for everybody —
+concentration 0.9987 across dates, at the solstice — so an ascendant admitted to the model would add
+**the same constant to every pair alive** [measured]. It is excluded for that reason, which is a fact
+about the geometry, and not for a zero that is not there. The page shows the 0.0430, because a reader
+who has been told elsewhere that the rising sign matters most deserves the real number rather than a
+rhetorical one. A test holds the geometry so the claim cannot drift back to "zero".
+
+## 8 · The estimator: the mean of the 576 margins, not the margin of the mean
+
+`Reading.tau` is the exact mean trace by §4. **It is not the score.** The score is the paper's margin
+averaged over the 576 charts the two dates leave open — the expected *reading*, not the reading of the
+average system.
+
+The two agree for all but a hair of the population, because above the branch point the margin is
+exactly −tau/2, a **linear** function, and there the mean of the margins is the margin of the mean. A
+pair whose own 576 traces straddle the branch is a different matter: the margin has a vertical tangent
+there, and the two definitions part company by as much as **0.044**, which is 59% of the population's
+whole spread [measured]. So the estimator is the average of the margins **everywhere and in one code
+path**, rather than a closed form that is exact about the average system instead of the average of the
+systems. Over the census the closed form is provably valid on **99.850%** of pairs; the other
+**146,101** pairs run the full 576-chart pass [measured].
+
+Where the closed form *is* used — §13's scan and the census tool — it is licensed by a true bound
+rather than a tolerance: no chart of a pair can have a trace below −|z_A(h)| |z_B(k)| / N², so when
+that bound stays above the branch point, linearity is guaranteed and one dot product settles the day.
+When the bound admits a sub-branch trace, the full pass runs. That is one code path with a proof
+attached, not a fast path with a fudge factor.
+
+Two exactness devices worth knowing about, because both were real defects first:
+
+- **The 576 readings are sorted before they are summed**, and the mean is taken from the sorted array.
+  Swapping the two people transposes the readings, which leaves them identical as a *set* but not as a
+  sequence — and floating-point addition is not associative, so walking the grid the other way round
+  moved the score by one unit in the last place. Sorting removes the dependence on the walk, which is
+  what makes score(A,B) = score(B,A) hold **exactly** rather than to within an ulp. It is also the more
+  accurate order to add in.
+- **score(A,B) = score(B,A) is an identity, not an asserted invariant**, because cos(2 phi) is even in
+  phi; lead(A,B) = −lead(B,A) likewise, because sin(phi) is odd. Neither needs the old engine's device
+  of computing both orderings and averaging them.
+
+The band shipped with every reading is the 5th-to-95th spread of that pair's own 576 readings, with
+the minimum and maximum beside it — nine readings in ten, and no bell shape assumed.
+
+## 9 · The contest channel, and the lead
+
+Everything in §4 collapses. **One quantity does not**: the contest share. A saddle is a nonlinear gate
+applied to each chart separately, so it carries information the score cannot.
+
+Measured: two pairs whose traces agree to **4 × 10⁻⁷** differ in contest share by **8 percentage
+points**, and the two quantities correlate only at **−0.80**. A random pair sits at about **23%**,
+against a uniform baseline of 23.005% [measured]. That is why the contest share is reported in its own
+right rather than folded into the score.
+
+Two decisions inside it, both deliberate:
+
+- **It is counted over the actual grid, not inferred from the mean**, because the gate is a threshold
+  and a threshold does not commute with an average.
+- **It is not weighted by |z|.** The 576 charts already *are* the birth-hour uncertainty; weighting by
+  the concentration as well would count the same doubt twice. And the count is kept in **integers** —
+  a count of grid slots is order-independent, so the share comes out bit-identical whichever person is
+  put first, where a float accumulation of weighted shares was symmetric only to an ulp with a strict
+  inequality riding on it.
+
+**The lead** is the paper's l: the mean of sin(phi) across the charts where a cell **is** a saddle, and
+zero when it never is. Positive means the second person is the one ahead, so they prevail in that
+contest. It is defined only inside the contest window, which is where the paper defines it: averaged
+over every cell instead, it names the **opposite** winner about one pair in six [measured]. A sin(phi)
+from a cell that is not a saddle is not the paper's l at all.
+
+## 10 · The frame, and what is genuinely invariant
+
+Positions are sidereal (Lahiri). Every quantity in the model is a function of phase **differences**, so
+moving the zero point of the zodiac by any **constant** changes nothing. A test asserts that exactly,
+at shifts of 7.3, 0.001, −23.85, 180 and 359.9 degrees, and it is what proves no absolute longitude
+has leaked into the arithmetic.
+
+**It is tempting to go one step further and say the score is therefore the same tropical or sidereal.
+That is false.** An ayanamsa is not a constant — it precesses — and the two people were born at
+different times, so switching frames shifts their two charts by **different** amounts. Across this
+window the Lahiri ayanamsa moves 0.377 degrees, and measured over 1,985,281 pairs the two frames
+disagree by a mean of **2.4 × 10⁻⁴** and at worst **3.5 × 10⁻³** — 0.33% and 4.7% of the population
+spread [measured]. Small, but not zero, and largest for the couples furthest apart in age.
+
+The sidereal frame is therefore a real commitment here, not a relabelling, and this is its size.
+
+## 11 · The season: the model's biggest single property
+
+cos(2 phi) is 180-degree periodic, which is what the symmetry of an aspect demands — and it means the
+model **cannot tell being in the same place from being directly opposite**. Both are tau = +1 and both
+strain. Followed through to real people, that says something startling: two people born on the same
+day of the year have their Sun, Mercury, Venus and Mars nearly on top of each other, so they can never
+settle. Over the census, **every** same-date pairing scores below zero, without exception; so does
+the MEAN of every day-of-year gap near six months, though not every pair in it — the best pairing six
+months apart still reaches +0.192.
+
+| day-of-year gap | 0 | 30 | 60 | 91 | 121 | 152 | 182 |
+|---|---|---|---|---|---|---|---|
+| mean score [measured] | −0.070 | −0.027 | +0.037 | +0.047 | +0.031 | −0.017 | −0.059 |
+
+Best at about a quarter of a year apart; worst together and worst opposite. And the size of it:
+**0.2577 of the score's variance is nothing but the distance between two birthdays in the calendar
+year** [measured].
+
+The engine this replaces measured **0.100** on the same test. So this is a real **regression** on that
+one axis, taken knowingly in exchange for exact arithmetic, no invented constants, and a fivefold
+improvement in what two dates can resolve (§12).
+
+It is not a bug and it is not fixable without breaking the derivation: a date-only model reads the
+calendar, because the Sun's longitude **is** the calendar. The old engine hid it by reading mostly the
+Moon. This one states it, measures it, and shows it — a reader who tries two friends born in the same
+week meets the model's worst case, and should find it already explained.
+
+## 12 · The census, and the percentile
+
+**There is no sample and no seed.** The old table was "20,000 random pairs, seed 13579" because
+scoring a pair cost 576 × 49 exponentials. The collapse makes a pair cost one dot product, so the
+reference population is computed **exhaustively**: every ordered pair of birthdays in the window, all
+**97,259,044** of them. A percentile from a census cannot be a sampling artefact, and there is nothing
+left to reproduce — only to recompute.
+
+**The window** is every birthday of a person aged 18 to 44 at a stated epoch: **1981-08-05 to
+2008-08-04, 9,862 days**, epoch **2026-08-04**. Two properties, both deliberate:
+
+- *The same window for everybody.* A window relative to each person ranks each person against a
+  different population, so two people's readings could not be compared and "you are in the 90th
+  percentile" would mean a different thing on each screen.
+- *A constant, never today.* A window that moves at midnight makes every committed number, and every
+  test that guards them, silently wrong the next morning. Moving it is a deliberate release act: bump
+  the epoch, re-run the calibration tool, paste the table back. A test fails if the constants and the
+  window stop agreeing.
+
+| | [measured, census] |
+|---|---|
+| mean | −2.454 × 10⁻⁴ |
+| spread | 0.074195 |
+| minimum | −0.463709 — **2000-05-18 paired with its own date** |
+| maximum | 0.321482 — 1989-05-22 with 1992-04-14, short of the derived ceiling 0.322876 by 1.39 × 10⁻³ |
+| settles | 49.9119% — 48,543,844 |
+| strains | 50.0875% — 48,714,606 |
+| contest | 0.0006% — **594** |
+
+The worst pairing that exists is a date paired with itself, and its score is exactly minus half the
+largest trace two dates can reach — the two facts are the same fact. The aggregate contest class is
+real and vanishing, which is precisely why §9 is reported separately.
+
+**Each chart as one vector** [measured]: |Z| lies in [0, 7] and the census finds a minimum of 0.0252
+(1981-12-15), a maximum of 6.7412 (2000-05-18) and a median of 2.9035. So |tau| reaches **0.9274** of
+its theoretical 1.0, and the interior optimum tau = −0.6458 is comfortably reachable.
+
+**The percentile table** shipped in `src/engine/stability.ts` is 41 steps spanning −0.32 to +0.32,
+each entry the share of the census scoring at or below that step, and it is generated by the tool in
+§18 rather than typed. A drift test recomputes a slice in CI and fails if the numbers go stale,
+because a shifted distribution must never leave an old table on the page.
+
+**The resolution limit, reported as a result** [measured]:
+
+| | |
+|---|---|
+| population spread of the score | 0.074195 |
+| median width of the 90% band **one pair** spans over its own 576 charts | 0.012101 |
+| bands measured | 8,100 real pairs, a 90 × 90 grid of days across the window |
+| ratio | **0.163** |
+
+Not knowing the two birth times costs about 16% of the whole difference between one couple and
+another. That is the ceiling on what two dates can resolve, and it is where this model gains most on
+the one it replaces: there the same ratio was **0.85**, and only about two pairs in five could be told
+apart at all. Aggregating over all 49 cells is what bought it — the Moon is the only body a date
+leaves open and it appears in 13 of the 49. Any page printing a compatibility percentage from dates
+alone without a band is claiming a precision the input does not carry. That is arithmetic, not
+criticism.
+
+## 13 · The scan: the most this person could score, and against whom
+
+`scanWindow` scores **every one of the 9,862 days** in the reference window against one person, one
+day at a time, and reports the best, the worst, the median, a histogram, and the number of days that
+cannot be told apart from the best.
+
+- Each day's whole contribution is three numbers — its mean chart vector and its largest hourly
+  length — so 9,862 days is about 237 KB and nothing needs shipping or caching.
+- The closed form is used **where it is provably exact and nowhere else**, licensed by the bound in
+  §8. Over the census that is 99.850% of pairs; the remaining 146,101 run the full 576-chart pass
+  [measured].
+- It yields the fraction done so a browser can run it in slices of a frame. A panel that freezes the
+  page for a second while you scroll it is broken.
+
+**The number that matters is indistinguishability, not ties.** How many days cannot be told apart from
+the best one — within one band width of it [measured]:
+
+| person | days indistinguishable from the best | of |
+|---|---|---|
+| 1985-03-15 | 15 | 9,862 |
+| 1999-11-02 | 11 | 9,862 |
+| 1992-02-29 | 19 | 9,862 |
+
+About **one day in 600**. Exact ties: **1**. The page this replaces printed "71 days out of 8,767" tied
+at the ceiling; because the score is now continuous, exact ties are a question about rounding rather
+than about people, and the honest equivalent is the table above. It puts the same stake through the
+one-soulmate idea, and it is the most useful sentence on the panel.
+
+## 14 · Robustness, and every ablation
+
+Rank correlations below are Spearman, against the model exactly as shipped, on a 400-day grid of the
+window (160,000 pairs). Reproduced by the tool in §18.
+
+### 14.1 · Three that undercut the model rather than flatter it
+
+Reported first, and at least as prominently as anything favourable, because the paper this borrows its
+shape from reports its own centring as worth "only ~0.003 AUC".
+
+| ablation | result [measured] | why it stays |
+|---|---|---|
+| **the 576-chart grid**, replaced by a single noon chart | mean difference 3.4 × 10⁻⁴ (0.45% of the spread), correlation **0.999983** — but worst case 2.4 × 10⁻², which is **33%** of the spread | it is not an approximation of the average over the unknown hours, it **is** that average (§4); and it is what produces the **band**, which is the part of the answer that needed it. Every concentration is at least 0.988, so there is little for the averaging to do |
+| **the eigenvalue nonlinearity**, replaced by plain −cos(2 phi)/2 — the paper's contest class thrown away | Spearman **0.999956**. It fires on **594** pairs in 97 million | it is the paper's own verdict function, and without it the best possible match would be the most anti-aligned pair — which the paper calls a contest |
+| **BASELINE**, swept across the paper's stated band | 0.9926 (0.50) · 0.9991 (0.60) · **1.0 (0.75)** · 0.99996 (0.90) · 0.99996 (1.00) | the ordering barely depends on the only number in the model that was not derived here. Reporting that is the point |
+
+So the mathematical centrepiece is nearly **inert**, and the apparatus that computes 576 charts moves
+the typical score by half a percent of its own spread, and the worst by a third of it. Both belong on
+the record: saying so beats letting a
+derivation imply an importance it does not have.
+
+### 14.2 · The body set
+
+The table in §6, which is the one ablation that changed the shipped model. Everything else here left
+it alone.
+
+### 14.3 · What robustness cannot cover
+
+Two properties are **not** robust and are not presented as such: the **season** (§11, 0.2577 of the
+variance) and the **frame** (§10, worst 4.7% of the spread). The first is a consequence of the
+harmonic and cannot be removed without abandoning the derivation; the second is a real commitment to
+the sidereal zodiac. Both are measured and printed rather than defended.
+
+## 15 · The empirical null
+
+Voas (2007), roughly **10 million married couples** from the 2001 England and Wales census: **no**
+sign-compatibility effect, bounded below about one couple in a thousand.
+
+So there is no outcome to fit to, and any model claiming to have *learned* compatibility would be
+lying. **Nothing here is fitted.** What is computed is a different and answerable question: under the
+tradition's own rules, stated openly, where does this pair fall among every pairing in the reference window?
+
+## 16 · What was removed
+
+All of it worked, all of it was verified, all of it is in the git history. It went because the
+standing instruction is that everything must be logical or stripped away, and each of these contained
+numbers nobody could source.
+
+- **The eight-test Vedic Moon score out of 36** (`kuta.ts`, `nakshatra.ts`, `score.ts`,
+  `interpret.ts`, `corpus.json`) — lookup tables reconstructed from Sanskrit sources, one of the eight
+  ranking four temperaments in an order inherited from a caste hierarchy. Not derivable.
+- **The continuous affinity fit** (`affinity.ts`) — a Gaussian kernel on five traditional aspect
+  angles, with its widths taken from a 1647 orb table and halved by a convention of ours.
+- **The valence table** (sixth +0.5, third +1, quarter −1, opposite −1): the tradition names which
+  angles are easy, and the magnitudes were ours.
+- **Benefic/malefic natures** and **per-body importance** — labelled at the time as "the sources rank
+  these; none numbers them", which was honest and is not a defence.
+- **The ease/friction split** and the exchange rate between them; and **the reader's switch** that read
+  the opposite angle as easy, which was the single choice that moved the ordering most.
+- **The random-angle null subtraction** and the exact trapezoid expectation it needed. A centring
+  device is only needed by a score that is off-centre by construction; this one centres itself (§6).
+- **Both 20,000-random-pair calibration tables and their seed** — replaced by the census (§12).
+- **The "effective aspect angle"**, 0.5 · acos(tau_bar). It was appealing, because the aggregate lies
+  on the same one-parameter family as a single aspect. It went because it is a monotone
+  reparameterisation of the trace and so carries nothing new, and because its reachable range over
+  real charts is only about 11 to 75 degrees: it can never report 90, so a reader shown "your
+  effective aspect is 70 degrees" would reasonably conclude they were near a square when they were at
+  the far end of the whole scale. One number that cannot say what it appears to say is worse than no
+  number.
+
+## 17 · Privacy
+
+Manual entries live in `localStorage` and are never transmitted; there is no server. Public entries
+come read-only from profiles whose owners already publish their birthday. Share links carry only names
+and dates — the receiving browser recomputes everything. Messaging deep-links into ArtaQuest's
+existing end-to-end-encrypted chat rather than reimplementing one.
+
+## 18 · Reproducing every number in this document
+
+```bash
+npm test                                   # §1 ephemeris vs the committed Swiss Ephemeris golden
+                                           # data; §4 the collapse against brute force; §3 the
+                                           # paper's published census and algebra; §7 the rising
+                                           # sign's 0.0430; §8 the exact symmetries; the ceiling
+
+python3 tools/golden.py                    # §1 regenerate golden.json (needs pyswisseph + the
+                                           # ephemeris files)
+node tools/compare-elements.mjs tests/golden.json   # §1 the Table 1 vs Table 2a decision
+
+# §5, §6, §9-§14: the census, the percentile table, every ablation, the band, the scan
+echo 'export * from "./src/engine/stability"; export * from "./src/engine/ephemeris";' | \
+  npx esbuild --bundle --format=esm --loader:.ts=ts --sourcefile=e.ts --outfile=/tmp/aq.mjs
+node tools/calibrate-stability.mjs /tmp/aq.mjs
+
+node tools/contrast.mjs                    # WCAG contrast, every ink/surface pair
+node tools/screenshot.mjs dist shots/      # real-browser audit of the built bundle, five widths
+```
+
+The calibration tool is bundled through stdin because `--outdir` writes `.js`, which node in `/tmp`
+reads as CommonJS. It prints the percentile table in the exact form it is pasted back into
+`src/engine/stability.ts`, so the shipped constants and the census can never quietly disagree.
+
+And the standing caveat, which is part of the method: there is no known mechanism by which any of this
+could work. These are old, internally consistent ways of talking about people — reported faithfully,
+calibrated honestly, and predicting nothing.
+
+## Edition V — Till Death Do Us Part (2026-09-01)
+
+A second reading on the page, from a different corpus and a different model family to everything
+above. It answers the opposite question: not *does this last* but *did it come apart*.
+
+### The corpus
+
+**175,155 marriages** between people with recorded birth dates, harvested from Wikidata
+(`P26` spouse statements, every birth decade 1500–1990) and Wikipedia prose. A marriage counts as
+having come apart — **9,682 of them, 5.53%** — when
+the record says so explicitly, by any of six routes:
+
+| evidence | pairs |
+|---|---|
+| remarriage while the other partner was still living | 5,377 |
+| an explicit `P1534` end cause (divorce, annulment, separation) | 2,739 |
+| a couple-bound phrase in the prose ("they divorced", "their separation") | 2,196 |
+| an end date more than a year from either death | 2,069 |
+| a per-couple judgement of the article text | 1,813 |
+| recorded infidelity | 573 |
+
+Everything else is a negative: presumed till-death. Couples enter only when the marriage is
+*provably over* — both born before 1950, or both deaths recorded — so a marriage still running is
+never counted as one that held. 22 pairs whose records contradict each other were dropped rather
+than resolved by a coin toss. Partial birth dates are kept, imputed to the middle of the known
+window (78,830 of them); the slow bodies that dominate the model are barely moved
+by a few months, and the fast terms simply attenuate.
+
+### The model
+
+```
+score = bias + Σ w · cos(angle)  +  w · sin(angle)          p = sigmoid(score)
+```
+
+**48 terms** over 13 sidereal bodies (Lahiri, noon UT), in three families that
+survived elimination — his positions, her natal aspects, and the same-body cross-chart differences,
+plus her midpoint axes:
+
+- `D  man[i] − woman[i]` — the synastry aspect
+- `natM man[i]`, `natW woman[i]` — natal placements
+- `aspW woman[i] − woman[j]` — her own natal aspects
+- `midW woman[i] + woman[j]` — her own midpoint axes
+
+Every angle is at the **fundamental harmonic only**. That is a finding, not a simplification: every
+higher harmonic was fitted and made it worse, which includes the classical aspect ladder (a trine is
+the 3rd harmonic, a square the 4th).
+
+**Ten-fold grouped cross-validated AUC 0.7430**, folds cut by connected component of
+the marriage graph so two couples sharing a person can never straddle the split. Fitted in **closed
+form**: three Newton steps from zero — step one is the weighted least-squares/LDA solve, steps two
+and three re-solve against the analytic logistic Hessian. No iterative optimiser, and it matches an
+LBFGS fit to the fourth decimal.
+
+### What each term is worth, measured
+
+Leave-one-out: the whole cross-validation refitted with that single sin or cos removed.
+
+| term | weight | AUC it carries alone |
+|---|---|---|
+| cos(her neptune-pluto) | +0.8158 | +0.00607 |
+| cos(her mid sun/mercury) | +0.1431 | +0.00183 |
+| cos(D uranus) | -0.1062 | +0.00075 |
+| cos(her saturn-chiron) | +0.1219 | +0.00070 |
+| cos(her mid moon/venus) | -0.0929 | +0.00053 |
+| sin(his mercury) | -0.0593 | +0.00040 |
+| sin(her mid sun/venus) | -0.1024 | +0.00040 |
+| cos(his uranus) | -0.0708 | +0.00039 |
+| sin(his neptune) | +0.2243 | +0.00034 |
+| cos(her mid moon/mercury) | +0.0720 | +0.00025 |
+
+The lesson is in the gap between the two columns: `sin(D pluto)` is one of the heaviest weights in the
+model and contributes almost nothing by itself, because `cos(D pluto)` covers for it. A weight is not
+a contribution.
+
+### What was tried and rejected
+
+Every angle family constructible from two dated charts was fitted. Rejected on measurement, not taste:
+the full cross-body synastry grid, composite-chart internal aspects, couple midpoints, his natal
+aspects, his midpoint axes, cross-body midpoints, all harmonics k≥2, the complete quadratic expansion
+(5,565 parameters, worse), and all four three-body families — Ebertin's midpoint contacts and the
+Hellenistic planetary lots among them. Out of reach with birth dates alone, and recorded as such:
+houses, angles, declinations, retrograde states.
+
+### Honest limits
+
+- **Which separations it sees.** Sliced by evidence, out of fold: P1534 0.781 · end-date 0.713 · judge 0.808 · text 0.757 · infid 0.666 · remarry 0.747. It reads a
+  judged article far better than a bare infidelity flag.
+- **A stricter target scores lower.** Trained and scored only on confident-versus-confident rows —
+  explicit separation against explicit till-death — five-seed AUC is **0.7165**, not
+  0.7430. Both numbers are real; the second is the one to quote against a sceptic.
+- **More data still helps, slightly.** 0.6993 at 44k couples →
+  0.7080 at 88k → 0.7165 at 175k.
+- **The corpus is famous people**, who are not a sample of marriages.
+- **A percentile, not a verdict.** The page shows where a pair falls among the 175,155,
+  because 5.5% of the corpus is a recorded separation and a bare
+  probability reads as worse news than it is.
+
+The model file itself is [`docs/tilldeath.json`](tilldeath.json) — 48 weights, the
+bias, and 200 couples with their scores so the page can prove it reproduces its own fit. CI replays
+those 200 through the shipped ephemeris shim and refuses to publish on a disagreement over 1e-3.

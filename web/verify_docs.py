@@ -38,7 +38,8 @@ DOCS = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "docs")
 
 REQUIRED = ["index.html", "ephem4.bin", "tables.json", "model.json", "model.npz",
-            "sweshim.py", "predictor.py", "runner.py", ".nojekyll"]
+            "sweshim.py", "predictor.py", "runner.py", ".nojekyll",
+            "tilldeath.py", "tilldeath.json"]
 ALLOWED_IMPORTS = {"numpy", "astropy", "erfa"}
 LEVELS = ["full", "month", "year", "absent"]
 # Mirrors kaggle/dates.py. It is a literal here because docs/ must verify from its own contents with nothing but
@@ -214,6 +215,8 @@ def main():
     if fails:
         print(f"\n{len(fails)} check(s) failed — refusing to publish")
         raise SystemExit(1)
+    check_tilldeath()
+
     if grid:
         print(f"\ndocs/ is publishable — mean of 14 AUCs {bm['benchmark15']:.4f} over "
               f"{bm.get('n_rows', 0):,} held-out couples")
@@ -221,6 +224,51 @@ def main():
         hd = m.get("heldout") or {}
         print(f"\ndocs/ is publishable — held-out AUC {hd.get('auc'):.4f} against an era rule of "
               f"{hd.get('era_rule'):.4f}, on {int(hd.get('n') or 0):,} couples born after the training years")
+
+
+def check_tilldeath():
+    """The Till Death model must reproduce its own fit THROUGH THE SHIPPED SHIM.
+
+    This is the one gate that matters for it. The weights were fitted in Python against Swiss
+    Ephemeris positions; the page recomputes those positions here, with docs/sweshim.py and
+    docs/ephem4.bin. If the two ever diverge — a changed ayanamsa path, a body index off by one, a
+    term dropped in an edit — the page keeps rendering confident numbers the corpus never produced.
+    So the model file ships 200 couples with their float64 scores, and they are replayed.
+
+    Tolerance 1e-3: the shim reproduces Swiss Ephemeris to arcseconds, which at k=1 moves the score
+    by ~1e-4 (measured: worst 1.2e-4 over these couples). Anything structurally wrong moves it by
+    whole units, hundreds of times this ceiling.
+    """
+    sys.path.insert(0, DOCS)
+    import sweshim
+    sweshim.load(os.path.join(DOCS, "ephem4.bin"), os.path.join(DOCS, "tables.json"))
+    import tilldeath as td
+    m = json.load(open(os.path.join(DOCS, "tilldeath.json")))
+
+    check("the till-death model is structurally a model",
+          isinstance(m.get("terms"), list) and len(m["terms"]) > 0
+          and isinstance(m.get("bias"), float) and isinstance(m.get("quantiles"), list),
+          f"{len(m.get('terms', []))} terms, {len(m.get('quantiles', []))} quantiles")
+
+    kinds = {"diff", "natM", "natW", "sum", "aspM", "aspW", "midM", "midW"}
+    bad = [t for t in m["terms"] if t["kind"] not in kinds or t["trig"] not in ("cos", "sin")
+           or not (0 <= t["i"] < len(m["bodies"]))
+           or (t["j"] is not None and not (0 <= t["j"] < len(m["bodies"])))]
+    check("every till-death term names a real body and a real angle kind", not bad,
+          f"{len(bad)} malformed" if bad else f"{len(m['terms'])} terms over {len(m['bodies'])} bodies")
+
+    check("the till-death quantiles are sorted",
+          all(m["quantiles"][i] <= m["quantiles"][i + 1] for i in range(len(m["quantiles"]) - 1)))
+
+    worst, n = td.verify(m)
+    check("the till-death page reproduces its own fit through the shipped shim", worst < 1e-3,
+          f"worst |diff| {worst:.2e} over {n} couples")
+
+    lo, hi = m["servable_span"]
+    outside = [v for v in m["verify"]
+               if not (lo <= int(v["dob_a"][:4]) <= hi and lo <= int(v["dob_b"][:4]) <= hi)]
+    check("every till-death verification couple is inside the shipped ephemeris span",
+          not outside, f"{len(outside)} outside {lo}-{hi}")
 
 
 if __name__ == "__main__":

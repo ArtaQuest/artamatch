@@ -214,9 +214,14 @@ const tdOut = await ev(`(async () => {
   const el = document.querySelector("#td-out");
   const cut = (x, n) => JSON.stringify(String(x || "").slice(0, n));
   return { shown: false,
-           text: "td-out=" + cut((el || {}).textContent, 90)
-                 + " pair-out=" + cut(document.querySelector("#pair-out").textContent, 60)
-                 + " dates=" + document.querySelector("#a-dob .dm").value
+           text: "calls=" + (window.__tdCalls || 0)
+                 + " args=" + JSON.stringify(window.__tdArgs || null)
+                 + " err=" + cut(window.__tdErr, 160)
+                 + " tdExists=" + !!el
+                 + " td-out=" + cut((el || {}).textContent, 70)
+                 + " pair=" + cut(document.querySelector("#pair-out").textContent, 40)
+                 + " y=" + document.querySelector("#a-dob .dy").value
+                 + " md=" + document.querySelector("#a-dob .dm").value
                  + "/" + document.querySelector("#a-dob .dd").value };
 })()`) || {};
 console.log(`  till-death : ${tdOut.shown ? `${tdOut.head} percentile, ${tdOut.rows} named drivers`

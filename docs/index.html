@@ -626,7 +626,11 @@ for (const id of ["#f-self", "#f-from", "#f-to"]) {
 // apart", learned from 175,155 wiki marriages where coming apart is on the record.
 async function scoreTillDeath(a, b) {
   // FIRST THING, BEFORE ANY WORK: an empty section and a section still computing looked exactly the
-  // same, in the browser gate and to a reader. Paint the state immediately.
+  // same, in the browser gate and to a reader. Paint the state immediately, and leave a trace on
+  // window so a gate can tell "never entered" from "entered and stalled" — the two produced the
+  // identical empty div, and one CI round trip was spent not knowing which.
+  window.__tdCalls = (window.__tdCalls || 0) + 1;
+  window.__tdArgs = [a, b];
   $("#td-out").innerHTML = `<p class="note" style="margin-top:22px">computing the Till Death reading…</p>`;
   const td = window.__td;
   if (!td) {
@@ -655,6 +659,7 @@ async function scoreTillDeath(a, b) {
       `import json, tilldeath; json.dumps(tilldeath.score(tilldeath.load(), ${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
   } catch (e) {
     // A SILENT BLANK IS THE WORST OUTCOME: the reading simply would not appear and nothing said why.
+    window.__tdErr = String(e && e.message || e).slice(0, 300);
     $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading could not be
       computed for these dates: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
     return;
@@ -692,6 +697,7 @@ $("#go-pair").onclick = async () => {
     `import json, runner; json.dumps(runner.score_pair(${JSON.stringify(a)}, ${JSON.stringify(b)}))`));
   if (!r.ok) { $("#pair-out").innerHTML = `<p class="note">${r.why}</p>`; return; }
   scoreTillDeath(a, b).catch(e => {
+    window.__tdErr = String(e && e.message || e).slice(0, 300);
     $("#td-out").innerHTML = `<p class="note warn" style="margin-top:22px">The Till Death reading
       failed: ${String(e && e.message || e).split("\n")[0].slice(0, 200)}</p>`;
   });

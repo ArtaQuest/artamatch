@@ -213,8 +213,17 @@ const tdOut = await ev(`(async () => {
   // NO NESTED BACKTICKS: this whole block is itself a template literal, and an inner backtick ends it.
   const el = document.querySelector("#td-out");
   const cut = (x, n) => JSON.stringify(String(x || "").slice(0, n));
+  // THREE-WAY: is it in the bytes the server sent, in the parsed document, or removed since?
+  let served = "?";
+  try {
+    const txt = await (await fetch(location.href, { cache: "no-store" })).text();
+    served = String(txt.includes('id="td-out"')) + "/len" + txt.length;
+  } catch (e) { served = "fetchfail:" + e.message; }
   return { shown: false,
-           text: "calls=" + (window.__tdCalls || 0)
+           text: "servedHasDiv=" + served
+                 + " domHasDiv=" + document.documentElement.outerHTML.includes("td-out")
+                 + " ids=" + document.querySelectorAll("[id]").length
+                 + " calls=" + (window.__tdCalls || 0)
                  + " args=" + JSON.stringify(window.__tdArgs || null)
                  + " err=" + cut(window.__tdErr, 160)
                  + " tdExists=" + !!el

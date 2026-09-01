@@ -6,7 +6,7 @@ Every angle is built from two SIDEREAL birth charts (Lahiri, noon UT) and nothin
 positions the model was fitted on, computed here through the page's own Swiss Ephemeris shim, so
 the page and the fit are the same physics rather than two implementations that agree by luck.
 
-The eight angle kinds, all at the fundamental harmonic:
+The angle kinds, all at the fundamental harmonic:
 
     diff  man[i] - woman[i]      the synastry aspect, his body against hers
     natM  man[i]                 his placement
@@ -16,6 +16,9 @@ The eight angle kinds, all at the fundamental harmonic:
     aspW  woman[i] - woman[j]    her own natal aspect
     midM  man[i] + man[j]        his own midpoint axis
     midW  woman[i] + woman[j]    her own midpoint axis
+    xdiff man[i] - woman[j]      the cross-body synastry aspect
+    xsum  man[i] + woman[j]      the cross-body couple midpoint
+    camp  (man[i]+woman[i]) - (man[j]+woman[j])   an aspect inside the composite chart
 
 `verify()` replays the couples shipped inside tilldeath.json and is what CI runs: a scorer that
 drifts from the fit would otherwise show numbers the corpus never produced.
@@ -65,6 +68,11 @@ def _angle(t, bodies, A, B):
     if k == "aspW": return B[i] - B[j]
     if k == "midM": return A[i] + A[j]
     if k == "midW": return B[i] + B[j]
+    # PAIR-ONLY kinds (2026-09-01): each needs BOTH charts, so none can be evaluated for a single
+    # person — which is exactly what makes them the only admissible features for a pair claim.
+    if k == "xdiff": return A[i] - B[j]
+    if k == "xsum":  return A[i] + B[j]
+    if k == "camp":  return (A[i] + B[i]) - (A[j] + B[j])
     raise ValueError(k)
 
 

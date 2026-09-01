@@ -192,21 +192,16 @@ it will read once there is a second date to compare yours with.</p>
 <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;margin-top:8px"><table><tbody id="t100"></tbody></table></div></details>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
 remembers. <span id="honestnum">What this ranks on: whether the marriage went well, judged from 10,000 historical records. Held-out AUC 0.587 against an age-gap baseline of 0.485 — a real edge, and a modest one. Dates with the same score are shown as ties, because the model has nine statements and cannot tell them apart.</span></p>
-</section>
 
-<section class="step on" id="tdsec" style="display:block">
-  <h2 style="margin-top:34px">Till death do us part?</h2>
-  <p class="sub">The ranking above asks whether a marriage went <i>well</i>. This asks the other question,
-  of one particular date: does this pair look like the marriages that <i>came apart</i>? It is a separate
-  model on a separate corpus — <span id="tdcorpus">175,155</span> marriages from the historical record, of
-  which <span id="tdpos">9,682</span> ended in a divorce, an annulment, a separation, an infidelity, or a
-  remarriage while the other partner was still living.</p>
-  <div class="panel">
+  <div class="panel" id="tdsec" style="margin-top:26px">
+    <h3 style="margin:0 0 6px;font-size:1.15em">Someone in particular?</h3>
+    <p class="sub" style="margin:0 0 14px">Enter their birthday. This reads the two charts as a
+    pair — nothing about either of you alone.</p>
     <div class="field"><label for="tddob">Their date of birth</label>
       <input type="date" id="tddob" min="1900-01-01" max="2026-12-31" value=""></div>
-    <button class="cta" id="tdgo" disabled>Read this pair</button>
+    <button class="cta" id="tdgo" disabled>Read us together</button>
+    <div id="td-out"></div>
   </div>
-  <div id="td-out"></div>
 </section>
 
 <section class="step on" id="rules" style="display:block">
@@ -623,21 +618,41 @@ def scan_chunk(y,m,d,g,ci,total):
   $("boot").textContent="";
   window.__AM_READY=true;
   pick();
-  if($("tdcorpus")&&window.__td){$("tdcorpus").textContent=window.__td.n_corpus.toLocaleString();
-    $("tdpos").textContent=window.__td.n_positive.toLocaleString();}
   tdPick();
 }
 boot().catch(e=>{$("boot").textContent="failed to load: "+e});
 
-// ── Till death do us part ───────────────────────────────────────────────────────────────────────
-// A second reading of the same person against one other date, from its own corpus and its own model
-// family. THE SECTION OWNS ITS BOX: it resolves #td-out and creates it if the markup ever loses it,
-// because a write that throws before anything is painted is the one failure that cannot report
-// itself, and it cost four CI runs to find once already.
+// ── Someone in particular ───────────────────────────────────────────────────────────────────────
+// A second model, on its own corpus, asked of one date rather than a whole year of them. It lives at
+// the end of the ranking because that is where the reader has a name in mind. THE CARD OWNS ITS BOX:
+// it resolves #td-out and creates it if the markup ever loses it, because a write that throws before
+// anything is painted is the one failure that cannot report itself.
+const TD_NICE = {sun:"Sun",moon:"Moon",mercury:"Mercury",venus:"Venus",mars:"Mars",jupiter:"Jupiter",
+  saturn:"Saturn",uranus:"Uranus",neptune:"Neptune",pluto:"Pluto",node:"Node",chiron:"Chiron",
+  lilith:"Lilith"};
 function tdBox(){
   let el=$("td-out");
   if(!el){el=document.createElement("div");el.id="td-out";($("tdsec")||document.body).appendChild(el);}
   return el;
+}
+// Plain words for a named angle. "cos(D pluto)" tells a reader nothing; "his Pluto to her Pluto"
+// tells them exactly what was looked at.
+function tdPhrase(label){
+  const td=window.__td, t=(td.terms||[]).find(x=>x.label===label);
+  if(!t) return label;
+  const B=i=>TD_NICE[td.bodies[i]]||td.bodies[i];
+  if(t.kind==="diff")  return "his "+B(t.i)+" to her "+B(t.i);
+  if(t.kind==="xdiff") return "his "+B(t.i)+" to her "+B(t.j);
+  if(t.kind==="sum")   return "your shared "+B(t.i);
+  if(t.kind==="xsum")  return "his "+B(t.i)+" with her "+B(t.j);
+  if(t.kind==="camp")  return B(t.i)+" and "+B(t.j)+" in your composite chart";
+  if(t.kind==="natM")  return "his "+B(t.i);
+  if(t.kind==="natW")  return "her "+B(t.i);
+  if(t.kind==="aspW")  return "her "+B(t.i)+" and "+B(t.j);
+  if(t.kind==="aspM")  return "his "+B(t.i)+" and "+B(t.j);
+  if(t.kind==="midW")  return "her "+B(t.i)+"/"+B(t.j)+" midpoint";
+  if(t.kind==="midM")  return "his "+B(t.i)+"/"+B(t.j)+" midpoint";
+  return label;
 }
 function tdPick(){
   const b=$("tdgo"); if(!b) return;
@@ -645,16 +660,15 @@ function tdPick(){
 }
 async function tdRead(){
   window.__tdCalls=(window.__tdCalls||0)+1;
-  tdBox().innerHTML='<p class="sub">computing both charts…</p>';
+  tdBox().innerHTML='<p class="sub" style="margin-top:14px">reading both charts…</p>';
   const td=window.__td;
-  if(!td){tdBox().innerHTML='<p class="sub">The Till Death model file did not load, so this reading is unavailable.</p>';return;}
-  // MAN FIRST, as the corpus was built — the page already knows which the reader is.
+  if(!td){tdBox().innerHTML='<p class="sub" style="margin-top:14px">That reading is unavailable — its model file did not load.</p>';return;}
   const me=$("dob").value, them=$("tddob").value;
-  const him = state.g==="m" ? me : them, her = state.g==="m" ? them : me;
-  const lo=td.servable_span[0], hi=td.servable_span[1];
-  const yr=d=>parseInt(String(d).slice(0,4),10);
+  // MAN FIRST, as the corpus was built. The page already knows which the reader is.
+  const him=state.g==="m"?me:them, her=state.g==="m"?them:me;
+  const lo=td.servable_span[0], hi=td.servable_span[1], yr=d=>parseInt(String(d).slice(0,4),10);
   if(!(yr(him)>=lo&&yr(her)>=lo&&yr(him)<=hi&&yr(her)<=hi)){
-    tdBox().innerHTML='<p class="sub">Both birth years have to fall inside '+lo+'–'+hi+', the span of the star tables this page carries.</p>';return;
+    tdBox().innerHTML='<p class="sub" style="margin-top:14px">Both birthdays need to fall inside '+lo+'–'+hi+'.</p>';return;
   }
   let r;
   try{
@@ -662,32 +676,41 @@ async function tdRead(){
       'import json,tilldeath; json.dumps(tilldeath.score(tilldeath.load(),'+JSON.stringify(him)+','+JSON.stringify(her)+'))'));
   }catch(e){
     window.__tdErr=String(e&&e.message||e).slice(0,300);
-    tdBox().innerHTML='<p class="sub">This pair could not be computed: '+String(e&&e.message||e).split("\n")[0].slice(0,160)+'</p>';return;
+    tdBox().innerHTML='<p class="sub" style="margin-top:14px">That pair could not be read: '+String(e&&e.message||e).split("\n")[0].slice(0,140)+'</p>';return;
   }
-  const rows=r.drivers.map(d=>'<tr><td>'+d.label+'</td><td style="text-align:right">'
+  // The model predicts COMING APART. Reading it the other way round is the kinder sentence and the
+  // same number: a pair at the 30th percentile of coming apart is steadier than 70 in a hundred.
+  const steadier=100-Math.round(100*r.percentile);
+  const top=r.drivers.slice().sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution))[0];
+  const lean=top.contribution>=0?"is the note that gives the record pause":"is what the record liked best";
+  const rows=r.drivers.map(d=>'<tr><td>'+tdPhrase(d.label)+'</td><td style="text-align:right">'
     +(d.contribution>=0?"+":"")+d.contribution.toFixed(3)+'</td><td>'
-    +(d.contribution>=0?"toward coming apart":"toward lasting")+'</td></tr>').join("");
+    +(d.contribution>=0?"toward parting":"toward lasting")+'</td></tr>').join("");
   tdBox().innerHTML=
-    '<p style="margin:18px 0 2px;font-size:2.4em;font-weight:700">'+Math.round(100*r.percentile)
-    +'<span style="font-size:.4em">th</span></p>'
-    +'<p class="sub" style="margin:0 0 14px">percentile among all '+td.n_corpus.toLocaleString()
-    +' couples — higher means this pair looks more like the marriages that came apart. A percentile is the '
-    +'honest unit here: only '+(100*td.n_positive/td.n_corpus).toFixed(1)+'% of that corpus is a recorded '
-    +'separation, so the raw probability ('+(100*r.p).toFixed(1)+'%) reads as worse news than it is.</p>'
-    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
-    +'<th style="text-align:left">The angles that moved this pair</th>'
-    +'<th style="text-align:right">Weight</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<p class="sub" style="margin:12px 0 0">Every row is a named angle. <b>D</b> is his body against hers, '
-    +'<b>her x–y</b> an aspect inside her own chart, <b>her mid x/y</b> a midpoint axis in it. The whole '
-    +'model is '+td.terms.length+' weights on a cosine or a sine — ten-fold cross-validated AUC '
-    +td.cv_auc_broad.toFixed(4)+', and <a href="tilldeath.json">tilldeath.json</a> is the model itself.</p>';
+    '<p style="margin:18px 0 2px;font-size:2.3em;font-weight:700;line-height:1">'+steadier
+    +'<span style="font-size:.42em;font-weight:400">%</span></p>'
+    +'<p style="margin:0 0 10px">steadier than that share of the marriages in the record.</p>'
+    +'<p class="sub" style="margin:0 0 12px">Of '+td.n_corpus.toLocaleString()+' marriages the record '
+    +'remembers, yours reads calmer than '+steadier+' in every hundred. '
+    +'<b>'+tdPhrase(top.label).replace(/^./,c=>c.toUpperCase())+'</b> '+lean+'.</p>'
+    +'<details style="margin-top:4px"><summary class="sub">the numbers behind it</summary>'
+    +'<table style="width:100%;border-collapse:collapse;margin-top:8px"><tbody>'+rows+'</tbody></table>'
+    +'<p class="sub" style="margin:10px 0 0">Every angle here needs <i>both</i> charts — no placement '
+    +'or aspect belonging to one of you is allowed in. '+td.terms.length+' weights on a cosine or a '
+    +'sine, cross-validated AUC '+td.cv_auc_broad.toFixed(4)+' over '+td.n_corpus.toLocaleString()
+    +' marriages of which '+td.n_positive.toLocaleString()+' came apart.</p>'
+    +'<p class="sub" style="margin:8px 0 0"><b>And the honest part:</b> one chart alone scores '
+    +Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4)+' on the same folds. Reading both '
+    +'charts together buys '+(td.cv_auc_broad-Math.max(td.baseline_him_only,td.baseline_her_only)).toFixed(4)
+    +' — which is to say almost nothing. Take the number above as a curiosity, not a verdict. '
+    +'The model itself is <a href="tilldeath.json">tilldeath.json</a>.</p></details>';
 }
 function tdWire(){
   const i=$("tddob"), b=$("tdgo");
   if(i) i.oninput=tdPick;
   if(b) b.onclick=()=>{tdRead().catch(e=>{
     window.__tdErr=String(e&&e.message||e).slice(0,300);
-    tdBox().innerHTML='<p class="sub">The Till Death reading failed: '+String(e&&e.message||e).split("\n")[0].slice(0,160)+'</p>';});};
+    tdBox().innerHTML='<p class="sub" style="margin-top:14px">That reading failed: '+String(e&&e.message||e).split("\n")[0].slice(0,140)+'</p>';});};
 }
 tdWire();
 

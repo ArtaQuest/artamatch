@@ -689,8 +689,13 @@ async function scoreTillDeath(a, b) {
     <p class="note" style="margin:0 0 12px">A separate model, on a separate corpus: ${td.n_corpus.toLocaleString()}
       marriages from Wikidata and Wikipedia, of which ${td.n_positive.toLocaleString()} are recorded as having
       come apart — a divorce, an annulment, a separation, an infidelity, or a remarriage while the other
-      partner was still living. It reads ${td.terms.length} named angles between the two sidereal charts and
-      nothing else. Ten-fold cross-validated AUC ${td.cv_auc_broad.toFixed(4)}.</p>
+      partner was still living. Every angle it reads needs BOTH charts — ${td.terms.length} of them, and no
+      placement or aspect belonging to one partner alone. Ten-fold cross-validated AUC
+      ${td.cv_auc_broad.toFixed(4)}; one chart alone scores
+      ${Math.max(td.baseline_him_only, td.baseline_her_only).toFixed(4)} on the same folds, so reading the pair
+      buys ${(td.cv_auc_broad - Math.max(td.baseline_him_only, td.baseline_her_only)).toFixed(4)} — which is to
+      say almost nothing. That comparison is the point of the exercise, so it is printed here rather than
+      left out.</p>
     <p style="margin:10px 0 4px"><span class="big">${(100 * r.percentile).toFixed(0)}<span
       style="font-size:.5em">th</span></span></p>
     <p class="note" style="margin:0 0 14px">percentile among all ${td.n_corpus.toLocaleString()} couples —

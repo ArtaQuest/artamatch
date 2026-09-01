@@ -616,69 +616,69 @@ by a few months, and the fast terms simply attenuate.
 score = bias + Σ w · cos(angle)  +  w · sin(angle)          p = sigmoid(score)
 ```
 
-**48 terms** over 13 sidereal bodies (Lahiri, noon UT), in three families that
-survived elimination — his positions, her natal aspects, and the same-body cross-chart differences,
-plus her midpoint axes:
+**64 terms** over 13 sidereal bodies (Lahiri, noon UT), in three families — and every one of them
+needs **both** birth charts. No placement, aspect or midpoint belonging to a single person is
+admissible, because such a feature is not evidence about a couple:
 
-- `D  man[i] − woman[i]` — the synastry aspect
-- `natM man[i]`, `natW woman[i]` — natal placements
-- `aspW woman[i] − woman[j]` — her own natal aspects
-- `midW woman[i] + woman[j]` — her own midpoint axes
+- `diff  man[i] − woman[i]` — the same-body synastry aspect
+- `sum   man[i] + woman[i]` — the couple's midpoint axis for that body
+- `xdiff man[i] − woman[j]` — the cross-body synastry grid
 
-Every angle is at the **fundamental harmonic only**. That is a finding, not a simplification: every
-higher harmonic was fitted and made it worse, which includes the classical aspect ladder (a trine is
-the 3rd harmonic, a square the 4th).
+Each term is one cosine or one sine of one named angle, at the fundamental harmonic only. The score
+is `bias + Σ wₜ·trigₜ(angleₜ)`, through a sigmoid. Fitted by the closed-form solver: three explicit
+Newton steps on balanced BCE, the first of which is the weighted least-squares solution.
 
-**Ten-fold grouped cross-validated AUC 0.7430**, folds cut by connected component of
-the marriage graph so two couples sharing a person can never straddle the split. Fitted in **closed
-form**: three Newton steps from zero — step one is the weighted least-squares/LDA solve, steps two
-and three re-solve against the analytic logistic Hessian. No iterative optimiser, and it matches an
-LBFGS fit to the fourth decimal.
+**Ten-fold grouped cross-validated AUC 0.7366**, folds cut by connected component of the marriage
+graph so a person never appears on both sides of a split, averaged over three fold seeds.
 
-### What each term is worth, measured
+### The number that matters, and it is not the AUC
 
-Leave-one-out: the whole cross-validation refitted with that single sin or cos removed.
+The operator's two baselines are the same model fitted on **one** partner's chart alone, given the
+complete solo algebra — placements, own aspects, own midpoint axes — on this corpus and these folds:
 
-| term | weight | AUC it carries alone |
-|---|---|---|
-| cos(her neptune-pluto) | +0.8158 | +0.00607 |
-| cos(her mid sun/mercury) | +0.1431 | +0.00183 |
-| cos(D uranus) | -0.1062 | +0.00075 |
-| cos(her saturn-chiron) | +0.1219 | +0.00070 |
-| cos(her mid moon/venus) | -0.0929 | +0.00053 |
-| sin(his mercury) | -0.0593 | +0.00040 |
-| sin(her mid sun/venus) | -0.1024 | +0.00040 |
-| cos(his uranus) | -0.0708 | +0.00039 |
-| sin(his neptune) | +0.2243 | +0.00034 |
-| cos(her mid moon/mercury) | +0.0720 | +0.00025 |
+| model | AUC |
+|---|---|
+| **the pair-only model (64 terms)** | **0.7366** |
+| her chart alone (339 params) | 0.7362 |
+| his chart alone (339 params) | 0.7309 |
+| signed birth-date gap (2 params, sanity only) | 0.5422 |
 
-The lesson is in the gap between the two columns: `sin(D pluto)` is one of the heaviest weights in the
-model and contributes almost nothing by itself, because `cos(D pluto)` covers for it. A weight is not
-a contribution.
+Reading **both** charts together buys **+0.0004** over reading one of them. That is not a small
+effect; on 9,682 positives it is indistinguishable from nothing. The corpus can tell a 1650 marriage
+from a 1950 one and it can rank a person, but two charts read as a pair say no more than one chart
+read alone. This is the finding, and the page prints it beside every reading rather than showing the
+percentile on its own.
+
+An earlier edition of this model reached 0.7430 — by including his placements, her natal aspects and
+her midpoint axes. It beat one partner's chart by 0.005 while claiming to read a pair, which is why
+single-person families are now banned outright and `web/verify_docs.py` refuses to publish a model
+containing one.
 
 ### What was tried and rejected
 
-Every angle family constructible from two dated charts was fitted. Rejected on measurement, not taste:
-the full cross-body synastry grid, composite-chart internal aspects, couple midpoints, his natal
-aspects, his midpoint axes, cross-body midpoints, all harmonics k≥2, the complete quadratic expansion
-(5,565 parameters, worse), and all four three-body families — Ebertin's midpoint contacts and the
-Hellenistic planetary lots among them. Out of reach with birth dates alone, and recorded as such:
-houses, angles, declinations, retrograde states.
+Under the pair-only rule, backward elimination dropped **cross-body couple midpoints**
+(`man[i] + woman[j]`, removing them *helped* by 0.0018) and **composite-internal aspects**
+(`(man[i]+woman[i]) − (man[j]+woman[j])`, no cost). Of the survivors, the cross-body grid carries
+most of the signal: removing it costs 0.0200, against 0.0017 for the same-body differences and
+0.0004 for the couple midpoints.
+
+Rejected earlier, each measured rather than assumed: every harmonic above the fundamental (the
+classical aspect ladder — trine as the 3rd, square as the 4th — adds nothing on this target); the
+complete quadratic mixing of the basis (5,565 parameters, worse); and all four three-body families,
+Ebertin's midpoint contacts and the Hellenistic lots among them. Out of reach with date-only data,
+and recorded rather than silently skipped: houses, angles, declinations and planetary speeds.
 
 ### Honest limits
 
-- **Which separations it sees.** Sliced by evidence, out of fold: P1534 0.781 · end-date 0.713 · judge 0.808 · text 0.757 · infid 0.666 · remarry 0.747. It reads a
-  judged article far better than a bare infidelity flag.
-- **A stricter target scores lower.** Trained and scored only on confident-versus-confident rows —
-  explicit separation against explicit till-death — five-seed AUC is **0.7165**, not
-  0.7430. Both numbers are real; the second is the one to quote against a sceptic.
-- **More data still helps, slightly.** 0.6993 at 44k couples →
-  0.7080 at 88k → 0.7165 at 175k.
-- **The corpus is famous people**, who are not a sample of marriages.
-- **A percentile, not a verdict.** The page shows where a pair falls among the 175,155,
-  because 5.5% of the corpus is a recorded separation and a bare
-  probability reads as worse news than it is.
-
-The model file itself is [`docs/tilldeath.json`](tilldeath.json) — 48 weights, the
-bias, and 200 couples with their scores so the page can prove it reproduces its own fit. CI replays
-those 200 through the shipped ephemeris shim and refuses to publish on a disagreement over 1e-3.
+- **Term pruning chose 64 by looking at the curve**, so 0.7366 carries a little selection optimism;
+  the family-level figure before pruning was 0.7316.
+- **Which separations it sees.** Sliced by evidence, out of fold: P1534 0.781 · end-date 0.713 ·
+  judge 0.808 · text 0.757 · infidelity 0.666 · remarriage 0.747. It reads a documented divorce far
+  better than a documented infidelity.
+- **A harder target.** Trained and scored on the confident core only — explicit separation against
+  explicit till-death — five-seed AUC was **0.7165** for the earlier model family. Both numbers are
+  real; the stricter one is what to quote against a sceptic.
+- **The corpus is wider than the page.** 168,541 of the 175,155 couples fall inside the shipped
+  1598–2200 ayanamsa span; the fit used precomputed positions, so the remainder trained the model
+  but cannot be reproduced in the browser.
+- **What it cannot do.** It reads two birth dates. It knows nothing of the people.

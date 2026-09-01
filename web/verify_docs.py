@@ -212,10 +212,15 @@ def main():
           p.shape == (len(probes),) and np.isfinite(p).all() and ((p >= 0) & (p <= 1)).all(),
           "  ".join(f"{v:.1%}" for v in p))
 
+    check_tilldeath()
+
+    # THE VERDICT COMES AFTER EVERY CHECK, NOT BEFORE THE LAST ONE. This guard used to sit above
+    # check_tilldeath(), so each till-death check printed its verdict into a list nothing ever read:
+    # the script announced "publishable" and exited 0 with FAILs on screen. A gate that cannot fail
+    # protects nothing, and this one could not.
     if fails:
         print(f"\n{len(fails)} check(s) failed — refusing to publish")
         raise SystemExit(1)
-    check_tilldeath()
 
     if grid:
         print(f"\ndocs/ is publishable — mean of 14 AUCs {bm['benchmark15']:.4f} over "
@@ -250,12 +255,23 @@ def check_tilldeath():
           and isinstance(m.get("bias"), float) and isinstance(m.get("quantiles"), list),
           f"{len(m.get('terms', []))} terms, {len(m.get('quantiles', []))} quantiles")
 
-    kinds = {"diff", "natM", "natW", "sum", "aspM", "aspW", "midM", "midW"}
+    kinds = {"diff", "natM", "natW", "sum", "aspM", "aspW", "midM", "midW",
+             "xdiff", "xsum", "camp"}
+    SOLO = {"natM", "natW", "aspM", "aspW", "midM", "midW"}
     bad = [t for t in m["terms"] if t["kind"] not in kinds or t["trig"] not in ("cos", "sin")
            or not (0 <= t["i"] < len(m["bodies"]))
            or (t["j"] is not None and not (0 <= t["j"] < len(m["bodies"])))]
     check("every till-death term names a real body and a real angle kind", not bad,
           f"{len(bad)} malformed" if bad else f"{len(m['terms'])} terms over {len(m['bodies'])} bodies")
+
+    # THE PAIR-ONLY RULE, ENFORCED HERE RATHER THAN INTENDED (operator 2026-09-01). A feature that
+    # can be computed from ONE birth chart is not evidence about a couple, and the previous model
+    # leaned on six such families: it beat one partner's chart alone by 0.005 while claiming to read
+    # a pair. A single solo term in the shipped file now refuses the build.
+    solo = sorted({t["kind"] for t in m["terms"]} & SOLO)
+    check("the shipped model uses NO single-person feature", not solo,
+          f"solo kinds present: {solo}" if solo
+          else "every term needs both charts (" + ", ".join(sorted({t["kind"] for t in m["terms"]})) + ")")
 
     check("the till-death quantiles are sorted",
           all(m["quantiles"][i] <= m["quantiles"][i + 1] for i in range(len(m["quantiles"]) - 1)))

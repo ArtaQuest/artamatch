@@ -787,7 +787,12 @@ skipped as a constant. Conventions are the lab's and are computed identically in
 (`docs/tilldeath.py`, parity proven on 60 values). In the lean cross-chart, first-harmonic bank the
 ten pseudo-bodies raise the candidates from 169 to 529 and the nested AUC **falls** from 0.6914 to
 0.6904: the year-cycle systems are calendar clocks the outer planets already carry, and the
-day-cycle ones carry nothing. The full-bank version is reported below when it lands.
+day-cycle ones carry nothing. With the full bank as well (planets and systems, every family,
+thirteen harmonics — 12,192 candidates) the nested AUC is 0.6903, and the forcing step's picks
+show what a wide bank invites: the 36th harmonic of his Moon against her year stem. Those runs
+used the plain-calendar Chinese year; the corrected, extended set of twenty systems (Li Chun year,
+gendered Kua, Nine-Star month, nayin, yoga, dasha lord, lunar mansion, weekday, Haab month,
+attitude number) is measured below when it lands.
 
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks

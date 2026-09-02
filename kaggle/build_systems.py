@@ -32,7 +32,29 @@ SYS = [("num_lifepath", 9), ("num_birthday", 31), ("num_birthday_reduced", 9), (
        ("cn_day_nayin", 30), ("cn_kua", 9), ("nine_star", 9), ("nine_star_month", 9),
        ("tz_sign", 20), ("tz_tone", 13), ("haab_month", 19), ("lord_night", 9),
        ("vedic_yoga", 27), ("vedic_dasha_lord", 9), ("manzil", 28), ("weekday", 7)]
+# NAME NUMEROLOGY (operator 2026-09-02, "also include numerology of names"): the name the world
+# knows the person by (the Wikidata English label), romanised so every script gets a value.
+# Pythagorean letter values A=1..I=9, J=1..; Chaldean 1-8 by the classical table. Master numbers
+# reduce (nine states each). The corpus and the browser share this code to the letter.
+NAME_SYS = [("name_expression", 9), ("name_soul_urge", 9), ("name_personality", 9),
+            ("name_chaldean", 9), ("name_cornerstone", 9), ("name_maturity", 9)]
+SYS = SYS + NAME_SYS
 NST = dict(SYS)
+PYTH = {c: (i % 9) + 1 for i, c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZ")}
+CHAL = dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1,2,3,4,5,8,3,5,1,1,2,3,4,5,7,8,1,2,3,4,6,6,6,5,1,7]))
+VOWELS = set("AEIOUY")
+def romanize(label):
+    from unidecode import unidecode
+    return "".join(c for c in unidecode(label or "").upper() if "A" <= c <= "Z")
+def name_states(label, lifepath_1to9):
+    L = romanize(label)
+    if not L:                       # no Latin letters at all: state 0 everywhere, counted
+        return {n: 0 for n, _ in NAME_SYS}
+    expr = red9(sum(PYTH[c] for c in L)); soul = red9(sum(PYTH[c] for c in L if c in VOWELS) or 9)
+    pers = red9(sum(PYTH[c] for c in L if c not in VOWELS) or 9); chal = red9(sum(CHAL[c] for c in L))
+    return {"name_expression": expr - 1, "name_soul_urge": soul - 1, "name_personality": pers - 1,
+            "name_chaldean": chal - 1, "name_cornerstone": red9(PYTH[L[0]]) - 1,
+            "name_maturity": red9(lifepath_1to9 + expr) - 1}
 
 def jdn(y, m, d):
     a = (14 - m) // 12; yy = y + 4800 - a; mm = m + 12 * a - 3
@@ -43,7 +65,7 @@ def red9(t):
 def lifepath(y, m, d): return red9(sum(int(c) for c in f"{y:04d}{m:02d}{d:02d}"))
 def ninestar_year(cy): return 1 + (11 - (1 + (sum(int(c) for c in str(cy)) - 1) % 9) - 1) % 9
 
-def states(y, m, d, sid_sun, sid_moon, aya, female):
+def states(y, m, d, sid_sun, sid_moon, aya, female, label=""):
     """0-based state index per system. sid_* sidereal degrees at noon UT; aya the Lahiri ayanamsa."""
     j = jdn(y, m, d); sx = (j + 49) % 60; k = (j - 584283) % 260
     trop_sun = (sid_sun + aya) % 360.0
@@ -66,25 +88,32 @@ def states(y, m, d, sid_sun, sid_moon, aya, female):
             "lord_night": (j - 584283) % 9,
             "vedic_yoga": int(((sid_sun + sid_moon) % 360.0) // (360.0 / 27.0)),
             "vedic_dasha_lord": nak % 9, "manzil": int(sid_moon // (360.0 / 28.0)),
-            "weekday": (j + 1) % 7}
+            "weekday": (j + 1) % 7, **name_states(label, lifepath(y, m, d))}
 
-def angles(y, m, d, sid_sun, sid_moon, aya, female):
-    st = states(y, m, d, sid_sun, sid_moon, aya, female)
+def angles(y, m, d, sid_sun, sid_moon, aya, female, label=""):
+    st = states(y, m, d, sid_sun, sid_moon, aya, female, label)
     return [(st[n] + 1) * 360.0 / N for n, N in SYS]
 
 if __name__ == "__main__":
     full = pd.read_csv(f"{D_}/full.csv", dtype=str)
     Z = np.load(f"{D_}/phases.npz", allow_pickle=True)
     bodies = [str(b) for b in Z["bodies"]]; isun, imoon = bodies.index("sun"), bodies.index("moon")
-    def side(col, theta, female):
+    LAB = os.path.expanduser("~/.artamatch-dev/labels.csv")
+    labels = dict(pd.read_csv(LAB, dtype=str).fillna("").itertuples(index=False, name=None)) if os.path.exists(LAB) else {}
+    missing = 0
+    def side(col, pcol, theta, female):
+        nonlocal missing
         out = []
-        for iso, row in zip(full[col], theta):
+        for iso, pid, row in zip(full[col], full[pcol], theta):
             y, m, d = int(iso[:4]), int(iso[5:7]), int(iso[8:10])
             aya = swe.get_ayanamsa_ut(swe.julday(y, m, d, 12.0))
-            out.append(angles(y, m, d, float(row[isun]), float(row[imoon]), aya, female))
+            lab = labels.get(pid, "")
+            if not romanize(lab): missing += 1
+            out.append(angles(y, m, d, float(row[isun]), float(row[imoon]), aya, female, lab))
         return np.array(out, np.float64)
-    A = side("true_dob_a", Z["theta_a_train"], False)
-    B = side("true_dob_b", Z["theta_b_train"], True)
+    A = side("true_dob_a", "pid_a", Z["theta_a_train"], False)
+    B = side("true_dob_b", "pid_b", Z["theta_b_train"], True)
+    print(f"  names: {len(labels):,} labels · {missing:,} of {2*len(full):,} persons without Latin letters (state 0)")
     np.savez_compressed(f"{D_}/systems.npz", theta_a_sys=A, theta_b_sys=B,
                         names=np.array([n for n, _ in SYS]), nstates=np.array([n for _, n in SYS]))
     print(f"wrote {D_}/systems.npz · {len(SYS)} systems x {len(full):,} couples")

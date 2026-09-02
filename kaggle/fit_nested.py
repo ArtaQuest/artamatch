@@ -51,6 +51,9 @@ DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave
 ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")                   # lean model: keep ONE family (e.g. XY)
 SYSTEMS = os.environ.get("AQ_SYSTEMS", "0") == "1"             # other systems as pseudo-bodies (build_systems.py)
 VAULT = os.environ.get("AQ_VAULT", "0") == "1"                 # 10% of families sealed before anything runs; one look at the end
+VALIDATE = os.environ.get("AQ_VALIDATE", "0") == "1"           # every addition must improve an inner CV, else stop
+SHORTLIST = int(os.environ.get("AQ_SHORTLIST", "5"))           # candidates per step put to the inner CV
+VTOL = float(os.environ.get("AQ_VTOL", "0"))                    # minimum inner-CV improvement to accept
 ONLY_HARM = tuple(int(x) for x in os.environ.get("AQ_ONLY_HARM", "").split(",") if x)   # lean: keep these harmonics
 NOUTER = int(os.environ.get("AQ_NOUTER", "10"))                # outer folds (ablations use 5)
 NO_INNER = os.environ.get("AQ_NO_INNER", "0") == "1"           # K fixed at KMAX (ablations)
@@ -70,7 +73,8 @@ TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
        + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else "")
        + (f"_split{ERA_SPLIT}" if ERA_SPLIT else "")
        + (f"_only{ONLY_FAM}" if ONLY_FAM else "") + (f"_h{'-'.join(map(str,ONLY_HARM))}only" if ONLY_HARM else "")
-       + ("_systems" if SYSTEMS else "") + ("_vault" if VAULT else ""))
+       + ("_systems" if SYSTEMS else "") + ("_vault" if VAULT else "")
+       + (f"_val{SHORTLIST}" if VALIDATE else ""))
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -323,8 +327,32 @@ def score_group(r, vw, taken_angles, mask=None, X=None):
     return z
 def angle_phasors(a): return list(range(a * GSIZE, (a + 1) * GSIZE))
 
-def stepwise(trm_np, kmax):
-    """greedy selection ORDER on the rows where trm_np is True"""
+def inner_auc(sel, trm_np, ifold, nfold=5):
+    """inner cross-validated AUC of a FIXED structure on the training rows only"""
+    if not sel:
+        return 0.5
+    Amat = design(sel); oof = np.zeros(n, np.float32)
+    for kf in range(nfold):
+        tr = trm_np & (ifold != kf)
+        wm_t = torch.from_numpy((w * tr).astype(np.float32)).to(DEV)
+        beta = newton_on(Amat, wm_t, RL, ksel=[MET[c]["k"] for c in sel])
+        v = (Amat @ torch.from_numpy(beta.astype(np.float32)).to(DEV)).cpu().numpy()
+        hold = trm_np & (ifold == kf); oof[hold] = v[hold]
+    del Amat
+    return float(roc_auc_score(y[trm_np], oof[trm_np]))
+
+def stepwise(trm_np, kmax, seed=0):
+    """greedy selection ORDER on the rows where trm_np is True.
+
+    With AQ_VALIDATE=1 the greedy becomes VALIDATED (operator 2026-09-02: "if adding more reduces
+    AUC there is overfitting; the worst case should be the same score"): the score test only
+    SHORTLISTS candidates; each is then judged by an inner five-fold CV inside the training rows,
+    the best one enters only if it improves that CV, and selection stops when none does. A
+    candidate that merely won the in-sample lottery cannot get in, so a wider bank of duds costs
+    nothing and a wider bank with signal still helps — the superset can no longer score lower
+    except by CV noise."""
+    ifold = np.random.default_rng(seed + 7).integers(0, 5, gid.max() + 1)[gid] if VALIDATE else None
+    cur_auc = 0.5
     wm_t = torch.from_numpy((w * trm_np).astype(np.float32)).to(DEV)
     pr0 = float((y[trm_np] * w[trm_np]).sum() / w[trm_np].sum())
     eta = torch.full((n,), float(np.log(pr0 / (1 - pr0))), device=DEV)
@@ -335,6 +363,14 @@ def stepwise(trm_np, kmax):
         if GROUP:
             a = int(torch.argmax(score_group(wm_t * (yt - pr), wm_t * pr * (1 - pr), angles, X=Xcur)).item())
             angles.append(a); sel += angle_phasors(a)
+        elif VALIDATE:
+            z = score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), sel, X=Xcur)
+            short = [int(c) for c in torch.topk(z, SHORTLIST).indices.tolist()]
+            cand = [(inner_auc(sel + [c], trm_np, ifold), c) for c in short]
+            best_auc, best = max(cand)
+            if best_auc <= cur_auc + VTOL:
+                del Xcur; break              # nothing on the shortlist survives validation: stop
+            sel.append(best); cur_auc = best_auc
         else:
             sel.append(int(torch.argmax(score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), sel, X=Xcur)).item()))
         del Xcur
@@ -418,7 +454,7 @@ tested = np.zeros(n, bool)
 for kf in ([1] if ERA_SPLIT else range(NOUTER)):
     trm = fold != kf
     tested |= ~trm
-    order = stepwise(trm, KMAX)
+    order = stepwise(trm, KMAX, seed=1000 + kf)
     Kin, inner_aucs = (KMAX, []) if NO_INNER else pick_k(order, trm, seed=1000 + kf)
     sel, forced = force_fast(order[:Kin], trm)
     wm_t = torch.from_numpy((w * trm).astype(np.float32)).to(DEV)
@@ -445,7 +481,7 @@ if ABLATE:
 # ---- the deployed model: the same procedure, once, on all data --------------------------------
 log("deploy pass on ALL data")
 allr = ~vault
-order = stepwise(allr, KMAX)
+order = stepwise(allr, KMAX, seed=77)
 Kin, inner_aucs = pick_k(order, allr, seed=77, nfold=10)
 log(f"   K by 10-fold CV over the all-data ordering: {Kin}  (curve max {max(inner_aucs):.4f})")
 sel, forced = force_fast(order[:Kin], allr)

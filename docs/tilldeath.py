@@ -112,8 +112,19 @@ def score(model, man_iso, woman_iso):
         else:
             hi = mid
     parts.sort(reverse=True)
+    # the same score placed among couples whose husband was born in the same decade — the
+    # calendar-fair percentile. Absent when the model file predates it or the decade is thin.
+    era = None
+    qd = (model.get("quantiles_by_decade") or {}).get(str(int(man_iso[:4]) // 10 * 10))
+    if qd:
+        elo, ehi = 0, len(qd) - 1
+        while elo < ehi:
+            mid = (elo + ehi) // 2
+            if qd[mid] < s: elo = mid + 1
+            else: ehi = mid
+        era = elo / float(len(qd) - 1)
     return {"score": s, "p": 1.0 / (1.0 + math.exp(-s)),
-            "percentile": lo / float(len(q) - 1),
+            "percentile": lo / float(len(q) - 1), "percentile_era": era,
             "drivers": [{"label": lb, "contribution": c} for _, lb, c in parts[:8]]}
 
 

@@ -46,53 +46,27 @@ DEG = math.pi / 180.0
 FLAGS = swe.FLG_SWIEPH | swe.FLG_SPEED
 
 
-def chart(iso, bodies):
+def chart(iso, bodies, female=False):
     """-> {body: radians} for a YYYY-MM-DD birth date at noon UT, sidereal Lahiri.
 
     The shim has no FLG_SIDEREAL: sidereal is tropical minus the ayanamsa, which is how
-    docs/worked.py does it and how the fit's own charts were built."""
+    docs/worked.py does it and how the fit's own charts were built. `female` matters only to the
+    gendered pseudo-body (Kua), whose rule differs for men and women."""
     swe.set_sid_mode(swe.SIDM_LAHIRI)
     y, m, d = int(iso[0:4]), int(iso[5:7]), int(iso[8:10])
     jd = swe.julday(y, m, d, 12.0)
     aya = swe.get_ayanamsa_ut(jd)
     out = {}
+    sid = lambda b: (swe.calc_ut(jd, BODY_CODE[b], FLAGS)[0][0] - aya) % 360.0
+    st = None
     for b in bodies:
         if b in SYSTEM_STATES:
-            out[b] = system_angle(b, y, m, d) * DEG
+            if st is None:
+                st = system_states(y, m, d, sid("sun"), sid("moon"), aya, female)
+            out[b] = (st[b] + 1) * 360.0 / SYSTEM_STATES[b] * DEG
             continue
-        trop = swe.calc_ut(jd, BODY_CODE[b], FLAGS)[0][0]
-        out[b] = ((trop - aya) % 360.0) * DEG
+        out[b] = sid(b) * DEG
     return out
-
-
-# ── OTHER SYSTEMS AS PSEUDO-BODIES (operator 2026-09-02). A system's state is an angle on its own
-# circle: state s of N -> s * 360/N (numerology has 9 states, so state 1 is 40 degrees). The
-# conventions are the lab's (scorer.py) and kaggle/build_systems.py's, to the digit — the corpus
-# and this page must agree or the shipped replay of 200 couples refuses the model file.
-SYSTEM_STATES = {"num_lifepath": 9, "num_birthday": 31, "cn_year_animal": 12, "cn_year_stem": 10,
-                 "cn_day_stem": 10, "cn_day_branch": 12, "nine_star": 9,
-                 "tz_sign": 20, "tz_tone": 13, "lord_night": 9}
-
-def _jdn(y, m, d):
-    a = (14 - m) // 12; yy = y + 4800 - a; mm = m + 12 * a - 3
-    return d + (153 * mm + 2) // 5 + 365 * yy + yy // 4 - yy // 100 + yy // 400 - 32045
-
-def _lifepath(y, m, d):
-    t = sum(int(c) for c in "%04d%02d%02d" % (y, m, d))
-    while t > 9:
-        t = sum(int(c) for c in str(t))
-    return t
-
-def system_angle(name, y, m, d):
-    """degrees, 0-based state index + 1 times the state width"""
-    j = _jdn(y, m, d); sx = (j + 49) % 60; k = (j - 584283) % 260
-    st = {"num_lifepath": _lifepath(y, m, d) - 1, "num_birthday": d - 1,
-          "cn_year_animal": (y - 4) % 12, "cn_year_stem": (y - 4) % 10,
-          "cn_day_stem": sx % 10, "cn_day_branch": sx % 12,
-          "nine_star": (1 + (11 - (1 + (sum(int(c) for c in str(y)) - 1) % 9) - 1) % 9) - 1,
-          "tz_sign": k % 20, "tz_tone": k % 13, "lord_night": (j - 584283) % 9}[name]
-    return (st + 1) * 360.0 / SYSTEM_STATES[name]
-
 
 def _angle(t, bodies, A, B):
     i = bodies[t["i"]]
@@ -124,7 +98,7 @@ def score(model, man_iso, woman_iso):
     """-> dict(score, p, percentile, drivers). Man first, as the corpus was built."""
     bodies = model["bodies"]
     A = chart(man_iso, bodies)
-    B = chart(woman_iso, bodies)
+    B = chart(woman_iso, bodies, female=True)
     s = model["bias"]
     parts = []
     for t in model["terms"]:
@@ -172,3 +146,55 @@ def verify(model, tol=1e-6):
 def load(path="/tilldeath.json"):
     with open(path) as f:
         return json.load(f)
+
+
+# ── EVERY DATE-ONLY SYSTEM AS A PSEUDO-BODY (operator 2026-09-02). A system's state is an angle on
+# its own circle: state s of N -> s * 360/N (a life path of 1 is 40 degrees). This is the SAME code
+# as kaggle/build_systems.py, to the digit — the corpus and this page must agree, or the shipped
+# replay of 200 couples refuses the model file. The Chinese year begins at Li Chun (tropical Sun
+# 315 degrees), never on 1 January; Kua is gendered by rule; offsets in a cycle are absorbed by
+# the fitted phase, lengths and boundaries are exact.
+SYSTEM_STATES = {"num_lifepath": 9, "num_birthday": 31, "num_birthday_reduced": 9, "num_attitude": 9,
+                 "cn_year_animal": 12, "cn_year_stem": 10, "cn_day_stem": 10, "cn_day_branch": 12,
+                 "cn_day_nayin": 30, "cn_kua": 9, "nine_star": 9, "nine_star_month": 9,
+                 "tz_sign": 20, "tz_tone": 13, "haab_month": 19, "lord_night": 9,
+                 "vedic_yoga": 27, "vedic_dasha_lord": 9, "manzil": 28, "weekday": 7}
+
+def _jdn(y, m, d):
+    a = (14 - m) // 12; yy = y + 4800 - a; mm = m + 12 * a - 3
+    return d + (153 * mm + 2) // 5 + 365 * yy + yy // 4 - yy // 100 + yy // 400 - 32045
+
+def _red9(t):
+    while t > 9:
+        t = sum(int(c) for c in str(t))
+    return t
+
+def _ninestar_year(cy):
+    return 1 + (11 - (1 + (sum(int(c) for c in str(cy)) - 1) % 9) - 1) % 9
+
+def system_states(y, m, d, sid_sun, sid_moon, aya, female):
+    j = _jdn(y, m, d); sx = (j + 49) % 60; k = (j - 584283) % 260
+    trop_sun = (sid_sun + aya) % 360.0
+    cy = y - 1 if (m <= 2 and trop_sun < 315.0) else y
+    ys = _ninestar_year(cy)
+    month_idx = int(((trop_sun - 315.0) % 360.0) // 30.0)
+    feb = {1: 8, 4: 8, 7: 8, 2: 5, 5: 5, 8: 5, 3: 2, 6: 2, 9: 2}[ys]
+    mstar = ((feb - month_idx - 1) % 9) + 1
+    s = _red9(sum(int(c) for c in str(cy)))
+    if cy < 2000:
+        kua = _red9(5 + s) if female else _red9(10 - s)
+    else:
+        kua = _red9(6 + s) if female else _red9(9 - s)
+    if kua == 5:
+        kua = 8 if female else 2
+    nak = int(sid_moon // (360.0 / 27.0))
+    return {"num_lifepath": _red9(sum(int(c) for c in "%04d%02d%02d" % (y, m, d))) - 1,
+            "num_birthday": d - 1, "num_birthday_reduced": _red9(d) - 1, "num_attitude": _red9(m + d) - 1,
+            "cn_year_animal": (cy - 4) % 12, "cn_year_stem": (cy - 4) % 10,
+            "cn_day_stem": sx % 10, "cn_day_branch": sx % 12, "cn_day_nayin": (sx // 2) % 30,
+            "cn_kua": kua - 1, "nine_star": ys - 1, "nine_star_month": mstar - 1,
+            "tz_sign": k % 20, "tz_tone": k % 13, "haab_month": ((j - 584283 + 348) % 365) // 20,
+            "lord_night": (j - 584283) % 9,
+            "vedic_yoga": int(((sid_sun + sid_moon) % 360.0) // (360.0 / 27.0)),
+            "vedic_dasha_lord": nak % 9, "manzil": int(sid_moon // (360.0 / 28.0)),
+            "weekday": (j + 1) % 7}

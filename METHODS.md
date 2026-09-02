@@ -714,7 +714,35 @@ baseline (same procedure, 5 outer folds, K=32): **0.6805**
 
 | removed | kind | nested AUC | cost |
 |---|---|---|---|
-
+| neptune | body | 0.6704 | +0.0101 |
+| pluto | body | 0.6720 | +0.0085 |
+| uranus | body | 0.6793 | +0.0012 |
+| mars | body | 0.6797 | +0.0008 |
+| venus | body | 0.6804 | +0.0001 |
+| chiron | body | 0.6805 | +0.0000 |
+| jupiter | body | 0.6806 | -0.0001 |
+| sun | body | 0.6806 | -0.0001 |
+| lilith | body | 0.6807 | -0.0002 |
+| node | body | 0.6808 | -0.0003 |
+| saturn | body | 0.6808 | -0.0003 |
+| mercury | body | 0.6809 | -0.0004 |
+| moon | body | 0.6810 | -0.0005 |
+| XY | family | 0.6536 | +0.0269 |
+| XX | family | 0.6810 | -0.0005 |
+| YY | family | 0.6811 | -0.0006 |
+| k=1 | harmonic | 0.6761 | +0.0044 |
+| k=8 | harmonic | 0.6802 | +0.0003 |
+| k=27 | harmonic | 0.6803 | +0.0002 |
+| k=9 | harmonic | 0.6803 | +0.0002 |
+| k=10 | harmonic | 0.6803 | +0.0002 |
+| k=4 | harmonic | 0.6803 | +0.0002 |
+| k=12 | harmonic | 0.6804 | +0.0001 |
+| k=36 | harmonic | 0.6804 | +0.0001 |
+| k=2 | harmonic | 0.6805 | +0.0000 |
+| k=7 | harmonic | 0.6805 | +0.0000 |
+| k=5 | harmonic | 0.6807 | -0.0002 |
+| k=6 | harmonic | 0.6808 | -0.0003 |
+| k=3 | harmonic | 0.6810 | -0.0005 |
 
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks

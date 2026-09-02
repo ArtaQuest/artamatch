@@ -247,14 +247,14 @@ reading alike:</p>
   background:rgba(12,30,50,.45);border-radius:0 14px 14px 0;font-size:13.5px;line-height:1.75">score = bias + Σ over <span id="mx-nph">32</span> phasors of  a·cos(k·θ) + c·sin(k·θ)
 p     = sigmoid(score)</pre>
 <p class="sub">θ is always the angle between two sidereal longitudes (Lahiri, cast at 12:00 UT on
-the birth date): his planet to hers, or two planets inside one chart. k is a whole-number harmonic
-— 1 is the aspect itself, 12 the sign, 27 the nakshatra, 36 the decan. Each phasor's cosine and
-sine carry their own weight, so its amplitude and phase are both fitted: a·cos + c·sin =
-A·cos(kθ−φ). There is nothing else in it — no buckets, no indicators, no inputs beyond the two
+the birth date): <span id="mx-theta">his planet to hers, or two planets inside one chart</span>.
+<span id="mx-harm">k is a whole-number harmonic — 1 is the aspect itself, 12 the sign, 27 the
+nakshatra, 36 the decan.</span> Each phasor's cosine and sine carry their own weight, so its
+amplitude and phase are both fitted: a·cos + c·sin = A·cos(kθ−φ). There is nothing else in it — no buckets, no indicators, no inputs beyond the two
 birth dates. It answers one narrow question: <b>did the historical record list children for a
 couple like this</b>, over <span id="mx-n">…</span> finished marriages, every birth date a real
 recorded day.</p>
-<p class="sub">The model was chosen from 4,225 candidate phasors by forward selection — each
+<p class="sub">The model was chosen from <span id="mx-bank">4,225</span> candidate phasors by forward selection — each
 candidate scored by the exact score test, against what the model already holds, so a phasor that
 merely restates an earlier one cannot get in — and its number is earned the hard way: the selection, the size of the model and the inclusion of every
 fast body were re-run from scratch inside each of ten training folds, so the quoted AUC never saw
@@ -345,6 +345,10 @@ async function boot(){
    F("mx-n",td.n_corpus.toLocaleString()); F("mx-cv",td.cv_auc_broad.toFixed(4));
    F("mx-nph",td.n_phasors); F("mx-hero-n",td.n_phasors); F("mx-nw",td.n_weights);
    F("mx-hero-corpus",td.n_corpus.toLocaleString());
+   if(td.bank){F("mx-bank",td.bank.n_candidates.toLocaleString());
+     const fam=td.bank.families, hs=td.bank.harmonics;
+     if(fam.length===1&&fam[0]==="XY") F("mx-theta","always his planet to hers — the ablations found the angles inside one chart worth nothing, so they are not searched");
+     if(hs.length===1&&hs[0]===1) F("mx-harm","k is 1 — the aspect itself; every overtone from the 2nd to the 36th harmonic was measured worthless and is not searched.");}
    document.querySelectorAll(".mx-corpus").forEach(e=>e.textContent=td.n_corpus.toLocaleString());
    document.querySelectorAll(".mx-cv").forEach(e=>e.textContent=td.cv_auc_broad.toFixed(4));
    document.querySelectorAll(".mx-solo").forEach(e=>e.textContent=Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));

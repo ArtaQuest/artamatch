@@ -584,8 +584,9 @@ calibrated honestly, and predicting nothing.
 
 ## Edition V — What the record remembers (2026-09-01)
 
-A model of **65 numbers** — 32 phasors over all thirteen bodies, every planet from the Sun to
-Pluto carrying weight — and an account of why it is worth less than its AUC suggests.
+A model of his planet to hers, first harmonic, nothing else — chosen from 169 candidates, every
+planet from the Sun to Pluto carrying weight — and an account of why it is worth less than its AUC
+suggests.
 
 ### The question
 
@@ -638,12 +639,12 @@ Each phasor pairs a cosine with a sine of the same angle, so its amplitude and p
 angle; there is not one indicator, bucket or threshold in the model, and `web/verify_docs.py` refuses
 a file containing one.
 
-**Nested ten-fold cross-validated AUC 0.6811**, folds cut by connected component of the marriage
+**Nested ten-fold cross-validated AUC 0.6914** on the 100,129-couple corpus, folds cut by connected component of the marriage
 graph so no person appears on both sides of a split — and *nested* meaning the stepwise selection,
 the choice of how many phasors, and the forcing-in of any missing fast body were all re-run from
 scratch inside every training fold, so the quoted number never saw its own test couples. One
-partner's chart alone, given its complete solo algebra (339 parameters), reaches 0.6644 on the same
-folds. The fixed-structure CV of the final model is 0.6866, and it is quoted only as a reference:
+partner's chart alone, given its complete solo algebra (339 parameters), reaches 0.6733 on the same
+folds. The fixed-structure CV of the final model is 0.6925, and it is quoted only as a reference:
 a structure chosen using all ten folds and then "cross-validated" is leak-inflated (measured below).
 
 ### How it was found
@@ -796,15 +797,15 @@ encode a decade:
 
 | bodies | slowest cycle | AUC | above chance |
 |---|---|---|---|
-| all 13 | 492 yr (Neptune–Pluto) | 0.6835 | 0.184 |
-| Sun–Saturn (7) | 29 yr | 0.5692 | 0.069 |
-| Sun–Mars (5) | 687 d | 0.5192 | 0.019 |
-| *birth-date gap, 2 parameters* | — | *0.5495* | *0.050* |
+| all 13 | 492 yr (Neptune–Pluto) | 0.6905 | 0.191 |
+| Sun–Saturn (7) | 29 yr | 0.5691 | 0.069 |
+| Sun–Mars (5) | 687 d | 0.5189 | 0.019 |
+| *birth-date gap, 2 parameters* | — | *0.5518* | *0.052* |
 
 **About 89% of what this model knows is when the two people were born.** Neptune takes 165 years to
 circle the zodiac and Pluto 248, so their positions are a statement about the decade. Strip them and
-the model falls to 0.5692; strip Jupiter and Saturn too and it reaches
-0.5192 — **less than the 0.5495 that two numbers of
+the model falls to 0.5691; strip Jupiter and Saturn too and it reaches
+0.5189 — **less than the 0.5518 that two numbers of
 birth-date difference achieve on their own**. Every angle Venus, Mars, Mercury, the Moon and the Sun
 can form between two charts, at thirteen harmonics, in differences and midpoints, is worth less than
 knowing how far apart the two birthdays are.

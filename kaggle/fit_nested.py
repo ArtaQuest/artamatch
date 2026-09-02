@@ -24,6 +24,8 @@ from sklearn.metrics import roc_auc_score
 from collections import Counter
 import fit_phasor_torch as P
 from closed_newton import _solve, DEV
+if os.environ.get("AQ_CPU", "0") == "1":
+    DEV = "cpu"      # run on the idle cores while the GPU carries another chain; identical arithmetic
 
 def _solve_soft(H, g, scale):
     from scipy.linalg import cho_factor, cho_solve
@@ -53,6 +55,7 @@ ORTHO = os.environ.get("AQ_ORTHO", "0") == "1"                 # exact score tes
 GROUP = os.environ.get("AQ_GROUP", "0") == "1"                 # select ANGLES (all harmonics at once), not phasors
 SWAP = os.environ.get("AQ_SWAP", "0") == "1"                   # one forward-backward swap pass after the forward run
 ERA = os.environ.get("AQ_ERA", "0") == "1"                     # outer folds are contiguous birth-era blocks (diagnostic)
+ERA_SPLIT = int(os.environ.get("AQ_ERA_SPLIT", "0"))            # ONE split: train grooms born < year, test >= year (extrapolation)
 HALPHA = float(os.environ.get("AQ_HALPHA", "0"))               # ridge scaled by k^alpha (smoothness prior)
 TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
        + (f"_h{'-'.join(map(str,HARM_EXTRA))}" if HARM_EXTRA else "")
@@ -60,7 +63,8 @@ TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
        + (f"_noBody{DROP_BODY}" if DROP_BODY else "") + (f"_noFam{DROP_FAM}" if DROP_FAM else "")
        + (f"_noHarm{DROP_HARM}" if DROP_HARM else "") + (f"_o{NOUTER}" if NOUTER != 10 else "")
        + ("_ortho" if ORTHO else "") + (f"_ha{HALPHA:g}" if HALPHA else "")
-       + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else ""))
+       + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else "")
+       + (f"_split{ERA_SPLIT}" if ERA_SPLIT else ""))
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -147,6 +151,12 @@ if ERA:
     order_c = np.argsort(comp_year, kind="stable")
     fold = np.empty(n, int); fold[order_c] = (np.arange(n) * NOUTER) // n
     log("ERA folds: " + " · ".join(f"{int(np.nanmin(yr_row[fold==k]))}-{int(np.nanmax(yr_row[fold==k]))}" for k in range(NOUTER)))
+if ERA_SPLIT:
+    # EXTRAPOLATION, one direction only: the model never sees a groom born on or after the cutoff
+    # and is scored only on those. This is the live page's situation for a modern couple.
+    yr_row = pd.to_numeric(full.dob_a.astype(str).str.slice(0, 4), errors="coerce").to_numpy()
+    fold = (yr_row >= ERA_SPLIT).astype(int)
+    log(f"ERA SPLIT at {ERA_SPLIT}: train {(fold==0).sum():,} · test {(fold==1).sum():,}")
 w = np.where(y > 0, n / (2 * y.sum()), n / (2 * (n - y.sum()))).astype(np.float32)
 yt = torch.from_numpy(y).to(DEV)
 FAST = [b for b in ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"] if b != DROP_BODY]
@@ -372,8 +382,10 @@ def pick_k(order, trm_np, seed, nfold=5):
 # ---- the nested estimate ----------------------------------------------------------------------
 oof_outer = np.zeros(n, np.float32)
 per_fold = []
-for kf in range(NOUTER):
+tested = np.zeros(n, bool)
+for kf in ([1] if ERA_SPLIT else range(NOUTER)):
     trm = fold != kf
+    tested |= ~trm
     order = stepwise(trm, KMAX)
     Kin, inner_aucs = (KMAX, []) if NO_INNER else pick_k(order, trm, seed=1000 + kf)
     sel, forced = force_fast(order[:Kin], trm)
@@ -389,7 +401,7 @@ for kf in range(NOUTER):
                      "forced": [b for b, _ in forced]})
     log(f"   outer {kf+1}/{NOUTER} · K_inner {Kin} (+{len(forced)} forced: {','.join(b for b,_ in forced) or 'none'}) · fold AUC {fauc:.4f}")
 
-auc_nested = float(roc_auc_score(y, oof_outer))
+auc_nested = float(roc_auc_score(y[tested], oof_outer[tested]))
 log(f"NESTED AUC (selection + K + forced fast bodies ALL inside the loop): {auc_nested:.4f}  [{TAG}]")
 np.save(f"{D_}/oof_nested_{TAG}.npy", oof_outer)
 if ABLATE:

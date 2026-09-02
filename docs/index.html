@@ -157,7 +157,7 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:70px;borde
 <header>
 <div class="eyebrow"><span class="ebfull">ArtaMatch · sidereal (Lahiri) · every rule reads both charts</span><span class="ebshort">ArtaMatch · every rule reads both charts</span></div>
 <h1>Written in the <span class="g">stars</span>?</h1>
-<p class="sub">93,598 marriages from the historical record, both charts read together — one model,
+<p class="sub"><span id="mx-hero-corpus">93,598</span> marriages from the historical record, both charts read together — one model,
 <span id="mx-hero-n">32</span> tuned waves, every weight published. Enter your birthday: it reads your chart, then looks for
 the birth dates that fit yours.</p>
 </header>
@@ -199,8 +199,8 @@ it will read once there is a second date to compare yours with.</p>
 <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;margin-top:8px"><table><tbody id="t100"></tbody></table></div></details>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
 remembers. <span id="honestnum">What this ranks on: whether the historical record lists children for couples like
-you, over 93,598 finished marriages — the same 32-phasor model as the reading below, nested
-cross-validated AUC 0.6794 against 0.6625 for one chart alone. About 89% of what it knows is when the
+you, over <span class="mx-corpus">93,598</span> finished marriages — the same model as the reading below,
+nested cross-validated AUC <span class="mx-cv">0.68</span> against <span class="mx-solo">0.66</span> for one chart alone. About 89% of what it knows is when the
 two of you were born, so inside this window the differences are small and honest — they come from the
 fast bodies, and they are exactly as thin as the measurement says.</span></p>
 
@@ -217,8 +217,8 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
   <div class="panel" id="tdsec" style="margin-top:26px">
     <h3 style="margin:0 0 6px;font-size:1.15em">Someone in particular?</h3>
     <p class="sub" style="margin:0 0 14px">Two birthdays, two charts, read together. One narrow
-    question — <b>did the record list children for couples like you</b> — asked of 93,598 finished
-    marriages. Read what comes back with the note beneath it.</p>
+    question — <b>did the record list children for couples like you</b> — asked of
+    <span class="mx-corpus">93,598</span> finished marriages. Read what comes back with the note beneath it.</p>
     <div class="field"><label for="tdme">Your date of birth</label>
       <input type="date" id="tdme" min="1900-01-01" max="2026-12-31" value=""></div>
     <div class="field"><label for="tddob">Their date of birth</label>
@@ -425,6 +425,10 @@ async function boot(){
   {const td=window.__td, dc=td.decomposition, F=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
    F("mx-n",td.n_corpus.toLocaleString()); F("mx-cv",td.cv_auc_broad.toFixed(4));
    F("mx-nph",td.n_phasors); F("mx-hero-n",td.n_phasors); F("mx-nw",td.n_weights);
+   F("mx-hero-corpus",td.n_corpus.toLocaleString());
+   document.querySelectorAll(".mx-corpus").forEach(e=>e.textContent=td.n_corpus.toLocaleString());
+   document.querySelectorAll(".mx-cv").forEach(e=>e.textContent=td.cv_auc_broad.toFixed(4));
+   document.querySelectorAll(".mx-solo").forEach(e=>e.textContent=Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));
    F("mx-solo",Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));
    F("mx-gap",td.baseline_age_gap.toFixed(4));
    F("mx-a13",dc.all_13_bodies.toFixed(3)); F("mx-f7",dc.fast_7_bodies_sun_to_saturn.toFixed(3));
@@ -713,6 +717,7 @@ $("go").onclick=async()=>{
 
 
 function renderTop(all,P){
+  const td=window.__td;
   $("top10").innerHTML=all.slice(0,10).map((r,i)=>{
     const gap=Math.abs(state.me[0]-+r[0].slice(0,4));
     // chips are the model's strongest movers for THIS pair: gold when they pull toward the record
@@ -726,7 +731,7 @@ function renderTop(all,P){
         : `You'd be ${gap===0?"about the same age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"older":"younger")}`)} · ${r[3]===0?"not one shadow":r[3]+" small shadows"}</span>
       <span class="mbar"><i style="width:${(100*r[4]).toFixed(0)}%"></i></span><span class="mp">${(100*r[4]).toFixed(1)}%</span></div>
       <div class="chips">${chips}</div>
-      <div class="why">The percentage is where this pairing sits among <b>93,598 recorded marriages</b>, on
+      <div class="why">The percentage is where this pairing sits among <b>${td.n_corpus.toLocaleString()} recorded marriages</b>, on
       one narrow question — did the record list children for couples like this. The chips are the angles
       that moved it most. Most of the score is simply when you were both born; the reading further down
       the page takes that apart honestly.</div></div>`;

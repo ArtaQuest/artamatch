@@ -115,6 +115,7 @@ score = F.astype(np.float64) @ beta
 log(f"in-sample {roc_auc_score(y, score):.4f} (converged in {step+1} Newton steps)")
 
 SPAN = (1598, 2200)
+dec_of = (pd.to_numeric(full.dob_a.astype(str).str.slice(0, 4), errors="coerce").fillna(0) // 10 * 10).astype(int).to_numpy()
 yr = lambda c: pd.to_numeric(c.astype(str).str.slice(0, 4), errors="coerce")
 inspan = ((yr(full.dob_a) >= SPAN[0]) & (yr(full.dob_a) <= SPAN[1])
           & (yr(full.dob_b) >= SPAN[0]) & (yr(full.dob_b) <= SPAN[1])).to_numpy()
@@ -166,6 +167,13 @@ model = {
     },
     "n_corpus": int(n), "n_positive": int(y.sum()),
     "quantiles": [float(q) for q in np.quantile(score, np.linspace(0, 1, 401))],
+    # ERA-CONDITIONED QUANTILES (operator 2026-09-02, "keep improving"): most of the score is the
+    # birth calendar, so a couple born in the 1990s is capped near the middle of the ALL-couples
+    # distribution by Neptune's position alone. Ranking them among couples whose husband was born
+    # in the same decade removes that cap and answers the fairer question. 101 quantiles per
+    # decade with at least 200 couples; the page shows both numbers and says which is which.
+    "quantiles_by_decade": {str(dec): [float(q) for q in np.quantile(score[dec_of == dec], np.linspace(0, 1, 101))]
+                            for dec in sorted(set(dec_of)) if (dec_of == dec).sum() >= 200},
     "verify": [{"dob_a": full.dob_a.iloc[int(i)], "dob_b": full.dob_b.iloc[int(i)],
                 "score": float(score[i])} for i in vsel],
 }

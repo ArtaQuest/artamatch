@@ -778,6 +778,17 @@ the same nested procedure with the exact score test gives 0.6837 with 22 phasors
 family gives 0.6833. Every family, harmonic and body the ablation table found worthless can be
 left out of the search itself at no cost.
 
+**Every other system as a pseudo-body** (operator, 2026-09-02). Numerology's life path and
+birthday number, the Chinese year animal and stem and day stem and branch, the Nine-Star year, the
+Tzolkin sign and tone, the Lord of the Night: each system's state becomes an angle on its own
+circle (state s of N is s·360/N — a life path of 1 is 40°), so the same families produce every
+aspect, across systems too, and a harmonic that is a multiple of a discrete body's state count is
+skipped as a constant. Conventions are the lab's and are computed identically in the browser
+(`docs/tilldeath.py`, parity proven on 60 values). In the lean cross-chart, first-harmonic bank the
+ten pseudo-bodies raise the candidates from 169 to 529 and the nested AUC **falls** from 0.6914 to
+0.6904: the year-cycle systems are calendar clocks the outer planets already carry, and the
+day-cycle ones carry nothing. The full-bank version is reported below when it lands.
+
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
 the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)

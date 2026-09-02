@@ -57,9 +57,41 @@ def chart(iso, bodies):
     aya = swe.get_ayanamsa_ut(jd)
     out = {}
     for b in bodies:
+        if b in SYSTEM_STATES:
+            out[b] = system_angle(b, y, m, d) * DEG
+            continue
         trop = swe.calc_ut(jd, BODY_CODE[b], FLAGS)[0][0]
         out[b] = ((trop - aya) % 360.0) * DEG
     return out
+
+
+# ── OTHER SYSTEMS AS PSEUDO-BODIES (operator 2026-09-02). A system's state is an angle on its own
+# circle: state s of N -> s * 360/N (numerology has 9 states, so state 1 is 40 degrees). The
+# conventions are the lab's (scorer.py) and kaggle/build_systems.py's, to the digit — the corpus
+# and this page must agree or the shipped replay of 200 couples refuses the model file.
+SYSTEM_STATES = {"num_lifepath": 9, "num_birthday": 31, "cn_year_animal": 12, "cn_year_stem": 10,
+                 "cn_day_stem": 10, "cn_day_branch": 12, "nine_star": 9,
+                 "tz_sign": 20, "tz_tone": 13, "lord_night": 9}
+
+def _jdn(y, m, d):
+    a = (14 - m) // 12; yy = y + 4800 - a; mm = m + 12 * a - 3
+    return d + (153 * mm + 2) // 5 + 365 * yy + yy // 4 - yy // 100 + yy // 400 - 32045
+
+def _lifepath(y, m, d):
+    t = sum(int(c) for c in "%04d%02d%02d" % (y, m, d))
+    while t > 9:
+        t = sum(int(c) for c in str(t))
+    return t
+
+def system_angle(name, y, m, d):
+    """degrees, 0-based state index + 1 times the state width"""
+    j = _jdn(y, m, d); sx = (j + 49) % 60; k = (j - 584283) % 260
+    st = {"num_lifepath": _lifepath(y, m, d) - 1, "num_birthday": d - 1,
+          "cn_year_animal": (y - 4) % 12, "cn_year_stem": (y - 4) % 10,
+          "cn_day_stem": sx % 10, "cn_day_branch": sx % 12,
+          "nine_star": (1 + (11 - (1 + (sum(int(c) for c in str(y)) - 1) % 9) - 1) % 9) - 1,
+          "tz_sign": k % 20, "tz_tone": k % 13, "lord_night": (j - 584283) % 9}[name]
+    return (st + 1) * 360.0 / SYSTEM_STATES[name]
 
 
 def _angle(t, bodies, A, B):

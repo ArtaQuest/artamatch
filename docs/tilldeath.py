@@ -69,6 +69,13 @@ def chart(iso, bodies, female=False, name=""):
     return out
 
 def _angle(t, bodies, A, B):
+    if t["kind"] == "lin":
+        # THE GENERAL LINEAR KIND (competition, 2026-09-02): a signed integer sum of named longitudes
+        # across both charts, e.g. (his Neptune - her Neptune) + (his Saturn - her Saturn) — a
+        # second-order phasor. coef maps "his:<body>" / "her:<body>" to an integer. Checked first:
+        # it carries no i/j.
+        return sum(c * (A if key.split(":", 1)[0] == "his" else B)[key.split(":", 1)[1]]
+                   for key, c in t["coef"].items())
     i = bodies[t["i"]]
     j = bodies[t["j"]] if t["j"] is not None else None
     k = t["kind"]

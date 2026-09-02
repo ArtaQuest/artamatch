@@ -256,7 +256,7 @@ def check_tilldeath():
           f"{len(m.get('terms', []))} terms, {len(m.get('quantiles', []))} quantiles")
 
     kinds = {"diff", "natM", "natW", "sum", "aspM", "aspW", "midM", "midW",
-             "xdiff", "xsum", "camp", "ddm", "ddp", "ssp", "dsm", "dsp"}
+             "xdiff", "xsum", "camp", "ddm", "ddp", "ssp", "dsm", "dsp", "lin"}
     SOLO = {"natM", "natW", "aspM", "aspW", "midM", "midW"}
     # EVERY TERM MUST BE SINUSOIDAL (operator 2026-09-01): a cosine or a sine of an integer harmonic
     # of a named angle. Anything else — an indicator, a bucket, a threshold — is refused here.
@@ -264,9 +264,15 @@ def check_tilldeath():
     check("every term is a sinusoid of an integer harmonic", not badk,
           f"{len(badk)} with a bad harmonic" if badk
           else "harmonics present: " + ", ".join(str(x) for x in sorted({t.get("k", 1) for t in m["terms"]})))
+    def _ok_lin(t):
+        # a linear term names every body it uses, with a non-zero integer coefficient
+        return isinstance(t.get("coef"), dict) and t["coef"] and all(
+            key.split(":", 1)[0] in ("his", "her") and key.split(":", 1)[1] in m["bodies"]
+            and isinstance(c, int) and c != 0 for key, c in t["coef"].items())
     bad = [t for t in m["terms"] if t["kind"] not in kinds or t["trig"] not in ("cos", "sin")
-           or not (0 <= t["i"] < len(m["bodies"]))
-           or (t["j"] is not None and not (0 <= t["j"] < len(m["bodies"])))]
+           or (t["kind"] == "lin" and not _ok_lin(t))
+           or (t["kind"] != "lin" and (not (0 <= t["i"] < len(m["bodies"]))
+               or (t["j"] is not None and not (0 <= t["j"] < len(m["bodies"])))))]
     check("every till-death term names a real body and a real angle kind", not bad,
           f"{len(bad)} malformed" if bad else f"{len(m['terms'])} terms over {len(m['bodies'])} bodies")
 

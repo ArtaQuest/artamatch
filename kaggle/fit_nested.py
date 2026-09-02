@@ -40,6 +40,7 @@ def _solve_soft(H, g, scale):
 
 D_ = os.path.expanduser(os.environ.get("AQ_DIR", "~/.artamatch-dev/tilldeath_max"))
 KMAX = int(os.environ.get("AQ_KMAX", "64"))
+SUMS = os.environ.get("AQ_SUMS", "0") == "1"
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -63,6 +64,19 @@ for i, j in C2:
     ANG.append((RA[:, i] - RA[:, j], f"his {bod[i]} - his {bod[j]}", "aspM", i, j, "XX"))
 for i, j in C2:
     ANG.append((RB[:, i] - RB[:, j], f"her {bod[i]} - her {bod[j]}", "aspW", i, j, "YY"))
+if SUMS:
+    # THE SUM HALF OF THE PAIR ALGEBRA (operator 2026-09-01, "keep experimenting"): the diff
+    # families span d-space only; sums are the composite/Davison axes. xsum includes i=j (the
+    # composite chart's own axis); midM/midW stay i<j because i=j is 2*his[i] — a solo natal
+    # position, which the diagonal rule excludes. Sum angles at low harmonic encode absolute
+    # longitude, i.e. the CALENDAR — whatever they add, the decomposition must re-measure.
+    for i in range(NB):
+        for j in range(NB):
+            ANG.append((RA[:, i] + RB[:, j], f"his {bod[i]} + her {bod[j]}", "xsum", i, j, "XYs"))
+    for i, j in C2:
+        ANG.append((RA[:, i] + RA[:, j], f"his {bod[i]} + his {bod[j]}", "midM", i, j, "XXs"))
+    for i, j in C2:
+        ANG.append((RB[:, i] + RB[:, j], f"her {bod[i]} + her {bod[j]}", "midW", i, j, "YYs"))
 HARM = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 27, 36)
 MET = []
 for a, (ang, name, kind, i, j, fam) in enumerate(ANG):
@@ -321,13 +335,13 @@ json.dump({"nested_auc": round(auc_nested, 4), "per_fold": per_fold,
                                              "max_wdiff": round(wdiff, 4)}},
            "rl_sweep": {str(k): round(v, 4) for k, v in sw.items()},
            "terms": terms, "bias": round(float(beta_cf[-1]), 4)},
-          open(f"{D_}/report_nested_k{KMAX}.json", "w"), indent=1)
+          open(f"{D_}/report_nested_k{KMAX}{'_sums' if SUMS else ''}.json", "w"), indent=1)
 json.dump({"met": [{"kind": MET[c]["kind"], "i": MET[c]["i"], "j": MET[c]["j"], "k": MET[c]["k"],
                     "label": MET[c]["label"], "fam": MET[c]["fam"]} for c in sel],
            "rl": rl_star, "cv": round(auc_nested, 4)},
-          open(f"{D_}/maxout_terms_k{KMAX}.json", "w"), indent=1)
+          open(f"{D_}/maxout_terms_k{KMAX}{'_sums' if SUMS else ''}.json", "w"), indent=1)
 # KMAX-STAMPED FILENAMES. The K=64 run silently overwrote the K=32 artifacts under the shared
 # names, so the exporter would have shipped the WORSE model (nested 0.6783 vs 0.6794) — the same
 # two-runs-one-filename failure that once put a wrong number on the live page. The name now carries
 # the run's identity, and the exporter names the file it ships from.
-log(f"saved report_nested_k{KMAX}.json + maxout_terms_k{KMAX}.json")
+log(f"saved report_nested_k{KMAX}{'_sums' if SUMS else ''}.json + maxout_terms_k{KMAX}{'_sums' if SUMS else ''}.json")

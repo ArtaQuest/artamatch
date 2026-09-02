@@ -102,7 +102,7 @@ if __name__ == "__main__":
     labels = dict(pd.read_csv(LAB, dtype=str).fillna("").itertuples(index=False, name=None)) if os.path.exists(LAB) else {}
     missing = 0
     def side(col, pcol, theta, female):
-        nonlocal missing
+        global missing
         out = []
         for iso, pid, row in zip(full[col], full[pcol], theta):
             y, m, d = int(iso[:4]), int(iso[5:7]), int(iso[8:10])

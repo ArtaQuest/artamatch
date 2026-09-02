@@ -59,7 +59,18 @@ for f in os.listdir("/kaggle/working"):
     if f.endswith(".py") or f == "__pycache__": (shutil.rmtree if os.path.isdir(f) else os.remove)(f)
 print("DONE in %.0fs · rc=%d" % (time.time() - T0, p.returncode), flush=True)
 '''
+def wait_ready(timeout=1800):
+    """a kernel pushed before its datasets are ready gets NO inputs mounted (measured: the smoke
+    kernel found an empty /kaggle/input) — poll both datasets until 'ready'."""
+    t0 = time.time()
+    while time.time() - t0 < timeout:
+        st = [sh("kaggle", "datasets", "status", d)[1].strip().lower() for d in (CODE_DS, CORPUS_DS)]
+        if all(x.startswith("ready") for x in st): return True
+        time.sleep(30)
+    raise SystemExit(f"datasets not ready after {timeout}s: {st}")
+
 def push(slug, envs, script="fit_nested.py", extra=()):
+    wait_ready()
     d = f"{K}/kernels/{slug}"; shutil.rmtree(d, ignore_errors=True); os.makedirs(d)
     # extra files (a competitor's comp_<slug>.py and helpers) ride inside the kernel dir itself
     for x in extra: shutil.copy(x, d)

@@ -852,7 +852,8 @@ where a hypothetical partner has none.
 **Is it overfit? Three direct probes, all on the 100,129-couple corpus, lean bank.** A **vault**:
 one family in ten (10,132 couples) sealed by a fixed seed before the search, the folds, the inner CV
 or the λ sweep saw anything; the model built on the other 90% scores **0.6922** on the vault against
-0.6908 nested on the 90% — the sealed couples agree, slightly above. The **K curve**: letting the
+0.6908 nested on the 90% — the sealed couples agree, slightly above; under validated selection the
+same vault scores 0.6927 against 0.6914 nested, again above. The **K curve**: letting the
 search run to 48 or 64 phasors gives 0.6913 and 0.6913 (the inner CV stops at 37); more terms neither
 help nor hurt. **Validated selection** reaches the same 0.6914 with **20 phasors** instead of 32.
 The model is not overfit; it is at the ceiling of what two birth dates hold about this label.

@@ -50,6 +50,7 @@ DROP_FAM = os.environ.get("AQ_DROP_FAM", "")                   # ablation: leave
 DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave one harmonic out
 ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")                   # lean model: keep ONE family (e.g. XY)
 SYSTEMS = os.environ.get("AQ_SYSTEMS", "0") == "1"             # other systems as pseudo-bodies (build_systems.py)
+VAULT = os.environ.get("AQ_VAULT", "0") == "1"                 # 10% of families sealed before anything runs; one look at the end
 ONLY_HARM = tuple(int(x) for x in os.environ.get("AQ_ONLY_HARM", "").split(",") if x)   # lean: keep these harmonics
 NOUTER = int(os.environ.get("AQ_NOUTER", "10"))                # outer folds (ablations use 5)
 NO_INNER = os.environ.get("AQ_NO_INNER", "0") == "1"           # K fixed at KMAX (ablations)
@@ -69,7 +70,7 @@ TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
        + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else "")
        + (f"_split{ERA_SPLIT}" if ERA_SPLIT else "")
        + (f"_only{ONLY_FAM}" if ONLY_FAM else "") + (f"_h{'-'.join(map(str,ONLY_HARM))}only" if ONLY_HARM else "")
-       + ("_systems" if SYSTEMS else ""))
+       + ("_systems" if SYSTEMS else "") + ("_vault" if VAULT else ""))
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -179,6 +180,16 @@ if ERA_SPLIT:
     fold = (yr_row >= ERA_SPLIT).astype(int)
     log(f"ERA SPLIT at {ERA_SPLIT}: train {(fold==0).sum():,} · test {(fold==1).sum():,}")
 w = np.where(y > 0, n / (2 * y.sum()), n / (2 * (n - y.sum()))).astype(np.float32)
+vault = np.zeros(n, bool)
+if VAULT:
+    # THE VAULT (operator 2026-09-02, "ensure the model is not prone to overfitting"): one family in
+    # ten is sealed away by a fixed seed before the search, the fold assignment, the inner CV or the
+    # lambda sweep see anything. Every fit gives sealed rows weight zero; every outer test set
+    # excludes them. The deploy model built on the other 90% is scored on the vault exactly once.
+    vault = (np.random.default_rng(2026).integers(0, 10, gid.max() + 1)[gid] == 0)
+    w = w * (~vault)
+    fold = np.where(vault, -1, fold)
+    log(f"VAULT: {vault.sum():,} couples sealed · {(~vault).sum():,} available")
 yt = torch.from_numpy(y).to(DEV)
 FAST = [b for b in ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"] if b != DROP_BODY]
 INV = {b: torch.tensor([bod[m["i"]] == b or bod[m["j"]] == b for m in MET], device=DEV) for b in FAST}
@@ -422,7 +433,7 @@ for kf in ([1] if ERA_SPLIT else range(NOUTER)):
                      "forced": [b for b, _ in forced]})
     log(f"   outer {kf+1}/{NOUTER} · K_inner {Kin} (+{len(forced)} forced: {','.join(b for b,_ in forced) or 'none'}) · fold AUC {fauc:.4f}")
 
-auc_nested = float(roc_auc_score(y[tested], oof_outer[tested]))
+auc_nested = float(roc_auc_score(y[tested & ~vault], oof_outer[tested & ~vault]))
 log(f"NESTED AUC (selection + K + forced fast bodies ALL inside the loop): {auc_nested:.4f}  [{TAG}]")
 np.save(f"{D_}/oof_nested_{TAG}.npy", oof_outer)
 if ABLATE:
@@ -433,7 +444,7 @@ if ABLATE:
 
 # ---- the deployed model: the same procedure, once, on all data --------------------------------
 log("deploy pass on ALL data")
-allr = np.ones(n, bool)
+allr = ~vault
 order = stepwise(allr, KMAX)
 Kin, inner_aucs = pick_k(order, allr, seed=77, nfold=10)
 log(f"   K by 10-fold CV over the all-data ordering: {Kin}  (curve max {max(inner_aucs):.4f})")
@@ -465,7 +476,11 @@ log(f"   lambda: {rl_star} (interior) · fixed-structure CV {sw[rl_star]:.4f} [r
 
 w_t = torch.from_numpy(w).to(DEV)
 beta_cf = newton_on(Amat, w_t, rl_star, ksel=[MET[c]["k"] for c in sel])
-auc_cf = float(roc_auc_score(y, (Amat @ torch.from_numpy(beta_cf.astype(np.float32)).to(DEV)).cpu().numpy()))
+sc_all = (Amat @ torch.from_numpy(beta_cf.astype(np.float32)).to(DEV)).cpu().numpy()
+auc_cf = float(roc_auc_score(y[allr], sc_all[allr]))
+if VAULT:
+    auc_vault = float(roc_auc_score(y[vault], sc_all[vault]))
+    log(f"VAULT AUC (the sealed 10%, scored once by the model built on the other 90%): {auc_vault:.4f}  vs nested {auc_nested:.4f}")
 # closed form vs gradient on the same penalised objective
 sw0 = (w_t * 0.25).sqrt().unsqueeze(1)
 sc = float(np.mean(np.diag(((Amat * sw0).T @ (Amat * sw0)).cpu().numpy())[:-1]))
@@ -477,7 +492,7 @@ for it in range(4000):
     loss = (w_t * torch.nn.functional.binary_cross_entropy_with_logits(Amat @ bt, yt, reduction="none")).sum() \
            + 0.5 * (reg_t * bt * bt).sum()
     loss.backward(); opt.step()
-auc_gd = float(roc_auc_score(y, (Amat @ bt.detach()).cpu().numpy()))
+auc_gd = float(roc_auc_score(y[allr], (Amat @ bt.detach()).cpu().numpy()[allr]))
 wdiff = float(np.max(np.abs(beta_cf - bt.detach().cpu().numpy().astype(np.float64))))
 log(f"   closed form train AUC {auc_cf:.4f} vs Adam-4000 {auc_gd:.4f} · max weight diff {wdiff:.4f}")
 assert auc_cf >= auc_gd - 1e-4, "closed form fell short of the gradient solution"

@@ -115,6 +115,8 @@ score = F.astype(np.float64) @ beta
 log(f"in-sample {roc_auc_score(y, score):.4f} (converged in {step+1} Newton steps)")
 
 SPAN = (1598, 2200)
+_LAB = os.path.expanduser("~/.artamatch-dev/labels.csv")
+_labels = dict(pd.read_csv(_LAB, dtype=str).fillna("").itertuples(index=False, name=None)) if os.path.exists(_LAB) else {}
 dec_of = (pd.to_numeric(full.dob_a.astype(str).str.slice(0, 4), errors="coerce").fillna(0) // 10 * 10).astype(int).to_numpy()
 yr = lambda c: pd.to_numeric(c.astype(str).str.slice(0, 4), errors="coerce")
 inspan = ((yr(full.dob_a) >= SPAN[0]) & (yr(full.dob_a) <= SPAN[1])
@@ -179,7 +181,10 @@ model = {
     # decade with at least 200 couples; the page shows both numbers and says which is which.
     "quantiles_by_decade": {str(dec): [float(q) for q in np.quantile(score[dec_of == dec], np.linspace(0, 1, 101))]
                             for dec in sorted(set(dec_of)) if (dec_of == dec).sum() >= 200},
+    # the replay couples carry their names too, so a model with name pseudo-bodies can be gated
+    # by the same shim replay (the labels file is the corpus builder's; absent -> "")
     "verify": [{"dob_a": full.dob_a.iloc[int(i)], "dob_b": full.dob_b.iloc[int(i)],
+                "name_a": _labels.get(full.pid_a.iloc[int(i)], ""), "name_b": _labels.get(full.pid_b.iloc[int(i)], ""),
                 "score": float(score[i])} for i in vsel],
 }
 json.dump(model, open(OUT, "w"), indent=1)

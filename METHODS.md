@@ -754,6 +754,29 @@ baseline (same procedure, 5 outer folds, K=32): **0.6805**
 | k=6 | harmonic | 0.6808 | -0.0003 |
 | k=3 | harmonic | 0.6810 | -0.0005 |
 
+**Where the record is deep, the second chart adds nothing.** Restricting to couples whose two
+people are both well documented (Wikidata sitelinks as the only criterion, never a feature) and
+re-running the whole nested procedure on the subset:
+
+| subset | couples | one chart alone | nested, both charts | lift |
+|---|---|---|---|---|
+| all | 100,129 | 0.6733 | 0.6911 | +0.018 |
+| both ≥ 5 sitelinks | 13,389 | 0.6539 | 0.6514 | −0.003 |
+| both ≥ 15 sitelinks | 3,584 | 0.6762 | 0.6312 | −0.045 |
+
+The corpus-wide lift lives in the thinly documented majority, where "no children recorded" is
+partly a statement about the record's depth. On the couples whose records are fullest — where
+the label means most — reading the second chart is worth nothing, and on the smallest subset the
+extra parameters cost more than they earn. This is reported as measured; the subsets are small
+and the last one is noisy, but the sign does not move.
+
+**The leanest model is as good as the biggest.** Restricting the bank to the cross-chart family at
+the fundamental harmonic only — 169 candidates, his planet to hers, first harmonic — and running
+the same nested procedure with the exact score test gives 0.6837 with 22 phasors chosen, against
+0.6834 for the full 4,225-phasor bank (33 phasors); adding the twelve overtones back to that
+family gives 0.6833. Every family, harmonic and body the ablation table found worthless can be
+left out of the search itself at no cost.
+
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
 the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)

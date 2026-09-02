@@ -135,6 +135,11 @@ model = {
     "formula": "score = bias + sum over phasors of a*cos(k*angle) + c*sin(k*angle); p = sigmoid(score)",
     "angles": {"xdiff": "man[i] - woman[j]", "aspM": "man[i] - man[j]", "aspW": "woman[i] - woman[j]"},
     "n_phasors": K, "n_weights": len(terms) + 1,
+    # the candidate bank (from the terms file when the run recorded it, else from AQ_BANK_* for a
+    # run made before the field existed — always explicit, never inferred from a filename)
+    "bank": (mx.get("bank") if mx and mx.get("bank") else
+             {"families": os.environ["AQ_BANK_FAMS"].split(","), "harmonics": [int(x) for x in os.environ["AQ_BANK_HARMS"].split(",")],
+              "n_candidates": int(os.environ["AQ_BANK_N"]), "systems": False, "ortho": True}) if mx else None,
     "terms": [{**t, "w": float(beta[ix])} for ix, t in enumerate(terms)],
     "bias": float(beta[-1]),
     # THE FIXED-TERM CV, not the frontier's value at this k. The frontier re-picks its terms inside

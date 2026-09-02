@@ -49,6 +49,7 @@ DROP_BODY = os.environ.get("AQ_DROP_BODY", "")                 # ablation: leave
 DROP_FAM = os.environ.get("AQ_DROP_FAM", "")                   # ablation: leave one family out
 DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave one harmonic out
 ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")                   # lean model: keep ONE family (e.g. XY)
+SYSTEMS = os.environ.get("AQ_SYSTEMS", "0") == "1"             # other systems as pseudo-bodies (build_systems.py)
 ONLY_HARM = tuple(int(x) for x in os.environ.get("AQ_ONLY_HARM", "").split(",") if x)   # lean: keep these harmonics
 NOUTER = int(os.environ.get("AQ_NOUTER", "10"))                # outer folds (ablations use 5)
 NO_INNER = os.environ.get("AQ_NO_INNER", "0") == "1"           # K fixed at KMAX (ablations)
@@ -67,7 +68,8 @@ TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
        + ("_ortho" if ORTHO else "") + (f"_ha{HALPHA:g}" if HALPHA else "")
        + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else "")
        + (f"_split{ERA_SPLIT}" if ERA_SPLIT else "")
-       + (f"_only{ONLY_FAM}" if ONLY_FAM else "") + (f"_h{'-'.join(map(str,ONLY_HARM))}only" if ONLY_HARM else ""))
+       + (f"_only{ONLY_FAM}" if ONLY_FAM else "") + (f"_h{'-'.join(map(str,ONLY_HARM))}only" if ONLY_HARM else "")
+       + ("_systems" if SYSTEMS else ""))
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -82,6 +84,16 @@ keep = [i for i, x in enumerate(nm_all) if x != "true_south_node"
         and x.replace("true_", "").replace("mean_", "") != DROP_BODY]
 bod = [nm_all[i].replace("true_", "").replace("mean_", "") for i in keep]
 RA, RB = np.deg2rad(tha[:, okb][:, keep]), np.deg2rad(thb[:, okb][:, keep])
+NSTATES = [0] * len(bod)          # 0 = continuous (a planet); N = a discrete system with N states
+if SYSTEMS:
+    # EVERY OTHER SYSTEM AS A PSEUDO-BODY (operator 2026-09-02). Its state is an angle on its own
+    # circle, so the same families give every aspect — across systems too. A harmonic that is a
+    # multiple of a discrete body's state count is a constant on that circle and is skipped.
+    SZ = np.load(f"{D_}/systems.npz", allow_pickle=True)
+    bod = bod + [str(x) for x in SZ["names"]]
+    NSTATES = NSTATES + [int(x) for x in SZ["nstates"]]
+    RA = np.concatenate([RA, np.deg2rad(SZ["theta_a_sys"])], 1)
+    RB = np.concatenate([RB, np.deg2rad(SZ["theta_b_sys"])], 1)
 NB = len(bod); C2 = list(itertools.combinations(range(NB), 2))
 n = len(y)
 ANG = []
@@ -128,6 +140,8 @@ if ONLY_HARM:
 MET = []
 for a, (ang, name, kind, i, j, fam) in enumerate(ANG):
     for k in HARM:
+        if any(NSTATES[x] and k % NSTATES[x] == 0 for x in (i, j)):
+            continue        # constant on a discrete circle
         MET.append({"a": a, "k": k, "kind": kind, "i": i, "j": j, "fam": fam,
                     "angle_name": name,
                     "label": f"{k}*({name})" if k > 1 else name})
@@ -493,7 +507,10 @@ json.dump({"nested_auc": round(auc_nested, 4), "per_fold": per_fold,
           open(f"{D_}/report_nested_{TAG}.json", "w"), indent=1)
 json.dump({"met": [{"kind": MET[c]["kind"], "i": MET[c]["i"], "j": MET[c]["j"], "k": MET[c]["k"],
                     "label": MET[c]["label"], "fam": MET[c]["fam"]} for c in sel],
-           "rl": rl_star, "cv": round(auc_nested, 4)},
+           "rl": rl_star, "cv": round(auc_nested, 4),
+           # THE BANK the model was chosen from — the page describes it from here, never from copy
+           "bank": {"families": sorted({a[5] for a in ANG}), "harmonics": list(HARM),
+                    "n_candidates": p, "systems": SYSTEMS, "ortho": ORTHO}},
           open(f"{D_}/maxout_terms_{TAG}.json", "w"), indent=1)
 # KMAX-STAMPED FILENAMES. The K=64 run silently overwrote the K=32 artifacts under the shared
 # names, so the exporter would have shipped the WORSE model (nested 0.6783 vs 0.6794) — the same

@@ -822,6 +822,24 @@ A pseudo-body's state is an angle on its own circle, state s of N at s·360/N, s
 formed exactly as a planet's are — with the one rule that a harmonic equal to a multiple of N is a
 constant on that circle and is never searched.
 
+**Validated selection (operator, 2026-09-02): the worst case must be the same score.** If adding
+candidates lowers the honest AUC, the selection step is overfitting the training fold: the greedy
+takes the candidate with the best in-sample score, and a larger pool hands it more spurious
+winners (the best of p null candidates scores like 2·ln p — about 10 for 169 candidates, 19 for
+12,192). The remedy is structural: the score test now only SHORTLISTS five candidates per step;
+each is judged by a five-fold cross-validation inside the training rows; the best enters only if
+it improves that inner CV, and selection stops when none does. A candidate that merely won the
+in-sample lottery cannot get in, so a superset bank can no longer score lower except by CV noise.
+The comparison that tests this — planets alone, planets with every other system, and the full
+planet bank, all under validated selection — is reported below when it lands.
+
+**Name numerology** (operator, 2026-09-02) joins the inventory after all, as six pseudo-bodies
+computed from the name the world knows each person by (the Wikidata English label, romanised so
+every script gets a value): Pythagorean expression, soul urge and personality numbers, the
+Chaldean expression, the cornerstone letter's value, and the maturity number (life path plus
+expression). Should a name term ever earn a place, the page will ask for both names and hold name
+terms at zero in the date scan, where a hypothetical partner has none.
+
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
 the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)

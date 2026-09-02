@@ -46,7 +46,7 @@ DEG = math.pi / 180.0
 FLAGS = swe.FLG_SWIEPH | swe.FLG_SPEED
 
 
-def chart(iso, bodies, female=False):
+def chart(iso, bodies, female=False, name=""):
     """-> {body: radians} for a YYYY-MM-DD birth date at noon UT, sidereal Lahiri.
 
     The shim has no FLG_SIDEREAL: sidereal is tropical minus the ayanamsa, which is how
@@ -62,7 +62,7 @@ def chart(iso, bodies, female=False):
     for b in bodies:
         if b in SYSTEM_STATES:
             if st is None:
-                st = system_states(y, m, d, sid("sun"), sid("moon"), aya, female)
+                st = system_states(y, m, d, sid("sun"), sid("moon"), aya, female, name)
             out[b] = (st[b] + 1) * 360.0 / SYSTEM_STATES[b] * DEG
             continue
         out[b] = sid(b) * DEG
@@ -94,11 +94,11 @@ def _angle(t, bodies, A, B):
     raise ValueError(k)
 
 
-def score(model, man_iso, woman_iso):
+def score(model, man_iso, woman_iso, man_name="", woman_name=""):
     """-> dict(score, p, percentile, drivers). Man first, as the corpus was built."""
     bodies = model["bodies"]
-    A = chart(man_iso, bodies)
-    B = chart(woman_iso, bodies, female=True)
+    A = chart(man_iso, bodies, name=man_name)
+    B = chart(woman_iso, bodies, female=True, name=woman_name)
     s = model["bias"]
     parts = []
     for t in model["terms"]:
@@ -138,7 +138,7 @@ def verify(model, tol=1e-6):
     """replay the shipped couples; -> (worst_absolute_difference, n)"""
     worst = 0.0
     for v in model["verify"]:
-        got = score(model, v["dob_a"], v["dob_b"])["score"]
+        got = score(model, v["dob_a"], v["dob_b"], v.get("name_a", ""), v.get("name_b", ""))["score"]
         worst = max(worst, abs(got - v["score"]))
     return worst, len(model["verify"])
 
@@ -158,7 +158,33 @@ SYSTEM_STATES = {"num_lifepath": 9, "num_birthday": 31, "num_birthday_reduced": 
                  "cn_year_animal": 12, "cn_year_stem": 10, "cn_day_stem": 10, "cn_day_branch": 12,
                  "cn_day_nayin": 30, "cn_kua": 9, "nine_star": 9, "nine_star_month": 9,
                  "tz_sign": 20, "tz_tone": 13, "haab_month": 19, "lord_night": 9,
-                 "vedic_yoga": 27, "vedic_dasha_lord": 9, "manzil": 28, "weekday": 7}
+                 "vedic_yoga": 27, "vedic_dasha_lord": 9, "manzil": 28, "weekday": 7,
+                 "name_expression": 9, "name_soul_urge": 9, "name_personality": 9,
+                 "name_chaldean": 9, "name_cornerstone": 9, "name_maturity": 9}
+NAME_SYS = ("name_expression", "name_soul_urge", "name_personality", "name_chaldean", "name_cornerstone", "name_maturity")
+_PYTH = {c: (i % 9) + 1 for i, c in enumerate("ABCDEFGHIJKLMNOPQRSTUVWXYZ")}
+_CHAL = dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ", [1,2,3,4,5,8,3,5,1,1,2,3,4,5,7,8,1,2,3,4,6,6,6,5,1,7]))
+_VOWELS = set("AEIOUY")
+
+def romanize(label):
+    """A-Z only. In the browser the name arrives already romanised by the page (unidecode is not
+    in Pyodide); on the corpus side build_systems.py romanises the Wikidata label the same way."""
+    try:
+        from unidecode import unidecode
+        label = unidecode(label or "")
+    except ImportError:
+        pass
+    return "".join(c for c in (label or "").upper() if "A" <= c <= "Z")
+
+def name_states(label, lifepath_1to9):
+    L = romanize(label)
+    if not L:
+        return {n: 0 for n in NAME_SYS}
+    expr = _red9(sum(_PYTH[c] for c in L)); soul = _red9(sum(_PYTH[c] for c in L if c in _VOWELS) or 9)
+    pers = _red9(sum(_PYTH[c] for c in L if c not in _VOWELS) or 9); chal = _red9(sum(_CHAL[c] for c in L))
+    return {"name_expression": expr - 1, "name_soul_urge": soul - 1, "name_personality": pers - 1,
+            "name_chaldean": chal - 1, "name_cornerstone": _red9(_PYTH[L[0]]) - 1,
+            "name_maturity": _red9(lifepath_1to9 + expr) - 1}
 
 def _jdn(y, m, d):
     a = (14 - m) // 12; yy = y + 4800 - a; mm = m + 12 * a - 3
@@ -172,7 +198,7 @@ def _red9(t):
 def _ninestar_year(cy):
     return 1 + (11 - (1 + (sum(int(c) for c in str(cy)) - 1) % 9) - 1) % 9
 
-def system_states(y, m, d, sid_sun, sid_moon, aya, female):
+def system_states(y, m, d, sid_sun, sid_moon, aya, female, name=""):
     j = _jdn(y, m, d); sx = (j + 49) % 60; k = (j - 584283) % 260
     trop_sun = (sid_sun + aya) % 360.0
     cy = y - 1 if (m <= 2 and trop_sun < 315.0) else y
@@ -197,4 +223,5 @@ def system_states(y, m, d, sid_sun, sid_moon, aya, female):
             "lord_night": (j - 584283) % 9,
             "vedic_yoga": int(((sid_sun + sid_moon) % 360.0) // (360.0 / 27.0)),
             "vedic_dasha_lord": nak % 9, "manzil": int(sid_moon // (360.0 / 28.0)),
-            "weekday": (j + 1) % 7}
+            "weekday": (j + 1) % 7,
+            **name_states(name, _red9(sum(int(c) for c in "%04d%02d%02d" % (y, m, d))))}

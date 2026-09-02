@@ -46,6 +46,12 @@ input[type=date]{width:100%;background:rgba(12,30,50,.55);border:1px solid var(-
   color:var(--ink);padding:16px 16px;font:400 19px/1.2 var(--serif);letter-spacing:.02em;
   color-scheme:dark;transition:border-color .25s,box-shadow .25s,background .25s}
 input[type=date]:hover{border-color:rgba(232,185,35,.35)}
+select{width:100%;background:rgba(12,30,50,.55);border:1px solid var(--line);border-radius:14px;
+  color:var(--ink);font:inherit;padding:13px 14px;-webkit-appearance:none;appearance:none;
+  background-image:linear-gradient(45deg,transparent 50%,var(--mut) 50%),linear-gradient(135deg,var(--mut) 50%,transparent 50%);
+  background-position:calc(100% - 21px) 50%,calc(100% - 15px) 50%;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+select:hover{border-color:rgba(232,185,35,.35)}
+select:focus{outline:none;border-color:var(--gold);background-color:rgba(12,30,50,.8)}
 input[type=date]:focus{outline:none;border-color:var(--gold);background:rgba(12,30,50,.8);
   box-shadow:0 0 0 3px rgba(232,185,35,.16)}
 .gbtns{display:flex;gap:12px}
@@ -198,7 +204,7 @@ cross-validated AUC 0.6794 against 0.6625 for one chart alone. About 89% of what
 two of you were born, so inside this window the differences are small and honest — they come from the
 fast bodies, and they are exactly as thin as the measurement says.</span></p>
 
-  </div>
+  
 </section>
 
 <!-- ITS OWN SECTION, VISIBLE BY SCROLLING. This card lived inside step 3, which meant a reader
@@ -231,10 +237,13 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
      and this is its precise description. Every number below is filled from tilldeath.json at load
      (see the boot script), so the copy cannot drift from the artifact. The old laboratory still
      lives, documented, at lab.html. -->
-<h2 style="margin-top:44px">The model, precisely</h2>
+<div aria-hidden="true" style="height:1px;margin:64px 18% 0;
+  background:linear-gradient(90deg,transparent,rgba(232,185,35,.45),transparent)"></div>
+<h2 style="margin-top:46px">The model, precisely</h2>
 <p class="sub">One formula scores everything on this page — the date ranking and the two-chart
 reading alike:</p>
-<pre style="overflow-x:auto;padding:12px 14px;border-left:2px solid var(--gold,#E8B923)">score = bias + Σ over 32 phasors of  a·cos(k·θ) + c·sin(k·θ)
+<pre style="overflow-x:auto;padding:16px 18px;margin:18px 0;border-left:2px solid var(--gold,#E8B923);
+  background:rgba(12,30,50,.45);border-radius:0 14px 14px 0;font-size:13.5px;line-height:1.75">score = bias + Σ over 32 phasors of  a·cos(k·θ) + c·sin(k·θ)
 p     = sigmoid(score)</pre>
 <p class="sub">θ is always the angle between two sidereal longitudes (Lahiri, cast at 12:00 UT on
 the birth date): his planet to hers, or two planets inside one chart. k is a whole-number harmonic
@@ -250,7 +259,8 @@ fast body were re-run from scratch inside each of ten training folds, so the quo
 its own test couples. <b>Nested ten-fold AUC <span id="mx-cv">…</span></b> · one partner's complete
 chart alone <span id="mx-solo">…</span> · the bare gap between the two birthdays
 <span id="mx-gap">…</span>.</p>
-<p class="sub" style="padding:10px 12px;border-left:2px solid var(--gold,#E8B923)"><b>The caveat,
+<p class="sub" style="padding:14px 18px;border-left:2px solid var(--gold,#E8B923);
+  background:rgba(12,30,50,.45);border-radius:0 14px 14px 0"><b>The caveat,
 printed inside every reading:</b> drop the slow bodies — Uranus, Neptune, Pluto, the node, Chiron,
 Lilith, whose positions say <i>when</i> a person was born — and the model falls from
 <span id="mx-a13">…</span> to <span id="mx-f7">…</span>; drop Jupiter and Saturn too and, at
@@ -260,6 +270,7 @@ of what this model reads is which decades the two of you were born in.</p>
 ablation: <a href="https://github.com/ArtaQuest/artamatch/blob/feature/artamatch/METHODS.md">METHODS</a>
 · the older pair-scoring laboratory, kept as documented history: <a href="lab.html">the lab</a></p>
 
+</div><!-- /wrap — closed HERE so the reading card and the model section share the same centered column as every other section -->
 <script id=browsejs>
 (function(){
   var D=document, idx=null, rows=[], loaded=0, filt='all', q='', busy=false, rendered=0;

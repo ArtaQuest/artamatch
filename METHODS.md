@@ -862,7 +862,11 @@ decade, couple-weighted, with the decade held fixed so the calendar cannot help:
 scores **0.5666** there against 0.6914 pooled — the 0.067 above chance is what the angles earn beyond
 the era, and it is the same figure the Sun–Saturn-only search reached from the other direction
 (0.569). Every wider bank scores lower within era as well (planets + twenty systems 0.5643, the full
-planet bank 0.5623). Astro-Databank, the one large source of timed births, forbids crawling in its
+planet bank 0.5623). And within era the one-chart baselines are **chance** — his complete chart
+0.4906, hers 0.5108 — so the pair's 0.5666 is a within-era lift of **+0.056**: once the calendar
+cannot flatter a single chart, the second chart is worth three times what the pooled comparison
+suggested. On the purified label of the competition's label entry (explicit child counts deciding
+the negatives, 58,337 couples) the same margin is +0.075: one chart 0.518, both 0.592. Astro-Databank, the one large source of timed births, forbids crawling in its
 robots.txt and is not used; Wikidata's own timed births are being counted.
 
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260

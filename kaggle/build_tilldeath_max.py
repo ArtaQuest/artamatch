@@ -169,9 +169,10 @@ def main():
     # ── recovered exact dates (WikiTree via P2949), applied ONLY where the year agrees with
     # Wikidata's own year — a mismatched year is a contradiction, not a recovery, and the person
     # keeps the imprecise date (and is excluded) rather than gaining a wrong precise one.
-    WT = os.path.expanduser("~/.artamatch-dev/wt_dates.csv")
     n_wt = 0
-    if os.path.exists(WT):
+    for WT in (os.path.expanduser("~/.artamatch-dev/wt_dates.csv"),
+               os.path.expanduser("~/.artamatch-dev/wp_dates.csv")):   # WikiTree, then enwiki infoboxes
+        if not os.path.exists(WT): continue
         for _, w in pd.read_csv(WT, dtype=str).iterrows():
             pid, wd = w["pid"], w["dob"]
             if not (isinstance(wd, str) and len(wd) == 10 and "-00" not in wd):
@@ -179,8 +180,24 @@ def main():
             p = person.get(pid)
             if p and "dob" in p and "-00" in p["dob"] and p["dob"][:4] == wd[:4]:
                 p["dob"] = wd; n_wt += 1
-        print(f"  recovered {n_wt:,} exact birth dates from {WT}", flush=True)
-    prec_excluded = []
+        print(f"  recovered exact birth dates so far: {n_wt:,} (through {os.path.basename(WT)})", flush=True)
+    # ── the facts our own harvest never fetched (wd_fill.py): filled ONLY where absent. A date
+    # already held (any precision) is never replaced from here — that is WikiTree's job above, and
+    # a Wikidata date is what the held one already came from.
+    WF = os.path.expanduser("~/.artamatch-dev/wd_facts.csv")
+    n_fill = {"dob": 0, "sex": 0, "death": 0}
+    if os.path.exists(WF):
+        for _, w in pd.read_csv(WF, dtype=str).fillna("").iterrows():
+            p = person.setdefault(w["pid"], {})
+            if w["dob"] and w["prec"] and "dob" not in p:
+                p["dob"] = clean_date(w["dob"], w["prec"]); n_fill["dob"] += 1
+            if w["sex"] and "sex" not in p:
+                p["sex"] = w["sex"]; n_fill["sex"] += 1
+            if w["death"] and "death" not in p:
+                try: p["death"] = float(w["death"]); n_fill["death"] += 1
+                except ValueError: pass
+        print(f"  filled from {WF}: " + " · ".join(f"{k} {v:,}" for k, v in n_fill.items()), flush=True)
+    prec_excluded = []; dob_missing = set(); nokids_pairs = []
     rows, dropped, skipped = [], 0, {"imputed": 0, "dob": 0, "sex": 0, "no_evidence": 0, "shady_only": 0,
                                     "no_children_row": 0, "self": 0, "died_before_born": 0,
                                     "gap60": 0}
@@ -189,7 +206,12 @@ def main():
         pa, pb = person.get(a, {}), person.get(b, {})
         da_, db_ = pa.get("dob", MISSING), pb.get("dob", MISSING)
         if da_ == MISSING or db_ == MISSING:
-            skipped["dob"] += 1; continue
+            skipped["dob"] += 1
+            # who is missing a date entirely — the decade harvests fetched dates for the SUBJECT
+            # spouse only, so a partner seen nowhere else has none, whether or not Wikidata has one
+            for pid, dd in ((a, da_), (b, db_)):
+                if dd == MISSING: dob_missing.add(pid)
+            continue
         sa, sb = pa.get("sex"), pb.get("sex")
         if {sa, sb} != {MALE, FEM}:
             skipped["sex"] += 1; continue
@@ -249,7 +271,9 @@ def main():
         nkid = kids.get((a, b), kids.get((b, a)))
         if TARGET == "children":
             if nkid is None:
-                skipped["no_children_row"] += 1; continue
+                skipped["no_children_row"] += 1
+                nokids_pairs.append((a, b, int(art or nat or any_death)))
+                continue
             if not (art or nat or any_death):
                 skipped["no_evidence"] += 1; continue    # unfinished: the count is not final
             srcs = [] if nkid >= 1 else ["childless"]
@@ -343,6 +367,10 @@ def main():
     json.dump({"n": len(d), "positives": int(d.y.sum()), "sources": n_src,
                "skipped": skipped, "contradictions": dropped},
               open(f"{OUT}/labels_report.json", "w"), indent=1)
+    pd.DataFrame({"pid": sorted(dob_missing)}).to_csv(f"{OUT}/_dob_missing.csv", index=False)
+    pd.DataFrame(nokids_pairs, columns=["pid_a", "pid_b", "finished"]).to_csv(f"{OUT}/_nokids_pairs.csv", index=False)
+    print(f"  wrote _dob_missing.csv: {len(dob_missing):,} people · _nokids_pairs.csv: {len(nokids_pairs):,} pairs "
+          f"({sum(f for _, _, f in nokids_pairs):,} finished)")
     if prec_excluded:
         pd.DataFrame(prec_excluded).to_csv(f"{OUT}/_prec_excluded.csv", index=False)
         print(f"  wrote _prec_excluded.csv: {len(prec_excluded):,} couples one exact date short")

@@ -41,6 +41,26 @@ def _solve_soft(H, g, scale):
 D_ = os.path.expanduser(os.environ.get("AQ_DIR", "~/.artamatch-dev/tilldeath_max"))
 KMAX = int(os.environ.get("AQ_KMAX", "64"))
 SUMS = os.environ.get("AQ_SUMS", "0") == "1"
+DD = os.environ.get("AQ_DD", "0") == "1"                      # four-body diff families ddm/ddp/camp
+HARM_EXTRA = tuple(int(x) for x in os.environ.get("AQ_HARM", "").split(",") if x)
+DROP_BODY = os.environ.get("AQ_DROP_BODY", "")                 # ablation: leave one body out
+DROP_FAM = os.environ.get("AQ_DROP_FAM", "")                   # ablation: leave one family out
+DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave one harmonic out
+NOUTER = int(os.environ.get("AQ_NOUTER", "10"))                # outer folds (ablations use 5)
+NO_INNER = os.environ.get("AQ_NO_INNER", "0") == "1"           # K fixed at KMAX (ablations)
+ABLATE = os.environ.get("AQ_ABLATE", "0") == "1"               # outer estimate only, no deploy pass
+ORTHO = os.environ.get("AQ_ORTHO", "0") == "1"                 # exact score test: project out the selected design
+GROUP = os.environ.get("AQ_GROUP", "0") == "1"                 # select ANGLES (all harmonics at once), not phasors
+SWAP = os.environ.get("AQ_SWAP", "0") == "1"                   # one forward-backward swap pass after the forward run
+ERA = os.environ.get("AQ_ERA", "0") == "1"                     # outer folds are contiguous birth-era blocks (diagnostic)
+HALPHA = float(os.environ.get("AQ_HALPHA", "0"))               # ridge scaled by k^alpha (smoothness prior)
+TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
+       + (f"_h{'-'.join(map(str,HARM_EXTRA))}" if HARM_EXTRA else "")
+       + (f"_rl{os.environ['AQ_RL']}" if os.environ.get("AQ_RL") else "")
+       + (f"_noBody{DROP_BODY}" if DROP_BODY else "") + (f"_noFam{DROP_FAM}" if DROP_FAM else "")
+       + (f"_noHarm{DROP_HARM}" if DROP_HARM else "") + (f"_o{NOUTER}" if NOUTER != 10 else "")
+       + ("_ortho" if ORTHO else "") + (f"_ha{HALPHA:g}" if HALPHA else "")
+       + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else ""))
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -51,7 +71,8 @@ Z = np.load(f"{D_}/phases.npz", allow_pickle=True)
 tha, thb = Z["theta_a_train"], Z["theta_b_train"]
 okb = ~np.isnan(tha).any(0) & ~np.isnan(thb).any(0)
 nm_all = [str(b) for b, o in zip(Z["bodies"], okb) if o]
-keep = [i for i, x in enumerate(nm_all) if x != "true_south_node"]
+keep = [i for i, x in enumerate(nm_all) if x != "true_south_node"
+        and x.replace("true_", "").replace("mean_", "") != DROP_BODY]
 bod = [nm_all[i].replace("true_", "").replace("mean_", "") for i in keep]
 RA, RB = np.deg2rad(tha[:, okb][:, keep]), np.deg2rad(thb[:, okb][:, keep])
 NB = len(bod); C2 = list(itertools.combinations(range(NB), 2))
@@ -77,7 +98,22 @@ if SUMS:
         ANG.append((RA[:, i] + RA[:, j], f"his {bod[i]} + his {bod[j]}", "midM", i, j, "XXs"))
     for i, j in C2:
         ANG.append((RB[:, i] + RB[:, j], f"her {bod[i]} + her {bod[j]}", "midW", i, j, "YYs"))
-HARM = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 27, 36)
+if DD:
+    # FOUR-BODY DIFFERENCE FAMILIES, pure d-space (no absolute longitude, so no calendar through a
+    # sum): ddm = (his i - her i) - (his j - her j), ddp = the same with a plus (midpoint axis to
+    # midpoint axis), camp = the composite chart's own aspect (his i + her i) - (his j + her j).
+    for i, j in C2:
+        ANG.append(((RA[:, i] - RB[:, i]) - (RA[:, j] - RB[:, j]),
+                    f"(his {bod[i]} - her {bod[i]}) - (his {bod[j]} - her {bod[j]})", "ddm", i, j, "DDm"))
+    for i, j in C2:
+        ANG.append(((RA[:, i] - RB[:, i]) + (RA[:, j] - RB[:, j]),
+                    f"(his {bod[i]} - her {bod[i]}) + (his {bod[j]} - her {bod[j]})", "ddp", i, j, "DDp"))
+    for i, j in C2:
+        ANG.append(((RA[:, i] + RB[:, i]) - (RA[:, j] + RB[:, j]),
+                    f"composite {bod[i]} - composite {bod[j]}", "camp", i, j, "CAMP"))
+if DROP_FAM:
+    ANG = [a for a in ANG if a[5] != DROP_FAM]
+HARM = tuple(h for h in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 27, 36) + HARM_EXTRA if h != DROP_HARM)
 MET = []
 for a, (ang, name, kind, i, j, fam) in enumerate(ANG):
     for k in HARM:
@@ -100,10 +136,20 @@ for a, b in zip(ids.pid_a, ids.pid_b):
     pa, pb = find(a), find(b)
     if pa != pb: parent[pa] = pb
 gid = pd.factorize(pd.Series([find(a) for a in ids.pid_a]))[0]
-fold = np.random.default_rng(7).integers(0, P.NFOLD, gid.max() + 1)[gid]
+fold = np.random.default_rng(7).integers(0, P.NFOLD, gid.max() + 1)[gid] % NOUTER
+if ERA:
+    # ERA-BLOCKED FOLDS (diagnostic, never a way to raise AUC): each outer fold is a contiguous block
+    # of birth years, assigned by the component's mean husband-birth-year so no family straddles a
+    # block. A model that is mostly a calendar cannot carry a birth decade it never saw, so the gap
+    # between this estimate and the random-fold one IS the calendar share, measured a third way.
+    yr_row = pd.to_numeric(full.dob_a.astype(str).str.slice(0, 4), errors="coerce").to_numpy()
+    comp_year = pd.Series(yr_row).groupby(gid).transform("mean").to_numpy()
+    order_c = np.argsort(comp_year, kind="stable")
+    fold = np.empty(n, int); fold[order_c] = (np.arange(n) * NOUTER) // n
+    log("ERA folds: " + " · ".join(f"{int(np.nanmin(yr_row[fold==k]))}-{int(np.nanmax(yr_row[fold==k]))}" for k in range(NOUTER)))
 w = np.where(y > 0, n / (2 * y.sum()), n / (2 * (n - y.sum()))).astype(np.float32)
 yt = torch.from_numpy(y).to(DEV)
-FAST = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"]
+FAST = [b for b in ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"] if b != DROP_BODY]
 INV = {b: torch.tensor([bod[m["i"]] == b or bod[m["j"]] == b for m in MET], device=DEV) for b in FAST}
 
 def cols(ci):
@@ -116,7 +162,17 @@ def design(sel):
         u, v = cols(c); cc += [u, v]
     return torch.stack(cc + [torch.ones(n, device=DEV)], 1)
 
-def newton_on(Amat, wm_t, rl, max_steps=40):
+def reg_vec(q, rl, sc, ksel):
+    reg = np.full(q, rl * sc); reg[-1] = 0.0
+    if HALPHA and ksel is not None:
+        # SMOOTHNESS PRIOR: a high harmonic is a sharp, narrow-orb shape, and it is penalised more —
+        # reg_k = rl * k^alpha, normalised so the mean penalty over the model's columns is unchanged.
+        kk = np.array([float(k) for k in ksel for _ in (0, 1)] + [1.0]) ** HALPHA
+        kk[:-1] *= (q - 1) / kk[:-1].sum()
+        reg[:-1] *= kk[:-1]
+    return reg
+
+def newton_on(Amat, wm_t, rl, max_steps=40, ksel=None):
     """DAMPED Newton on a STATIONARY objective. Two things were proven wrong the hard way here:
     (1) recomputing the ridge scale from every step's working Hessian means every step minimises a
     DIFFERENT penalty, so "convergence" is against a moving target — the scale is now fixed once,
@@ -128,7 +184,7 @@ def newton_on(Amat, wm_t, rl, max_steps=40):
     sw0 = (wm_t * 0.25).sqrt().unsqueeze(1)
     H0 = ((Amat * sw0).T @ (Amat * sw0)).cpu().numpy().astype(np.float64)
     sc = float(np.mean(np.diag(H0)[:-1])) or 1.0
-    reg = np.full(q, rl * sc); reg[-1] = 0.0
+    reg = reg_vec(q, rl, sc, ksel)
     reg_t = torch.from_numpy(reg.astype(np.float32)).to(DEV)
 
     def ploss(b):
@@ -164,12 +220,23 @@ def newton_on(Amat, wm_t, rl, max_steps=40):
         if not took: break
     return beta
 
-def score_all(r, vw, taken, mask=None):
+def score_all(r, vw, taken, mask=None, X=None):
+    """X: the current design (selected columns + intercept). With AQ_ORTHO=1 each candidate column
+    is projected onto the W-orthogonal complement of X before scoring, which turns the marginal
+    2-df statistic into the EXACT score test for adding it to THIS model — a candidate that merely
+    restates what the model already holds scores near zero instead of near its raw strength."""
     z = torch.empty(p, device=DEV)
+    if ORTHO and X is not None:
+        XW = X * vw.unsqueeze(1)
+        G = (X.T @ XW).cpu().numpy().astype(np.float64)
+        G[np.diag_indices_from(G)] += 1e-6 * float(np.mean(np.diag(G)))
+        Ginv = torch.from_numpy(np.linalg.inv(G).astype(np.float32)).to(DEV)
     for lo in range(0, p, 1024):
         hi = min(p, lo + 1024); sl = slice(lo, hi)
         T = THETA[:, A_IDX[sl]] * K_VAL[sl].unsqueeze(0)
         C, S = torch.cos(T), torch.sin(T)
+        if ORTHO and X is not None:
+            C = C - X @ (Ginv @ (XW.T @ C)); S = S - X @ (Ginv @ (XW.T @ S))
         gc, gs = C.T @ r, S.T @ r
         Scc = (C * C * vw.unsqueeze(1)).sum(0)
         Sss = (S * S * vw.unsqueeze(1)).sum(0)
@@ -184,19 +251,72 @@ def score_all(r, vw, taken, mask=None):
     if mask is not None: z[~mask] = -1.0
     return z
 
+GSIZE = len(HARM)
+INV_ANG = {b: torch.tensor([bod[a[3]] == b or bod[a[4]] == b for a in ANG], device=DEV) for b in FAST}
+def score_group(r, vw, taken_angles, mask=None, X=None):
+    """the 2*GSIZE-degree-of-freedom score statistic for adding a WHOLE ANGLE — every harmonic's
+    cosine and sine at once. z = g' S^-1 g with S ridge-stabilised; batched over angles."""
+    nA = len(ANG); z = torch.full((nA,), -1.0, device=DEV)
+    kv = torch.tensor([float(k) for k in HARM], device=DEV)
+    if ORTHO and X is not None:
+        XW = X * vw.unsqueeze(1)
+        G = (X.T @ XW).cpu().numpy().astype(np.float64); G[np.diag_indices_from(G)] += 1e-6 * float(np.mean(np.diag(G)))
+        Ginv = torch.from_numpy(np.linalg.inv(G).astype(np.float32)).to(DEV)
+    for lo in range(0, nA, 8):
+        hi = min(nA, lo + 8)
+        T = THETA[:, lo:hi].unsqueeze(2) * kv                       # n x A x GSIZE
+        Xc = torch.cat([torch.cos(T), torch.sin(T)], 2)              # n x A x 2G
+        if ORTHO and X is not None:
+            flat = Xc.reshape(n, -1)
+            flat = flat - X @ (Ginv @ (XW.T @ flat)); Xc = flat.reshape(n, hi - lo, -1)
+        g = torch.einsum("nai,n->ai", Xc, r).cpu().numpy().astype(np.float64)
+        S = torch.einsum("nai,naj->aij", Xc, Xc * vw.unsqueeze(1).unsqueeze(2)).cpu().numpy().astype(np.float64)
+        for a in range(hi - lo):
+            Sa = S[a]; Sa[np.diag_indices_from(Sa)] += 1e-4 * float(np.trace(Sa)) / Sa.shape[0]
+            try: z[lo + a] = float(g[a] @ np.linalg.solve(Sa, g[a]))
+            except np.linalg.LinAlgError: z[lo + a] = -1.0
+        del T, Xc
+    if taken_angles: z[torch.tensor(taken_angles, dtype=torch.long, device=DEV)] = -1.0
+    if mask is not None: z[~mask] = -1.0
+    return z
+def angle_phasors(a): return list(range(a * GSIZE, (a + 1) * GSIZE))
+
 def stepwise(trm_np, kmax):
     """greedy selection ORDER on the rows where trm_np is True"""
     wm_t = torch.from_numpy((w * trm_np).astype(np.float32)).to(DEV)
     pr0 = float((y[trm_np] * w[trm_np]).sum() / w[trm_np].sum())
     eta = torch.full((n,), float(np.log(pr0 / (1 - pr0))), device=DEV)
-    sel = []
+    sel = []; angles = []
     for k in range(kmax):
         pr = torch.sigmoid(eta)
-        sel.append(int(torch.argmax(score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), sel)).item()))
+        Xcur = design(sel) if (ORTHO and sel) else None
+        if GROUP:
+            a = int(torch.argmax(score_group(wm_t * (yt - pr), wm_t * pr * (1 - pr), angles, X=Xcur)).item())
+            angles.append(a); sel += angle_phasors(a)
+        else:
+            sel.append(int(torch.argmax(score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), sel, X=Xcur)).item()))
+        del Xcur
         Amat = design(sel)
-        beta = newton_on(Amat, wm_t, RL)
+        beta = newton_on(Amat, wm_t, RL, ksel=[MET[c]["k"] for c in sel])
         eta = Amat @ torch.from_numpy(beta.astype(np.float32)).to(DEV)
         del Amat
+    if SWAP and not GROUP:
+        # ONE FORWARD-BACKWARD PASS: for each chosen phasor, refit without it and ask the exact
+        # score test what it would pick in its place; swap if a different phasor scores higher
+        # than the one being held. Greedy forward selection cannot revisit an early pick that a
+        # later pick made redundant; this can.
+        swapped = 0
+        for pos in range(len(sel)):
+            rest = sel[:pos] + sel[pos + 1:]
+            Ar = design(rest)
+            br = newton_on(Ar, wm_t, RL, ksel=[MET[c]["k"] for c in rest])
+            pr = torch.sigmoid(Ar @ torch.from_numpy(br.astype(np.float32)).to(DEV))
+            z = score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), rest, X=(Ar if ORTHO else None))
+            best = int(torch.argmax(z).item())
+            if best != sel[pos] and float(z[best]) > float(z[sel[pos]]) * 1.02:
+                sel[pos] = best; swapped += 1
+            del Ar
+        log(f"      swap pass: {swapped} of {len(sel)} replaced")
     if DEV == "mps": torch.mps.empty_cache()
     return sel
 
@@ -212,10 +332,17 @@ def force_fast(sel, trm_np):
         return s
     for b in [b for b in FAST if b not in present()]:
         Amat = design(sel)
-        beta = newton_on(Amat, wm_t, RL)
+        beta = newton_on(Amat, wm_t, RL, ksel=[MET[c]["k"] for c in sel])
         pr = torch.sigmoid(Amat @ torch.from_numpy(beta.astype(np.float32)).to(DEV))
-        win = int(torch.argmax(score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), sel, INV[b])).item())
-        sel.append(win); forced.append((b, win))
+        if GROUP:
+            a = int(torch.argmax(score_group(wm_t * (yt - pr), wm_t * pr * (1 - pr),
+                                             [c // GSIZE for c in sel[::GSIZE]], INV_ANG[b],
+                                             X=(Amat if ORTHO else None))).item())
+            sel += angle_phasors(a); forced.append((b, a * GSIZE))
+        else:
+            win = int(torch.argmax(score_all(wm_t * (yt - pr), wm_t * pr * (1 - pr), sel, INV[b],
+                                             X=(Amat if ORTHO else None))).item())
+            sel.append(win); forced.append((b, win))
         del Amat
     if DEV == "mps": torch.mps.empty_cache()
     return sel, forced
@@ -229,29 +356,30 @@ def pick_k(order, trm_np, seed, nfold=5):
     for kf in range(nfold):
         tr = trm_np & (ifold != kf)
         wm_t = torch.from_numpy((w * tr).astype(np.float32)).to(DEV)
-        for K in range(1, len(order) + 1):
+        for K in range(GSIZE if GROUP else 1, len(order) + 1, GSIZE if GROUP else 1):
             sl = list(range(2 * K)) + [q - 1]
-            beta = newton_on(Amat[:, sl], wm_t, RL)
+            beta = newton_on(Amat[:, sl], wm_t, RL, ksel=[MET[c]["k"] for c in order[:K]])
             v = (Amat[:, sl] @ torch.from_numpy(beta.astype(np.float32)).to(DEV)).cpu().numpy()
             hold = trm_np & (ifold == kf)
             oof[K - 1][hold] = v[hold]
     del Amat
     if DEV == "mps": torch.mps.empty_cache()
     inner = trm_np.copy()
-    aucs = [float(roc_auc_score(y[inner], oof[K - 1][inner])) for K in range(1, len(order) + 1)]
-    return int(np.argmax(aucs)) + 1, aucs
+    Ks = list(range(GSIZE if GROUP else 1, len(order) + 1, GSIZE if GROUP else 1))
+    aucs = [float(roc_auc_score(y[inner], oof[K - 1][inner])) for K in Ks]
+    return Ks[int(np.argmax(aucs))], aucs
 
 # ---- the nested estimate ----------------------------------------------------------------------
 oof_outer = np.zeros(n, np.float32)
 per_fold = []
-for kf in range(P.NFOLD):
+for kf in range(NOUTER):
     trm = fold != kf
     order = stepwise(trm, KMAX)
-    Kin, inner_aucs = pick_k(order, trm, seed=1000 + kf)
+    Kin, inner_aucs = (KMAX, []) if NO_INNER else pick_k(order, trm, seed=1000 + kf)
     sel, forced = force_fast(order[:Kin], trm)
     wm_t = torch.from_numpy((w * trm).astype(np.float32)).to(DEV)
     Amat = design(sel)
-    beta = newton_on(Amat, wm_t, RL)
+    beta = newton_on(Amat, wm_t, RL, ksel=[MET[c]["k"] for c in sel])
     v = (Amat @ torch.from_numpy(beta.astype(np.float32)).to(DEV)).cpu().numpy()
     oof_outer[~trm] = v[~trm]
     del Amat
@@ -259,11 +387,16 @@ for kf in range(P.NFOLD):
     fauc = float(roc_auc_score(y[~trm], v[~trm]))
     per_fold.append({"K_inner": Kin, "n_forced": len(forced), "fold_auc": round(fauc, 4),
                      "forced": [b for b, _ in forced]})
-    log(f"   outer {kf+1}/10 · K_inner {Kin} (+{len(forced)} forced: {','.join(b for b,_ in forced) or 'none'}) · fold AUC {fauc:.4f}")
+    log(f"   outer {kf+1}/{NOUTER} · K_inner {Kin} (+{len(forced)} forced: {','.join(b for b,_ in forced) or 'none'}) · fold AUC {fauc:.4f}")
 
 auc_nested = float(roc_auc_score(y, oof_outer))
-log(f"NESTED AUC (selection + K + forced fast bodies ALL inside the loop): {auc_nested:.4f}")
-np.save(f"{D_}/oof_nested.npy", oof_outer)
+log(f"NESTED AUC (selection + K + forced fast bodies ALL inside the loop): {auc_nested:.4f}  [{TAG}]")
+np.save(f"{D_}/oof_nested_{TAG}.npy", oof_outer)
+if ABLATE:
+    json.dump({"tag": TAG, "nested_auc": round(auc_nested, 4), "per_fold": per_fold,
+               "n_angles": len(ANG), "n_phasors": p, "harmonics": list(HARM), "bodies": bod},
+              open(f"{D_}/ablate_{TAG}.json", "w"), indent=1)
+    log(f"saved ablate_{TAG}.json"); raise SystemExit(0)
 
 # ---- the deployed model: the same procedure, once, on all data --------------------------------
 log("deploy pass on ALL data")
@@ -283,7 +416,7 @@ for rl in GRID:
     oo = np.zeros(n, np.float32)
     for kf in range(P.NFOLD):
         wm_t = torch.from_numpy((w * (fold != kf)).astype(np.float32)).to(DEV)
-        beta = newton_on(Amat, wm_t, rl)
+        beta = newton_on(Amat, wm_t, rl, ksel=[MET[c]["k"] for c in sel])
         v = (Amat @ torch.from_numpy(beta.astype(np.float32)).to(DEV)).cpu().numpy()
         oo[fold == kf] = v[fold == kf]
     sw[rl] = float(roc_auc_score(y, oo))
@@ -298,14 +431,14 @@ assert rl_star != GRID[-1], f"boundary lambda {rl_star} — the sweep never turn
 log(f"   lambda: {rl_star} (interior) · fixed-structure CV {sw[rl_star]:.4f} [reference only — the honest number is the nested {auc_nested:.4f}]")
 
 w_t = torch.from_numpy(w).to(DEV)
-beta_cf = newton_on(Amat, w_t, rl_star)
+beta_cf = newton_on(Amat, w_t, rl_star, ksel=[MET[c]["k"] for c in sel])
 auc_cf = float(roc_auc_score(y, (Amat @ torch.from_numpy(beta_cf.astype(np.float32)).to(DEV)).cpu().numpy()))
 # closed form vs gradient on the same penalised objective
 sw0 = (w_t * 0.25).sqrt().unsqueeze(1)
 sc = float(np.mean(np.diag(((Amat * sw0).T @ (Amat * sw0)).cpu().numpy())[:-1]))
 bt = torch.zeros(q, device=DEV, requires_grad=True)
 opt = torch.optim.Adam([bt], lr=0.05)
-reg_t = torch.full((q,), rl_star * sc, device=DEV); reg_t[-1] = 0.0
+reg_t = torch.from_numpy(reg_vec(q, rl_star, sc, [MET[c]["k"] for c in sel]).astype(np.float32)).to(DEV)
 for it in range(4000):
     opt.zero_grad()
     loss = (w_t * torch.nn.functional.binary_cross_entropy_with_logits(Amat @ bt, yt, reduction="none")).sum() \
@@ -338,13 +471,13 @@ json.dump({"nested_auc": round(auc_nested, 4), "per_fold": per_fold,
                                              "max_wdiff": round(wdiff, 4)}},
            "rl_sweep": {str(k): round(v, 4) for k, v in sw.items()},
            "terms": terms, "bias": round(float(beta_cf[-1]), 4)},
-          open(f"{D_}/report_nested_k{KMAX}{'_sums' if SUMS else ''}.json", "w"), indent=1)
+          open(f"{D_}/report_nested_{TAG}.json", "w"), indent=1)
 json.dump({"met": [{"kind": MET[c]["kind"], "i": MET[c]["i"], "j": MET[c]["j"], "k": MET[c]["k"],
                     "label": MET[c]["label"], "fam": MET[c]["fam"]} for c in sel],
            "rl": rl_star, "cv": round(auc_nested, 4)},
-          open(f"{D_}/maxout_terms_k{KMAX}{'_sums' if SUMS else ''}.json", "w"), indent=1)
+          open(f"{D_}/maxout_terms_{TAG}.json", "w"), indent=1)
 # KMAX-STAMPED FILENAMES. The K=64 run silently overwrote the K=32 artifacts under the shared
 # names, so the exporter would have shipped the WORSE model (nested 0.6783 vs 0.6794) — the same
 # two-runs-one-filename failure that once put a wrong number on the live page. The name now carries
 # the run's identity, and the exporter names the file it ships from.
-log(f"saved report_nested_k{KMAX}{'_sums' if SUMS else ''}.json + maxout_terms_k{KMAX}{'_sums' if SUMS else ''}.json")
+log(f"saved report_nested_{TAG}.json + maxout_terms_{TAG}.json")

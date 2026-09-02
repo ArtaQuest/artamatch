@@ -48,6 +48,8 @@ HARM_EXTRA = tuple(int(x) for x in os.environ.get("AQ_HARM", "").split(",") if x
 DROP_BODY = os.environ.get("AQ_DROP_BODY", "")                 # ablation: leave one body out
 DROP_FAM = os.environ.get("AQ_DROP_FAM", "")                   # ablation: leave one family out
 DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave one harmonic out
+ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")                   # lean model: keep ONE family (e.g. XY)
+ONLY_HARM = tuple(int(x) for x in os.environ.get("AQ_ONLY_HARM", "").split(",") if x)   # lean: keep these harmonics
 NOUTER = int(os.environ.get("AQ_NOUTER", "10"))                # outer folds (ablations use 5)
 NO_INNER = os.environ.get("AQ_NO_INNER", "0") == "1"           # K fixed at KMAX (ablations)
 ABLATE = os.environ.get("AQ_ABLATE", "0") == "1"               # outer estimate only, no deploy pass
@@ -64,7 +66,8 @@ TAG = (f"k{KMAX}" + ("_sums" if SUMS else "") + ("_dd" if DD else "")
        + (f"_noHarm{DROP_HARM}" if DROP_HARM else "") + (f"_o{NOUTER}" if NOUTER != 10 else "")
        + ("_ortho" if ORTHO else "") + (f"_ha{HALPHA:g}" if HALPHA else "")
        + ("_group" if GROUP else "") + ("_swap" if SWAP else "") + ("_era" if ERA else "")
-       + (f"_split{ERA_SPLIT}" if ERA_SPLIT else ""))
+       + (f"_split{ERA_SPLIT}" if ERA_SPLIT else "")
+       + (f"_only{ONLY_FAM}" if ONLY_FAM else "") + (f"_h{'-'.join(map(str,ONLY_HARM))}only" if ONLY_HARM else ""))
 RL = float(os.environ.get("AQ_RL", "0.003"))
 T0 = time.time()
 log = lambda *a: print(f"[{time.time()-T0:7.1f}s]", *a, flush=True)
@@ -117,7 +120,11 @@ if DD:
                     f"composite {bod[i]} - composite {bod[j]}", "camp", i, j, "CAMP"))
 if DROP_FAM:
     ANG = [a for a in ANG if a[5] != DROP_FAM]
+if ONLY_FAM:
+    ANG = [a for a in ANG if a[5] == ONLY_FAM]
 HARM = tuple(h for h in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 27, 36) + HARM_EXTRA if h != DROP_HARM)
+if ONLY_HARM:
+    HARM = tuple(h for h in HARM if h in ONLY_HARM)
 MET = []
 for a, (ang, name, kind, i, j, fam) in enumerate(ANG):
     for k in HARM:

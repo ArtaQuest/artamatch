@@ -7,7 +7,8 @@ thing removed; the delta is against the baseline run of that same procedure — 
 import glob, json, os, sys
 D_ = os.path.expanduser(os.environ.get("AQ_DIR", "~/.artamatch-dev/tilldeath_wt"))
 runs = {}
-for f in glob.glob(f"{D_}/ablate_k32_o5*.json"):
+# tags read k32_<what>_o5; the baseline is k32_o5 — the glob once matched only the baseline
+for f in glob.glob(f"{D_}/ablate_k32_*o5.json"):
     j = json.load(open(f)); runs[j["tag"]] = j["nested_auc"]
 base = runs.get("k32_o5")
 if base is None:
@@ -15,7 +16,7 @@ if base is None:
 rows = []
 for tag, auc in runs.items():
     if tag == "k32_o5": continue
-    what = tag.replace("k32_o5_", "")
+    what = tag.replace("k32_", "").replace("_o5", "")
     kind = ("body" if what.startswith("noBody") else "family" if what.startswith("noFam") else "harmonic" if what.startswith("noHarm") else "other")
     name = what.replace("noBody", "").replace("noFam", "").replace("noHarm", "k=")
     rows.append((kind, name, auc, base - auc))

@@ -470,10 +470,22 @@ for kf in ([1] if ERA_SPLIT else range(NOUTER)):
     log(f"   outer {kf+1}/{NOUTER} · K_inner {Kin} (+{len(forced)} forced: {','.join(b for b,_ in forced) or 'none'}) · fold AUC {fauc:.4f}")
 
 auc_nested = float(roc_auc_score(y[tested & ~vault], oof_outer[tested & ~vault]))
+# WITHIN-ERA AUC (operator 2026-09-02, "figure out the bottleneck"): the AUC inside each husband
+# birth decade, weighted by couples. The calendar cannot help here — decade is held fixed — so
+# this is what a feature earns beyond the era. It is the metric "more astrology" has to move.
+_yr = pd.to_numeric(full.dob_a.astype(str).str.slice(0, 4), errors="coerce").to_numpy()
+_dec = (_yr // 10 * 10); _m = tested & ~vault
+_num = _den = 0.0
+for _d in np.unique(_dec[_m]):
+    _r = _m & (_dec == _d)
+    if _r.sum() >= 200 and 0 < y[_r].sum() < _r.sum():
+        _num += roc_auc_score(y[_r], oof_outer[_r]) * _r.sum(); _den += _r.sum()
+auc_within_era = _num / _den if _den else float("nan")
+log(f"WITHIN-ERA AUC (decade held fixed, couple-weighted): {auc_within_era:.4f}   [pooled nested {auc_nested:.4f}]")
 log(f"NESTED AUC (selection + K + forced fast bodies ALL inside the loop): {auc_nested:.4f}  [{TAG}]")
 np.save(f"{D_}/oof_nested_{TAG}.npy", oof_outer)
 if ABLATE:
-    json.dump({"tag": TAG, "nested_auc": round(auc_nested, 4), "per_fold": per_fold,
+    json.dump({"tag": TAG, "nested_auc": round(auc_nested, 4), "within_era_auc": round(auc_within_era, 4), "per_fold": per_fold,
                "n_angles": len(ANG), "n_phasors": p, "harmonics": list(HARM), "bodies": bod},
               open(f"{D_}/ablate_{TAG}.json", "w"), indent=1)
     log(f"saved ablate_{TAG}.json"); raise SystemExit(0)
@@ -548,7 +560,7 @@ for b in FAST:
     assert amps and max(amps) > 0, f"{b} missing or weightless"
     log(f"   {b:<8} in {len(amps)} term(s) · max amplitude {max(amps):.4f}")
 
-json.dump({"nested_auc": round(auc_nested, 4), "per_fold": per_fold,
+json.dump({"nested_auc": round(auc_nested, 4), "within_era_auc": round(auc_within_era, 4), "per_fold": per_fold,
            "deploy": {"K": Kin, "n_forced": len(forced), "rl": rl_star,
                       "fixed_cv_reference": round(sw[rl_star], 4),
                       "closed_vs_gradient": {"auc_cf": round(auc_cf, 4), "auc_gd": round(auc_gd, 4),

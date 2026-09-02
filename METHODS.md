@@ -885,7 +885,7 @@ a judge ranking the survivors by verifier-recomputed gain. The standing best was
 | 7 | birth-decade nuisance terms in selection | 0.6895 | −0.0019 | 0.5655 | loses once refit without them |
 | 8 | era-specialised ensemble | 0.6891 | −0.0023 | 0.5580 | loses on both metrics |
 | — | label purified by explicit child counts | 0.7308 reported | **disqualified** | — | a leak, see below |
-| — | name-numerology variants | — | did not finish | — | the standing names run (0.6910) stands |
+| — | name-numerology variants (30 pseudo-bodies) | 0.6998 / within-era 0.5885 | **disqualified** | — | finished after the judge; a proxy, see below |
 
 **The disqualification is the competition's most useful result.** The label entry kept positives at
 any record depth but negatives only where both spouses were deeply documented, so *being thinly
@@ -893,6 +893,18 @@ documented* became a proxy for the label — the thin-record indicator alone sco
 label, and the standing model's own out-of-fold scores beat the entry on its rows. Its reported
 "cleaner label, more astrology" was the depth rule, not the stars. The rule for any future label
 work follows: whatever condition defines a negative must define a positive the same way.
+
+**The names entry fell the same way.** Thirty name pseudo-bodies (first name, surname, full name;
+Pythagorean and Chaldean; master numbers; the "hidden passion") lifted the same-fold control from
+0.6914 / 0.5667 to 0.6998 / **0.5885** — the largest within-era movement of the programme, and on
+the standard corpus, labels and folds. Its first pick in every fold was surname against surname on
+the hidden-passion number, a letter-frequency statistic. The refutation is one line: **the length
+of the two names alone scores 0.650 pooled and 0.610 within era** — above the entry, above every
+astrology model — and the count of words 0.608, the count of title words and regnal numerals 0.563.
+Long, titled, many-worded names belong to well-documented aristocrats, whose children Wikidata
+records; the numerology was carrying documentation depth. (The dynastic guess — a shared surname —
+scores below chance.) Name numerology is therefore excluded from the model on the same principle as
+the label rule: a feature that reads the record's depth is not reading the couple.
 
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.

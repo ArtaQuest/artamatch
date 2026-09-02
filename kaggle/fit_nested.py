@@ -99,6 +99,9 @@ if SYSTEMS:
     NSTATES = NSTATES + [int(x) for x in SZ["nstates"]]
     RA = np.concatenate([RA, np.deg2rad(SZ["theta_a_sys"])], 1)
     RB = np.concatenate([RB, np.deg2rad(SZ["theta_b_sys"])], 1)
+    # the tag carries the SYSTEM COUNT: a 20-system and a 26-system run once shared a tag and the
+    # later one overwrote the earlier one's artifacts (the two-runs-one-filename trap, again)
+    TAG = TAG.replace("_systems", f"_systems{len(SZ['names'])}")
 NB = len(bod); C2 = list(itertools.combinations(range(NB), 2))
 n = len(y)
 ANG = []

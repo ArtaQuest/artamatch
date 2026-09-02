@@ -61,11 +61,34 @@ bodies = [nm_all[i].replace("true_", "").replace("mean_", "") for i in keep]
 A, B = np.deg2rad(tha[:, okb][:, keep]), np.deg2rad(thb[:, okb][:, keep])
 n = len(y)
 
+import re as _re
+def lin_coef(label):
+    """the coefficient vector of an interaction label such as
+    '(his neptune - her neptune) + (his saturn - her saturn)': {"his:neptune": 1, "her:neptune": -1, ...}.
+    The competition's second-order phasors carry their algebra only in the label; the scorer's
+    general 'lin' kind takes exactly this dict."""
+    coef = {}
+    outer_sign = 1
+    for piece in _re.split(r"\)\s*([+-])\s*\(", label.strip()):
+        if piece in ("+", "-"): outer_sign = 1 if piece == "+" else -1; continue
+        piece = piece.strip("() ")
+        for m in _re.finditer(r"([+-]?)\s*(his|her)\s+([a-z_]+)", piece):
+            sgn = -1 if m.group(1) == "-" else 1
+            key = f"{m.group(2)}:{m.group(3)}"
+            coef[key] = coef.get(key, 0) + outer_sign * sgn
+    return {k: v for k, v in coef.items() if v}
 def ang(t):
     i, j, k = t["i"], t["j"], t["kind"]
     if k == "xdiff": return A[:, i] - B[:, j]
     if k == "aspM":  return A[:, i] - A[:, j]
     if k == "aspW":  return B[:, i] - B[:, j]
+    if k in ("int+", "int-", "lin"):
+        coef = t.get("coef") or lin_coef(t["label"].split("*(", 1)[-1].rstrip(")") if t["label"].startswith(tuple("0123456789")) else t["label"])
+        out = np.zeros(n)
+        for key, c in coef.items():
+            side, body = key.split(":", 1); out += c * (A if side == "his" else B)[:, bodies.index(body)]
+        t["kind"] = "lin"; t["coef"] = coef
+        return out
     raise ValueError(k)
 
 terms, cols = [], []
@@ -73,7 +96,8 @@ for t in phas:
     a = ang(t) * t["k"]
     for trig, v in (("cos", np.cos(a)), ("sin", np.sin(a))):
         terms.append({"kind": t["kind"], "i": t["i"], "j": t["j"], "k": t["k"], "trig": trig,
-                      "label": f"{trig}({t['label']})", "fam": t["fam"], "folds": t["folds"]})
+                      "label": f"{trig}({t['label']})", "fam": t["fam"], "folds": t["folds"],
+                      **({"coef": t["coef"]} if t["kind"] == "lin" else {})})
         cols.append(v)
 F = np.column_stack(cols + [np.ones(n)]).astype(np.float32)
 Ft = torch.from_numpy(F).to(CN.DEV)

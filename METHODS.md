@@ -865,9 +865,42 @@ the era, and it is the same figure the Sun–Saturn-only search reached from the
 planet bank 0.5623). And within era the one-chart baselines are **chance** — his complete chart
 0.4906, hers 0.5108 — so the pair's 0.5666 is a within-era lift of **+0.056**: once the calendar
 cannot flatter a single chart, the second chart is worth three times what the pooled comparison
-suggested. On the purified label of the competition's label entry (explicit child counts deciding
-the negatives, 58,337 couples) the same margin is +0.075: one chart 0.518, both 0.592. Astro-Databank, the one large source of timed births, forbids crawling in its
+suggested. Astro-Databank, the one large source of timed births, forbids crawling in its
 robots.txt and is not used; Wikidata's own timed births are being counted.
+
+**The competition (2026-09-03).** Ten independent entries, each one honest attack on the standing
+model, each run under the same nested rules (five outer folds on Kaggle T4 kernels, a same-fold
+control beside it), each then handed to an adversarial verifier whose default was to refute, and
+a judge ranking the survivors by verifier-recomputed gain. The standing best was 0.6914 pooled,
+0.5666 within era.
+
+| # | entry | nested | honest gain | within era | verdict |
+|---|---|---|---|---|---|
+| 1 | second-order phasors (sum/difference angles of each fold's own first ten picks) | **0.6927** (10 folds) | **+0.0013** | 0.5660 | real (9/10 folds up, bootstrap 0/300) — and entirely calendar |
+| 2 | multiplicity-corrected stopping rule | 0.6916 | +0.0002 | 0.5679 | same score with ~18 phasors instead of 32 |
+| 3 | Moon-uncertainty-aware bank | 0.6916 | +0.0002 | 0.5646 | inert against its own control |
+| 4 | stability-bagged selection | 0.6912 | −0.0002 | 0.5671 | matches plain stepwise within noise |
+| 5 | the traditions' own compatibility circles (trines, elements, east/west…) | 0.6903 | −0.0011 | 0.5649 | loses |
+| 6 | state-to-angle by each tradition's geometry | 0.6901 | −0.0013 | 0.5649 | loses in every fold |
+| 7 | birth-decade nuisance terms in selection | 0.6895 | −0.0019 | 0.5655 | loses once refit without them |
+| 8 | era-specialised ensemble | 0.6891 | −0.0023 | 0.5580 | loses on both metrics |
+| — | label purified by explicit child counts | 0.7308 reported | **disqualified** | — | a leak, see below |
+| — | name-numerology variants | — | did not finish | — | the standing names run (0.6910) stands |
+
+**The disqualification is the competition's most useful result.** The label entry kept positives at
+any record depth but negatives only where both spouses were deeply documented, so *being thinly
+documented* became a proxy for the label — the thin-record indicator alone scores 0.932 on that
+label, and the standing model's own out-of-fold scores beat the entry on its rows. Its reported
+"cleaner label, more astrology" was the depth rule, not the stars. The rule for any future label
+work follows: whatever condition defines a negative must define a positive the same way.
+
+**The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
+their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
+The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the
+exact reproduction command is in the research repository, but a model that reads the calendar more
+finely at the cost of a harder explanation is not the model this page promises. What the
+competition establishes: 0.69 pooled and 0.567 within era is the practical ceiling of birth-date
+phasors on this corpus, flat under every honest widening tried.
 
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks

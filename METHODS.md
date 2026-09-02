@@ -686,12 +686,35 @@ Wideners, all on the 93,598-couple corpus, against 0.6811: λ during selection 0
 0.001 → 0.6811; harmonics 11, 13–16, 18, 20, 24, 30, 45, 60 added → 0.6791; the four-body
 difference families `ddm`/`ddp`/`camp` (pure d-space, no calendar through a sum) → 0.6808. Nothing
 that adds candidates helps; the one thing that helped is choosing better among the candidates
-already there — the exact score test above, +0.0023. The **era-blocked diagnostic** (outer folds
-as contiguous blocks of birth years, assigned per family so no couple straddles a block): with two
-blocks, trained on couples born before ~1908 and tested on those born after, the model scores
-**0.41 — below chance**. The calendar mapping does not merely fail to transfer across eras; it
-inverts. That is the decomposition's 89% measured a third way, and it is why no reading on the
-page is offered without it.
+already there — the exact score test above, +0.0023. Selecting whole angles (all thirteen
+harmonics of an angle at once, a 26-degree-of-freedom score) reaches 0.6816 with twelve angles —
+a hair above plain selection at roughly eight times the weights, and below the exact score test.
+
+**The era-blocked diagnostic** (outer folds as contiguous blocks of birth years, assigned per
+family so no couple straddles a block) has two very different answers, and both are needed. With
+**ten** blocks each held-out era lies *between* trained eras and the model **interpolates**:
+0.6700, only 0.011 below random folds. With **two** blocks — trained on couples born before ~1908
+and scored on those born after, and vice versa — it must **extrapolate**, and it scores **0.41,
+below chance**: the calendar mapping does not merely fail to transfer beyond the trained eras, it
+inverts. The one-direction version (train before a cutoff, test only after) is measured below. A
+modern couple on the live page is the extrapolation case; that is why the reading carries its
+caveat and the era-fair percentile falls silent for decades the corpus does not hold.
+
+**Every ablation, with the selection re-run inside every fold.** Each row removes one thing from
+the candidate bank and re-runs the whole procedure (stepwise to 32, five outer folds, every
+remaining fast body forced in); the cost is against the baseline of that same procedure, never
+against the ten-fold deploy number. Four bodies cost anything — Neptune and Pluto an order of
+magnitude more than Uranus and Mars — and nine cost nothing, the Sun, Moon, Venus and Saturn among
+them. Of the three angle families only the cross-chart one matters: remove his-planet-to-hers and
+the model loses 0.027, more than any body; remove either chart's internal angles and nothing is
+lost, because what they carried is re-expressed across the pair. Of the harmonics only the
+fundamental matters.
+
+baseline (same procedure, 5 outer folds, K=32): **0.6805**
+
+| removed | kind | nested AUC | cost |
+|---|---|---|---|
+
 
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks

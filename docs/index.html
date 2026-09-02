@@ -158,7 +158,7 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:70px;borde
 <div class="eyebrow"><span class="ebfull">ArtaMatch · sidereal (Lahiri) · every rule reads both charts</span><span class="ebshort">ArtaMatch · every rule reads both charts</span></div>
 <h1>Written in the <span class="g">stars</span>?</h1>
 <p class="sub">93,598 marriages from the historical record, both charts read together — one model,
-32 tuned waves, every weight published. Enter your birthday: it reads your chart, then looks for
+<span id="mx-hero-n">32</span> tuned waves, every weight published. Enter your birthday: it reads your chart, then looks for
 the birth dates that fit yours.</p>
 </header>
 
@@ -243,7 +243,7 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
 <p class="sub">One formula scores everything on this page — the date ranking and the two-chart
 reading alike:</p>
 <pre style="overflow-x:auto;padding:16px 18px;margin:18px 0;border-left:2px solid var(--gold,#E8B923);
-  background:rgba(12,30,50,.45);border-radius:0 14px 14px 0;font-size:13.5px;line-height:1.75">score = bias + Σ over 32 phasors of  a·cos(k·θ) + c·sin(k·θ)
+  background:rgba(12,30,50,.45);border-radius:0 14px 14px 0;font-size:13.5px;line-height:1.75">score = bias + Σ over <span id="mx-nph">32</span> phasors of  a·cos(k·θ) + c·sin(k·θ)
 p     = sigmoid(score)</pre>
 <p class="sub">θ is always the angle between two sidereal longitudes (Lahiri, cast at 12:00 UT on
 the birth date): his planet to hers, or two planets inside one chart. k is a whole-number harmonic
@@ -253,8 +253,9 @@ A·cos(kθ−φ). There is nothing else in it — no buckets, no indicators, no 
 birth dates. It answers one narrow question: <b>did the historical record list children for a
 couple like this</b>, over <span id="mx-n">…</span> finished marriages, every birth date a real
 recorded day.</p>
-<p class="sub">The model was chosen from 4,225 candidate phasors by forward selection, and its
-number is earned the hard way: the selection, the size of the model and the inclusion of every
+<p class="sub">The model was chosen from 4,225 candidate phasors by forward selection — each
+candidate scored by the exact score test, against what the model already holds, so a phasor that
+merely restates an earlier one cannot get in — and its number is earned the hard way: the selection, the size of the model and the inclusion of every
 fast body were re-run from scratch inside each of ten training folds, so the quoted AUC never saw
 its own test couples. <b>Nested ten-fold AUC <span id="mx-cv">…</span></b> · one partner's complete
 chart alone <span id="mx-solo">…</span> · the bare gap between the two birthdays
@@ -266,7 +267,7 @@ Lilith, whose positions say <i>when</i> a person was born — and the model fall
 <span id="mx-a13">…</span> to <span id="mx-f7">…</span>; drop Jupiter and Saturn too and, at
 <span id="mx-f5">…</span>, it knows less than the age gap alone. About <span id="mx-pct">…</span>%
 of what this model reads is which decades the two of you were born in.</p>
-<p class="sub">All 65 weights: <a href="tilldeath.json">tilldeath.json</a> · every measurement and
+<p class="sub">All <span id="mx-nw">65</span> weights: <a href="tilldeath.json">tilldeath.json</a> · every measurement and
 ablation: <a href="https://github.com/ArtaQuest/artamatch/blob/feature/artamatch/METHODS.md">METHODS</a>
 · the older pair-scoring laboratory, kept as documented history: <a href="lab.html">the lab</a></p>
 
@@ -423,6 +424,7 @@ async function boot(){
   // survived one model change already (89%, 91,146) and had to be hunted down.
   {const td=window.__td, dc=td.decomposition, F=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
    F("mx-n",td.n_corpus.toLocaleString()); F("mx-cv",td.cv_auc_broad.toFixed(4));
+   F("mx-nph",td.n_phasors); F("mx-hero-n",td.n_phasors); F("mx-nw",td.n_weights);
    F("mx-solo",Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));
    F("mx-gap",td.baseline_age_gap.toFixed(4));
    F("mx-a13",dc.all_13_bodies.toFixed(3)); F("mx-f7",dc.fast_7_bodies_sun_to_saturn.toFixed(3));

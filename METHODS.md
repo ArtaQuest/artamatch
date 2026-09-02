@@ -656,7 +656,11 @@ Every feature is an angle between two of the 26 bodies of the two charts:
 
 at harmonics k ∈ {1..10, 12, 27, 36} — the aspect itself, then the sign (30° is the 12th harmonic),
 the nakshatra (27th) and the decan (36th). 4,225 candidate phasors. Forward stepwise selection by the
-two-degree-of-freedom score statistic; the number of phasors chosen by an inner five-fold CV; every
+**exact** two-degree-of-freedom score statistic — every candidate is first projected onto the
+W-orthogonal complement of the columns already in the model, so a phasor that merely restates what
+the model holds scores near zero rather than near its raw strength (the marginal statistic, which
+ignores that correlation, was measured to cost 0.0023 of nested AUC: 0.6811 → 0.6834 on the same
+corpus, same folds, same everything else); the number of phasors chosen by an inner five-fold CV; every
 fit by damped Newton on a fixed penalised objective — each step an exact solve, halved until the
 loss actually falls, iterated until the gradient collapses, and checked against 4,000 steps of Adam
 on the same objective (train AUC 0.6853 both ways, max weight difference 0.002).
@@ -676,6 +680,30 @@ with the sum families (his+her composite axes `xsum`, within-chart midpoint axes
 lands at the same 0.6783 while the in-training reference rises to 0.6847. Extra capacity buys
 optimism, not out-of-fold signal, in both directions — so 32 phasors over the diff families stands,
 as a measurement made three times.
+
+**The second round (2026-09-02), every run the same nested procedure with one thing changed.**
+Wideners, all on the 93,598-couple corpus, against 0.6811: λ during selection 0.01 → 0.6808,
+0.001 → 0.6811; harmonics 11, 13–16, 18, 20, 24, 30, 45, 60 added → 0.6791; the four-body
+difference families `ddm`/`ddp`/`camp` (pure d-space, no calendar through a sum) → 0.6808. Nothing
+that adds candidates helps; the one thing that helped is choosing better among the candidates
+already there — the exact score test above, +0.0023. The **era-blocked diagnostic** (outer folds
+as contiguous blocks of birth years, assigned per family so no couple straddles a block): with two
+blocks, trained on couples born before ~1908 and tested on those born after, the model scores
+**0.41 — below chance**. The calendar mapping does not merely fail to transfer across eras; it
+inverts. That is the decomposition's 89% measured a third way, and it is why no reading on the
+page is offered without it.
+
+**Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
+couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
+the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)
+gave 3,720 exact dates for the year-only pool; English Wikipedia `{{birth date}}` infoboxes gave
+1,123 more (only 12,293 of 90,990 such people have an article at all). Children rows were added for
+7,657 finished couples the original children harvest never covered. Together: 100,129 couples, with
+the caveat that the added couples are a different mix — 25.6% with children against 50.3% — so the
+one-chart baselines rise with them (0.6710 / 0.6733) and only the lift over one chart is comparable
+across corpora. Verified along the way: the children query's orientation is sound (0 of 400
+negatives have children in either parent order; 0% of negatives in either the standing or the added
+set have any recorded child with anyone).
 
 ### THE RESULT THAT MATTERS: most of this is a calendar
 

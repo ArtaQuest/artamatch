@@ -755,21 +755,23 @@ baseline (same procedure, 5 outer folds, K=32): **0.6805**
 | k=6 | harmonic | 0.6808 | -0.0003 |
 | k=3 | harmonic | 0.6810 | -0.0005 |
 
-**Where the record is deep, the second chart adds nothing.** Restricting to couples whose two
-people are both well documented (Wikidata sitelinks as the only criterion, never a feature) and
-re-running the whole nested procedure on the subset:
+**Where the record is deep: measured twice, and the second measurement corrects the first.**
+Restricting to couples whose two people are both well documented (Wikidata sitelinks as the only
+criterion, never a feature) and re-running the whole nested procedure on the subset:
 
-| subset | couples | one chart alone | nested, both charts | lift |
-|---|---|---|---|---|
-| all | 100,129 | 0.6733 | 0.6911 | +0.018 |
-| both ≥ 5 sitelinks | 13,389 | 0.6539 | 0.6514 | −0.003 |
-| both ≥ 15 sitelinks | 3,584 | 0.6762 | 0.6312 | −0.045 |
+| subset | couples | one chart alone | full bank, plain greedy | lean bank, validated | lift (lean) |
+|---|---|---|---|---|---|
+| all | 100,129 | 0.6733 | 0.6911 | 0.6914 | +0.018 |
+| both ≥ 5 sitelinks | 13,389 | 0.6539 | 0.6514 | **0.6771** | **+0.023** |
+| both ≥ 15 sitelinks | 3,584 | 0.6762 | 0.6312 | 0.6685 | −0.008 |
 
-The corpus-wide lift lives in the thinly documented majority, where "no children recorded" is
-partly a statement about the record's depth. On the couples whose records are fullest — where
-the label means most — reading the second chart is worth nothing, and on the smallest subset the
-extra parameters cost more than they earn. This is reported as measured; the subsets are small
-and the last one is noisy, but the sign does not move.
+The first pass, with the full 4,225-phasor bank and the plain greedy, read "the lift vanishes where
+records are deep" — and that reading was an artifact: on 13,389 rows the greedy overfits its own
+selection, and the wide bank scored *below* one chart. The lean bank under validated selection, the
+procedure that actually ships, shows a pair lift on the deep-record couples at least as large as on
+the whole corpus. On the smallest subset no lift is detectable, and with fewer than 200 couples per
+decade neither is anything else — it is reported as measured and not read into. The corrected
+statement: the second chart's contribution is not confined to thinly documented couples.
 
 **The leanest model is as good as the biggest.** Restricting the bank to the cross-chart family at
 the fundamental harmonic only — 169 candidates, his planet to hers, first harmonic — and running

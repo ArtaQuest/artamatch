@@ -830,8 +830,11 @@ winners (the best of p null candidates scores like 2·ln p — about 10 for 169 
 each is judged by a five-fold cross-validation inside the training rows; the best enters only if
 it improves that inner CV, and selection stops when none does. A candidate that merely won the
 in-sample lottery cannot get in, so a superset bank can no longer score lower except by CV noise.
-The comparison that tests this — planets alone, planets with every other system, and the full
-planet bank, all under validated selection — is reported below when it lands.
+The comparison that tests it, all under validated selection on the 100,129-couple corpus: planets
+alone in the lean bank **0.6914 with 20 phasors**; planets with the twenty systems (1,089
+candidates) **0.6906 with 23**; the full planet bank of 4,225 **0.6913 with 22**. Three banks,
+one score, inside the nested estimate's noise — a wider bank no longer costs anything, and none of
+them finds anything the lean bank lacks.
 
 **Name numerology** (operator, 2026-09-02) joins the inventory after all, as six pseudo-bodies
 computed from the name the world knows each person by (the Wikidata English label, romanised so

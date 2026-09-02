@@ -34,14 +34,29 @@ def datasets():
 RUN_PY = '''
 import os, shutil, subprocess, sys, glob, time
 T0 = time.time()
-src = [d for d in glob.glob("/kaggle/input/*") if "corpus" in d][0]
-code = [d for d in glob.glob("/kaggle/input/*") if "code" in d][0]
+# MOUNT ROOTS (memory): datasets may sit at /kaggle/input/<slug> or /kaggle/input/datasets/<user>/<slug>;
+# find each by a marker file instead of guessing the path, and print the tree for the log
+for root, dirs, files in os.walk("/kaggle/input"):
+    if root.count("/") <= 5: print("INPUT", root, files[:4], flush=True)
+def find_dir(marker):
+    for root, dirs, files in os.walk("/kaggle/input"):
+        if marker in files: return root
+    raise SystemExit("no " + marker + " under /kaggle/input")
+src = find_dir("phases.npz"); code = find_dir("fit_nested.py")
 os.makedirs("/kaggle/working/corpus", exist_ok=True)
 for f in os.listdir(src): shutil.copy(os.path.join(src, f), "/kaggle/working/corpus/")
 for f in os.listdir(code):
     if f.endswith(".py"): shutil.copy(os.path.join(code, f), "/kaggle/working/")
 os.chdir("/kaggle/working")
 env = dict(os.environ); env["AQ_DIR"] = "/kaggle/working/corpus"
+# CUDA PROBE: a GPU whose architecture the torch build lacks fails on the first op, not at import;
+# prove one matmul works, else run on the cores rather than die
+try:
+    import torch
+    (torch.ones(8, 8, device="cuda") @ torch.ones(8, 8, device="cuda")).sum().item()
+    print("CUDA ok:", torch.cuda.get_device_name(0), flush=True)
+except Exception as e:
+    print("CUDA unusable, falling back to CPU:", str(e)[:120], flush=True); env["AQ_CPU"] = "1"
 for kv in __ENV__.split(): k, v = kv.split("=", 1); env[k] = v
 print("ENV", {k: v for k, v in env.items() if k.startswith("AQ_")}, flush=True)
 with open("/kaggle/working/run.log", "w") as log:
@@ -82,6 +97,8 @@ def push(slug, envs, script="fit_nested.py", extra=()):
     kid = f"{USER}/artamatch-comp-{slug}".lower().replace("_", "-")
     json.dump({"id": kid, "title": f"artamatch-comp-{slug}", "code_file": "run.py", "language": "python",
                "kernel_type": "script", "is_private": True, "enable_gpu": True, "enable_internet": False,
+               # T4 (sm_75): the default P100 (sm_60) has no kernel image in the current torch build
+               "machine_shape": "NvidiaTeslaT4",
                "dataset_sources": [CODE_DS, CORPUS_DS], "competition_sources": [], "kernel_sources": []},
               open(f"{d}/kernel-metadata.json", "w"))
     rc, out = sh("kaggle", "kernels", "push", "-p", d, timeout=600)

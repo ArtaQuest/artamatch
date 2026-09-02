@@ -840,6 +840,22 @@ Chaldean expression, the cornerstone letter's value, and the maturity number (li
 expression). Should a name term ever earn a place, the page will ask for both names and hold name
 terms at zero in the date scan, where a hypothetical partner has none.
 
+**Is it overfit? Three direct probes, all on the 100,129-couple corpus, lean bank.** A **vault**:
+one family in ten (10,132 couples) sealed by a fixed seed before the search, the folds, the inner CV
+or the λ sweep saw anything; the model built on the other 90% scores **0.6922** on the vault against
+0.6908 nested on the 90% — the sealed couples agree, slightly above. The **K curve**: letting the
+search run to 48 or 64 phasors gives 0.6913 and 0.6913 (the inner CV stops at 37); more terms neither
+help nor hurt. **Validated selection** reaches the same 0.6914 with **20 phasors** instead of 32.
+The model is not overfit; it is at the ceiling of what two birth dates hold about this label.
+
+**Within-era AUC — the metric "more astrology" has to move.** The AUC inside each husband birth
+decade, couple-weighted, with the decade held fixed so the calendar cannot help: the shipped model
+scores **0.5666** there against 0.6914 pooled — the 0.067 above chance is what the angles earn beyond
+the era, and it is the same figure the Sun–Saturn-only search reached from the other direction
+(0.569). Every wider bank scores lower within era as well (planets + twenty systems 0.5643, the full
+planet bank 0.5623). Astro-Databank, the one large source of timed births, forbids crawling in its
+robots.txt and is not used; Wikidata's own timed births are being counted.
+
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
 the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)

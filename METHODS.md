@@ -696,9 +696,19 @@ family so no couple straddles a block) has two very different answers, and both 
 0.6700, only 0.011 below random folds. With **two** blocks — trained on couples born before ~1908
 and scored on those born after, and vice versa — it must **extrapolate**, and it scores **0.41,
 below chance**: the calendar mapping does not merely fail to transfer beyond the trained eras, it
-inverts. The one-direction version (train before a cutoff, test only after) is measured below. A
-modern couple on the live page is the extrapolation case; that is why the reading carries its
-caveat and the era-fair percentile falls silent for decades the corpus does not hold.
+inverts. The one-direction version — train only on couples whose groom was born before a cutoff,
+score only those born after, selection and all — is the cleanest statement of it:
+
+| trained on grooms born before | scored on those born after | AUC |
+|---|---|---|
+| 1860 | 57,882 couples | 0.5193 |
+| 1890 | 40,274 couples | 0.5279 |
+| 1910 | 25,068 couples | 0.5265 |
+
+Every cutoff lands within a hair of the Sun–Mars-only figure (0.5192): past the eras it has seen,
+the model keeps exactly what the fast bodies carry and nothing else. A modern couple on the live
+page is this case; that is why the reading carries its caveat and the era-fair percentile falls
+silent for decades the corpus does not hold.
 
 **Every ablation, with the selection re-run inside every fold.** Each row removes one thing from
 the candidate bank and re-runs the whole procedure (stepwise to 32, five outer folds, every

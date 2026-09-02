@@ -595,7 +595,7 @@ targets did*, below). The shipped question is narrower and is stated on the page
 
 ### The corpus
 
-**91,146 finished marriages**, 45,343 of them (49.7%)
+**93,598 finished marriages**, 47,124 of them (50.4%)
 with children recorded. Built from Wikidata `P26` spouse statements and Wikipedia prose, and filtered
 hard:
 
@@ -604,7 +604,7 @@ hard:
 - **real recorded days only** — 78% of raw Wikidata birth timestamps read `1 January`, which is how a
   year-precision date renders. Every one is demoted to year precision and then excluded, along with
   every other partial date. A year-only date puts the Moon anywhere in the zodiac, and the fast
-  bodies are precisely what the central test below depends on. This cost 74,016 couples.
+  bodies are precisely what the central test below depends on. This cost 74,016 couples — of which 2,452 were later recovered whole via WikiTree (P2949): 3,720 people's exact dates, accepted only when WikiTree marks the date certain and its year equals Wikidata's own.
 - excluded too: 47 died-before-born, pairs >60 years apart, self-pairs, and 25 whose two Wikidata
   items contradict each other about how the marriage ended.
 
@@ -617,33 +617,33 @@ worst case** over 1,014 positions — every planet inside 0.0012°, the Sun insi
     p     = sigmoid(score)
 
 32 phasors — 65 numbers, all of them in [`tilldeath.json`](docs/tilldeath.json). The strongest, by
-fitted amplitude √(a²+c²):
+fitted amplitude √(a²+c²), on the 93,598-couple corpus:
 
 | phasor | amplitude |
 |---|---|
-| `3·(his Neptune − her Neptune)` | 0.670 |
-| `her Neptune − her Pluto` | 0.629 |
-| `his Neptune − her Pluto` | 0.379 |
-| `his Saturn − her Saturn` | 0.242 |
-| `his Neptune − her Uranus` | 0.127 |
-| …27 more, amplitudes 0.066 → 0.032 | |
+| `her Neptune − her Pluto` | 0.867 |
+| `3·(his Neptune − her Neptune)` | 0.493 |
+| `2·(his Pluto − her Pluto)` | 0.240 |
+| `his Saturn − her Saturn` | 0.212 |
+| `his Neptune − her Uranus` | 0.131 |
+| …27 more, amplitudes 0.110 → 0.03 | |
 
-**Every fast body is in the model and carries weight** (operator order): the Sun in 2 terms, the
-Moon, Mercury and Venus in 1 each, Mars in 7, Jupiter in 4, Saturn in 4 (its Saturn–Saturn synastry
-is the strongest non-Neptune/Pluto term at 0.242). The amplitudes are what the data itself supports
-at the cross-validated ridge — the hierarchy above *is* the finding: the slow bodies dominate.
+**Every fast body is in the model and carries weight** (operator order): the Sun in 3 terms, the
+Moon, Mercury, Venus and Jupiter in 1 each, Mars in 8, Saturn in 3 (its Saturn–Saturn synastry is
+the strongest non-outer-planet term at 0.212). The amplitudes are what the data itself supports at
+the cross-validated ridge — the hierarchy above *is* the finding: the slow bodies dominate.
 
 Each phasor pairs a cosine with a sine of the same angle, so its amplitude and phase are both free
 (`a·cos + c·sin = A·cos(θ − φ)`). Every feature is a sinusoid of an integer harmonic of a named
 angle; there is not one indicator, bucket or threshold in the model, and `web/verify_docs.py` refuses
 a file containing one.
 
-**Nested ten-fold cross-validated AUC 0.6794**, folds cut by connected component of the marriage
+**Nested ten-fold cross-validated AUC 0.6811**, folds cut by connected component of the marriage
 graph so no person appears on both sides of a split — and *nested* meaning the stepwise selection,
 the choice of how many phasors, and the forcing-in of any missing fast body were all re-run from
 scratch inside every training fold, so the quoted number never saw its own test couples. One
-partner's chart alone, given its complete solo algebra (339 parameters), reaches 0.6625 on the same
-folds. The fixed-structure CV of the final model is 0.6838, and it is quoted only as a reference:
+partner's chart alone, given its complete solo algebra (339 parameters), reaches 0.6644 on the same
+folds. The fixed-structure CV of the final model is 0.6866, and it is quoted only as a reference:
 a structure chosen using all ten folds and then "cross-validated" is leak-inflated (measured below).
 
 ### How it was found
@@ -668,10 +668,14 @@ fold was chosen using the other folds' data, and it is why the shipped number is
 fixed-structure; **(2)** three fixed Newton steps, enough at 2 phasors, silently underfit at 35
 (train 0.6413 vs the true 0.6859) — convergence must be measured, not assumed; **(3)** an undamped
 Newton step on a deep design can overshoot into saturation and paint one constant — one outer fold
-scored 0.4996, exactly chance, until the steps were damped. Pushing the search deeper was measured
-twice: K=64 with the damped solver holds every fold sane and still comes out **worse** under the
-nested estimate (0.6783 against 0.6794) while its leak-prone fixed-structure reference *rises* to
-0.6861 — thirty-two more phasors buying optimism, not signal. So 32 stands, as a measurement.
+scored 0.4996, exactly chance, until the steps were damped. Widening the model was then measured
+twice more, and both wideners lost: **K=64** with the damped solver holds every fold sane and still
+comes out worse under the nested estimate (0.6783 against 0.6794) while its leak-prone
+fixed-structure reference *rises* to 0.6861; and **doubling the candidate bank to 8,450 phasors**
+with the sum families (his+her composite axes `xsum`, within-chart midpoint axes `midM`/`midW`)
+lands at the same 0.6783 while the in-training reference rises to 0.6847. Extra capacity buys
+optimism, not out-of-fold signal, in both directions — so 32 phasors over the diff families stands,
+as a measurement made three times.
 
 ### THE RESULT THAT MATTERS: most of this is a calendar
 
@@ -680,15 +684,15 @@ encode a decade:
 
 | bodies | slowest cycle | AUC | above chance |
 |---|---|---|---|
-| all 13 | 492 yr (Neptune–Pluto) | 0.6812 | 0.181 |
-| Sun–Saturn (7) | 29 yr | 0.5693 | 0.069 |
-| Sun–Mars (5) | 687 d | 0.5193 | 0.019 |
-| *birth-date gap, 2 parameters* | — | *0.5494* | *0.049* |
+| all 13 | 492 yr (Neptune–Pluto) | 0.6835 | 0.184 |
+| Sun–Saturn (7) | 29 yr | 0.5692 | 0.069 |
+| Sun–Mars (5) | 687 d | 0.5192 | 0.019 |
+| *birth-date gap, 2 parameters* | — | *0.5495* | *0.050* |
 
 **About 89% of what this model knows is when the two people were born.** Neptune takes 165 years to
 circle the zodiac and Pluto 248, so their positions are a statement about the decade. Strip them and
-the model falls to 0.5693; strip Jupiter and Saturn too and it reaches
-0.5193 — **less than the 0.5494 that two numbers of
+the model falls to 0.5692; strip Jupiter and Saturn too and it reaches
+0.5192 — **less than the 0.5495 that two numbers of
 birth-date difference achieve on their own**. Every angle Venus, Mars, Mercury, the Moon and the Sun
 can form between two charts, at thirteen harmonics, in differences and midpoints, is worth less than
 knowing how far apart the two birthdays are.
@@ -707,7 +711,7 @@ Five targets were built and measured. The pattern is the finding:
 |---|---|---|---|---|
 | P1534 divorce | Wikidata field | 165,589 | 0.8652 | 0.8637 |
 | came apart (mixed evidence) | mixed | 175,407 | 0.7937 | 0.7877 |
-| **children listed** | Wikidata field | 91,146 | 0.6812 | 0.6625 |
+| **children listed** | Wikidata field | 93,598 | 0.6835 | 0.6644 |
 | happy, judged from prose | an LLM reading | 1,590 | 0.53 | 0.53 |
 | infidelity, judged from prose | an LLM reading | 9,924 | 0.53 | 0.53 |
 
@@ -724,9 +728,11 @@ structured ones (0.68, not 0.86) and gains the most from reading both charts (+0
 
 - **The label is not fertility.** Wikidata lists children mainly when a notable person descends from
   the couple, so "no children recorded" blends genuine childlessness with thin documentation.
-- **The shipped figure is the nested estimate (0.6794)**, in which the selection, the term count
-  and the forced fast bodies were all inside the loop; the fixed-structure CV (0.6838) is published
-  in the model file as a reference and is known to be leak-inflated.
+- **The shipped figure is the nested estimate (0.6811)**, in which the selection, the term count
+  and the forced fast bodies were all inside the loop; the fixed-structure CV (0.6866) is published
+  in the model file as a reference and is known to be leak-inflated. (The K=64 and sum-family
+  measurements quoted above were made on the pre-recovery 91,146-couple corpus and are recorded
+  as made.)
 - **Cross-corpus AUCs are not comparable.** Each filtering step changed the population; both solo
   baselines rose ~0.05 when unfinished marriages were excluded, which made the corpus cleaner *and*
   easier.

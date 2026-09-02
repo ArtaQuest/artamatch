@@ -192,7 +192,7 @@ it will read once there is a second date to compare yours with.</p>
 <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;margin-top:8px"><table><tbody id="t100"></tbody></table></div></details>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
 remembers. <span id="honestnum">What this ranks on: whether the historical record lists children for couples like
-you, over 91,146 finished marriages — the same 32-phasor model as the reading below, nested
+you, over 93,598 finished marriages — the same 32-phasor model as the reading below, nested
 cross-validated AUC 0.6794 against 0.6625 for one chart alone. About 89% of what it knows is when the
 two of you were born, so inside this window the differences are small and honest — they come from the
 fast bodies, and they are exactly as thin as the measurement says.</span></p>
@@ -210,7 +210,7 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
   <div class="panel" id="tdsec" style="margin-top:26px">
     <h3 style="margin:0 0 6px;font-size:1.15em">Someone in particular?</h3>
     <p class="sub" style="margin:0 0 14px">Two birthdays, two charts, read together. One narrow
-    question — <b>did the record list children for couples like you</b> — asked of 91,146 finished
+    question — <b>did the record list children for couples like you</b> — asked of 93,598 finished
     marriages. Read what comes back with the note beneath it.</p>
     <div class="field"><label for="tdme">Your date of birth</label>
       <input type="date" id="tdme" min="1900-01-01" max="2026-12-31" value=""></div>
@@ -710,7 +710,7 @@ async function tdRead(){
   }
   // The model predicts COMING APART. Reading it the other way round is the kinder sentence and the
   // The model scores the chance the record lists children. The percentile is the honest unit: it
-  // places this pair among the 91,146 the model was fitted on, without implying a probability about
+  // places this pair among the 93,598 the model was fitted on, without implying a probability about
   // any particular couple.
   const pctl=Math.round(100*r.percentile);
   const top=r.drivers.slice().sort((a,b)=>Math.abs(b.contribution)-Math.abs(a.contribution))[0];
@@ -856,7 +856,7 @@ function renderTop(all,P){
         : `You'd be ${gap===0?"about the same age":gap+"y "+((+r[0].slice(0,4)>state.me[0])?"older":"younger")}`)} · ${r[3]===0?"not one shadow":r[3]+" small shadows"}</span>
       <span class="mbar"><i style="width:${(100*r[4]).toFixed(0)}%"></i></span><span class="mp">${(100*r[4]).toFixed(1)}%</span></div>
       <div class="chips">${chips}</div>
-      <div class="why">The percentage is where this pairing sits among <b>91,146 recorded marriages</b>, on
+      <div class="why">The percentage is where this pairing sits among <b>93,598 recorded marriages</b>, on
       one narrow question — did the record list children for couples like this. The chips are the angles
       that moved it most. Most of the score is simply when you were both born; the reading further down
       the page takes that apart honestly.</div></div>`;

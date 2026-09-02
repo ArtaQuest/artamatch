@@ -794,6 +794,34 @@ used the plain-calendar Chinese year; the corrected, extended set of twenty syst
 gendered Kua, Nine-Star month, nayin, yoga, dasha lord, lunar mansion, weekday, Haab month,
 attitude number) is measured below when it lands.
 
+**The inventory of systems, and what each became.** Everything in the history of astrology and
+numerology that can be computed from a birth date alone is either a body already in the bank, a
+pseudo-body added, or a quantisation of a body already there — and a few things are excluded on
+principle.
+
+| system | what it is here | why |
+|---|---|---|
+| Western / Vedic planetary positions (13 bodies) | the continuous bodies | the bank itself |
+| tropical zodiac signs, decans, terms | quantisations of the Sun etc.; decan = 36th harmonic | already carried by harmonics of the same body |
+| nakshatra, tithi, karana | Moon at k=27; Moon−Sun aspect; half-tithi | already in the bank as angles |
+| Vedic yoga (27), Vimshottari dasha lord (9) | pseudo-bodies | sum-based and lord-mapped states the diff bank cannot form |
+| Arabic lunar mansions / manzil (28) | pseudo-body | the 28-fold Moon circle is not a harmonic in the bank |
+| Chinese year animal (12), year stem (10), day stem (10), day branch (12), day nayin (30) | pseudo-bodies, year at **Li Chun** | arithmetic cycles of the day count and the solar year |
+| Chinese month branch, hour pillar | not added / impossible | month branch is the tropical Sun quantised; the hour needs a birth time |
+| Kua (9, gendered) | pseudo-body | the rule differs for men and women, applied per person |
+| Nine-Star Ki year (9) and month (9) | pseudo-bodies | year and solar-month cycles |
+| Maya Tzolkin sign (20), tone (13), Haab month (19), Lord of the Night (9) | pseudo-bodies | day-count cycles (GMT correlation 584283) |
+| Maya Long Count, kin (260) | not added | kin = sign × tone; the katun is a calendar clock |
+| numerology life path (9), birthday (31), reduced birthday (9), attitude (9) | pseudo-bodies | digit cycles of the date |
+| numerology by name (expression, soul urge), gematria | **excluded** | the page's contract is two birth dates and nothing else |
+| weekday (7): planetary days, Burmese Mahabote | pseudo-body | the seven-day cycle |
+| Celtic tree calendar, Native American totems, Japanese Rokuyō | not added | date-of-year (the Sun) or lunar-calendar quantisations already carried |
+| houses, ascendant, midheaven, planetary hours, Human Design | **impossible here** | all need a birth time; the corpus has dates only |
+
+A pseudo-body's state is an angle on its own circle, state s of N at s·360/N, so its aspects are
+formed exactly as a planet's are — with the one rule that a harmonic equal to a multiple of N is a
+constant on that circle and is never searched.
+
 **Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
 couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
 the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)

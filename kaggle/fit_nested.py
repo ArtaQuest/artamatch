@@ -116,7 +116,7 @@ def design(sel):
         u, v = cols(c); cc += [u, v]
     return torch.stack(cc + [torch.ones(n, device=DEV)], 1)
 
-def newton_on(Amat, wm_t, rl, max_steps=25):
+def newton_on(Amat, wm_t, rl, max_steps=40):
     """DAMPED Newton on a STATIONARY objective. Two things were proven wrong the hard way here:
     (1) recomputing the ridge scale from every step's working Hessian means every step minimises a
     DIFFERENT penalty, so "convergence" is against a moving target — the scale is now fixed once,
@@ -145,7 +145,10 @@ def newton_on(Amat, wm_t, rl, max_steps=25):
         if not np.isfinite(gp).all(): break
         gn = float(np.max(np.abs(gp)))
         if g0 is None: g0 = gn or 1.0
-        if step >= 3 and gn < 1e-5 * g0: break
+        # 1e-5 relative was measured NOT ENOUGH on the 93,598-couple corpus: Newton stopped there
+        # and Adam ground 3e-4 of AUC closer along a flat direction (weights 0.24 apart). Quadratic
+        # convergence makes the extra decades of gradient collapse nearly free.
+        if step >= 3 and gn < 1e-7 * g0: break
         sw = (wm_t * (0.25 if step == 0 else pr * (1 - pr))).sqrt().unsqueeze(1)
         H = ((Amat * sw).T @ (Amat * sw)).cpu().numpy().astype(np.float64)
         if not np.isfinite(H).all(): break

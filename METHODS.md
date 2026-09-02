@@ -840,8 +840,11 @@ them finds anything the lean bank lacks.
 computed from the name the world knows each person by (the Wikidata English label, romanised so
 every script gets a value): Pythagorean expression, soul urge and personality numbers, the
 Chaldean expression, the cornerstone letter's value, and the maturity number (life path plus
-expression). Should a name term ever earn a place, the page will ask for both names and hold name
-terms at zero in the date scan, where a hypothetical partner has none.
+expression). Measured under validated selection in the lean bank, planets + twenty systems + six
+name systems (1,521 candidates) score **0.6910** against 0.6914 for planets alone: names carry
+information the date does not, and it is not information about this label. Should a name term
+ever earn a place, the page will ask for both names and hold name terms at zero in the date scan,
+where a hypothetical partner has none.
 
 **Is it overfit? Three direct probes, all on the 100,129-couple corpus, lean bank.** A **vault**:
 one family in ten (10,132 couples) sealed by a fixed seed before the search, the folds, the inner CV

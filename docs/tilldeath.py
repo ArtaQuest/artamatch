@@ -58,15 +58,37 @@ def chart(iso, bodies, female=False, name=""):
     aya = swe.get_ayanamsa_ut(jd)
     out = {}
     sid = lambda b: (swe.calc_ut(jd, BODY_CODE[b], FLAGS)[0][0] - aya) % 360.0
-    st = None
+    st = None; L = None
     for b in bodies:
         if b in SYSTEM_STATES:
             if st is None:
                 st = system_states(y, m, d, sid("sun"), sid("moon"), aya, female, name)
             out[b] = (st[b] + 1) * 360.0 / SYSTEM_STATES[b] * DEG
             continue
+        if b in SYSTEM_MODULES:
+            # A REGISTERED PSEUDO-BODY (round 2, 2026-09-03): its state function is the very same
+            # pure-python code the corpus was built with, fed this person's sidereal longitudes in
+            # degrees. A discrete state s of N becomes (s+1)*360/N; a continuous one is degrees.
+            if L is None:
+                L = {pb: sid(pb) for pb in BODY_CODE}; L["_female"] = bool(female)
+            n_, fn = SYSTEM_MODULES[b]
+            v = fn(y, m, d, L)
+            out[b] = (((int(v) + 1) * 360.0 / n_) if n_ else float(v) % 360.0) * DEG
+            continue
         out[b] = sid(b) * DEG
     return out
+
+
+SYSTEM_MODULES = {}     # pseudo-body name -> (N states or 0, fn(y, m, d, L))
+def register_module(path):
+    """Load a tradition module (systems_<tradition>.py, pure python) by FILE PATH — the names carry
+    hyphens and are not importable by name — and register every system it exposes."""
+    import importlib.util, os
+    spec = importlib.util.spec_from_file_location("sysmod_" + os.path.basename(path).replace("-", "_").replace(".py", ""), path)
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    for sy in mod.SYSTEMS:
+        SYSTEM_MODULES[sy["name"]] = (int(sy.get("n", 0)), sy["fn"])
+    return [sy["name"] for sy in mod.SYSTEMS]
 
 def _angle(t, bodies, A, B):
     if t["kind"] == "lin":

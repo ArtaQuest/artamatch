@@ -907,6 +907,28 @@ records; the numerology was carrying documentation depth. (The dynastic guess �
 scores below chance.) Name numerology is therefore excluded from the model on the same principle as
 the label rule: a feature that reads the record's depth is not reading the couple.
 
+**Round two: every pseudo-body there is (2026-09-03).** The operator's order was to test all of
+them. Eight tradition modules were written — every system derivable from a birth date (and, where
+a system needs it, the person's own longitudes) as a pure-python state function: **387
+pseudo-bodies** across Western and Hellenistic dignities, the whole Vedic panchanga and
+Ashtakoota inputs with navamsa and dwadasamsa signs of every body, the Chinese four pillars with
+nayin, trines, Nine-Star and Kua, the Tzolkin, Haab, Long Count and Venus round, the Hebrew,
+Islamic, Jalali, Zoroastrian, Coptic, Julian and Republican calendars, numerology's every reduced
+number and the six biorhythm cycles as phase pseudo-bodies, the minor bodies from Ceres to Eris
+and the eight Uranian hypotheticals, and the Tibetan, Celtic, Burmese and medicine-wheel systems.
+Each was added **alone** to the lean planet bank and run through the nested procedure beside a
+same-run control (five outer folds, Kaggle T4 kernels, the remainder on the laptop), then every
+one was scored as a possible proxy: how well its angle alone predicts a deep record, or a husband
+born after 1900.
+
+The proxy check decided the sweep before the sweep did. **Forty-two pseudo-bodies are era
+proxies** — the Uranian hypotheticals predict "born after 1900" at AUC 0.9999 (a 700-year orbit
+is a calendar), Eris 0.994, the Long Count *may* 0.961 and katun 0.928, the tropical signs, decans
+and terms of Pluto and Neptune 0.85–0.93, Pholus 0.80 — and a single Uranian angle alone scores the
+label at 0.676, within a hair of an entire chart. Every pooled "gain" in the sweep belongs to that
+list (katun +0.0016, Hades +0.0016, Zeus +0.0015). The 345 clean pseudo-bodies — every fast
+tradition humanity has written down — sit within ±0.001 of the control on both metrics.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

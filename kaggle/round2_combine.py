@@ -9,7 +9,7 @@ Writes ~/.artamatch-dev/round2_results.json.
 import glob, json, os, re, subprocess, sys, time
 H = os.path.expanduser("~"); D = f"{H}/.artamatch-dev/tilldeath_wt3"
 res, ctrls = {}, []
-for f in glob.glob(f"{H}/.artamatch-dev/kaggle/out/sweep*/out/run.log") + [f"{H}/.artamatch-dev/sweep_local.log"]:
+for f in glob.glob(f"{H}/.artamatch-dev/kaggle/out/sweep*/out/run.log") + glob.glob(f"{H}/.artamatch-dev/kaggle/out/rest*/out/run.log") + [f"{H}/.artamatch-dev/sweep_local.log"]:
     if not os.path.exists(f): continue
     c = None; local = {}
     for line in open(f, errors="replace"):

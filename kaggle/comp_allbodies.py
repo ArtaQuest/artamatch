@@ -1,4 +1,16 @@
-"""fit_nested.py — the WHOLE procedure inside every fold, so the quoted AUC cannot leak.
+"""comp_allbodies.py — THE FULL BODY SPACE: every real body and every pseudo-body in ONE search.
+
+400 bodies (13 real + 387 pseudo) give 160,000 cross-chart angles, and fit_nested.py materialises
+every angle column (100,129 x 160,000 float32 = 64 GB). Here the columns are computed ON THE FLY
+from the two longitude matrices (100,129 x 400 each, 160 MB apiece): the scoring loop already walks
+candidates in chunks, so each chunk builds its own cos/sin and frees them. Everything else — the
+exact orthogonalised score test, validated selection, forced fast bodies, damped Newton, the nested
+loop, the within-era metric — is fit_nested.py unchanged, and with AQ_ONLY_BODIES set to the 13 real
+bodies it reproduces fit_nested's numbers (checked at a tiny configuration).
+
+Original docstring follows.
+
+fit_nested.py — the WHOLE procedure inside every fold, so the quoted AUC cannot leak.
 
 The prefix scan of the fold-agreed list creeps upward forever (0.6835 at 24 terms -> 0.6860 at 79)
 and never turns over. That creep IS the leak: a term agreed by even one fold was chosen using data
@@ -166,7 +178,28 @@ for a, (ang, name, kind, i, j, fam) in enumerate(ANG):
         MET.append({"a": a, "k": k, "kind": kind, "i": i, "j": j, "fam": fam,
                     "angle_name": name,
                     "label": f"{k}*({name})" if k > 1 else name})
-THETA = torch.from_numpy(np.column_stack([a[0].astype(np.float32) for a in ANG])).to(DEV)
+# ON THE FLY: keep the longitudes, not the angles.
+RA_t = torch.from_numpy(RA.astype(np.float32)).to(DEV)
+RB_t = torch.from_numpy(RB.astype(np.float32)).to(DEV)
+ANG_I = torch.tensor([a[3] for a in ANG], dtype=torch.long, device=DEV)
+ANG_J = torch.tensor([a[4] for a in ANG], dtype=torch.long, device=DEV)
+_KIND = torch.tensor([1 if a[2] == "xdiff" else (2 if a[2] == "aspM" else 3) for a in ANG], dtype=torch.int8, device=DEV)
+def theta_cols(idx):
+    """exactly the columns fit_nested would have materialised, for a tensor of ANG indices"""
+    i, j, w = ANG_I[idx], ANG_J[idx], _KIND[idx]
+    left = torch.where(w == 3, RB_t[:, i], RA_t[:, i])      # YY takes her body on the left
+    right = torch.where(w == 2, RA_t[:, j], RB_t[:, j])     # XX takes his body on the right
+    return left - right
+class _ThetaView:
+    """stands in for THETA: the fitter only ever slices columns out of it"""
+    def __getitem__(self, key):
+        cols = key[1]
+        if isinstance(cols, int): return theta_cols(torch.tensor([cols], device=DEV))[:, 0]
+        return theta_cols(cols if torch.is_tensor(cols) else torch.tensor(cols, device=DEV))
+    def element_size(self): return 4
+    def nelement(self): return RA_t.nelement() + RB_t.nelement()
+THETA = _ThetaView()
+log(f"longitudes held as {(RA_t.nelement()+RB_t.nelement())*4/2**30:.3f} GB · angles built per chunk")
 p = len(MET)
 A_IDX = torch.tensor([m["a"] for m in MET], device=DEV)
 K_VAL = torch.tensor([float(m["k"]) for m in MET], device=DEV)
@@ -326,7 +359,7 @@ def score_group(r, vw, taken_angles, mask=None, X=None):
         Ginv = torch.from_numpy(np.linalg.inv(G).astype(np.float32)).to(DEV)
     for lo in range(0, nA, 8):
         hi = min(nA, lo + 8)
-        T = THETA[:, lo:hi].unsqueeze(2) * kv                       # n x A x GSIZE
+        T = theta_cols(torch.arange(lo, hi, device=DEV)).unsqueeze(2) * kv   # n x A x GSIZE (on the fly)
         Xc = torch.cat([torch.cos(T), torch.sin(T)], 2)              # n x A x 2G
         if ORTHO and X is not None:
             flat = Xc.reshape(n, -1)

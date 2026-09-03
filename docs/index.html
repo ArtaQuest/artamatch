@@ -348,8 +348,9 @@ async function boot(){
    // THE QUESTION COMES FROM THE ARTIFACT (operator 2026-09-03): a new target ships by swapping
    // tilldeath.json; the page never carries the question as copy of its own.
    if(td.target_says){document.querySelectorAll(".mx-says").forEach(e=>e.textContent=td.target_says);
-     document.querySelectorAll(".mx-says-q").forEach(e=>e.textContent=td.target_says.replace(/^whether /,"did ").replace(/ like this$/," like you"));
-     document.querySelectorAll(".mx-says-model").forEach(e=>e.textContent=td.target_says.replace(/^whether /,"did "));}
+     const q=td.target_question||td.target_says.replace(/^whether /,"did ");
+     document.querySelectorAll(".mx-says-q").forEach(e=>e.textContent=q.replace(/ like this$/," like you"));
+     document.querySelectorAll(".mx-says-model").forEach(e=>e.textContent=q);}
    if(td.bank){F("mx-bank",td.bank.n_candidates.toLocaleString());
      const fam=td.bank.families, hs=td.bank.harmonics;
      if(fam.length===1&&fam[0]==="XY") F("mx-theta","always his planet to hers — the ablations found the angles inside one chart worth nothing, so they are not searched");

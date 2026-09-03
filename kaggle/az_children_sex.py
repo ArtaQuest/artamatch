@@ -48,7 +48,16 @@ for lo in range(0, len(pairs), 120):
     if (lo // 120) % 25 == 0: print("progress", lo + len(ch), len(pairs), len(rows), flush=True)
     time.sleep(0.6)
 csv = "\n".join("%s,%d,%d,%d,%d,%s" % (k, *v) for k, v in rows.items())
-print("BEGIN_CSV\n" + base64.b64encode(gzip.compress(csv.encode())).decode() + "\nEND_CSV", flush=True)
+url = os.environ["SINK_BASE"] + "/" + os.environ["SHARD"] + ".csv.gz?" + base64.b64decode(os.environ["SINK_SAS"]).decode()
+body = gzip.compress(csv.encode())
+for t in range(6):
+    try:
+        req = urllib.request.Request(url, data=body, method="PUT", headers={"x-ms-blob-type": "BlockBlob", "Content-Type": "application/octet-stream"})
+        with urllib.request.urlopen(req, timeout=120) as r: print("uploaded", len(body), "bytes ->", r.status, flush=True)
+        break
+    except Exception as e:
+        print("upload retry", t, str(e)[:80], flush=True); time.sleep(20)
+print("DONE", len(rows), flush=True)
 '''
 def sh(*a, **k): return subprocess.run(a, capture_output=True, text=True, timeout=k.get("timeout", 600))
 def slices():
@@ -61,7 +70,9 @@ def create(i, sl):
     env = base64.b64encode(gzip.compress("\n".join(f"{a},{b}" for a, b in sl).encode())).decode()
     r = sh("az", "container", "create", "-g", RG, "-n", f"kidsex{i}", "--image", IMAGE, "--location", LOC,
            "--restart-policy", "Never", "--cpu", "1", "--memory", "1.5", "--os-type", "Linux",
-           "--environment-variables", f"SLICE={env}", f"W={W}",
+           "--environment-variables", f"SLICE={env}", f"W={W}", f"SHARD=kidsex{i}",
+           f"SINK_BASE={open(os.path.expanduser('~/.artamatch-dev/kidsex_blob_base.txt')).read().strip()}",
+           f"SINK_SAS={base64.b64encode(open(os.path.expanduser('~/.artamatch-dev/kidsex_sas.txt')).read().strip().encode()).decode()}",
            "--command-line", "python -c \"import base64,os;exec(base64.b64decode(os.environ['W']))\"", timeout=900)
     ok = r.returncode == 0
     print(f"shard {i}: {len(sl):,} couples · create -> {'ok' if ok else (r.stderr or r.stdout).strip()[-120:]}", flush=True)
@@ -83,16 +94,20 @@ def poll():
         for i in sorted(running):
             st = sh("az", "container", "show", "-g", RG, "-n", f"kidsex{i}", "--query", "instanceView.state", "-o", "tsv").stdout.strip()
             if st in ("Succeeded", "Failed", "Terminated", "Stopped"):
-                logs = sh("az", "container", "logs", "-g", RG, "-n", f"kidsex{i}", timeout=600).stdout
-                if "BEGIN_CSV" in logs:
-                    b = logs.split("BEGIN_CSV\n", 1)[1].split("\nEND_CSV", 1)[0]
-                    for line in gzip.decompress(base64.b64decode(b)).decode().split("\n"):
+                import urllib.request
+                url = open(os.path.expanduser("~/.artamatch-dev/kidsex_blob_base.txt")).read().strip() + f"/kidsex{i}.csv.gz?" + open(os.path.expanduser("~/.artamatch-dev/kidsex_sas.txt")).read().strip()
+                got = False
+                try:
+                    with urllib.request.urlopen(url, timeout=120) as r: blob = r.read()
+                    for line in gzip.decompress(blob).decode().split("\n"):
                         if line: p = line.split(","); rows[p[0]] = p[1:]
-                    print(f"shard {i}: {st} · merged {len(rows):,} couples so far", flush=True)
-                else:
-                    print(f"shard {i}: {st} without a CSV — tail: {logs[-200:]!r}", flush=True); pending.append(i)
+                    got = True; print(f"shard {i}: {st} · merged {len(rows):,} couples so far", flush=True)
+                except Exception as e:
+                    logs = sh("az", "container", "logs", "-g", RG, "-n", f"kidsex{i}", timeout=600).stdout
+                    print(f"shard {i}: {st} · no blob ({str(e)[:60]}) — log tail: {logs[-160:]!r}", flush=True); pending.append(i)
                 sh("az", "container", "delete", "-g", RG, "-n", f"kidsex{i}", "--yes")
-                running.discard(i); done.add(i) if "BEGIN_CSV" in logs else None
+                running.discard(i)
+                if got: done.add(i)
         while pending and len(running) < 4:
             i = pending.pop(0)
             if create(i, S[i]): running.add(i)

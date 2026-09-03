@@ -1066,11 +1066,18 @@ one-chart baselines and the within-era metric; the primary target's decompositio
 The one-chart baselines rise with the new label (0.673 → 0.698) for a reason the label makes plain:
 recorded separations are modern, so a single chart's calendar reads "born late → split" and gains.
 The pair's lift over it is unchanged (+0.014) and the within-era figure is the same 0.566 as before —
-what the couple adds is not the calendar. The **success** target is the one that ships: it is the
-operator's definition, its lift matches the strict variant within noise, and the ≥2-children variant
-buys nothing but a rarer positive. Decomposition on the success corpus: all thirteen bodies 0.7112,
-Sun–Saturn 0.5722, Sun–Mars 0.5236, against a 0.5517 age gap — the calendar's share is the same.
-The live model is this one: 25 phasors, his planet to hers, first harmonic.
+what the couple adds is not the calendar. Within era the one-chart baselines on the success corpus
+are again chance (0.4955 / 0.5116), so its within-era pair lift is +0.0545 against the children
+label's +0.0558. Decomposition on the success corpus: all thirteen bodies 0.7112, Sun–Saturn 0.5722,
+Sun–Mars 0.5236, against a 0.5517 age gap — the calendar's share of the above-chance skill rises
+from about 62% to about 66%, because separations are modern.
+
+**The decision: the children target stays.** The operator's aim is the largest astrology effect —
+what the second chart adds over one — and every measure of it is equal or larger under the children
+label: pooled lift +0.018 against +0.014, within-era lift +0.0558 against +0.0545, the fast-body
+models within noise of each other. Adding separation to the label made the label more predictable
+and the model no more astrological. The success model was measured in full and is kept on the
+record; the live page still asks whether the record lists children.
 
 ### What the targets did
 

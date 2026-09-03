@@ -1079,6 +1079,26 @@ models within noise of each other. Adding separation to the label made the label
 and the model no more astrological. The success model was measured in full and is kept on the
 record; the live page still asks whether the record lists children.
 
+### The sex of the children (2026-09-03)
+
+The operator's next question: did the couple have boys, girls, or both? For the 48,881 couples
+with children, every linked child's sex (P21) and birth date (P569) were harvested — the laptop's
+single IP was throttled to two couples a second, so the harvest ran as six Azure containers, each
+with its own egress address, returning results through blob storage. Four targets over the same
+finished marriages, nothing about the parents in any label:
+
+| target | population | y = 1 |
+|---|---|---|
+| `hadboy` | couples with ≥ 1 child of recorded sex | at least one son |
+| `hadgirl` | couples with ≥ 1 child of recorded sex | at least one daughter |
+| `bothsex` | couples with ≥ 2 children of recorded sex | both sexes present |
+| `firstboy` | couples whose earliest-dated child has a recorded sex | the firstborn is a son |
+
+Each ran the full nested procedure (lean bank, exact score test, validated selection, ten folds)
+beside its one-chart baselines and the within-era metric. The expectation stated in advance: the sex
+of a child is not something a birth date should predict, and any pooled signal here would have to
+be documentation-era again (which sex a record bothers to link). Results follow.
+
 ### What the targets did
 
 Five targets were built and measured. The pattern is the finding:

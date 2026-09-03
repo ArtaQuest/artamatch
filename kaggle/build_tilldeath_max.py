@@ -206,7 +206,8 @@ def main():
     rows, dropped, skipped = [], 0, {"imputed": 0, "dob": 0, "sex": 0, "no_evidence": 0, "shady_only": 0,
                                     "no_children_row": 0, "self": 0, "died_before_born": 0,
                                     "gap60": 0}
-    n_src = {"childless": 0, "P1534": 0}
+    from collections import Counter
+    n_src = Counter()      # any source string — the success targets add "split:<signals>" and "few:<n>"
     for (a, b), r in pairs.items():
         pa, pb = person.get(a, {}), person.get(b, {})
         da_, db_ = pa.get("dob", MISSING), pb.get("dob", MISSING)

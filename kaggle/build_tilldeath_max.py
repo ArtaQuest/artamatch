@@ -302,7 +302,7 @@ def main():
                 skipped["no_children_row"] += 1; continue
             if not (art or nat or any_death):
                 skipped["no_evidence"] += 1; continue
-            sx = kidsex.get(ukey(a, b))
+            sx = kidsex.get("|".join(sorted((a, b))))     # children_sex.csv is keyed by the SORTED-QID string; ukey() returns a tuple
             if sx is None:
                 skipped["no_child_sex"] = skipped.get("no_child_sex", 0) + 1; continue
             boys, girls, first = sx
@@ -397,6 +397,7 @@ def main():
                      "y": 0 if srcs else 1, "src": "+".join(srcs) or "prospered",
                      "natural": int((nat or endnat) and not srcs)})
     d = pd.DataFrame(rows)
+    assert len(d) > 0, f"no rows survived for target {TARGET!r} — skipped: {dict(skipped)}"
     print(f"\n  {len(d):,} couples ({int(d.fullprec.sum()):,} full-precision · "
           f"{len(d) - int(d.fullprec.sum()):,} imputed)")
     print(f"  target '{TARGET}' · y=1: {int(d.y.sum()):,} ({d.y.mean():.2%})   "

@@ -929,6 +929,58 @@ label at 0.676, within a hair of an entire chart. Every pooled "gain" in the swe
 list (katun +0.0016, Hades +0.0016, Zeus +0.0015). The 345 clean pseudo-bodies — every fast
 tradition humanity has written down — sit within ±0.001 of the control on both metrics.
 
+*The twenty-five largest within-era movers (paired against each run's own control):*
+
+| pseudo-body | N | Δ pooled | Δ within-era | era AUC | flag |
+|---|---|---|---|---|---|
+| mesoamerican_lc_may | 13 | +0.0010 | +0.0010 | 0.96 | era-proxy |
+| western_element_moon | 4 | +0.0002 | +0.0010 | 0.50 | clean |
+| mb_venusmars_sum | 0 | +0.0001 | +0.0009 | 0.51 | clean |
+| vedic_varna | 4 | +0.0001 | +0.0009 | 0.50 | clean |
+| mesoamerican_tz_trecena | 20 | +0.0001 | +0.0008 | 0.50 | clean |
+| western_face_sun | 7 | +0.0000 | +0.0008 | 0.50 | clean |
+| western_gender_mars | 2 | +0.0001 | +0.0008 | 0.50 | clean |
+| western_gender_lilith | 2 | +0.0001 | +0.0008 | 0.50 | clean |
+| vedic_rashi_pluto | 12 | +0.0002 | +0.0007 | 0.93 | era-proxy |
+| vedic_antardasha_lord | 9 | +0.0002 | +0.0007 | 0.50 | clean |
+| mb_pallas | 0 | +0.0000 | +0.0007 | 0.51 | clean |
+| cycles-numerology_num_challenge1 | 9 | +0.0003 | +0.0007 | 0.50 | clean |
+| western_gender_sun | 2 | +0.0002 | +0.0007 | 0.50 | clean |
+| east-asian_month_nayin | 5 | +0.0000 | +0.0007 | 0.50 | clean |
+| western_decan_neptune | 36 | +0.0002 | +0.0007 | 0.89 | era-proxy |
+| western_modality_node | 3 | +0.0001 | +0.0007 | 0.51 | clean |
+| western_gender_chiron | 2 | +0.0002 | +0.0007 | 0.51 | clean |
+| calendars_jdn_mod9 | 9 | +0.0001 | +0.0006 | 0.50 | clean |
+| mesoamerican_lord_night | 9 | +0.0001 | +0.0006 | 0.50 | clean |
+| mesoamerican_819_phase | 819 | +0.0001 | +0.0006 | 0.50 | clean |
+| vedic_rajju | 5 | +0.0001 | +0.0006 | 0.50 | clean |
+| mesoamerican_tz_quarter | 4 | +0.0000 | +0.0006 | 0.50 | clean |
+| western_gender_node | 2 | +0.0000 | +0.0006 | 0.50 | clean |
+| vedic_d12_mercury | 12 | +0.0001 | +0.0005 | 0.50 | clean |
+| vedic_d9_neptune | 12 | +0.0001 | +0.0005 | 0.55 | clean |
+
+*The fifteen largest pooled movers:*
+
+| pseudo-body | N | Δ pooled | Δ within-era | era AUC | flag |
+|---|---|---|---|---|---|
+| mesoamerican_lc_katun | 20 | +0.0016 | +0.0004 | 0.93 | era-proxy |
+| mb_uranian_hades | 0 | +0.0016 | +0.0001 | 0.99 | era-proxy |
+| mb_uranian_zeus | 0 | +0.0015 | -0.0001 | 0.95 | era-proxy |
+| mesoamerican_venus_dresden13 | 13 | +0.0012 | -0.0001 | 0.79 | era-proxy |
+| mb_eris | 0 | +0.0012 | +0.0004 | 0.99 | era-proxy |
+| mb_uranian_cupido | 0 | +0.0012 | +0.0005 | 0.91 | era-proxy |
+| mb_uranian_kronos | 0 | +0.0011 | -0.0004 | 0.97 | era-proxy |
+| mesoamerican_lc_may | 13 | +0.0010 | +0.0010 | 0.96 | era-proxy |
+| calendars_french_republican_month | 14 | +0.0010 | +0.0002 | 0.54 | clean |
+| mb_uranian_apollon | 0 | +0.0010 | -0.0002 | 1.00 | era-proxy |
+| mb_uranian_admetos | 0 | +0.0010 | -0.0002 | 1.00 | era-proxy |
+| mb_uranian_vulkanus | 0 | +0.0010 | +0.0002 | 1.00 | era-proxy |
+| mb_uranian_poseidon | 0 | +0.0009 | -0.0003 | 1.00 | era-proxy |
+| mb_pholus | 0 | +0.0008 | -0.0008 | 0.80 | era-proxy |
+| calendars_french_republican_decade_day | 11 | +0.0007 | -0.0007 | 0.54 | clean |
+
+**The clean 345: Δ pooled mean -0.0001 (max +0.0010) · Δ within-era mean -0.0001 (max +0.0010)**
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

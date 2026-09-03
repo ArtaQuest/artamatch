@@ -981,6 +981,18 @@ tradition humanity has written down — sit within ±0.001 of the control on bot
 
 **The clean 345: Δ pooled mean -0.0001 (max +0.0010) · Δ within-era mean -0.0001 (max +0.0010)**
 
+**Round two, the combined models.** Planets plus the five "worthy" clean pseudo-bodies, ten folds,
+validated: 0.6928 / 0.5680 against a same-procedure control of 0.6914 / 0.5662 — and the model's
+strongest term by far (amplitude 0.57) is *his Year-Bearer round minus hers*, the Mesoamerican
+52-year calendar round, which as a difference is simply the couple's **age gap modulo 52**; the next
+two pair Neptune and Pluto with the French Republican month, a calendar that exists only before
+1806. Without the Republican flags the three clean pseudo-bodies give 0.6921 / 0.5674, the
+Year-Bearer round alone 0.6917 / 0.5669 — a thousandth either way, inside the noise. **The
+fast-body model** — the operator's question of what the fast bodies alone can do — answers itself:
+Sun to Saturn alone reaches 0.5472 pooled and 0.5447 within era with two phasors; adding the forty
+pseudo-bodies with any positive within-era delta gives 0.5516 and 0.5411. Every pseudo-body ever
+written down, added to the fast bodies, moves nothing.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the
@@ -1044,7 +1056,21 @@ The separation evidence is exactly what the divorce targets computed; the childr
 same P22/P25 linkage. Each corpus was built beside the standing one, charted, and run through the
 full nested procedure (lean bank, exact score test, validated selection, ten folds) with the
 one-chart baselines and the within-era metric; the primary target's decomposition was re-measured.
-Results follow.
+
+| target | couples | positive | one chart alone | nested, both charts | lift | within era |
+|---|---|---|---|---|---|---|
+| **success** | 100,235 | 45.3% | 0.6982 | **0.7123** | +0.014 | 0.5661 |
+| success_strict | 100,235 | 45.8% | 0.6973 | 0.7118 | +0.015 | 0.5662 |
+| prosper2 | 100,235 | 26.5% | 0.6759 | 0.6883 | +0.012 | 0.5589 |
+
+The one-chart baselines rise with the new label (0.673 → 0.698) for a reason the label makes plain:
+recorded separations are modern, so a single chart's calendar reads "born late → split" and gains.
+The pair's lift over it is unchanged (+0.014) and the within-era figure is the same 0.566 as before —
+what the couple adds is not the calendar. The **success** target is the one that ships: it is the
+operator's definition, its lift matches the strict variant within noise, and the ≥2-children variant
+buys nothing but a rarer positive. Decomposition on the success corpus: all thirteen bodies 0.7112,
+Sun–Saturn 0.5722, Sun–Mars 0.5236, against a 0.5517 age gap — the calendar's share is the same.
+The live model is this one: 25 phasors, his planet to hers, first harmonic.
 
 ### What the targets did
 

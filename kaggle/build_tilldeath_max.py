@@ -39,7 +39,12 @@ AQ_FULLPREC = os.environ.get("AQ_FULLPREC", "1") == "1"
 # invalidates phases.npz for whatever sits in its directory.
 OUT = os.path.expanduser(os.environ.get("AQ_OUT") or
                          {"children": "~/.artamatch-dev/tilldeath_max",
-                          "p1534": "~/.artamatch-dev/p1534"}[TARGET])
+                          "p1534": "~/.artamatch-dev/p1534",
+                          # SUCCESS (operator 2026-09-03): the marriage LASTED and had children.
+                          # A couple that split counts against, whatever their children.
+                          "success": "~/.artamatch-dev/success",          # every separation signal
+                          "success_strict": "~/.artamatch-dev/success_strict",   # strong signals only
+                          "prosper2": "~/.artamatch-dev/prosper2"}[TARGET])     # lasted + >= 2 children
 MISSING = "0000-00-00"
 MALE, FEM = "Q6581097", "Q6581072"
 
@@ -277,6 +282,26 @@ def main():
             if not (art or nat or any_death):
                 skipped["no_evidence"] += 1; continue    # unfinished: the count is not final
             srcs = [] if nkid >= 1 else ["childless"]
+        elif TARGET in ("success", "success_strict", "prosper2"):
+            # THE SUCCESS TARGET (operator 2026-09-03): "flip the labels if couples split —
+            # separation discounts having children; maximise the quality (test of time) and the
+            # quantity (children) of the relationship."
+            #   y = 1  the marriage lasted (no separation evidence) AND the record lists children
+            #          (>= 1, or >= 2 for prosper2)
+            #   y = 0  it split (any separation evidence — strict: P1534, an end date before either
+            #          death, or remarriage while the spouse lived), or it lasted childless
+            # Population unchanged: FINISHED marriages with a children row. `srcs` at this point
+            # holds the separation evidence exactly as the divorce targets computed it.
+            if nkid is None:
+                skipped["no_children_row"] += 1
+                nokids_pairs.append((a, b, int(art or nat or any_death)))
+                continue
+            if not (art or nat or any_death or srcs):
+                skipped["no_evidence"] += 1; continue
+            STRONG = {"P1534", "end-date", "remarry"}
+            sep = [x for x in srcs if (x in STRONG if TARGET == "success_strict" else True)]
+            need = 2 if TARGET == "prosper2" else 1
+            srcs = (["split:" + "+".join(sep)] if sep else []) + (["childless" if nkid == 0 else f"few:{nkid}"] if nkid < need else [])
         else:
             # P1534 ONLY: a recorded cause saying the two of them ended it, against marriages that
             # ended in a recorded death. Rows whose only sign of trouble is weaker than P1534 are

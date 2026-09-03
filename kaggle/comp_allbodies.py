@@ -60,7 +60,8 @@ HARM_EXTRA = tuple(int(x) for x in os.environ.get("AQ_HARM", "").split(",") if x
 DROP_BODY = os.environ.get("AQ_DROP_BODY", "")                 # ablation: leave one body out
 DROP_FAM = os.environ.get("AQ_DROP_FAM", "")                   # ablation: leave one family out
 DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave one harmonic out
-ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")                   # lean model: keep ONE family (e.g. XY)
+ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")
+CHUNK = int(os.environ.get("AQ_CHUNK", "1024"))   # candidates scored at once; 400 bodies want ~128                   # lean model: keep ONE family (e.g. XY)
 SYSTEMS = os.environ.get("AQ_SYSTEMS", "0") == "1"             # other systems as pseudo-bodies (build_systems.py)
 SYS_FILE = os.environ.get("AQ_SYSTEMS_FILE", "systems.npz")     # which systems file in AQ_DIR
 SYS_ONLY = [x for x in os.environ.get("AQ_SYS_ONLY", "").split(",") if x]     # keep only these pseudo-bodies
@@ -129,14 +130,22 @@ if ONLY_BODIES:
     TAG += "_bodies" + "-".join(ONLY_BODIES)
 NB = len(bod); C2 = list(itertools.combinations(range(NB), 2))
 n = len(y)
+# LAZY, AND ONE FAMILY AT A TIME. 400 bodies make 160,000 XY angles; holding each one's column is
+# 64 GB, and even the numpy list killed a 13 GB Kaggle kernel before the first log line. The entry
+# carries (kind, i, j) and theta_cols rebuilds exactly the column fit_nested would have held.
 ANG = []
-for i in range(NB):
-    for j in range(NB):
-        ANG.append((RA[:, i] - RB[:, j], f"his {bod[i]} - her {bod[j]}", "xdiff", i, j, "XY"))
-for i, j in C2:
-    ANG.append((RA[:, i] - RA[:, j], f"his {bod[i]} - his {bod[j]}", "aspM", i, j, "XX"))
-for i, j in C2:
-    ANG.append((RB[:, i] - RB[:, j], f"her {bod[i]} - her {bod[j]}", "aspW", i, j, "YY"))
+_want = lambda fam: (not ONLY_FAM) or fam == ONLY_FAM
+if _want("XY"):
+    for i in range(NB):
+        for j in range(NB):
+            ANG.append((None, f"his {bod[i]} - her {bod[j]}", "xdiff", i, j, "XY"))
+if _want("XX"):
+    for i, j in C2:
+        ANG.append((None, f"his {bod[i]} - his {bod[j]}", "aspM", i, j, "XX"))
+if _want("YY"):
+    for i, j in C2:
+        ANG.append((None, f"her {bod[i]} - her {bod[j]}", "aspW", i, j, "YY"))
+assert not SUMS, "comp_allbodies serves XY/XX/YY; the sum families need their own lazy rule"
 if SUMS:
     # THE SUM HALF OF THE PAIR ALGEBRA (operator 2026-09-01, "keep experimenting"): the diff
     # families span d-space only; sums are the composite/Davison axes. xsum includes i=j (the
@@ -150,6 +159,7 @@ if SUMS:
         ANG.append((RA[:, i] + RA[:, j], f"his {bod[i]} + his {bod[j]}", "midM", i, j, "XXs"))
     for i, j in C2:
         ANG.append((RB[:, i] + RB[:, j], f"her {bod[i]} + her {bod[j]}", "midW", i, j, "YYs"))
+assert not DD, "comp_allbodies serves XY/XX/YY; the four-body families need their own lazy rule"
 if DD:
     # FOUR-BODY DIFFERENCE FAMILIES, pure d-space (no absolute longitude, so no calendar through a
     # sum): ddm = (his i - her i) - (his j - her j), ddp = the same with a plus (midpoint axis to
@@ -326,8 +336,8 @@ def score_all(r, vw, taken, mask=None, X=None):
         G = (X.T @ XW).cpu().numpy().astype(np.float64)
         G[np.diag_indices_from(G)] += 1e-6 * float(np.mean(np.diag(G)))
         Ginv = torch.from_numpy(np.linalg.inv(G).astype(np.float32)).to(DEV)
-    for lo in range(0, p, 1024):
-        hi = min(p, lo + 1024); sl = slice(lo, hi)
+    for lo in range(0, p, CHUNK):
+        hi = min(p, lo + CHUNK); sl = slice(lo, hi)
         T = THETA[:, A_IDX[sl]] * K_VAL[sl].unsqueeze(0)
         C, S = torch.cos(T), torch.sin(T)
         if ORTHO and X is not None:
@@ -341,7 +351,7 @@ def score_all(r, vw, taken, mask=None, X=None):
         zz = (gs * gs * Scc - 2 * gc * gs * Scs + gc * gc * Sss) / (det + eps)
         rho2 = (Scs * Scs) / (Scc * Sss + eps)
         z[sl] = torch.where(rho2 < 0.9, zz, torch.full_like(zz, -1.0))
-        del T, C, S
+        del T, C, S, gc, gs, Scc, Sss, Scs, det, zz, rho2
     if taken: z[torch.tensor(taken, dtype=torch.long, device=DEV)] = -1.0
     if mask is not None: z[~mask] = -1.0
     return z

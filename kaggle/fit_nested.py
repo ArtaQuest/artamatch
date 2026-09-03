@@ -50,6 +50,9 @@ DROP_FAM = os.environ.get("AQ_DROP_FAM", "")                   # ablation: leave
 DROP_HARM = int(os.environ.get("AQ_DROP_HARM", "0"))           # ablation: leave one harmonic out
 ONLY_FAM = os.environ.get("AQ_ONLY_FAM", "")                   # lean model: keep ONE family (e.g. XY)
 SYSTEMS = os.environ.get("AQ_SYSTEMS", "0") == "1"             # other systems as pseudo-bodies (build_systems.py)
+SYS_FILE = os.environ.get("AQ_SYSTEMS_FILE", "systems.npz")     # which systems file in AQ_DIR
+SYS_ONLY = [x for x in os.environ.get("AQ_SYS_ONLY", "").split(",") if x]     # keep only these pseudo-bodies
+ONLY_BODIES = [x for x in os.environ.get("AQ_ONLY_BODIES", "").split(",") if x]  # keep only these planets (fast-body model)
 VAULT = os.environ.get("AQ_VAULT", "0") == "1"                 # 10% of families sealed before anything runs; one look at the end
 VALIDATE = os.environ.get("AQ_VALIDATE", "0") == "1"           # every addition must improve an inner CV, else stop
 SHORTLIST = int(os.environ.get("AQ_SHORTLIST", "5"))           # candidates per step put to the inner CV
@@ -86,7 +89,8 @@ tha, thb = Z["theta_a_train"], Z["theta_b_train"]
 okb = ~np.isnan(tha).any(0) & ~np.isnan(thb).any(0)
 nm_all = [str(b) for b, o in zip(Z["bodies"], okb) if o]
 keep = [i for i, x in enumerate(nm_all) if x != "true_south_node"
-        and x.replace("true_", "").replace("mean_", "") != DROP_BODY]
+        and x.replace("true_", "").replace("mean_", "") != DROP_BODY
+        and (not ONLY_BODIES or x.replace("true_", "").replace("mean_", "") in ONLY_BODIES)]
 bod = [nm_all[i].replace("true_", "").replace("mean_", "") for i in keep]
 RA, RB = np.deg2rad(tha[:, okb][:, keep]), np.deg2rad(thb[:, okb][:, keep])
 NSTATES = [0] * len(bod)          # 0 = continuous (a planet); N = a discrete system with N states
@@ -94,14 +98,19 @@ if SYSTEMS:
     # EVERY OTHER SYSTEM AS A PSEUDO-BODY (operator 2026-09-02). Its state is an angle on its own
     # circle, so the same families give every aspect — across systems too. A harmonic that is a
     # multiple of a discrete body's state count is a constant on that circle and is skipped.
-    SZ = np.load(f"{D_}/systems.npz", allow_pickle=True)
-    bod = bod + [str(x) for x in SZ["names"]]
-    NSTATES = NSTATES + [int(x) for x in SZ["nstates"]]
-    RA = np.concatenate([RA, np.deg2rad(SZ["theta_a_sys"])], 1)
-    RB = np.concatenate([RB, np.deg2rad(SZ["theta_b_sys"])], 1)
+    SZ = np.load(f"{D_}/{SYS_FILE}", allow_pickle=True)
+    _names = [str(x) for x in SZ["names"]]
+    _sel = [i for i, nm_ in enumerate(_names) if not SYS_ONLY or nm_ in SYS_ONLY]
+    assert not SYS_ONLY or len(_sel) == len(SYS_ONLY), f"unknown pseudo-body in AQ_SYS_ONLY: {set(SYS_ONLY) - set(_names)}"
+    bod = bod + [_names[i] for i in _sel]
+    NSTATES = NSTATES + [int(SZ["nstates"][i]) for i in _sel]
+    RA = np.concatenate([RA, np.deg2rad(SZ["theta_a_sys"][:, _sel])], 1)
+    RB = np.concatenate([RB, np.deg2rad(SZ["theta_b_sys"][:, _sel])], 1)
     # the tag carries the SYSTEM COUNT: a 20-system and a 26-system run once shared a tag and the
     # later one overwrote the earlier one's artifacts (the two-runs-one-filename trap, again)
-    TAG = TAG.replace("_systems", f"_systems{len(SZ['names'])}")
+    TAG = TAG.replace("_systems", "_sys" + ("-".join(SYS_ONLY) if SYS_ONLY else str(len(_sel))))
+if ONLY_BODIES:
+    TAG += "_bodies" + "-".join(ONLY_BODIES)
 NB = len(bod); C2 = list(itertools.combinations(range(NB), 2))
 n = len(y)
 ANG = []

@@ -1027,6 +1027,25 @@ Lilith, Chiron, Saturn. Venus, the planet the tradition would nominate first, co
 
 The page prints this decomposition inside every reading rather than in a footnote.
 
+### The success target (2026-09-03)
+
+The operator's redefinition: **a marriage succeeded if it lasted and had children** — a couple
+that split counts against, whatever their children ("separation discounts having children"), and
+the aim is to maximise both the quality (the test of time) and the quantity (children) of the
+relationship. Three corpora, all over the same finished marriages with a children row:
+
+| target | y = 1 | y = 0 |
+|---|---|---|
+| `success` | no separation evidence of any kind, and ≥ 1 child | any separation signal — an explicit end cause (P1534), an end date before either death, remarriage while the spouse lived, or a prose-judged divorce, text match or infidelity — or lasted childless |
+| `success_strict` | as above, with only the three strong separation signals counted | as above, strong signals only |
+| `prosper2` | lasted and ≥ 2 children | split, or fewer than two |
+
+The separation evidence is exactly what the divorce targets computed; the children count is the
+same P22/P25 linkage. Each corpus was built beside the standing one, charted, and run through the
+full nested procedure (lean bank, exact score test, validated selection, ten folds) with the
+one-chart baselines and the within-era metric; the primary target's decomposition was re-measured.
+Results follow.
+
 ### What the targets did
 
 Five targets were built and measured. The pattern is the finding:

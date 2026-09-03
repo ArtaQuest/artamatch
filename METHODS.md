@@ -1097,7 +1097,29 @@ finished marriages, nothing about the parents in any label:
 Each ran the full nested procedure (lean bank, exact score test, validated selection, ten folds)
 beside its one-chart baselines and the within-era metric. The expectation stated in advance: the sex
 of a child is not something a birth date should predict, and any pooled signal here would have to
-be documentation-era again (which sex a record bothers to link). Results follow.
+be documentation-era again (which sex a record bothers to link).
+
+| target | couples | positive | one chart alone | nested, both charts | within era |
+|---|---|---|---|---|---|
+| had a son | 48,841 | 76.2% | 0.5493 | 0.5522 | **0.5041** |
+| had a daughter | 48,841 | 64.5% | 0.5121 | 0.5141 | **0.5005** |
+| both sexes (≥ 2 sexed children) | 28,315 | 70.1% | 0.5260 | 0.5205 | **0.4987** |
+| firstborn a son | 47,497 | 57.9% | 0.5279 | 0.5277 | **0.4983** |
+
+**This is the control the whole programme needed, and it passes.** On four targets the birth
+calendar cannot reach, the model is at chance within era on every one — 0.4983 to 0.5041, straddling
+0.5 — and the pooled figures (0.51–0.55) are exactly the documentation era they should be: the
+record links sons far more often than daughters (17,358 couples with only sons against 11,629 with
+only daughters, a 49% excess that is archival, not biological), so "had a son" carries the most
+pooled signal and "both sexes" the least. Reading both charts adds +0.003, +0.002, −0.006 and
+−0.000 over reading one. The `bothsex` fit refused its own deployment at a boundary λ — the
+cross-validation asking for maximum regularisation, which is what a model with nothing to fit
+should do.
+
+The comparison that matters: the same machinery, the same corpus, the same folds, reaches +0.056
+within era on *whether the couple had children at all* and 0.000 on *which sex those children were*.
+Whatever the children signal is, it behaves like a property of the couple and not like an artifact
+of the pipeline, because the pipeline finds nothing when nothing is there.
 
 ### What the targets did
 

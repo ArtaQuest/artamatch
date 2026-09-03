@@ -44,7 +44,12 @@ OUT = os.path.expanduser(os.environ.get("AQ_OUT") or
                           # A couple that split counts against, whatever their children.
                           "success": "~/.artamatch-dev/success",          # every separation signal
                           "success_strict": "~/.artamatch-dev/success_strict",   # strong signals only
-                          "prosper2": "~/.artamatch-dev/prosper2"}[TARGET])     # lasted + >= 2 children
+                          "prosper2": "~/.artamatch-dev/prosper2",              # lasted + >= 2 children
+                          # THE SEX OF THE CHILDREN (operator 2026-09-03): boys / girls / both / firstborn
+                          "hadboy": "~/.artamatch-dev/sex_hadboy",     # >= 1 sexed child: at least one boy
+                          "hadgirl": "~/.artamatch-dev/sex_hadgirl",   # >= 1 sexed child: at least one girl
+                          "bothsex": "~/.artamatch-dev/sex_both",      # >= 2 sexed children: both sexes present
+                          "firstboy": "~/.artamatch-dev/sex_firstboy"}[TARGET])   # firstborn known: a boy
 MISSING = "0000-00-00"
 MALE, FEM = "Q6581097", "Q6581072"
 
@@ -157,6 +162,12 @@ def main():
                 kids[ukey(_x, _y)] = int(_n)
     print(f"  children.csv: {len(kids):,} pairs · "
           f"{sum(1 for v in kids.values() if v == 0):,} with none recorded", flush=True)
+    kidsex = {}
+    _sf = f"{BIO}/children_sex.csv"
+    if os.path.exists(_sf):
+        for _, r in pd.read_csv(_sf, dtype=str).fillna("").iterrows():
+            kidsex[r["pair"]] = (int(r["boys"] or 0), int(r["girls"] or 0), r["firstborn"])
+        print(f"  children_sex.csv: {len(kidsex):,} couples with sexed children", flush=True)
     t = pd.read_csv(f"{BIO}/marriages.csv")
     thit = {ukey(a, b) for a, b, d in zip(t.pid_a, t.pid_b, t.description.fillna(""))
             if BOUND.search(d)}
@@ -283,6 +294,30 @@ def main():
             if not (art or nat or any_death):
                 skipped["no_evidence"] += 1; continue    # unfinished: the count is not final
             srcs = [] if nkid >= 1 else ["childless"]
+        elif TARGET in ("hadboy", "hadgirl", "bothsex", "firstboy"):
+            # THE SEX OF THE CHILDREN. Population: finished marriages whose linked children carry a
+            # recorded sex (bio/children_sex.csv, from each child's P21; the firstborn from the
+            # earliest child with a birth date). Nothing about the parents enters the label.
+            if nkid is None or nkid < 1:
+                skipped["no_children_row"] += 1; continue
+            if not (art or nat or any_death):
+                skipped["no_evidence"] += 1; continue
+            sx = kidsex.get(ukey(a, b))
+            if sx is None:
+                skipped["no_child_sex"] = skipped.get("no_child_sex", 0) + 1; continue
+            boys, girls, first = sx
+            if TARGET == "hadboy":
+                if boys + girls < 1: skipped["no_child_sex"] = skipped.get("no_child_sex", 0) + 1; continue
+                srcs = [] if boys >= 1 else ["no_boy"]
+            elif TARGET == "hadgirl":
+                if boys + girls < 1: skipped["no_child_sex"] = skipped.get("no_child_sex", 0) + 1; continue
+                srcs = [] if girls >= 1 else ["no_girl"]
+            elif TARGET == "bothsex":
+                if boys + girls < 2: skipped["fewer_than_two_sexed"] = skipped.get("fewer_than_two_sexed", 0) + 1; continue
+                srcs = [] if (boys >= 1 and girls >= 1) else ["one_sex_only"]
+            else:
+                if first not in ("M", "F"): skipped["firstborn_unknown"] = skipped.get("firstborn_unknown", 0) + 1; continue
+                srcs = [] if first == "M" else ["first_girl"]
         elif TARGET in ("success", "success_strict", "prosper2"):
             # THE SUCCESS TARGET (operator 2026-09-03): "flip the labels if couples split —
             # separation discounts having children; maximise the quality (test of time) and the

@@ -138,6 +138,22 @@ assert gn < 1e-3 * g0, f"export refit did not converge: |g| {gn:.3g} vs start {g
 score = F.astype(np.float64) @ beta
 log(f"in-sample {roc_auc_score(y, score):.4f} (converged in {step+1} Newton steps)")
 
+# THE TARGET IS NAMED BY THE CORPUS DIRECTORY (operator 2026-09-03, the success target), never by
+# copy: the artifact carries what the number means, and the page reads it from there.
+_T = os.path.basename(D_.rstrip("/"))
+TARGET_META = {
+    "success": {"name": "artamatch-success-phasor", "target": "lasted_with_children",
+                "says": "whether a marriage like this lasted — no separation in the record — and had children",
+                "positive": "toward lasting with children"},
+    "success_strict": {"name": "artamatch-success-strict-phasor", "target": "lasted_with_children_strict",
+                "says": "whether a marriage like this lasted — no explicit end, no end date before a death, no remarriage — and had children",
+                "positive": "toward lasting with children"},
+    "prosper2": {"name": "artamatch-prosper2-phasor", "target": "lasted_with_two_or_more_children",
+                "says": "whether a marriage like this lasted and had two or more children",
+                "positive": "toward lasting with children"},
+}.get(_T, {"name": "artamatch-children-phasor", "target": "children_recorded",
+           "says": "whether the historical record lists children for a couple like this",
+           "positive": "toward children in the record"})
 SPAN = (1598, 2200)
 _LAB = os.path.expanduser("~/.artamatch-dev/labels.csv")
 _labels = dict(pd.read_csv(_LAB, dtype=str).fillna("").itertuples(index=False, name=None)) if os.path.exists(_LAB) else {}
@@ -149,12 +165,13 @@ rng = np.random.default_rng(20260901)
 vsel = rng.choice(np.where(inspan)[0], 200, replace=False)
 SOLO = {"natM", "natW", "aspM", "aspW", "midM", "midW"}
 model = {
-    "name": "artamatch-children-phasor",
+    "name": TARGET_META["name"],
     "edition": "V — what the record remembers",
     "date": "2026-09-01",
     "zodiac": "sidereal (Lahiri), noon UT, birth dates only",
-    "target": "children_recorded",
-    "target_says": "whether the historical record lists children for a couple like this",
+    "target": TARGET_META["target"],
+    "target_says": TARGET_META["says"],
+    "target_positive": TARGET_META["positive"],
     "pair_only": not bool({t["kind"] for t in terms} & SOLO),
     "bodies": bodies,
     "servable_span": list(SPAN),

@@ -144,15 +144,19 @@ _T = os.path.basename(D_.rstrip("/"))
 TARGET_META = {
     "success": {"name": "artamatch-success-phasor", "target": "lasted_with_children",
                 "says": "whether a marriage like this lasted — no separation in the record — and had children",
+                "question": "did a marriage like this last — no separation in the record — and have children",
                 "positive": "toward lasting with children"},
     "success_strict": {"name": "artamatch-success-strict-phasor", "target": "lasted_with_children_strict",
                 "says": "whether a marriage like this lasted — no explicit end, no end date before a death, no remarriage — and had children",
+                "question": "did a marriage like this last — no explicit end, no end date before a death, no remarriage — and have children",
                 "positive": "toward lasting with children"},
     "prosper2": {"name": "artamatch-prosper2-phasor", "target": "lasted_with_two_or_more_children",
                 "says": "whether a marriage like this lasted and had two or more children",
+                "question": "did a marriage like this last and have two or more children",
                 "positive": "toward lasting with children"},
 }.get(_T, {"name": "artamatch-children-phasor", "target": "children_recorded",
            "says": "whether the historical record lists children for a couple like this",
+           "question": "did the historical record list children for a couple like this",
            "positive": "toward children in the record"})
 SPAN = (1598, 2200)
 _LAB = os.path.expanduser("~/.artamatch-dev/labels.csv")
@@ -172,6 +176,7 @@ model = {
     "target": TARGET_META["target"],
     "target_says": TARGET_META["says"],
     "target_positive": TARGET_META["positive"],
+    "target_question": TARGET_META["question"],
     "pair_only": not bool({t["kind"] for t in terms} & SOLO),
     "bodies": bodies,
     "servable_span": list(SPAN),

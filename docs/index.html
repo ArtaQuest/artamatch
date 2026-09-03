@@ -199,8 +199,8 @@ it will read once there is a second date to compare yours with.</p>
 <details id="more" style="display:none"><summary>The full ranking, every date scanned</summary>
 <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;margin-top:8px"><table><tbody id="t100"></tbody></table></div></details>
 <p class="sub" id="honest" style="display:none;margin-top:16px">Tap any date to see what the sky
-remembers. <span id="honestnum">What this ranks on: whether the historical record lists children for couples like
-you, over <span class="mx-corpus">93,598</span> finished marriages — the same model as the reading below,
+remembers. <span id="honestnum">What this ranks on: <span class="mx-says">whether the historical record lists children for couples like
+you</span>, over <span class="mx-corpus">93,598</span> finished marriages — the same model as the reading below,
 nested cross-validated AUC <span class="mx-cv">0.68</span> against <span class="mx-solo">0.66</span> for one chart alone. About 89% of what it knows is when the
 two of you were born, so inside this window the differences are small and honest — they come from the
 fast bodies, and they are exactly as thin as the measurement says.</span></p>
@@ -218,7 +218,7 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
   <div class="panel" id="tdsec" style="margin-top:26px">
     <h3 style="margin:0 0 6px;font-size:1.15em">Someone in particular?</h3>
     <p class="sub" style="margin:0 0 14px">Two birthdays, two charts, read together. One narrow
-    question — <b>did the record list children for couples like you</b> — asked of
+    question — <b class="mx-says-q">did the record list children for couples like you</b> — asked of
     <span class="mx-corpus">93,598</span> finished marriages. Read what comes back with the note beneath it.</p>
     <div class="field"><label for="tdme">Your date of birth</label>
       <input type="date" id="tdme" min="1900-01-01" max="2026-12-31" value=""></div>
@@ -251,7 +251,7 @@ the birth date): <span id="mx-theta">his planet to hers, or two planets inside o
 <span id="mx-harm">k is a whole-number harmonic — 1 is the aspect itself, 12 the sign, 27 the
 nakshatra, 36 the decan.</span> Each phasor's cosine and sine carry their own weight, so its
 amplitude and phase are both fitted: a·cos + c·sin = A·cos(kθ−φ). There is nothing else in it — no buckets, no indicators, no inputs beyond the two
-birth dates. It answers one narrow question: <b>did the historical record list children for a
+birth dates. It answers one narrow question: <b class="mx-says-model">did the historical record list children for a
 couple like this</b>, over <span id="mx-n">…</span> finished marriages, every birth date a real
 recorded day.</p>
 <p class="sub">The model was chosen from <span id="mx-bank">4,225</span> candidate phasors by forward selection — each
@@ -345,6 +345,11 @@ async function boot(){
    F("mx-n",td.n_corpus.toLocaleString()); F("mx-cv",td.cv_auc_broad.toFixed(4));
    F("mx-nph",td.n_phasors); F("mx-hero-n",td.n_phasors); F("mx-nw",td.n_weights);
    F("mx-hero-corpus",td.n_corpus.toLocaleString());
+   // THE QUESTION COMES FROM THE ARTIFACT (operator 2026-09-03): a new target ships by swapping
+   // tilldeath.json; the page never carries the question as copy of its own.
+   if(td.target_says){document.querySelectorAll(".mx-says").forEach(e=>e.textContent=td.target_says);
+     document.querySelectorAll(".mx-says-q").forEach(e=>e.textContent=td.target_says.replace(/^whether /,"did ").replace(/ like this$/," like you"));
+     document.querySelectorAll(".mx-says-model").forEach(e=>e.textContent=td.target_says.replace(/^whether /,"did "));}
    if(td.bank){F("mx-bank",td.bank.n_candidates.toLocaleString());
      const fam=td.bank.families, hs=td.bank.harmonics;
      if(fam.length===1&&fam[0]==="XY") F("mx-theta","always his planet to hers — the ablations found the angles inside one chart worth nothing, so they are not searched");
@@ -513,7 +518,7 @@ async function tdRead(){
   const rows=r.drivers.map(d=>'<tr><td>'+tdPhrase(d.label)
     +'<br><span style="opacity:.55;font-size:.85em">'+d.label+'</span></td><td style="text-align:right">'
     +(d.contribution>=0?"+":"")+d.contribution.toFixed(3)+'</td><td>'
-    +(d.contribution>=0?"toward children in the record":"away from it")+'</td></tr>').join("");
+    +(d.contribution>=0?(td.target_positive||"toward children in the record"):"away from it")+'</td></tr>').join("");
   // A STABLE MARKER FOR THE GATE. The browser check used to poll for a phrase in this copy, so
   // rewording the reading broke the gate and looked like a broken page. Prose is not an interface;
   // this attribute is.
@@ -655,7 +660,7 @@ function renderTop(all,P){
       <span class="mbar"><i style="width:${(100*r[4]).toFixed(0)}%"></i></span><span class="mp">${(100*r[4]).toFixed(1)}%</span></div>
       <div class="chips">${chips}</div>
       <div class="why">The percentage is where this pairing sits among <b>${td.n_corpus.toLocaleString()} recorded marriages</b>, on
-      one narrow question — did the record list children for couples like this. The chips are the angles
+      one narrow question — ${td.target_says||"did the record list children for couples like this"}. The chips are the angles
       that moved it most. Most of the score is simply when you were both born; the reading further down
       the page takes that apart honestly.</div></div>`;
   }).join("");

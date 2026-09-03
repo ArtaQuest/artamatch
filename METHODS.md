@@ -993,6 +993,35 @@ Sun to Saturn alone reaches 0.5472 pooled and 0.5447 within era with two phasors
 pseudo-bodies with any positive within-era delta gives 0.5516 and 0.5411. Every pseudo-body ever
 written down, added to the fast bodies, moves nothing.
 
+**A model per body, then an ensemble over them (operator 2026-09-03).** Every body gets its own
+phasor model, fitted only on the cross-chart angles it takes part in, and a ridge logistic stacks
+the scores. The stack is nested — base models are fitted on inner folds of the training rows to
+make the meta's features and refitted on all training rows to score the untouched outer fold — so
+no base learner ever scores its own fitted rows. Over the thirteen real bodies the stack reaches
+0.6854 pooled and 0.5597 within era, a little *below* the joint search's 0.6914 / 0.5666:
+partitioning the angles by owning body costs something, and the single joint fit stays the model.
+
+Its by-product is the most direct statement of the whole finding — what each body earns **alone**:
+
+| body | its own model, out-of-fold | orbital period |
+|---|---|---|
+| Neptune | **0.6877** | 165 y |
+| Pluto | 0.6756 | 248 y |
+| Uranus | 0.6306 | 84 y |
+| Chiron | 0.5874 | 50 y |
+| Saturn | 0.5541 | 29 y |
+| lunar node | 0.5274 | 18.6 y |
+| Mars | 0.5154 | 1.9 y |
+| Jupiter | 0.5031 | 11.9 y |
+| Lilith | 0.5023 | 8.9 y |
+| Mercury | 0.5020 | 88 d |
+| Moon | 0.5011 | 27 d |
+| Venus | **0.4998** | 225 d |
+
+The order is almost exactly the ordering by orbital period. Neptune alone is worth nearly the whole
+model; **Venus, the planet the tradition assigns to love, is at chance to four decimals**, and so
+are the Moon, Mercury, Jupiter and Lilith. A body's value here is its slowness, not its meaning.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

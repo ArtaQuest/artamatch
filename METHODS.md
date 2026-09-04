@@ -612,7 +612,58 @@ hard:
 Charts are sidereal (Lahiri) at 12:00 UT from Kerykeion, **verified against pyswisseph to 0.0103°
 worst case** over 1,014 positions — every planet inside 0.0012°, the Sun inside 0.00002°.
 
-### The model
+### The model, in its finalized form (2026-09-04)
+
+Each phasor's two weights are one **strength** and one **ideal separation**, because
+a·cos(kθ) + c·sin(kθ) is identically A·cos(kθ − φ) with A = √(a²+c²) and φ = atan2(c, a) — checked
+to 4×10⁻¹⁶ over four thousand angles. So the model is a list of aspects, each naming the angle at
+which it contributes most:
+
+    score = bias + Σ over aspects of  A · cos(k·θ − φ)
+    p     = sigmoid(score)
+
+θ is the separation of his body from hers, k the harmonic, φ/k the ideal separation. The artifact
+publishes A and φ beside the fitted weights, the publish gate refuses any file where the two
+representations disagree (proven by nudging one phase 7° — exit 1), and a reading shows each
+aspect's ideal separation next to the couple's actual one.
+
+| aspect | ideal separation | strength |
+|---|---|---|
+| his uranus - her uranus | 325.3° | 0.663 |
+| his neptune - her pluto | 194.3° | 0.625 |
+| his pluto - her neptune | 134.0° | 0.488 |
+| his neptune - her neptune | 306.3° | 0.350 |
+| his saturn - her saturn | 323.2° | 0.238 |
+| his neptune - her uranus | 215.8° | 0.178 |
+| his pluto - her uranus | 114.4° | 0.151 |
+| his uranus - her neptune | 90.7° | 0.133 |
+| his chiron - her chiron | 286.9° | 0.130 |
+| his pluto - her pluto | 20.5° | 0.124 |
+| his node - her node | 330.0° | 0.084 |
+| his neptune - her chiron | 59.9° | 0.071 |
+| his pluto - her chiron | 354.0° | 0.049 |
+| his uranus - her chiron | 96.1° | 0.042 |
+| his saturn - her chiron | 72.4° | 0.041 |
+| his chiron - her pluto | 58.8° | 0.040 |
+| his saturn - her uranus | 128.2° | 0.039 |
+| his neptune - her node | 158.7° | 0.036 |
+| his uranus - her saturn | 257.9° | 0.034 |
+| his jupiter - her node | 189.6° | 0.033 |
+| his pluto - her mars | 201.4° | 0.033 |
+| his node - her uranus | 133.5° | 0.032 |
+| his moon - her node | 211.8° | 0.029 |
+| his node - her neptune | 134.2° | 0.028 |
+| his mercury - her pluto | 19.2° | 0.027 |
+| his jupiter - her mars | 254.8° | 0.026 |
+| his lilith - her saturn | 14.9° | 0.026 |
+| his lilith - her jupiter | 246.7° | 0.026 |
+| his pluto - her mercury | 332.4° | 0.024 |
+| his neptune - her sun | 119.5° | 0.022 |
+| his venus - her saturn | 244.6° | 0.019 |
+| his sun - her neptune | 244.5° | 0.017 |
+| his uranus - her pluto | 283.2° | 0.016 |
+
+The equivalent weight form, which is what the scorer replays:
 
     score = bias + Σ over phasors of  a·cos(k·θ) + c·sin(k·θ)
     p     = sigmoid(score)

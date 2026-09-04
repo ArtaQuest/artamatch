@@ -480,9 +480,9 @@ const checks = [
     && Number(phone.btnOpacity) >= 0.9), `cursor ${phone.btnCursor}, opacity ${phone.btnOpacity}`],
   ["no console or runtime errors", errors.length === 0],
   ["the till-death reading renders when a reader presses its button", !!tdOut.shown, tdOut.why || ""],
-  ["and it names one row per term in the shipped model",
+  ["and it names one row per aspect, with its separation in degrees",
    !!tdOut.shown && tdOut.rows > 0 && tdOut.rows === tdOut.expect && !!tdOut.names,
-   `${tdOut.rows} rows for ${tdOut.expect} terms`],
+   `${tdOut.rows} rows for ${tdOut.expect} aspects · name+degrees ${tdOut.names}`],
 ];
 console.log("");
 let ok = true;

@@ -129,15 +129,19 @@ def score(model, man_iso, woman_iso, man_name="", woman_name=""):
     A = chart(man_iso, bodies, name=man_name)
     B = chart(woman_iso, bodies, female=True, name=woman_name)
     s = model["bias"]
-    parts = []
+    parts = {}
     for t in model["terms"]:
         # THE HARMONIC. k=1 is the aspect itself; k=12 is the 30-degree sign structure, k=27 the
         # nakshatra, k=36 the decan. Absent means 1, so a model written before harmonics existed
         # still scores identically through this path.
-        a = _angle(t, bodies, A, B) * t.get("k", 1)
+        th = _angle(t, bodies, A, B)
+        a = th * t.get("k", 1)
         c = t["w"] * (math.cos(a) if t["trig"] == "cos" else math.sin(a))
         s += c
-        parts.append((abs(c), t["label"], c))
+        key = (t["kind"], t["i"], t["j"], t.get("k", 1))
+        d = parts.setdefault(key, {"label": t["label"].replace("cos(", "").replace("sin(", "").rstrip(")"),
+                                   "contribution": 0.0, "separation_deg": math.degrees(th) % 360.0})
+        d["contribution"] += c
     q = model["quantiles"]
     lo, hi = 0, len(q) - 1
     while lo < hi:
@@ -146,7 +150,6 @@ def score(model, man_iso, woman_iso, man_name="", woman_name=""):
             lo = mid + 1
         else:
             hi = mid
-    parts.sort(reverse=True)
     # the same score placed among couples whose husband was born in the same decade — the
     # calendar-fair percentile. Absent when the model file predates it or the decade is thin.
     era = None
@@ -160,7 +163,26 @@ def score(model, man_iso, woman_iso, man_name="", woman_name=""):
         era = elo / float(len(qd) - 1)
     return {"score": s, "p": 1.0 / (1.0 + math.exp(-s)),
             "percentile": lo / float(len(q) - 1), "percentile_era": era,
-            "drivers": [{"label": lb, "contribution": c} for _, lb, c in parts[:8]]}
+            "drivers": _drivers(model, parts)}
+
+
+def _drivers(model, parts):
+    """one entry per PHASOR — its contribution, the couple's actual separation, and the ideal
+    separation the fit gives that aspect (a*cos + c*sin == A*cos(theta - phi), so phi/k is the angle
+    at which the aspect contributes most). A phasor's cosine and sine are one aspect: reported apart
+    they printed the same name twice with two different numbers."""
+    ph = {(f["kind"], f["i"], f["j"], f["k"]): f for f in (model.get("phasors") or [])}
+    out = []
+    for key, d in sorted(parts.items(), key=lambda kv: -abs(kv[1]["contribution"])):
+        f = ph.get(key)
+        if f:
+            d["ideal_separation_deg"] = f["ideal_separation_deg"]
+            d["strength"] = f["amp"]
+            d["off_by_deg"] = round(abs((d["separation_deg"] - f["ideal_separation_deg"] + 180.0) % 360.0 - 180.0), 1)
+        d["separation_deg"] = round(d["separation_deg"], 1)
+        d["contribution"] = round(d["contribution"], 6)
+        out.append(d)
+    return out[:8]
 
 
 def verify(model, tol=1e-6):

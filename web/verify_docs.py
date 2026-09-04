@@ -30,6 +30,7 @@ import ast
 import glob
 import importlib
 import json
+import math
 import os
 import re
 import sys
@@ -316,6 +317,26 @@ def check_tilldeath():
         check("the model does not claim a lift it has not got",
               m["cv_auc_broad"] >= bar - 0.02,
               f"CV {m['cv_auc_broad']:.4f} vs one chart {bar:.4f} -> {m['cv_auc_broad']-bar:+.4f}")
+
+    # THE PHASE FORM MUST MATCH THE WEIGHTS. a*cos + c*sin == A*cos(theta - phi) is an identity, so
+    # a published amplitude or ideal separation that disagrees with the fitted weights is an edit
+    # that got out of step — and it is the form the page shows a reader.
+    if m.get("phasors"):
+        pw = {}
+        for t in m["terms"]:
+            pw.setdefault((t["kind"], t["i"], t["j"], t["k"]), {})[t["trig"]] = t["w"]
+        bad, missing = [], [k for k in pw if k not in {(f["kind"], f["i"], f["j"], f["k"]) for f in m["phasors"]}]
+        for f in m["phasors"]:
+            w = pw.get((f["kind"], f["i"], f["j"], f["k"]))
+            if not w: bad.append((f["label"], "no weights")); continue
+            a, c = w.get("cos", 0.0), w.get("sin", 0.0)
+            amp = math.hypot(a, c); phi = math.degrees(math.atan2(c, a)) % 360.0
+            ideal = phi / f["k"] % (360.0 / f["k"])
+            if abs(amp - f["amp"]) > 1e-6 or abs((ideal - f["ideal_separation_deg"] + 180) % 360 - 180) > 1e-3:
+                bad.append((f["label"], f"amp {f['amp']} vs {amp:.6f}, ideal {f['ideal_separation_deg']} vs {ideal:.3f}"))
+        check("every published ideal separation matches the fitted weights", not bad and not missing,
+              f"{len(bad)} disagree, {len(missing)} unpublished" if (bad or missing)
+              else f"{len(m['phasors'])} phasors, amplitude and phase exact from a and c")
 
     check("the till-death quantiles are sorted",
           all(m["quantiles"][i] <= m["quantiles"][i + 1] for i in range(len(m["quantiles"]) - 1)))

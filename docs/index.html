@@ -544,7 +544,11 @@ async function tdRead(){
     +Math.round(100*(1-(td.decomposition.fast_5_bodies_sun_to_mars-0.5)/(td.decomposition.all_13_bodies-0.5)))
     +'% of what this reading knows is which decades you were both born in.</p>'
     +'<details style="margin-top:4px"><summary class="sub">the numbers behind it</summary>'
-    +'<table style="width:100%;border-collapse:collapse;margin-top:8px"><tbody>'+rows+'</tbody></table>'
+    +'<table style="width:100%;border-collapse:collapse;margin-top:8px">'
+    +'<thead><tr><th style="text-align:left;font-weight:500;opacity:.55;font-size:.82em">aspect</th>'
+    +'<th style="text-align:right;font-weight:500;opacity:.55;font-size:.82em">yours / ideal</th>'
+    +'<th style="text-align:right;font-weight:500;opacity:.55;font-size:.82em">moves it</th>'
+    +'<th></th></tr></thead><tbody>'+rows+'</tbody></table>'
     +'<p class="sub" style="margin:10px 0 0">'
     +(td.terms.length>2*r.drivers.length?'The '+r.drivers.length+' strongest movers of ':'All of ')
     +td.n_phasors+' phasors — '+td.n_weights+' numbers, each a cosine or a sine of a named angle '

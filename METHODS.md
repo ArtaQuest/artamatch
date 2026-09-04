@@ -1085,6 +1085,16 @@ nested procedure: **0.6917 pooled, 0.5649 within era**, against 0.6914 / 0.5666.
 ten-thousandths on the pooled number and a loss within era. The out-of-plane and out-of-longitude
 dimensions of a birth chart carry no more about this label than its longitudes do.
 
+The chosen terms say why, and they are the last word on the whole search. Twenty-five of the
+model's thirty-five phasors use one of the new dimensions, and the two strongest are *his Neptune's
+latitude against her Pluto* and *his Pluto's declination against hers*. Neptune's latitude is driven
+by the same 165-year orbit as its longitude, so its cross-chart difference carries exactly the same
+statement about the century; the new dimensions of a slow body are still slow, and of a fast body
+still noise. The terms the procedure was forced to include for the fast bodies — *his Moon's speed
+decile against her Sun*, *his Moon against her Sun's distance decile* — are the same tell as in
+every earlier round: pairings no astrologer would write, chosen because the rule demands a fast
+body and the data offers nothing better.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

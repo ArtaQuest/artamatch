@@ -1022,6 +1022,51 @@ The order is almost exactly the ordering by orbital period. Neptune alone is wor
 model; **Venus, the planet the tradition assigns to love, is at chance to four decimals**, and so
 are the Moon, Mercury, Jupiter and Lilith. A body's value here is its slowness, not its meaning.
 
+**The last two architectures, and the end of the search (2026-09-04).** Two ways of using all 400
+bodies at once, both nested, both against the standing 0.6914 / 0.5666:
+
+| architecture | candidates | nested | within era |
+|---|---|---|---|
+| the shipped joint search, 13 real bodies | 169 | **0.6914** | **0.5666** |
+| one greedy over every body, real and pseudo | 160,000 | 0.6884 | 0.5583 |
+| a phasor model per body, 400 stacked (10 folds) | 400 × 799 | 0.6887 | 0.5612 |
+| the same stack over the 13 real bodies only | 13 × 25 | 0.6854 | 0.5597 |
+
+Neither beats the thirteen-body joint fit. Opening the greedy to 160,000 candidate angles costs
+0.003 — selection noise, exactly as the earlier wideners did — and stacking four hundred per-body
+models costs about as much, because a weak learner per body cannot recover what a joint fit gets
+from choosing across bodies. The 160,000-candidate search needed the candidate table made lazy
+(400 bodies would hold 64 GB of angle columns; the eager version killed a Kaggle kernel before its
+first log line) and its columns are rebuilt per scoring chunk — restricted to the thirteen real
+bodies it reproduces the shipped fitter to the fourth decimal.
+
+**The per-body leaderboard is the finding.** Each body's own model, over only the angles that body
+takes part in, ranked by out-of-fold AUC:
+
+| rank | body | own model |
+|---|---|---|
+| 1 | Neptune | 0.6868 |
+| 2 | Neptune's tropical term | 0.6862 |
+| 3 | Neptune's decan | 0.6858 |
+| 4 | Cupido (Uranian, 262-year orbit) | 0.6839 |
+| 5 | the Long Count *may* (256 years) | 0.6835 |
+| … | | |
+| — | Pluto | 0.6756 |
+| — | Uranus | 0.6306 |
+| — | Chiron | 0.5874 |
+| — | Saturn | 0.5541 |
+| — | the lunar node | 0.5274 |
+| — | Mars | 0.5154 |
+| — | Jupiter | 0.5031 |
+| — | Lilith | 0.5023 |
+| — | Mercury | 0.5020 |
+| — | the Moon | 0.5011 |
+| — | Venus | 0.4998 |
+
+Neptune alone reaches what the whole thirty-three-phasor model reaches. The next four entries are
+Neptune wearing other clothes and two other clocks of the same period. Below Uranus the list falls
+to chance, and Venus — the planet the tradition would nominate first for love — scores 0.4998.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

@@ -1067,6 +1067,24 @@ Neptune alone reaches what the whole thirty-three-phasor model reaches. The next
 Neptune wearing other clothes and two other clocks of the same period. Below Uranus the list falls
 to chance, and Venus — the planet the tradition would nominate first for love — scores 0.4998.
 
+**The ensemble across architectures, and the last dimension (2026-09-04).** Two closing tests.
+
+A **rank average** over every architecture measured — the lean joint fit, the full 4,225-phasor
+bank, second-order interactions, the four-hundred-body stack, validated selection — reaches 0.6927
+pooled and 0.5665 within era: the pooled figure is the interactions model's known calendar gain and
+the within-era figure does not move. A rank average fits no parameters, so unlike a stacked
+meta-model it cannot leak; the reason it gains nothing is in the correlation matrix, where every
+architecture agrees with every other at **0.95 to 0.99**. There is no diversity left to average.
+
+Then the one thing the whole programme had never tested: **every feature so far is a function of
+ecliptic longitude**. A chart holds more, and the tradition uses it — declination ("parallels" are
+declination aspects), ecliptic latitude, retrogradation, speed (station versus fast) and distance
+(perigee versus apogee). Fifty-five such pseudo-bodies over eleven bodies, entering as continuous
+circles under a fixed linear map or as states, added to the lean bank and run through the same
+nested procedure: **0.6917 pooled, 0.5649 within era**, against 0.6914 / 0.5666. Three
+ten-thousandths on the pooled number and a loss within era. The out-of-plane and out-of-longitude
+dimensions of a birth chart carry no more about this label than its longitudes do.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

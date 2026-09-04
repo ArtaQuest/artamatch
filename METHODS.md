@@ -1290,3 +1290,227 @@ structured ones (0.68, not 0.86) and gains the most from reading both charts (+0
   baselines rose ~0.05 when unfinished marriages were excluded, which made the corpus cleaner *and*
   easier.
 - **What it cannot do.** It reads two birth dates. It knows nothing about the people.
+## Round: which four major aspects (2026-09-03)
+
+Question: of the Ptolemaic five (conjunction 0°, sextile 60°, square 90°, trine 120°,
+opposition 180°), which combination of four maximises 10-fold CV AUC? Smooth per-pair form,
+169 pairs per aspect, convex analytic ridge, standing group folds. `/tmp/combo4.py`.
+
+Answer: **all five are the same model.** Pooled 0.6893 / within-era 0.5624 for every
+combination; spread 0.00001 at lambda 100 and at lambda 10; out-of-fold scores of two
+different 4-sets rank-correlate 1.000000.
+
+The reason is algebraic, and it also explains the earlier greedy result (3rd and 4th aspect
+adding -0.00002): `cos(theta - A) = cos A * cos theta + sin A * sin theta`, so every aspect
+column lies in the 2-D span of {cos theta_p, sin theta_p}. Any two distinct angles span it;
+further angles add columns of rank zero. Ladder at lambda 100: 1 aspect (trine) 0.6867,
+2 (conj+trine) 0.6894, 3 0.6894, 4 0.6893, 5 0.6893.
+
+Consequence for the polarity question. In the four-aspect form the per-aspect weights are
+NOT identifiable — four columns of rank two, so the ridge returns the minimum-norm split and
+a change of lambda moves all four numbers without changing the fit. Therefore no traditional
+positive/negative reading may be taken from a fitted four-aspect model, and the sum-|w|
+ordering it produces (trine 1.096, opposition 0.917, sextile 0.743, square 0.672) is a
+ridge-allocation artifact, not evidence. The per-aspect univariate/joint tests recorded above
+remain the only well-posed way to ask; their verdicts are unchanged.
+
+Final fitted four-aspect model (sextile/square/trine/opposition, all data, lambda 100,
+bias +0.397138, 676 weights; `~/.artamatch-dev/final4_weights.json` holds the top 40 pairs).
+Identifiable strength is concentrated in the slowest bodies exactly as everywhere else:
+neptune-neptune 0.505 (ideal sep 282.7°), pluto-pluto 0.497 (105.5°), uranus-uranus 0.159,
+against sun-venus 0.037 and mercury-sun 0.030. Neptune and Pluto move ~2°/year, so their
+mutual angle is a birth-year clock; 0.6893 pooled vs 0.5624 within era is the same ~89%
+calendar share the programme reports throughout.
+
+### The optimal TWO aspects (2026-09-04)
+
+Since two aspects saturate the fit, which two? `/tmp/pair2.py`, `/tmp/pair2b.py`.
+
+All ten pairs of the Ptolemaic five, 169 pairs per aspect, analytic ridge, 10 group folds:
+
+| pair | angles | separation | rank | AUC (lambda 100) | within-era |
+|---|---|---|---|---|---|
+| conj+trine | 0, 120 | 120 | 2 | 0.68937 | 0.5624 |
+| conj+sextile | 0, 60 | 60 | 2 | 0.68937 | 0.5624 |
+| sextile+oppo | 60, 180 | 120 | 2 | 0.68937 | 0.5624 |
+| square+trine | 90, 120 | 30 | 2 | 0.68936 | 0.5624 |
+| trine+oppo | 120, 180 | 60 | 2 | 0.68936 | 0.5624 |
+| sextile+trine | 60, 120 | 60 | 2 | 0.68933 | 0.5624 |
+| conj+square | 0, 90 | 90 | 2 | 0.68935 | 0.5624 |
+| square+oppo | 90, 180 | 90 | 2 | 0.68935 | 0.5624 |
+| sextile+square | 60, 90 | 30 | 2 | 0.68931 | 0.5623 |
+| **conj+opposition** | 0, 180 | 180 | **1** | **0.66558** | **0.5433** |
+
+Two findings.
+
+1. **One pair is forbidden and it is a doctrinally natural one.** Conjunction and opposition are
+   antipodal, and `cos(theta - 180) = -cos theta`, so that pair has rank 1: it is a single aspect
+   wearing two names, and it costs 0.024 AUC. Any other pair of distinct majors spans the full
+   per-pair plane; the spread across those nine is 0.00006.
+
+2. **The fifth-decimal ordering is ridge bookkeeping, not information.** A separation sweep
+   (base 0, second angle 10..170) rises monotonically as the two angles CLOSE, peaking at ~10
+   separation (0.68980) rather than at the orthogonal 90 (0.68935). Two checks kill the
+   astrological reading. Pushed further toward degeneracy the "edge" reverses and collapses —
+   sep 5 -> 0.68921, sep 2 -> 0.68436, sep 1 -> 0.67604 — which is a conditioning curve, not a
+   dose-response. And tuning lambda on the ORTHOGONAL pair recovers it: {0, 90} at lambda 3000
+   reaches 0.68957 / within-era 0.5629, within 0.0002 of the best near-pair. A near-collinear
+   basis simply shrinks less in the poorly determined direction; it is a slacker ridge with a
+   nicer number.
+
+**Choice of record: conjunction 0 + square 90.** Basis condition number 1.0 (the canonical
+cos/sin plane), so lambda means what it says, the two weights per pair are identifiable as one
+amplitude and one phase, and no fifth-decimal advantage is being bought with numerical slack.
+0.68957 / 0.5629 at its own best lambda. The shipped 33-phasor model already IS this model,
+written in the equivalent (amplitude, ideal separation) parameterisation.
+
+### The best TRIPLET (2026-09-04)
+
+`/tmp/trip3.py`, `/tmp/trip3b.py`, `/tmp/trip3c.py`.
+
+All ten triples of the Ptolemaic five, harmonic 1, lambda 100: 0.68932 to 0.68936, spread
+0.00004, **every one of rank 2** — in a 2-D plane a third direction cannot exist, so the third
+term is a rank-zero column by construction.
+
+Two things were tested before accepting that.
+
+**1. The only escape from redundancy is a different harmonic, and it is closed.** `cos(k t - A)`
+with k > 1 is genuinely outside the span of {cos t, sin t}. Adding a full second-harmonic plane
+to the k=1 plane does not help, it *hurts*, and so does every harmonic up to 6:
+k=2 -0.00090, k=3 -0.00255, k=4 -0.00257, k=5 -0.00266, k=6 -0.00240 (within-era falls too,
+0.5624 -> 0.5568..0.5588). A third term carrying real new information makes the model worse.
+
+**2. The triple ordering is penalty geometry, and a duplicate-angle control proves it.** The
+three best triples all contain conjunction AND opposition — the collinear pair — i.e. they spend
+a term on a duplicate of a direction they already have. Duplicating a column halves the ridge's
+effective grip on that direction. The control `{0, 0, 90}` — literally the same angle twice,
+zero new information — reaches 0.68961, indistinguishable from the `{0, 90, 180}` triple
+(0.68961) and ABOVE the plain pair `{0, 90}` (0.68957). Conversely `{60, 90, 120}`, the only
+triple with three genuinely distinct directions and no duplicate, ranks LAST.
+
+Each contender at its own best lambda (grid 10..30000):
+
+| model | best AUC | lambda | within-era |
+|---|---|---|---|
+| pair `{0, 120}` | **0.68976** | 3000 | 0.5629 |
+| **triple `{0, 120, 180}` = conj+trine+oppo** | **0.68974** | 3000 | 0.5630 |
+| triple `{0, 90, 180}` = conj+square+oppo | 0.68961 | 3000 | 0.5629 |
+| control `{0, 0, 90}` duplicated angle | 0.68961 | 3000 | 0.5629 |
+| triple `{0, 60, 180}` = conj+sextile+oppo | 0.68959 | 3000 | 0.5631 |
+| pair `{0, 90}` orthogonal | 0.68957 | 3000 | 0.5629 |
+| quad `{0, 60, 90, 120}` | 0.68955 | 3000 | 0.5627 |
+| triple `{60, 90, 120}` no duplicate | 0.68941 | 1000 | 0.5625 |
+
+Paired component bootstrap, 600 draws resampling the marriage-graph component (the CV unit),
+against the pair `{0, 120}`:
+
+| comparison | delta | 95% CI |
+|---|---|---|
+| best triple `{0,120,180}` | -0.00002 | [-0.00008, +0.00005] |
+| control `{0,0,90}` | -0.00015 | [-0.00024, -0.00006] |
+| honest triple `{60,90,120}` | -0.00056 | [-0.00074, -0.00040] |
+
+**Verdict.** The best triplet is **conjunction 0 + trine 120 + opposition 180**, 0.68974 /
+within-era 0.5630. It is statistically indistinguishable from its own two-term subset
+`{0, 120}` (CI straddles zero) because the opposition term IS the conjunction term negated; and
+the only triplet whose three terms point in three different directions is significantly worse
+than the pair. No triplet beats a lambda-tuned pair anywhere in the family. Report the triplet
+if a third aspect is wanted for doctrinal completeness, not because it adds anything.
+
+### CORRECTION to the span argument (2026-09-04, adversarial audit)
+
+The claim recorded above — "every aspect column lies in the 2-D span of {cos t, sin t}; any two
+distinct angles span it; further angles add columns of rank zero" — was offered as the reason all
+five 4-sets are "the same model". It conflates the MODEL CLASS with the ESTIMATOR, and as an
+explanation of the fitted numbers it is wrong. Two parts, stated separately now.
+
+(a) THE MODEL CLASS. The span statement is true and is what kills the information question: no set
+of k >= 2 aspects can express anything the two-angle set cannot, which is why the ladder saturates
+at two and why the conjunction+opposition pair — ANTIPODAL, hence rank 1 — collapses to 0.6656.
+(Note the original sentence was also loose here: "any two DISTINCT angles span it" is false, since
+0 and 180 are distinct and span a line.) The non-identifiability conclusion follows from this part
+and stands.
+
+(b) THE ESTIMATOR. Ridge is NOT span-invariant, so the span does not determine the fit at lambda
+100. With the per-pair block X_p = Z_p A^T, Z_p = [cos t_p, sin t_p] and A the k x 2 matrix of rows
+(cos A_k, sin A_k), the ridge problem min ||y - sum Z_p A^T w_p||^2 + lambda sum ||w_p||^2 is EXACTLY
+the fit of beta_p = A^T w_p under the anisotropic penalty lambda beta_p^T (A^T A)^{-1} beta_p, where
+
+    A^T A = (k/2) I + (1/2) R_mat,     R = sum_k exp(2 i A_k)
+
+(per-column standardisation replaces A^T A by A^T D^{-2} A). Two aspect sets fit identically iff
+they share that matrix — for the majors, iff they share (k, R). Eigenvalues: {0,90} and {90,180}
+give (1,1), cond 1; the five |R|=1 pairs give (0.5,1.5), cond 3; {60,90} and {90,120} give
+(0.134,1.866), cond 13.9; every 4-set gives (1.5,2.5), cond 1.667; all five majors give 2.5*I,
+cond 1. The ten-pair table groups by (|R|, arg R), NOT by rank: {0,90} and {90,180} both give
+exactly 0.68935; {0,60} and {60,180} both exactly 0.68937; {60,120} gives 0.68933 and {60,90}
+0.68931 at identical rank and span. Drop-conjunction and drop-opposition 4-sets share R exactly
+and are bit-identical (max |pred diff| 0.0e+00); the other 4-sets differ.
+
+So: the five 4-sets are the same model CLASS and their fits are INDISTINGUISHABLE (spread 0.00001,
+shared anisotropy cond 1.667) — not literally the same fit, and "rank-correlate 1.000000" was
+agreement to six decimals, not identity. The separation sweep is the falsification of the span-only
+reading, not a footnote: sep 1 deg 0.67604, sep 2 deg 0.68436, sep 10 deg 0.68980, all rank 2, all
+the same span, a 0.014 range = 1400x the spread cited as confirmation. The mechanism is the penalty
+coefficients lambda/(1 +/- |cos delta|), which is also exactly what finding 2 of that round said.
+
+This correction STRENGTHENS the shipped five-aspect model rather than weakening it: the five
+Ptolemaic majors are the balanced set, R = 0, so A^T A = (5/2) I and the induced penalty is
+lambda * (2/5) * I — isotropic. Writing the model in these five privileges no direction of the sky,
+which is a property of THIS set and not of aspect bases in general.
+
+## SHIPPED: six families, five fixed aspects (2026-09-04)
+
+Operator: fix the aspect set to conjunction, sextile, square, trine and opposition and max that
+model out; then, the same day, put men-only and women-only NATAL aspects back in the bank with
+three sum families. Both done; this is what is live.
+
+**The model.**
+
+    score = bias + SUM over selected angles of SUM over A in {0, 60, 90, 120, 180} of w[angle,A] * cos(angle - A)
+    p     = sigmoid(score)
+
+The five angles are FIXED — written down before any data was read, not fitted, not searched. What
+is fitted is the weight each aspect carries on each angle, and those five weights are not five free
+numbers: w[angle,A] = (2/5) * amp * cos(A - ideal_separation), so SUM_A w[angle,A] cos(theta - A) =
+amp * cos(theta - ideal_separation) exactly (verified: worst |diff| 8.3e-16 over 3,601 angles x 28
+selected angles). Hence conjunction and opposition are always exact negatives.
+
+**Why these five and not any five.** Ridge is not invariant to the aspect basis (see the CORRECTION
+above): a set A induces the penalty lambda * beta' (A'A)^{-1} beta with A'A = (k/2)I + (1/2)R_mat,
+R = sum exp(2iA). For the five Ptolemaic majors R = 0 exactly, so A'A = (5/2)I and the penalty is
+(2/5)*lambda*I — ISOTROPIC. Writing the model in these five privileges no direction of the sky.
+That is a property of this set, not of aspect bases in general.
+
+**The bank (676 candidates).** xdiff his[i]-her[j] 169 · aspM his[i]-his[j] 78 · aspW her[i]-her[j]
+78 · xsum his[i]+her[j] 169 · midM his[i]+his[j] 91 · midW her[i]+her[j] 91. The pair-only rule of
+2026-09-01 is lifted; `pair_only` is false and the solo families are declared in the artifact.
+
+**Estimator.** Ridge-penalised logistic, damped Newton to gradient collapse (1e-7 relative). Log-loss
+plus a positive ridge is strictly convex, so the minimum is unique and independent of the start;
+each step is one Cholesky solve, halved until the penalised loss falls. A single weighted
+least-squares solve — one Newton step — costs 0.0005 AUC (0.69088 vs 0.69155 on the XY-only bank),
+which is exactly the gap that had this edition sitting under the previous one.
+
+**Nested 10-fold** — which angles enter, how many, and lambda all re-run inside every training fold,
+fast bodies forced in inside every fold:
+
+| bank | pooled AUC | within-era |
+|---|---|---|
+| XY only, 5 columns standardised separately | 0.69085 | 0.56688 |
+| XY only, identifiable isotropic basis | 0.69088 | 0.56728 |
+| XY only, logistic Newton | 0.69155 | 0.56772 |
+| **six families, logistic Newton (SHIPPED)** | **0.69279** | **0.56720** |
+
+K = 28, lambda = 300, both interior on grids taken to K = 60 and lambda = 1000. Every family earns
+selection across the ten folds: xdiff 151, aspW 36, xsum 35, aspM 28, midW 27, midM 15. Shipped
+model: 14 xdiff, 4 aspW, 4 xsum, 3 aspM, 2 midM, 1 midW.
+
+**The honest reading, and it is the important part.** The six families bought +0.00124 POOLED and
+-0.00052 WITHIN ERA. They bought more calendar, not more astrology. Decomposition on the same bank:
+all 13 bodies 0.6928, Sun..Saturn only 0.5453, Sun..Mars only 0.4965 (chance). Two parameters of the
+husband's birth year alone reach 0.6747 of the model's 0.6928. And inside a single husband-birth
+decade, couple-weighted, the model reaches 0.5672 where two plain numbers of age gap reach 0.5663 —
+handing the age gap to the model moves it to 0.5669, i.e. it adds nothing, because the model already
+contains it: the angle between two slow planets IS the gap between the two birth dates, wrapped
+around a circle. One partner's complete chart alone is chance within era (0.4950 his, 0.5133 hers).

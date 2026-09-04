@@ -159,7 +159,7 @@ footer{color:var(--mut);font-size:12.5px;text-align:center;margin-top:70px;borde
 <div class="eyebrow"><span class="ebfull">ArtaMatch · sidereal (Lahiri) · every rule reads both charts</span><span class="ebshort">ArtaMatch · every rule reads both charts</span></div>
 <h1>Written in the <span class="g">stars</span>?</h1>
 <p class="sub"><span id="mx-hero-corpus">93,598</span> marriages from the historical record, both charts read together — one model,
-<span id="mx-hero-n">32</span> tuned waves, every weight published. Enter your birthday: it reads your chart, then looks for
+<span id="mx-hero-n">32</span> angles, each read at the five classical aspects, every weight published. Enter your birthday: it reads your chart, then looks for
 the birth dates that fit yours.</p>
 </header>
 
@@ -244,18 +244,36 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
 <p class="sub">One formula scores everything on this page — the date ranking and the two-chart
 reading alike:</p>
 <pre style="overflow-x:auto;padding:16px 18px;margin:18px 0;border-left:2px solid var(--gold,#E8B923);
-  background:rgba(12,30,50,.45);border-radius:0 14px 14px 0;font-size:13.5px;line-height:1.75">score = bias + Σ over <span id="mx-nph">32</span> phasors of  a·cos(k·θ) + c·sin(k·θ)
+  background:rgba(12,30,50,.45);border-radius:0 14px 14px 0;font-size:13.5px;line-height:1.75">score = bias + Σ over <span id="mx-nph">32</span> angles of  Σ over the five aspects A of  w[angle,A] · cos(θ − A)
+
+        A ∈ { conjunction 0° · sextile 60° · square 90° · trine 120° · opposition 180° }
+
 p     = sigmoid(score)</pre>
 <p class="sub">θ is always the angle between two sidereal longitudes (Lahiri, cast at 12:00 UT on
 the birth date): <span id="mx-theta">his planet to hers, or two planets inside one chart</span>.
-<span id="mx-harm">k is a whole-number harmonic — 1 is the aspect itself, 12 the sign, 27 the
-nakshatra, 36 the decan.</span> Each phasor's cosine and sine carry their own weight, so its
-amplitude and phase are both fitted: a·cos + c·sin = A·cos(kθ−φ). There is nothing else in it — no buckets, no indicators, no inputs beyond the two
+The five aspect angles are <b>fixed</b> — the five Ptolemaic majors, written down before any
+data was read: not fitted, not chosen by a search, the same five on every pair. What is fitted is
+how much weight each aspect carries on each pair. Those five weights are <i>not</i> five free
+numbers, and this is the part worth checking by hand: they are a function of the pair's two, by
+w[angle,A] = (2/5)·amp·cos(A − ideal separation), which sums back to
+Σ<sub>A</sub> w[angle,A]·cos(θ−A) = amp·cos(θ − ideal separation) exactly. Two consequences you can
+verify in the published weights: conjunction and opposition always come out exact negatives of each
+other, because cos(θ−180°) = −cosθ; and because Σ<sub>A</sub> e<sup>2iA</sup> = 0 for these five
+angles — they are a <i>balanced</i> set — the penalty the basis puts on a pair is isotropic, so
+choosing to write the model in these five aspects privileges no direction of the sky.
+There is nothing else in it — no buckets, no indicators, no inputs beyond the two
 birth dates. It answers one narrow question: <b class="mx-says-model">did the historical record list children for a
 couple like this</b>, over <span id="mx-n">…</span> finished marriages, every birth date a real
 recorded day.</p>
-<p class="sub">The model was chosen from <span id="mx-bank">4,225</span> candidate phasors by forward selection — each
-candidate scored by the exact score test, against what the model already holds, so a phasor that
+<p class="sub">The angles come from six families, and <b>four of the six need only one of the two
+charts</b>: his planet to hers (his[i] − her[j]) and their sum (his[i] + her[j]) read the couple, while
+his own natal aspects (his[i] − his[j]), hers (her[i] − her[j]) and each partner&rsquo;s own midpoint sums
+(his[i] + his[j], her[i] + her[j]) read one person alone. An earlier edition searched only the
+couple angles; that restriction was lifted on 4 September 2026, and every family earned its way in.
+Which ones the model actually kept is in <span class="mx-fam">…</span>.</p>
+<div id="mx-asp" style="margin:18px 0"></div>
+<p class="sub">The model was chosen from <span id="mx-bank">4,225</span> candidate angles by forward selection — each
+candidate scored by the exact score test, against what the model already holds, so an angle that
 merely restates an earlier one cannot get in — and its number is earned the hard way: the selection, the size of the model and the inclusion of every
 fast body were re-run from scratch inside each of ten training folds, so the quoted AUC never saw
 its own test couples. <b>Nested ten-fold AUC <span id="mx-cv">…</span></b> · one partner's complete
@@ -266,8 +284,14 @@ chart alone <span id="mx-solo">…</span> · the bare gap between the two birthd
 printed inside every reading:</b> drop the slow bodies — Uranus, Neptune, Pluto, the node, Chiron,
 Lilith, whose positions say <i>when</i> a person was born — and the model falls from
 <span id="mx-a13">…</span> to <span id="mx-f7">…</span>; drop Jupiter and Saturn too and, at
-<span id="mx-f5">…</span>, it knows less than the age gap alone. About <span id="mx-pct">…</span>%
-of what this model reads is which decades the two of you were born in.</p>
+<span id="mx-f5">…</span>, it is at chance. About <span id="mx-pct">…</span>%
+of what this model reads is which decades the two of you were born in. Two parameters of the
+husband's birth year alone reach <span id="mx-by">…</span>. And inside a single birth decade,
+where the calendar cannot help it, the model reaches <span id="mx-we">…</span> against
+<span id="mx-wegap">…</span> for two plain numbers of age gap — handing the age gap to the model on
+top changes it to <span id="mx-weboth">…</span>, which is to say it adds nothing, because the model
+already contains it: the angle between two slow planets <i>is</i> the gap between the two birth
+dates, wrapped around a circle.</p>
 <p class="sub">All <span id="mx-nw">65</span> weights: <a href="tilldeath.json">tilldeath.json</a> · every measurement and
 ablation: <a href="https://github.com/ArtaQuest/artamatch/blob/feature/artamatch/METHODS.md">METHODS</a>
 · the older pair-scoring laboratory, kept as documented history: <a href="lab.html">the lab</a></p>
@@ -360,6 +384,46 @@ async function boot(){
    document.querySelectorAll(".mx-solo").forEach(e=>e.textContent=Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));
    F("mx-solo",Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));
    F("mx-gap",td.baseline_age_gap.toFixed(4));
+   if(td.baseline_birth_year_only!=null) F("mx-by",td.baseline_birth_year_only.toFixed(4));
+   if(td.families&&td.families.selected){const sel=td.families.selected;
+     const nice={xdiff:"his planet to hers",xsum:"his + her",aspM:"his own aspects",
+                 aspW:"her own aspects",midM:"his own sums",midW:"her own sums"};
+     const txt=Object.keys(sel).sort((a,b)=>sel[b]-sel[a])
+       .map(k=>sel[k]+" "+(nice[k]||k)).join(" · ");
+     document.querySelectorAll(".mx-fam").forEach(e=>e.textContent=txt);}
+   if(td.within_era){F("mx-we",td.within_era.model.toFixed(4));
+     F("mx-wegap",td.within_era.age_gap.toFixed(4));
+     F("mx-weboth",td.within_era.model_plus_age_gap.toFixed(4));}
+   // THE FIVE ASPECTS, straight out of the artifact. Each row's weight is the total this aspect
+   // carries across the shipped pairs; it is DETERMINED by those pairs' amplitudes and ideal
+   // separations, not a free parameter, so it is a description of the fitted model and not a
+   // measurement of that aspect's importance in the tradition.
+   if(td.aspects&&document.getElementById("mx-asp")){
+     const A=td.aspects, W=A.weights, tot=A.names.map(nm=>W.reduce((s,e)=>s+Math.abs(e.w[nm]),0));
+     const pos=A.names.map(nm=>W.filter(e=>e.w[nm]>0).length);
+     const big=Math.max.apply(null,tot);
+     let rows="";
+     A.names.forEach((nm,ix)=>{rows+='<tr><td style="padding:5px 10px 5px 0;text-transform:capitalize">'+nm
+       +'</td><td style="padding:5px 10px;text-align:right;font-variant-numeric:tabular-nums">'+A.degrees[ix]
+       +'°</td><td style="padding:5px 10px;width:42%"><span style="display:inline-block;height:7px;border-radius:4px;'
+       +'background:var(--gold,#E8B923);width:'+Math.max(2,Math.round(100*tot[ix]/big))+'%"></span></td>'
+       +'<td style="padding:5px 0 5px 10px;text-align:right;font-variant-numeric:tabular-nums">'+tot[ix].toFixed(3)
+       +'</td><td style="padding:5px 0 5px 14px;text-align:right;font-variant-numeric:tabular-nums;opacity:.75">'
+       +pos[ix]+'/'+W.length+'</td></tr>';});
+     document.getElementById("mx-asp").innerHTML=
+       '<table style="width:100%;border-collapse:collapse;font-size:13.5px"><thead><tr style="opacity:.7">'
+       +'<th style="text-align:left;padding:0 10px 6px 0;font-weight:500">aspect</th>'
+       +'<th style="text-align:right;padding:0 10px 6px;font-weight:500">angle</th>'
+       +'<th style="padding:0 10px 6px"></th>'
+       +'<th style="text-align:right;padding:0 0 6px 10px;font-weight:500">total weight</th>'
+       +'<th style="text-align:right;padding:0 0 6px 14px;font-weight:500">pulling up</th></tr></thead>'
+       +'<tbody>'+rows+'</tbody></table>'
+       +'<p class="sub" style="margin:8px 0 0;font-size:12.5px;opacity:.8">The five angles are fixed; '
+       +'only '+td.n_weights+' numbers are fitted ('+td.n_pairs+' pairs × 2, plus the bias), and the '
+       +td.n_aspect_weights+' aspect weights follow from them. So read this as a description of the '
+       +'fitted model, not as a ranking of the aspects: a row&rsquo;s total is set by where the pairs&rsquo; '
+       +'ideal separations happen to fall. All '+td.n_aspect_weights+' of them, pair by pair, are in '
+       +'<a href="tilldeath.json">tilldeath.json</a>.</p>';}
    F("mx-a13",dc.all_13_bodies.toFixed(3)); F("mx-f7",dc.fast_7_bodies_sun_to_saturn.toFixed(3));
    F("mx-f5",dc.fast_5_bodies_sun_to_mars.toFixed(3));
    F("mx-pct",Math.round(100*(1-(dc.fast_5_bodies_sun_to_mars-0.5)/(dc.all_13_bodies-0.5))));}
@@ -547,8 +611,9 @@ async function tdRead(){
     +'<table style="width:100%;border-collapse:collapse;margin-top:8px"><tbody>'+rows+'</tbody></table>'
     +'<p class="sub" style="margin:10px 0 0">'
     +(td.terms.length>2*r.drivers.length?'The '+r.drivers.length+' strongest movers of ':'All of ')
-    +td.n_phasors+' phasors — '+td.n_weights+' numbers, each a cosine or a sine of a named angle '
-    +'between or within your two charts, every planet from the Sun to Pluto carrying weight. '
+    +td.n_pairs+' body pairs — '+td.n_weights+' fitted numbers, each pair read at all five '
+    +'classical aspects of a named angle '
+    +'between your two charts, every planet from the Sun to Pluto carrying weight. '
     +'Nested ten-fold cross-validated AUC '+td.cv_auc_broad.toFixed(4)+' — the choice of terms was '
     +'re-made inside every fold, so that number never saw its own test couples. One chart alone '
     +'reaches '+Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4)+' on the same folds, '

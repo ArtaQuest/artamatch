@@ -181,9 +181,9 @@ for d in np.unique(dec):
 log(f"STACK NESTED AUC: {auc:.4f} · WITHIN-ERA {num/den:.4f}   ({NB} per-body models stacked)")
 order = np.argsort(-base_auc.mean(0))
 log("top base learners: " + " · ".join(f"{bod[i]} {base_auc.mean(0)[i]:.4f}" for i in order[:12]))
-np.save(f"{D_}/oof_stack.npy", oof)
+np.save(f"{D_}/oof_stack_{NB}b_k{KB}_o{NOUTER}.npy", oof)
 json.dump({"nested_auc": round(auc, 4), "within_era_auc": round(num / den, 4), "n_bodies": NB,
            "kb": KB, "nouter": NOUTER, "ninner": NINNER, "meta_rl": META_RL,
            "base_auc_mean": {bod[i]: round(float(base_auc.mean(0)[i]), 4) for i in order}},
-          open(f"{D_}/report_stack.json", "w"), indent=1)
-log("saved report_stack.json")
+          open(f"{D_}/report_stack_{NB}b_k{KB}_o{NOUTER}.json", "w"), indent=1)
+log(f"saved report_stack_{NB}b_k{KB}_o{NOUTER}.json")

@@ -1095,6 +1095,39 @@ decile against her Sun*, *his Moon against her Sun's distance decile* — are th
 every earlier round: pairings no astrologer would write, chosen because the rule demands a fast
 body and the data offers nothing better.
 
+**THE WITHIN-PERSON TEST (2026-09-04) — the strongest instrument in this corpus.** Every result
+above compares different couples, so era, documentation depth and personal fecundity are always in
+play. There is a design that removes all three: **the same person, married twice, with different
+outcomes.** His own chart is then fixed — his era, his fecundity, his record's depth cancel exactly
+— and only the partner varies. The corpus holds 11,328 people in two or more marriages, of whom
+**4,614 have discordant outcomes**, giving 5,834 paired comparisons. The fold structure makes this
+legitimate: folds are cut by connected component of the marriage graph, so both of a person's
+marriages sit in the same fold and neither was seen by the model that scored them.
+
+Read as "does the model rank the marriage that had children above the one that did not":
+
+| design | pairs (people) | the model | the era rule | difference (95% CI) |
+|---|---|---|---|---|
+| within person, partner's era free | 5,834 (4,614) | **0.6021** | 0.5755 | **+0.027 [+0.010, +0.044]** |
+| + partner's decade matched | 3,406 (2,959) | 0.5530 | 0.5327 | +0.020 [−0.000, +0.043] |
+| + partner within 5 years | 1,977 (1,777) | 0.5374 | 0.5192 | +0.018 [−0.011, +0.046] |
+| + partner within 2 years | 912 (873) | 0.5499 | 0.5170 | +0.033 [−0.007, +0.075] |
+| fast bodies only, decade matched | 3,406 (2,959) | 0.5338 | 0.5327 | +0.001 [−0.023, +0.023] |
+
+Nulls are permutations that flip a whole person's pairs together, and intervals are bootstraps over
+people, because someone married three times contributes several correlated comparisons. Against
+chance the model wins everywhere (p ≤ 0.001). Against **the era rule** — "the earlier-born partner
+is the one who had children", which is itself worth 0.52 to 0.58 — the model's edge is significant
+only when the partner's era is left free, exactly where the model is allowed to read that era more
+finely than the crude rule does. With the partner's decade matched the edge is +0.020 with an
+interval that touches zero; with the partner's birth year matched to two years it is +0.033 with an
+interval that spans zero; and the fast bodies, on their own, add **+0.001**.
+
+So the cleanest instrument available says what every other measurement said, and says it about the
+partner rather than the person: what the model reads is when the partner was born. What would settle
+the residual +0.02 to +0.03 is not a better model but roughly four times as many discordant
+same-era remarriages — a data problem, not a search problem.
+
 **The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
 their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
 The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the

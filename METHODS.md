@@ -1836,3 +1836,56 @@ On the 100k-couple children target the artifact is negligible, as expected for a
 fold base rates 48.0–49.9%: seven bodies K=6 0.54912 pooled → 0.54934 fold-averaged; twelve angles
 (live edition VIII) 0.69115 → 0.69125; six families K=28 0.69279 → 0.69288. The published headline
 numbers stand. The re-scored 10k label table follows.
+
+## Round: the complex phasor model on happy-or-not (2026-09-05)
+
+Operator's model, on the 10k judged marriages (9,606 with charts; label = `happy`, 1,964 = 20.4%):
+
+    p = sigmoid( |z|^2 + beta0 ),  z = b + SUM_i [ d_i e^{j(thM_i - thW_i)} + s_i e^{j(thM_i + thW_i)} + m_i e^{j thM_i} + w_i e^{j thW_i} ]
+
+29 complex parameters over the seven classical bodies; beta0 is a real offset added because |z|^2 >= 0
+would pin p >= 1/2. `~/.artamatch-dev/complex_fit.py`, `complex_fit2.py`.
+
+**Structure.** |z|^2 = theta^H (x x^H) theta. Every base phasor has unit modulus, so the squared terms are
+a constant and the model is 2 Re SUM_{k<l} theta_k^* theta_l e^{j(phi_l - phi_k)}: a first-order phasor on
+each of the 28 base angles with complex weight b^* theta_k (b's phase is the reference every other
+phase is read against) plus 378 second-order composite angles with weights TIED by rank one.
+The global phase is a gauge — |z|^2 is invariant to theta -> e^{j a} theta — so only phases relative
+to b are identified; arg b = 0 was fixed by choice.
+
+**Analytic route and its failure.** Lift to the Hermitian Theta = theta theta^H: the loss is convex in
+the 406 complex c_kl = theta_k^* theta_l, solved by Newton (ridge 300 by inner CV), then theta recovered
+as sqrt(lambda_1) v_1 after completing the diagonal to the nearest rank-one PSD matrix. The fitted Theta
+is only **8.6% rank one** (top eigenvalue share), so the extracted theta is a poor point: logloss 0.5093
+and train AUC 0.489, where gradient descent on the true rank-one model reaches 0.5017 (unregularised)
+/ 0.5045 (ridge 0.03). **The GD check fails the analytic solution.** At ridge 0.03, Adam from five
+random starts converges to ONE solution (implied lifted weights correlate +1.000 across starts), so the
+regularised rank-one optimum is well defined — it is simply not the lifted-and-projected point. The
+lifted convex model itself trains to 0.668 and cross-validates at 0.504: overfit.
+
+**Cross-validation (ten folds by component, fold-averaged AUC):** rank-one model 0.4966–0.5039 across
+ridges 1e-3..1 (best 0.5039 at 0.03, chance); first-order phasors only, linear, 0.5283; birth year alone,
+two parameters, 0.5763 — this label is partly a clock. The |z|^2 form cannot switch its second-order
+terms off (they are theta_k^* theta_l whenever the first-order terms b^* theta_k are non-zero), and with
+|b| = 0.0755 the first-order terms hold only 13.1% of the total strength; the model is dominated by
+composite angles it cannot learn from 1,964 positives.
+
+**The learned variables at ridge 0.03** (train AUC 0.5515, logloss 0.5045, beta0 −1.4428, |b| 0.0755;
+a term 2|b||theta_k| cos(angle_k + arg theta_k − arg b) peaks at angle_k = −arg theta_k):
+
+| param | modulus | phase | peaks at |
+|---|---|---|---|
+| d_sun / d_moon / d_mercury | 0.033 / 0.019 / 0.031 | +105° / +110° / +157° | 105° (trine +15) / 110° (trine +10) / 157° (opposition +23) |
+| d_venus / d_mars | 0.040 / 0.037 | +128° / −98° | 128° (trine +8) / 98° (square +8) |
+| d_jupiter / d_saturn | 0.073 / 0.063 | −5° / −22° | 5° (conjunction) / 22° (conjunction +22) |
+| s_sun / s_venus / s_saturn | 0.046 / 0.075 / 0.047 | +77° / +64° / +96° | midpoint Leo 21 / Leo 28 / Leo 12 (or Aquarius) |
+| s_moon / s_mars / s_mercury / s_jupiter | 0.026 / 0.018 / 0.042 / 0.039 | +164 / +155 / +100 / −105 | Cancer 8 / Cancer 13 / Leo 10 / Taurus 23 (or opposite) |
+| m_sun / m_mercury / m_venus / m_moon | 0.037 / 0.029 / 0.027 / 0.026 | −114 / −111 / −109 / −123 | his Sun Cancer 24 / Mercury Cancer 21 / Venus Cancer 19 / Moon Leo 3 |
+| m_jupiter / m_mars / m_saturn | 0.035 / 0.011 / 0.052 | −154 / −158 / +17 | his Jupiter Virgo 4 / Mars Virgo 8 / Saturn Pisces 13 |
+| w_sun / w_mercury / w_venus | 0.027 / 0.026 / 0.030 | +40 / +33 / +35 | her Sun Aquarius 20 / Mercury Aquarius 27 / Venus Aquarius 25 |
+| w_moon / w_mars / w_jupiter / w_saturn | 0.032 / 0.038 / 0.036 / 0.052 | +115 / +178 / +125 / −2 | her Moon Sagittarius 5 / Mars Libra 2 / Jupiter Scorpio 25 / Saturn Aries 2 |
+
+Top of the 406 weights: (his Venus + her Venus) midpoint Leo 28 / Aquarius 28; (his Jupiter − her
+Jupiter) conjunction; their composite; (his Saturn − her Saturn) conjunction +22; his and her Saturn
+placements. The full top-50 is in `~/.artamatch-dev/complex_fit2.json`. Because the cross-validated AUC
+is 0.504, these phases describe the training sample, not a rule.

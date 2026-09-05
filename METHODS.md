@@ -1832,3 +1832,7 @@ shift is diluted by the score spread) and large only for a null model. On the 10
 target (base rate 48.8%, fold rates nearly equal) the effect is negligible — see the line recorded
 beneath. Rule from here: report fold-averaged AUC for any label under ~10% positives, and always
 run the intercept-only null through the same evaluation.
+On the 100k-couple children target the artifact is negligible, as expected for a balanced label with
+fold base rates 48.0–49.9%: seven bodies K=6 0.54912 pooled → 0.54934 fold-averaged; twelve angles
+(live edition VIII) 0.69115 → 0.69125; six families K=28 0.69279 → 0.69288. The published headline
+numbers stand. The re-scored 10k label table follows.

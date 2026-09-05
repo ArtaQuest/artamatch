@@ -1933,3 +1933,14 @@ Shares of total |theta|: synastry aspects 32.1%, midpoints 27.8%, his placements
 
 Saturn–Saturn (his − her) near conjunction at the top is the age-gap clock again: on this label
 birth year alone scores 0.576, above the model's 0.528, so the strongest "aspect" is the calendar.
+
+### The complex model without Saturn (2026-09-05)
+
+sigmoid(Re(z + beta0)), six bodies (Sun, Moon, Mercury, Venus, Mars, Jupiter), 24 complex weights,
+PyTorch SGD, ridge 0.003 by ten-fold CV. **CV AUC 0.5078** against 0.5282 with Saturn and 0.5763 for
+birth year alone. Five seeds agree to 3.5e-3. Removing Saturn removes the out-of-sample signal: the
+with-Saturn model's edge was d_saturn near conjunction, i.e. the age-gap clock. What remains at the top
+without it — Venus midpoint Leo 23 / Aquarius 23 (0.161), Sun midpoint Taurus 3 / Scorpio 3 (0.102),
+her Sun Libra 27 (0.093), Venus–Venus opposition +15 (0.083), Sun–Sun conjunction +14 (0.082) — is
+fitted in-sample (train AUC 0.552) and does not carry to held-out couples. Shares: synastry 30.9%,
+midpoints 32.8%, his placements 19.3%, hers 17.0%. `~/.artamatch-dev/complex_real6.py`.

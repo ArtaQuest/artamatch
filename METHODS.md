@@ -1514,3 +1514,70 @@ decade, couple-weighted, the model reaches 0.5672 where two plain numbers of age
 handing the age gap to the model moves it to 0.5669, i.e. it adds nothing, because the model already
 contains it: the angle between two slow planets IS the gap between the two birth dates, wrapped
 around a circle. One partner's complete chart alone is chance within era (0.4950 his, 0.5133 hers).
+
+## SHIPPED: twelve angles, five aspects (2026-09-05)
+
+Operator: forget harmonics, stick with the five aspects, max out AUC and make the model as
+explainable as possible. Both halves of that were measured rather than guessed.
+
+**Maxing out, and where it stopped.** Two things were tried on top of the 0.69279 six-family model.
+(1) The generalized harmonic form — every angle carried k=1..12, harmonics doing the aspect grids
+(k=2 the conjunction/opposition axis, 3 the trine grid, 4 the square grid, 12 the sign division) over
+a bank that also held the ABSOLUTE angles his[i] and her[i]. Nested: **0.69329 / 0.56811**, the best
+figure the programme has produced, and the absolute angles earned 22 selections across the ten folds.
+Free harmonic use was k=1 109, k=2 31, k=3 15, then almost nothing. (2) With harmonics ruled out, the
+absolute families were kept and the five-aspect form re-run over 702 angles: **0.69255**, slightly
+BELOW the 676-angle model. That is consistent: an absolute angle's value lay in harmonics 2-3, which
+is the sign structure, so with k=1 only it contributes selection noise. The five-aspect maximum is
+therefore the six-family bank, and it was already deployed.
+
+**Self-sums removed.** midM/midW with i=j is a doubled longitude, not a midpoint, and it read as
+nonsense in a reading ("his pluto + his pluto"). Dropping them takes the bank 676 -> 650 and costs
+nothing measurable (0.69269 vs 0.69279 at K=28).
+
+**The size curve, and the rule used to choose.** lambda by inner CV at each K, selection re-run in
+every fold:
+
+| angles | fitted numbers | aspect weights | pooled AUC | within-era |
+|---|---|---|---|---|
+| 8 | 17 | 40 | 0.67992 | 0.55710 |
+| 10 | 21 | 50 | 0.68633 | **0.56788** |
+| **12** | **25** | **60** | **0.69115** | **0.56733** |
+| 16 | 33 | 80 | 0.69115 | 0.56664 |
+| 20 | 41 | 100 | 0.69168 | 0.56582 |
+| 24 | 49 | 120 | 0.69234 | 0.56689 |
+| 28 | 57 | 140 | 0.69269 | 0.56689 |
+| 33 | 67 | 165 | 0.69254 | 0.56618 |
+
+Pooled AUC climbs with K; the within-era figure PEAKS at 10-12 angles and then flattens. So the
+angles past the twelfth buy pooled AUC only — they buy more birth calendar. The rule applied was
+**the smallest model that loses nothing on the honest metric**: K=12 is 0.0016 below K=28 pooled and
+0.0004 ABOVE it within era, at less than half the size. A paired component bootstrap (400 draws over
+marriage-graph components) puts K=12 at -0.00155 [-0.00216, -0.00098] against K=28 pooled — a real
+but small pooled loss, deliberately taken.
+
+**The shipped model, in full.** 12 angles, 25 fitted numbers, 60 aspect weights, bias +0.94337 style
+constant, nested 0.69115 / within-era 0.56733. Each angle is two numbers — a strength and a preferred
+separation — and its five aspect weights follow by w[A] = (2/5)*amp*cos(A - ideal). Strength shares:
+his uranus - her uranus 31.0% (likes 42 deg, a wide sextile) · her neptune - her pluto 27.1% (177 deg,
+near-exact opposition) · his neptune - his pluto 18.5% (95 deg, square) · his neptune - her uranus 8.9%
+(132 deg, trine) · his saturn - her saturn 6.7% · her neptune + her pluto 3.6%, and the remaining six
+required fast-body pairs 2.9% between them. The top five angles hold 92%. All seven forced fast-body
+angles together hold 11% — which is the plainest available answer to whether fast-planet synastry
+carries anything: barely.
+
+**Decomposition at K=12.** all 13 bodies 0.69114, Sun..Saturn only 0.54855, Sun..Mars only 0.49551
+(chance). The husband's birth year in two parameters reaches 0.67469. Within a single birth decade the
+model reaches 0.56733 against 0.56625 for two numbers of age gap, and handing the age gap to the model
+moves it to 0.56705 — it adds nothing, because the model already contains it.
+
+**Rejected on the way, and why it is recorded.** A "weight per sign" model was built to operator
+specification (aspect polarity fixed by tradition, 12 sign weights per angle, 12xangles+1). Fixing the
+polarities collapses the aspect sum to ONE sinusoid of fixed phase — 2.130*cos(theta - 20.1 deg) for
+the benefic-conjunction polarity — so the per-angle preferred separation is given up. Nested it reached
+0.69051 / 0.56177, and 61% of its absolute weight sat on cells holding under 500 couples, including
++12.92 learned from THREE couples. A support floor (a sector needs 500 training couples to get its own
+number, computed inside every fold) cost 0.00035 pooled and GAINED 0.0006 within era, confirming those
+cells were noise. It is superseded by this edition, which reaches the same information with 25 numbers
+instead of 241 — and, per the harmonic identity, a weight per sign is contained in the general form
+anyway (harmonics 1..5 of an absolute angle plus a constant span the 12-sector basis exactly).

@@ -271,6 +271,8 @@ his own natal aspects (his[i] − his[j]), hers (her[i] − her[j]) and each par
 (his[i] + his[j], her[i] + her[j]) read one person alone. An earlier edition searched only the
 couple angles; that restriction was lifted on 4 September 2026, and every family earned its way in.
 Which ones the model actually kept is in <span class="mx-fam">…</span>.</p>
+<div id="mx-angles" style="margin:18px 0"></div>
+<p class="sub" id="mx-size" style="margin:14px 0 0"></p>
 <div id="mx-asp" style="margin:18px 0"></div>
 <p class="sub">The model was chosen from <span id="mx-bank">4,225</span> candidate angles by forward selection — each
 candidate scored by the exact score test, against what the model already holds, so an angle that
@@ -385,6 +387,40 @@ async function boot(){
    F("mx-solo",Math.max(td.baseline_him_only,td.baseline_her_only).toFixed(4));
    F("mx-gap",td.baseline_age_gap.toFixed(4));
    if(td.baseline_birth_year_only!=null) F("mx-by",td.baseline_birth_year_only.toFixed(4));
+   // EVERY ANGLE, and what it prefers. This is the whole model: two numbers per angle.
+   if(td.aspects&&td.aspects.weights&&document.getElementById("mx-angles")){
+     const W=td.aspects.weights.slice().sort((a,b)=>b.amp-a.amp);
+     const tot=W.reduce((s,e)=>s+e.amp,0), big=W[0].amp;
+     const FAM={xdiff:"his to hers",xsum:"his + hers",aspM:"his own",aspW:"her own",
+                midM:"his own sum",midW:"her own sum",natM:"his",natW:"hers"};
+     let rows="";
+     W.forEach(e=>{
+       const off=Math.round(e.off_by_deg||0);
+       const likes=Math.round(e.undirected_ideal_deg)+"° — "+e.nearest_aspect+(off>=1?" +"+off+"°":" exactly");
+       rows+='<tr><td style="padding:5px 10px 5px 0">'+e.angle+'</td>'
+        +'<td style="padding:5px 10px;opacity:.7">'+(FAM[e.family]||e.family)+'</td>'
+        +'<td style="padding:5px 10px;width:26%"><span style="display:inline-block;height:7px;border-radius:4px;'
+        +'background:var(--gold,#E8B923);width:'+Math.max(2,Math.round(100*e.amp/big))+'%"></span></td>'
+        +'<td style="padding:5px 0 5px 10px;text-align:right;font-variant-numeric:tabular-nums">'
+        +(100*e.amp/tot).toFixed(1)+'%</td>'
+        +'<td style="padding:5px 0 5px 14px;text-align:right;font-variant-numeric:tabular-nums">'+likes+'</td>'
+        +'<td style="padding:5px 0 5px 12px;opacity:.6">'+(e.forced_fast_body?"required":"")+'</td></tr>';});
+     document.getElementById("mx-angles").innerHTML=
+       '<p class="sub" style="margin:0 0 8px"><b>Every angle in the model, and the separation it prefers.</b> '
+       +'Each one is two fitted numbers — how much it matters, and where it likes to sit. Nothing else.</p>'
+       +'<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">'
+       +'<thead><tr style="opacity:.7"><th style="text-align:left;padding:0 10px 6px 0;font-weight:500">angle</th>'
+       +'<th style="text-align:left;padding:0 10px 6px;font-weight:500">family</th>'
+       +'<th style="padding:0 10px 6px"></th>'
+       +'<th style="text-align:right;padding:0 0 6px 10px;font-weight:500">share</th>'
+       +'<th style="text-align:right;padding:0 0 6px 14px;font-weight:500">likes to sit at</th>'
+       +'<th style="padding:0 0 6px 12px"></th></tr></thead><tbody>'+rows+'</tbody></table></div>';}
+   if(td.size_choice&&document.getElementById("mx-size")){
+     const c=td.size_choice.curve||{}, ks=Object.keys(c).map(Number).sort((a,b)=>a-b);
+     const bits=ks.map(k=>k+" → "+c[k][0].toFixed(4)+" / "+c[k][1].toFixed(4)).join(" · ");
+     document.getElementById("mx-size").innerHTML=
+       '<b>Why twelve angles and not more.</b> '+td.size_choice.rule
+       +' <span style="opacity:.75">Angles → pooled AUC / within-era AUC: '+bits+'.</span>';}
    if(td.families&&td.families.selected){const sel=td.families.selected;
      const nice={xdiff:"his planet to hers",xsum:"his + her",aspM:"his own aspects",
                  aspW:"her own aspects",midM:"his own sums",midW:"her own sums"};

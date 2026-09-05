@@ -1770,3 +1770,5 @@ angle is chosen more than 7/30 — the signal, such as it is, lives entirely in 
 
 One angle alone (his Moon + her Venus, K=1, three seeds): see the line recorded beneath this entry.
 Honest ceiling for the couple-only form: about 0.53, interval [0.50, 0.56].
+One angle alone, his Moon + her Venus (K=1, three seeds): mean 0.5145 (0.506–0.523), within-era
+0.513. So the second angle is worth about +0.012 and stays; below two angles the model is at chance.

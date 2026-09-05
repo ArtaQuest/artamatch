@@ -1581,3 +1581,45 @@ number, computed inside every fold) cost 0.00035 pooled and GAINED 0.0006 within
 cells were noise. It is superseded by this edition, which reaches the same information with 25 numbers
 instead of 241 — and, per the harmonic identity, a weight per sign is contained in the general form
 anyway (harmonics 1..5 of an absolute angle plus a constant span the 12-sector basis exactly).
+
+### Brainstorm round: Sun sign, traditional aspects, naming the calendar (2026-09-05)
+
+Operator: improve accuracy and explainability; make the Sun sign matter; make aspects make sense.
+Three candidates, each measured on the live model's folds (12 live angles fixed, lambda by inner CV,
+logistic Newton). `~/.artamatch-dev/brainstorm.py`.
+
+| arm | pooled AUC | within-era |
+|---|---|---|
+| live model (12 angles, smooth) | 0.69118 | 0.56747 |
+| his sidereal Sun sign alone (12 cells) | 0.49882 | 0.49919 |
+| her sidereal Sun sign alone (12) | 0.49268 | 0.49223 |
+| 12 x 12 Sun-sign compatibility grid alone (144) | 0.49790 | 0.49745 |
+| 4 x 4 element grid alone (16) | 0.49717 | 0.49758 |
+| live + his sign + her sign | 0.69092 (-0.0003) | 0.56677 (-0.0007) |
+| live + 12x12 grid | 0.68993 (-0.0013) | 0.56465 (-0.0028) |
+| orb-limited aspects alone (5 per angle, 8 deg half-width, 60) | 0.62321 | 0.51077 |
+| live + orb aspects | 0.69068 (-0.0005) | 0.56522 (-0.0023) |
+| his decade + her decade, no astrology (102) | 0.67545 | 0.50802 |
+| decades + live | 0.69310 (+0.0019) | 0.56481 (-0.0027) |
+| decades + live + orb + grid | 0.69132 (+0.0001) | 0.56146 (-0.0060) |
+
+**The Sun sign is at chance every way it can be asked** — his alone, hers alone, the 144-cell
+compatibility grid (~700 couples per cell), the element grid — pooled AND within era, all within
+0.007 of 0.5. Added to the live model it costs. This is not a resolution or support problem; the
+grid is the best-supported object in the whole programme.
+
+**Traditional orb-limited aspects add nothing over the smooth wave.** Alone they reach 0.623 pooled
+(what leaks through the kernel positions is the calendar) and 0.511 within era; on top of the live
+model they cost 0.0005 / 0.0023. The reason the live model's "likes to sit at 42 deg = sextile +18"
+reads badly is structural and worth stating: with k = 1 an angle has ONE preferred bearing, and a
+bearing is not an aspect. A real aspect is a symmetric pattern with an orb, which is a harmonic
+object (k=3 the trine grid, k=4 the square grid, k=6 the sextile grid) or a bump — and the sinusoid
+rule of 2026-09-01 admits only the former.
+
+**Naming the calendar** (decade terms carrying the era) raises pooled AUC by 0.0019 and lowers
+within-era by 0.0027: the astrology terms, relieved of the calendar, lose within-era discrimination,
+which says part of their within-era signal was calendar interaction. Decade indicators are also not
+sinusoids, so they cannot ship as terms under the standing rule.
+
+Net: none of the three improves the model on the honest metric. What can be done without cost is
+presentational — stop calling a bearing an aspect, and state the Sun-sign null on the page.

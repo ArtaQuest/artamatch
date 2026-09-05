@@ -1944,3 +1944,30 @@ without it — Venus midpoint Leo 23 / Aquarius 23 (0.161), Sun midpoint Taurus 
 her Sun Libra 27 (0.093), Venus–Venus opposition +15 (0.083), Sun–Sun conjunction +14 (0.082) — is
 fitted in-sample (train AUC 0.552) and does not carry to held-out couples. Shares: synastry 30.9%,
 midpoints 32.8%, his placements 19.3%, hers 17.0%. `~/.artamatch-dev/complex_real6.py`.
+
+## Round: the six-body happy-or-not competition (2026-09-05)
+
+Operator: brainstorm and competitively max out the ten-fold AUC of the six bodies (Sun, Moon, Mercury,
+Venus, Mars, Jupiter — no Saturn) on the `happy` label; the only input is the six-body phases; data and
+training may be improved; no baselines, no within-era. Shared ground `~/.artamatch-dev/six_data.py`
+(9,606 judged couples, component folds, fold-averaged AUC as THE metric — pooled AUC is biased on this
+label, see the correction above). Twelve independent approaches, then adversarial re-runs and a nested
+blend. The session limit interrupted the run: eight entries reported, four never ran (kernel, training
+tricks, confidence weighting, wildcard), and the verify/blend phases are pending resume.
+
+| entry | fold-averaged AUC | what it is | status |
+|---|---|---|---|
+| data_extra | 0.5234 | judged-only ridge on cos/sin of the 144 angles; the 4,110-couple extra pool was REJECTED by inner CV in every fold at every weight | reported, unverified |
+| complex_allpairs | 0.5228 | complex linear model over all body pairs, harmonics 1–3 (k=1 alone: 0.4999) | reported, unverified |
+| harmonics | 0.5226 | 144-angle bank × harmonics with an inner-CV order cutoff (picked k≤3 in all folds); per order alone k=2 0.519 is the only repeatable trace, k≥4 noise | reported, re-run reproduced bit-for-bit by its author |
+| gbm | 0.5178 | HistGradientBoosting on raw degrees (trees on sin/cos 0.502); tuning inside folds, variant chosen on the outer number | reported, unverified |
+| traditional | 0.5160 | orb aspects, sign indicators, elements, classic synastry score; 9-block rank average | reported |
+| mlp | 0.5085 | small PyTorch MLP, fully nested | reported |
+| phasor_select | 0.5066 | five-aspect k=1 phasors, greedy selection | reported |
+| lin_higher | 0.5000 | ±1 higher-order angles, screened | reported |
+
+Reading: every approach sits between 0.50 and 0.523; the three leaders are within 0.001 of one another
+and share one ingredient — low-order harmonics (2–3) on the angle bank, i.e. sign-scale structure —
+while every k=1 form, every tree and the MLP are at or near chance. The competitors' own fold-to-fold
+spread (0.50–0.555) is wider than the gaps between them. More data did not help: the keyword-labelled
+extra pool was rejected by inner CV in every fold. Ceiling for six bodies on this label, honestly: ~0.52.

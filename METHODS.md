@@ -1889,3 +1889,47 @@ Top of the 406 weights: (his Venus + her Venus) midpoint Leo 28 / Aquarius 28; (
 Jupiter) conjunction; their composite; (his Saturn − her Saturn) conjunction +22; his and her Saturn
 placements. The full top-50 is in `~/.artamatch-dev/complex_fit2.json`. Because the cross-validated AUC
 is 0.504, these phases describe the training sample, not a rule.
+
+### The complex model, three forms, PyTorch + SGD (2026-09-05)
+
+`~/.artamatch-dev/complex_sgd.py`, `complex_torch.py`, `complex_real.py`. Label `happy` (20.4%), 9,606 couples.
+
+1. **sigmoid(|z|^2 + real offset)**, numpy SGD: ridge grid 1e-3..0.3, CV best 0.511 at ridge 0.1 — but at
+   that ridge every |theta| shrinks to ~0 and five seeds disagree (implied-weight correlations 0.1–0.2);
+   the phases are noise. Recorded as such.
+2. **sigmoid(|z + beta0|^2)**, the operator's exact form, PyTorch SGD (momentum 0.9, batch 512): BCE
+   0.6931 = log 2 on every seed, train AUC 0.505, CV 0.49–0.49. The failure is structural, not
+   numerical: |z + beta0|^2 >= 0 forces p >= 1/2 for every couple, and for a label with 20% positives
+   the loss is minimised by theta -> 0, p = 1/2 for everyone. The form cannot express a base rate below
+   one half.
+3. **sigmoid(Re(z + beta0))**, PyTorch SGD: convex; ridge 0.01 by ten-fold CV (fold-averaged); **CV AUC
+   0.5282** (birth year alone 0.5763); train AUC 0.566. Five seeds agree to 3e-3 in theta; exact Newton
+   on the same objective agrees to 3e-2. Re(beta0) = −1.387 is the intercept; Im(beta0) never reaches the
+   output. Each term is |theta_k| cos(phi_k + arg theta_k), peaking at phi_k = −arg theta_k — the
+   argument of a weight is the happiest angle, no reference phase needed.
+
+Shares of total |theta|: synastry aspects 32.1%, midpoints 27.8%, his placements 23.7%, her placements
+16.4%. The 28 weights, ranked:
+
+| # | term | modulus | peaks at | reading |
+|---|---|---|---|---|
+| 1 | d_saturn | 0.1358 | 29° | Saturn–Saturn conjunction +29° |
+| 2 | s_venus | 0.1190 | 289° | Venus midpoint Leo 25° / Aquarius 25° |
+| 3 | m_saturn | 0.1031 | 335° | his Saturn in Pisces 5° |
+| 4 | d_venus | 0.0618 | 195° | Venus–Venus opposition +15° |
+| 5 | m_venus | 0.0541 | 307° | his Venus in Aquarius 7° |
+| 6 | s_saturn | 0.0522 | 201° | Saturn midpoint Cancer 11° / Capricorn 11° |
+| 7 | w_sun | 0.0516 | 206° | her Sun in Libra 26° |
+| 8 | d_mars | 0.0509 | 83° | Mars–Mars square +7° |
+| 9 | s_sun | 0.0486 | 61° | Sun midpoint Taurus 0° / Scorpio 0° |
+| 10 | s_moon | 0.0435 | 157° | Moon midpoint Gemini 18° / Sagittarius 18° |
+| 11 | d_mercury | 0.0431 | 128° | Mercury–Mercury trine +8° |
+| 12 | w_saturn | 0.0430 | 73° | her Saturn in Gemini 13° |
+| 13 | m_jupiter | 0.0389 | 187° | his Jupiter in Libra 7° |
+| 14 | d_moon | 0.0353 | 69° | Moon–Moon sextile +9° |
+| 15 | s_jupiter | 0.0351 | 83° | Jupiter midpoint Taurus 11° / Scorpio 11° |
+| 16 | d_sun | 0.0342 | 356° | Sun–Sun conjunction +4° |
+| 17–28 | w_mars, m_sun, w_moon, m_mars, m_moon, d_jupiter, w_venus, w_jupiter, s_mars, s_mercury, m_mercury, w_mercury | 0.028–0.008 | | see complex_real.json |
+
+Saturn–Saturn (his − her) near conjunction at the top is the age-gap clock again: on this label
+birth year alone scores 0.576, above the model's 0.528, so the strongest "aspect" is the calendar.

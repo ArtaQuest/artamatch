@@ -1772,3 +1772,34 @@ One angle alone (his Moon + her Venus, K=1, three seeds): see the line recorded 
 Honest ceiling for the couple-only form: about 0.53, interval [0.50, 0.56].
 One angle alone, his Moon + her Venus (K=1, three seeds): mean 0.5145 (0.506–0.523), within-era
 0.513. So the second angle is worth about +0.012 and stays; below two angles the model is at chance.
+
+### Infidelity, bare synastry only (2026-09-05)
+
+Operator: simplify to the bare bone of synastry — his planet − her planet, 49 angles, nothing else.
+Same protocol (nested by component, three fold seeds, closed grids, K from 1). `~/.artamatch-dev/infid_syn.py`.
+
+**Three-seed mean AUC 0.4863** (0.4812–0.4945), within-era 0.4890; seed-averaged
+out-of-fold 0.4863, bootstrap 95% CI [0.4593, 0.5092]. Against synastry + midpoint 0.5267 [0.503, 0.557]
+and six families 0.5276 [0.500, 0.552]: removing the midpoints removes the signal.
+
+Final fit on all 9,606 couples chose K=12, lambda 0.1, bias -2.8880, train AUC 0.593 — a
+twelve-angle model with a high training score on a target it cannot predict out of sample is the shape of
+overfitting, and it is recorded as such. Most-chosen angles over 30 fold fits: his moon - her sun 26/30; his mars - her moon 25/30; his sun - her venus 17/30; his moon - her mars 16/30.
+
+| angle | strength | share | prefers | chosen |
+|---|---|---|---|---|
+| his sun - her sun | 0.5899 | 17.7% | 160° — opposition +20° | 13/30 |
+| his mercury - her sun | 0.4745 | 14.2% | 18° — conjunction +18° | 7/30 |
+| his sun - her venus | 0.4251 | 12.7% | 79° — square +11° | 17/30 |
+| his mercury - her saturn | 0.3411 | 10.2% | 130° — trine +10° | 11/30 |
+| his venus - her saturn | 0.2880 | 8.6% | 49° — sextile +11° | 11/30 |
+| his saturn - her venus | 0.2549 | 7.6% | 150° — trine +30° | 13/30 |
+| his saturn - her sun | 0.2475 | 7.4% | 3° — conjunction +3° | 11/30 |
+| his moon - her sun | 0.1988 | 6.0% | 139° — trine +19° | 26/30 |
+| his mars - her moon | 0.1448 | 4.3% | 110° — trine +10° | 25/30 |
+| his sun - her jupiter | 0.1338 | 4.0% | 86° — square +4° | 14/30 |
+| his moon - her mars | 0.1316 | 3.9% | 63° — sextile +3° | 16/30 |
+| his jupiter - her saturn | 0.1107 | 3.3% | 112° — trine +8° | 12/30 |
+
+Verdict: on this label, bare synastry is at chance. Whatever the seven bodies know about the infidelity
+annotation is carried by the midpoints (his + hers), not by planet-to-planet differences.

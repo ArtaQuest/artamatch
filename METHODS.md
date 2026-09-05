@@ -1803,3 +1803,32 @@ overfitting, and it is recorded as such. Most-chosen angles over 30 fold fits: h
 
 Verdict: on this label, bare synastry is at chance. Whatever the seven bodies know about the infidelity
 annotation is carried by the midpoints (his + hers), not by planet-to-planet differences.
+
+### CORRECTION: pooled cross-validated AUC is biased downward on rare labels (2026-09-05)
+
+Operator: "there must be something wrong." There was — in the evaluation, not the fit. Every
+infidelity figure above is the AUC of out-of-fold scores POOLED across the ten folds. When a held-out
+fold's positive rate is above average, the model trained without it carries a LOWER intercept, so that
+fold's scores are shifted down while it holds more positives; pooling then ranks a positive-rich fold
+below the others. The bias is a property of the pooling, not of any feature.
+
+**Demonstrated on a null model** — intercept only, refitted per fold, no features at all — with the
+infidelity fold base rates (4.2%–7.2%): pooled AUC 0.4551 / 0.4544 / 0.4598 over the three seeds;
+fold-averaged AUC 0.5000 exactly. A model that cannot see the charts scores 0.455 pooled. That is the
+"consistently below chance" signature reported for bare synastry and for her-chart-only, and it was
+an artifact. `~/.artamatch-dev/infid_eval.py`.
+
+**Corrected figures (AUC scored within each fold and averaged, weighted by fold size; three seeds):**
+
+| bank | pooled (as reported) | fold-averaged | pooled after per-fold centring |
+|---|---|---|---|
+| bare synastry (49) | 0.4996 | **0.4994** | 0.5012 |
+| synastry + midpoint (98) | 0.5267 | **0.5318** | 0.5297 |
+| six families (182) | 0.5214 | **0.5253** | 0.5246 |
+
+So: bare synastry is AT chance, not below it; synastry + midpoint is about 0.532, and the rankings
+between banks are unchanged. The correction is small once real features are present (the intercept
+shift is diluted by the score spread) and large only for a null model. On the 100k-couple children
+target (base rate 48.8%, fold rates nearly equal) the effect is negligible — see the line recorded
+beneath. Rule from here: report fold-averaged AUC for any label under ~10% positives, and always
+run the intercept-only null through the same evaluation.

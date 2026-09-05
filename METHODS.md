@@ -1623,3 +1623,58 @@ sinusoids, so they cannot ship as terms under the standing rule.
 
 Net: none of the three improves the model on the honest metric. What can be done without cost is
 presentational — stop calling a bearing an aspect, and state the Sun-sign null on the page.
+
+## Round: the seven classical bodies (2026-09-05, operator order — no slow bodies from now on)
+
+Bank: Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn; six families, self-sums removed; 182
+two-body angles, five fixed aspects; exact Gram. `~/.artamatch-dev/seven_fit.py` and friends.
+
+**The curve is flat and the model is Saturn.** Free selection, nested: K=4 0.54883, K=6 0.54912 /
+within-era 0.54653, K=8 0.54893, K=12 0.54778, K=28 0.54562. Forcing every body's own pair in
+(the earlier device) costs 0.0006 and was dropped. The K=6 model: his Saturn - her Saturn carries
+67% of the strength and prefers 87 deg, a near-exact square; the other five angles share 33%.
+Without Saturn the model is 0.5052 — chance. One chart alone: 0.5014 his, 0.5013 hers.
+
+**Saturn - Saturn IS the age gap.** Predicting the angle from the birth-date gap alone at 12.22
+deg/yr reproduces it to a median 5.6 deg (90th pct 13.1). corr(cos angle, gap) = +0.52. Age gap
+alone: 0.54370 pooled / 0.56625 within era — the gap BEATS the seven-body model within era
+(0.54653), and gap + bodies reaches 0.55678 within era, below the gap on its own. The seven bodies
+add nothing beyond the age gap.
+
+**Max-out: higher-order angles.** Every +-1 combination of 2, 3 and 4 of the 14 longitudes
+(9,646 candidates, `lin` kind, no coefficient above 1 so nothing is a harmonic), screened per fold
+to the top 400, exact greedy, nested: **0.55886 pooled / 0.54407 within era** against 0.54912 /
+0.54653 two-body. Every fold's leading additions are Jupiter-Saturn cross terms — "his Jupiter -
+his Saturn - her Jupiter + her Saturn", "his Mars - his Saturn - her Saturn" — i.e. the 20-year
+Jupiter-Saturn cycle read across the two charts. Pooled goes up, within era goes DOWN: the
+higher-order angles buy calendar, not synastry. Recorded, not shipped.
+
+**Diagnostics closed.** Every couple is already full-precision, so the noon-UT Moon question has
+no subset to test. Sun-sign grids and orb aspects: see the brainstorm round above (all cost).
+
+**Which annotated label do the seven bodies predict?** The 10,000 human-checked marriages
+(`bio/judged.csv`, 9,606 with charts), every binary label, nested 10-fold by component, read
+against birth year alone and age gap alone on the same rows:
+
+| label | n pos | seven bodies [95% CI] | within-era | birth year | age gap |
+|---|---|---|---|---|---|
+| children together | 6196 | 0.5583 [0.548, 0.572] | 0.5594 | 0.5808 | 0.5834 |
+| children recorded (corpus y) | 4913 | 0.5454 [0.535, 0.555] | 0.5499 | 0.6717 | 0.5486 |
+| infidelity | 532 | 0.5416 [0.516, 0.566] | 0.5513 | 0.4915 | 0.5182 |
+| joint creative work | 1110 | 0.5391 [0.523, 0.555] | 0.5390 | 0.6871 | 0.5518 |
+| abuse | 193 | 0.5352 [0.491, 0.576] | 0.5191 | 0.5443 | 0.5642 |
+| conflict | 679 | 0.5301 [0.507, 0.550] | 0.5320 | 0.5343 | 0.4822 |
+| toxic | 993 | 0.5300 [0.511, 0.550] | 0.5307 | 0.5095 | 0.4863 |
+| happy | 1964 | 0.5195 [0.506, 0.533] | 0.5118 | 0.5733 | 0.5307 |
+| happy vs toxic only | 1964/2957 | 0.5184 [0.496, 0.543] | 0.5238 | 0.5369 | 0.5241 |
+| joint business | 269 | 0.5154 [0.485, 0.551] | 0.5304 | 0.5944 | 0.5287 |
+| quality above median | 4803 | 0.5147 [0.504, 0.526] | 0.5112 | 0.5436 | 0.4880 |
+| good (judged2) | 5351 | 0.5136 [0.503, 0.527] | 0.5154 | 0.5947 | 0.5251 |
+| judge-confidence control | 2577 | 0.4986 [0.485, 0.512] | 0.5011 | 0.5087 | 0.5238 |
+
+Read against the calendar: the best raw number (children together, 0.558) sits BELOW both its
+calendar baselines. The one label where the seven bodies beat both birth year and age gap is
+**infidelity** — 0.5416 against 0.4915 / 0.5182, within-era 0.5513 — on 532 positives, with a CI
+that reaches down to 0.516. Happiness, goodness and quality are near chance for the charts, and
+"good" is a clock (birth year 0.595), exactly the failure the labelling pipeline's own century
+gate warns about. The control label sits at 0.499, so the machinery is not manufacturing signal.

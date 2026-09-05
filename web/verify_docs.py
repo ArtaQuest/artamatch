@@ -297,16 +297,24 @@ def check_tilldeath():
     # not be published.
     dc = m.get("decomposition") or {}
     if dc:
-        vals = [dc.get("all_13_bodies"), dc.get("fast_7_bodies_sun_to_saturn"),
-                dc.get("fast_5_bodies_sun_to_mars")]
+        # Two shapes. The 2026-09-05 seven-body editions publish `arms`: three labelled restricted
+        # fits, most bodies first. Older files carry the three fixed keys. Same mechanism either way:
+        # three DISTINCT numbers, and fewer bodies never scoring higher.
+        arms = dc.get("arms")
+        if isinstance(arms, list) and len(arms) == 3 and all(isinstance(a, dict) for a in arms):
+            vals = [a.get("auc") for a in arms]
+            labels = [str(a.get("label", "?")) for a in arms]
+        else:
+            vals = [dc.get("all_13_bodies"), dc.get("fast_7_bodies_sun_to_saturn"),
+                    dc.get("fast_5_bodies_sun_to_mars")]
+            labels = ["all13", "fast7", "fast5"]
         ok = all(isinstance(v, float) for v in vals) and len({round(v, 6) for v in vals}) == 3
         check("the decomposition reports three distinct restricted fits", ok,
               " > ".join(f"{v:.4f}" if isinstance(v, float) else str(v) for v in vals)
               + ("" if ok else "  <- two of these are the same number"))
-        check("the decomposition is ordered: fewer bodies never scores higher",
-              all(isinstance(v, float) for v in vals) and vals[0] > vals[1] > vals[2],
-              "all13 > fast7 > fast5" if all(isinstance(v, float) for v in vals)
-              and vals[0] > vals[1] > vals[2] else "OUT OF ORDER")
+        ordered = all(isinstance(v, float) for v in vals) and vals[0] > vals[1] > vals[2]
+        check("the decomposition is ordered: fewer bodies never scores higher", ordered,
+              " > ".join(labels) if ordered else "OUT OF ORDER")
 
     check("the one-chart baselines are published beside the model",
           isinstance(m.get("baseline_him_only"), float) and isinstance(m.get("baseline_her_only"), float),

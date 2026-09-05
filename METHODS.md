@@ -1678,3 +1678,65 @@ calendar baselines. The one label where the seven bodies beat both birth year an
 that reaches down to 0.516. Happiness, goodness and quality are near chance for the charts, and
 "good" is a clock (birth year 0.595), exactly the failure the labelling pipeline's own century
 gate warns about. The control label sits at 0.499, so the machinery is not manufacturing signal.
+
+## Round: infidelity, maxed out (2026-09-05)
+
+Target: the `infidelity` annotation of the 10,000 human-checked marriages (9,606 with charts, 532
+positives; 515 of the 546 infidelity=True rows are also `toxic`). Seven classical bodies, five fixed
+aspects, k=1. Everything nested by marriage-graph component and REPEATED over three fold seeds,
+because one 10-fold run on 532 positives has an SE near 0.02 — the 0.5416 reported in the label
+survey was the lucky end of that. `~/.artamatch-dev/infid_max.py`, `infid_max2.py`, `infid_final.py`.
+
+**Levers tried (mean of three seeds):**
+
+| bank | AUC (min–max) | within-era |
+|---|---|---|
+| six families, 182 two-body angles | **0.5276** (0.521–0.536) | 0.534 |
+| + absolute placements natM/natW (196) | 0.5252 | 0.533 |
+| higher-order ±1 angles (9,646, screened) | 0.5239 (0.513–0.537) | 0.520 |
+| his chart only (49) | 0.5075 | 0.528 |
+| one-person features only (98) | 0.4957 | 0.511 |
+| cross-chart only (49) | 0.4860 | 0.493 |
+| absolute placements only (14) | 0.4929 | 0.502 |
+| her chart only (49) | 0.4750 (0.469–0.478) | 0.469 |
+
+Cross-chart angles alone are BELOW chance and her chart alone is reliably below chance — a model
+that is consistently worse than 0.5 out of sample is not an anti-signal, it is a fitted direction
+that reverses on new couples, i.e. noise. The signal that exists needs the cross AND own families
+together. The evidence text attributes only 139 cases to him and 99 to her (352 unattributed), too
+few to split the target by whose infidelity.
+
+**Closed grids (K to 20, lambda to 0.1), three seeds: mean 0.5214 (0.505–0.536), within-era
+0.528; seed-averaged out-of-fold AUC 0.5266, bootstrap 95% CI [0.4998, 0.5519].** Lambda sits at
+the floor in 15 of 30 fold fits; with at most 40 parameters on 8,600 rows the ridge is irrelevant
+there, so the floor is not hiding anything. Calendar on the same rows: birth year 0.49, age gap
+0.52 — this label is NOT a clock, which is why it was worth pursuing and why the answer is small.
+
+**What is stable, though.** Across the 30 fold fits, **his Moon + her Venus is chosen 30/30 times
+and chosen FIRST 21/30** — the one angle in this whole programme that survives every resampling.
+Then his Moon − his Saturn 22/30, his Moon + her Moon 20/30, his Venus + her Mercury 18/30. The
+model's identity is stable even though its discrimination is marginal.
+
+**Final model, all 9,606 couples: K=4, lambda 0.1, bias −2.8752 (train AUC 0.584, optimistic).**
+
+| angle | family | strength | share | prefers | stable |
+|---|---|---|---|---|---|
+| his Moon + her Venus | his + hers | 0.2443 | 28.5% | 119° — a trine, 1° off | 30/30 |
+| his Venus + her Mercury | his + hers | 0.2135 | 24.9% | 25° — conjunction +25° | 18/30 |
+| his Moon − his Saturn | his own | 0.2038 | 23.8% | 3° — conjunction, 3° off | 22/30 |
+| his Moon + her Moon | his + hers | 0.1943 | 22.7% | 73° — sextile +13° | 20/30 |
+
+Five aspect weights per angle (derived, w[A] = (2/5)·amp·cos(A − ideal)):
+
+| angle | conj | sext | square | trine | oppo |
+|---|---|---|---|---|---|
+| his Moon + her Venus | −0.0480 | +0.0497 | +0.0851 | +0.0977 | +0.0480 |
+| his Venus + her Mercury | +0.0777 | +0.0695 | +0.0355 | −0.0081 | −0.0777 |
+| his Moon − his Saturn | +0.0814 | +0.0439 | +0.0037 | −0.0375 | −0.0814 |
+| his Moon + her Moon | +0.0225 | +0.0757 | +0.0744 | +0.0532 | −0.0225 |
+
+Read plainly: the model says a marriage is likelier to be annotated with infidelity when the SUM of
+his Moon and her Venus sits near 119°, when his Venus plus her Mercury sits near 25°, when his Moon
+is near his own Saturn (a natal Moon–Saturn conjunction in the husband's chart), and when the sum
+of the two Moons sits near 73°. Three of the four are sum ("midpoint") angles, not aspects between
+planets. Nothing above 0.53 should be claimed for any of it.

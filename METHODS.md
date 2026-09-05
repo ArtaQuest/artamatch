@@ -1740,3 +1740,33 @@ his Moon and her Venus sits near 119°, when his Venus plus her Mercury sits nea
 is near his own Saturn (a natal Moon–Saturn conjunction in the husband's chart), and when the sum
 of the two Moons sits near 73°. Three of the four are sum ("midpoint") angles, not aspects between
 planets. Nothing above 0.53 should be claimed for any of it.
+
+### Infidelity, simplified: synastry + midpoint only (2026-09-05)
+
+Operator: use synastry and midpoint (Davison) only. Bank = his[i] − her[j] (49) and his[i] + her[j]
+(49; the composite midpoint of positions, doubled — what the shipped scorer computes; a Davison chart
+cast at the mid-date would differ for the Moon). No own-chart families. Same protocol: nested by
+component, three fold seeds, closed grids. `~/.artamatch-dev/infid_couple.py`.
+
+**Nothing was lost by simplifying.** Three-seed mean **0.5267** (0.516–0.534), within-era 0.529;
+seed-averaged out-of-fold 0.5290, bootstrap 95% CI [0.5027, 0.5574] — against 0.5276 for the six-family
+bank. Modal K=2, lambda 0.1 (floor; irrelevant at five parameters).
+
+**Selection stability over 30 fold fits:** his Moon + her Venus chosen 30/30 and first 23/30; his Moon +
+her Moon 19/30; his Venus + her Mercury 17/30; his Mercury + her Mercury 11/30. No synastry DIFFERENCE
+angle is chosen more than 7/30 — the signal, such as it is, lives entirely in the midpoints.
+
+**Final model, all 9,606 couples: two angles, five fitted numbers, bias −2.8604.**
+
+| angle | strength | share | prefers | stable |
+|---|---|---|---|---|
+| his Moon + her Venus | 0.2387 | 52.7% | 120° — an exact trine on the midpoint sum | 30/30 |
+| his Venus + her Mercury | 0.2138 | 47.3% | 24° — conjunction +24° | 17/30 |
+
+| angle | conj | sext | square | trine | oppo |
+|---|---|---|---|---|---|
+| his Moon + her Venus | −0.0472 | +0.0482 | +0.0830 | **+0.0955** | +0.0472 |
+| his Venus + her Mercury | **+0.0781** | +0.0693 | +0.0349 | −0.0088 | −0.0781 |
+
+One angle alone (his Moon + her Venus, K=1, three seeds): see the line recorded beneath this entry.
+Honest ceiling for the couple-only form: about 0.53, interval [0.50, 0.56].

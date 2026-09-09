@@ -231,6 +231,82 @@ fast bodies, and they are exactly as thin as the measurement says.</span></p>
   </div>
 </section>
 
+<!-- THE COUPLE'S NUMBER (2026-09-09). The one tradition on this page that needs no sky: the life path is the
+     digital root of the whole date, the couple's number is the two life paths added and reduced again. The nine
+     rates below are from the same 100,129 marriages as the reading above (label: children listed), triple-checked
+     against the raw file; see METHODS.md "The couple's number". Nothing here touches Pyodide or the model. -->
+<section class="step on" id="cnsec" style="display:block">
+<h2 style="margin-top:34px">The couple&rsquo;s number</h2>
+<p class="sub">One tradition here needs no sky. Add up every digit of a birth date, and keep adding until a single
+figure is left: that is a person&rsquo;s <b>life path</b>. Add the two life paths and reduce once more, and the
+couple has a number of its own, one to nine. Thirty seconds and a pencil.</p>
+<div class="panel" id="cnpanel" style="margin-top:22px">
+  <div class="field"><label for="cnme">Your date of birth</label>
+    <input type="date" id="cnme" min="1600-01-01" max="2030-12-31" value=""></div>
+  <div class="field"><label for="cnthem">Their date of birth</label>
+    <input type="date" id="cnthem" min="1600-01-01" max="2030-12-31" value=""></div>
+  <div id="cn-out" class="sub" style="min-height:1.6em;margin-top:14px"></div>
+  <p class="sub" style="margin-top:22px">Across <b>100,129 marriages</b> whose two dates are known to the day, how often
+  each couple&rsquo;s number went on to have children written beside it:</p>
+  <table id="cn-tab" style="margin-top:8px;font-size:13.5px"><thead><tr>
+    <th style="text-align:left;padding:6px 8px;color:var(--mut);font-weight:500">Couple&rsquo;s number</th>
+    <th style="text-align:right;padding:6px 8px;color:var(--mut);font-weight:500">Marriages</th>
+    <th style="text-align:right;padding:6px 8px;color:var(--mut);font-weight:500">Had children</th>
+    <th style="width:38%"></th></tr></thead><tbody></tbody></table>
+  <p class="sub" style="margin-top:16px"><b>Four kept the most company with cradles</b> &mdash; 49.55% of its
+  11,221 couples &mdash; and nine the least, at 47.98%. Between the two lies a point and a half, on a base of
+  48.82%. If you know your own life path, the partner who makes a four with you has life path
+  <b>4&nbsp;&minus;&nbsp;yours</b>, counted round the ring of nine: a 1 seeks a 3, a 4 seeks a 9, a 9 seeks a 4.</p>
+  <p class="status" style="max-width:640px;margin:14px auto 0">Read the order, not the certainty. Four is the best of
+  nine numbers found by looking at all nine, and a best-of-nine lead this size arises from chance alone about four
+  times in ten (permutation p&nbsp;=&nbsp;0.42). On 9,913 couples whose marriages were read and judged for warmth,
+  four sits at 20.32% against a 20.60% base &mdash; no lift there at all. This is the gentlest signal on the page.
+  Carry it as a charm, not a forecast.</p>
+</div>
+<script>
+(function () {
+  try {
+    var RATE = {1:48.76,2:48.94,3:49.05,4:49.55,5:48.62,6:48.79,7:48.98,8:48.67,9:47.98};
+    var N = {1:11122,2:11089,3:11051,4:11221,5:11264,6:11036,7:11260,8:10999,9:11087};
+    var BASE = 48.82;
+    var red = function (v) { v = Math.abs(Math.round(v)); while (v > 9) v = String(v).split("").reduce(function (a, c) { return a + (+c); }, 0); return v || 9; };
+    var lp = function (iso) { var p = String(iso || "").split("-").map(Number); return (p.length === 3 && p[0] && p[1] && p[2]) ? red(p[0] + p[1] + p[2]) : null; };
+    var q = function (sel) { return document.querySelector(sel); };
+    var tb = q("#cn-tab tbody");
+    if (tb) {
+      var vals = Object.keys(RATE).map(function (k) { return RATE[k]; });
+      var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), html = "";
+      for (var k = 1; k <= 9; k++) {
+        var w = Math.max(3, Math.round(100 * (RATE[k] - lo + 0.3) / (hi - lo + 0.3)));
+        html += '<tr' + (k === 4 ? ' style="color:var(--gold)"' : '') + '><td style="padding:5px 8px">' + k +
+          '</td><td style="text-align:right;padding:5px 8px">' + N[k].toLocaleString() +
+          '</td><td style="text-align:right;padding:5px 8px">' + RATE[k].toFixed(2) + '%</td>' +
+          '<td style="padding:5px 8px"><div class="bar" style="margin:0"><i style="width:' + w + '%"></i></div></td></tr>';
+      }
+      tb.innerHTML = html;
+    }
+    var out = q("#cn-out"), A = q("#cnme"), B = q("#cnthem");
+    if (!out || !A || !B) return;
+    var paint = function () {
+      var a = lp(A.value), b = lp(B.value);
+      if (!a && !b) { out.innerHTML = ""; return; }
+      var one = a || b;
+      if (!(a && b)) {
+        out.innerHTML = "<b>Life path " + one + ".</b> A four is made with a life path <b>" + red(4 - one + 9) +
+          "</b>; a nine with a <b>" + red(9 - one + 9) + "</b>.";
+        return;
+      }
+      var c = red(a + b), d = RATE[c] - BASE;
+      out.innerHTML = "<b>Life paths " + a + " and " + b + " &rarr; your number is " + c + ".</b> In the record, couples with a " +
+        c + " had children written beside them " + RATE[c].toFixed(2) + "% of the time (" + (d >= 0 ? "+" : "&minus;") +
+        Math.abs(d).toFixed(2) + " against the 48.82% base)" +
+        (c === 4 ? " &mdash; the number that kept the most company with cradles." : c === 9 ? " &mdash; the quietest number in the record." : ".");
+    };
+    A.addEventListener("input", paint); B.addEventListener("input", paint);
+  } catch (e) { /* this section must never reach the console: the page's gate fails on any error */ }
+})();
+</script>
+
 <section class="step on" id="rules" style="display:block">
 <!-- DECLUTTERED (operator 2026-09-02). This section used to hold the RETIRED quality model's whole
      library — "what we found when we pushed the score", 44 systems fitted alone, eleven tradition

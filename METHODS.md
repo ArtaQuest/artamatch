@@ -1971,3 +1971,25 @@ and share one ingredient — low-order harmonics (2–3) on the angle bank, i.e.
 while every k=1 form, every tree and the MLP are at or near chance. The competitors' own fold-to-fold
 spread (0.50–0.555) is wider than the gaps between them. More data did not help: the keyword-labelled
 extra pool was rejected by inner CV in every fold. Ceiling for six bodies on this label, honestly: ~0.52.
+
+
+## The couple's number (2026-09-09) — the section between the two-chart reading and "The model, precisely"
+
+The life path is the digital root of the whole date (digit sum reduced to one figure, 1-9); the
+couple's number is the two life paths added and reduced again. Because the digital root respects
+addition this equals the digital root of (Y+M+D)_a + (Y+M+D)_b, and reducing before or after the
+addition gives the same digit — verified as an identity on every row.
+
+Corpus: the same 100,129 marriages as the two-chart reading (`docs/tilldeath.json`'s corpus; both
+dates to the day). The label is CHILDREN RECORDED (n_children > 0; 48.82%), which is why the page
+says "had children written beside it" and never "lasted" or "loved". Triple-checked: an independent
+recomputation from the raw file with datetime parsing and repeated-digit-sum reduction agreed on
+every digit; identity checks; every column sums to 100,129 couples and 48,881 parents.
+P(children | number): 1 48.76 · 2 48.94 · 3 49.05 · 4 49.55 · 5 48.62 · 6 48.79 · 7 48.98 ·
+8 48.67 · 9 47.98 (percent; ~11,000 couples each).
+
+Honest size, and it is on the page: four is the maximum of nine cells chosen post hoc. Label
+permutation p for the cell alone 0.05; best-of-9 p = 0.42 (10,000 draws); chi-square across the nine
+p = 0.62. Era-standardised by husband's birth decade the highest is still 4. On the 9,913
+judged-warmth couples the same number is 20.32% vs a 20.60% base. Offered as a charm, not a forecast.
+Files: `~/.artamatch-dev/parenthood_sum_mod9_FINAL.csv`, `parenthood_100k.csv`.

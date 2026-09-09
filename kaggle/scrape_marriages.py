@@ -18,7 +18,7 @@ cause where one exists. The structural rule will be scored against those causes 
 import os, time, urllib.parse, urllib.request
 
 OUT = os.path.expanduser(os.environ.get("AQ_MAR", "~/.artamatch-dev/marriages"))
-LO, HI, STEP = int(os.environ.get("AQ_LO", "1500")), int(os.environ.get("AQ_HI", "1950")), 10
+LO, HI, STEP = int(os.environ.get("AQ_LO", "1500")), int(os.environ.get("AQ_HI", "1950")), int(os.environ.get("AQ_STEP", "10"))
 UA = "ArtaMatch research (https://artaquest.com; arash@artaquest.org)"
 EP = "https://query.wikidata.org/sparql"
 import socket

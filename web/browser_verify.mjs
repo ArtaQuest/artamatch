@@ -350,6 +350,74 @@ const fHi = Number(String(finder.max || "2026-12-31").slice(0, 4));
 const inWin = v => /^(\d{4})-/.test(v || "")
                    && Number(String(v).slice(0, 4)) >= fLo && Number(String(v).slice(0, 4)) <= fHi;
 
+
+// THE TILL-DEATH READING is a second model on the page, with its own corpus and its own section. It is
+// driven exactly as a reader drives it — a gate that only loads a page proves nothing about a control,
+// and this section rendered nothing in CI while passing locally for four runs because nothing clicked it.
+//
+// TWO PAGES CARRY IT and this harness is pointed at one of them by the workflow: lab.html has the pair
+// scorer (#go-pair, both dates in one control), index.html is the reader-facing page (#dob + #tddob +
+// #tdgo). Probing for whichever exists is the difference between a gate and a guess.
+const tdOut = await ev(`(async () => {
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const readable = () => {
+    const el = document.getElementById("td-out");
+    return el ? el.textContent || "" : "";
+  };
+  let btn;
+  if (document.getElementById("tdgo")) {                       // the reader-facing page
+    const set = (id, v) => { const e = document.getElementById(id);
+      e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); };
+    const g = document.getElementById("gm"); if (g) g.click();
+    // the card carries its own date fields now; fill them directly, the way a reader who scrolled
+    // straight to it would (the wizard fields are also set, exercising the prefill path)
+    set("dob", "1940-03-14");
+    if (document.getElementById("tdme")) set("tdme", "1940-03-14");
+    set("tddob", "1944-11-02");
+    btn = document.getElementById("tdgo");
+  } else if (document.getElementById("go-pair")) {             // the lab page
+    const setFull = (sel, y, m, d) => {
+      const h = document.querySelector(sel), pad = v => String(v).padStart(2, "0");
+      const yy = h.querySelector(".dy"), mm = h.querySelector(".dm"), dd = h.querySelector(".dd");
+      yy.value = String(y); yy.dispatchEvent(new Event("input", { bubbles: true }));
+      mm.value = pad(m); mm.dispatchEvent(new Event("change", { bubbles: true }));
+      dd.value = pad(d); dd.dispatchEvent(new Event("change", { bubbles: true }));
+      if (mm.value !== pad(m) || dd.value !== pad(d)) throw new Error("date parts did not take");
+    };
+    setFull("#a-dob", 1940, 3, 14); setFull("#b-dob", 1944, 11, 2);
+    btn = document.getElementById("go-pair");
+  } else {
+    return { shown: false, why: "neither #tdgo nor #go-pair is in this page" };
+  }
+  for (let i = 0; i < 120 && btn.disabled; i++) await wait(500);
+  if (btn.disabled) return { shown: false, why: "the button never became enabled" };
+  btn.click();
+  for (let i = 0; i < 180; i++) {
+    const t = readable();
+    // GATE ON A MARKER, NOT ON COPY. This used to poll for a phrase in the reading's own prose, so
+    // rewording the page broke the gate and the failure looked like a broken page rather than a
+    // stale test. The page sets data-td-ready when it has rendered.
+    if (document.querySelector('#td-out [data-td-ready]')) {
+      const el = document.getElementById("td-out");
+      // THE EXPECTED ROW COUNT COMES FROM THE MODEL, never a constant: this once hardcoded 8 and
+      // failed the moment the model went from 8 terms to 4, which reads as a broken page rather
+      // than a stale gate.
+      // THE SCORER CAPS ITS DRIVERS AT EIGHT (tilldeath.py parts[:8]), so the expected count is
+      // min(8, terms) — reading terms.length alone broke the moment the model outgrew eight terms.
+      return { shown: true, rows: el.querySelectorAll("tbody tr").length,
+               expect: Math.min(8, ((window.__td || {}).terms || []).length),
+               names: t.includes("cos(") || t.includes("sin(") };
+    }
+    await wait(1000);
+  }
+  return { shown: false,
+           why: "timed out; td-out=" + JSON.stringify(readable().slice(0, 90))
+                + " calls=" + (window.__tdCalls || 0)
+                + " err=" + JSON.stringify(String(window.__tdErr || "").slice(0, 140)) };
+})()`) || {};
+console.log(`  till-death : ${tdOut.shown ? `rendered with ${tdOut.rows} named drivers`
+                                          : "NOT RENDERED — " + (tdOut.why || "")}`);
+
 const checks = [
   ["the search inputs stay inside the computable range",
    inWin(finder.self) && inWin(finder.from) && inWin(finder.to),
@@ -411,6 +479,10 @@ const checks = [
   ["an enabled button looks enabled", phone.btnDisabled || (phone.btnCursor === "pointer"
     && Number(phone.btnOpacity) >= 0.9), `cursor ${phone.btnCursor}, opacity ${phone.btnOpacity}`],
   ["no console or runtime errors", errors.length === 0],
+  ["the till-death reading renders when a reader presses its button", !!tdOut.shown, tdOut.why || ""],
+  ["and it names one row per term in the shipped model",
+   !!tdOut.shown && tdOut.rows > 0 && tdOut.rows === tdOut.expect && !!tdOut.names,
+   `${tdOut.rows} rows for ${tdOut.expect} terms`],
 ];
 console.log("");
 let ok = true;

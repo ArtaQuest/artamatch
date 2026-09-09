@@ -1,0 +1,27 @@
+{
+ "ranked_by": "summed absolute weight of the statements in each group",
+ "note": "every statement here reads both birth dates, and more than half of its variance comes from how far apart the two births are rather than from when they happened",
+ "n_statements": 8,
+ "cv_auc": 0.5987,
+ "test_auc": 0.5858,
+ "cards": [
+  {
+   "key": "cycles",
+   "label": "The sky you were both born under",
+   "blurb": "Rudhyar's cycle phases \u2014 where a pair of slow planets stood in their own cycle at each birth. This is the part of the reading that is about your era as much as about the two of you.",
+   "statements": 5,
+   "weight": 1.4564,
+   "mean_interaction": 0.21,
+   "share": 0.617
+  },
+  {
+   "key": "relchart",
+   "label": "The chart of the relationship itself",
+   "blurb": "The composite and Davison charts \u2014 the midpoint of your two charts, read as a third entity.",
+   "statements": 3,
+   "weight": 0.9043,
+   "mean_interaction": 0.037,
+   "share": 0.383
+  }
+ ]
+}

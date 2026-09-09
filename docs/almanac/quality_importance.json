@@ -1,0 +1,111 @@
+{
+ "model": "quality_maxcv.json",
+ "full_cv": 0.6033521960470564,
+ "audit_failures": [],
+ "ranked": [
+  {
+   "rule": "NOT(cycle_neptune_pluto_phase=Tau)",
+   "weight": 0.48323168684748985,
+   "fires": 5743,
+   "fire_rate": 0.726134783158427,
+   "std_contrib": 0.21549266381744828,
+   "drop_one_cv_loss": 0.02324642869189042,
+   "z": 8.359049208136087,
+   "good_when_fires": 0.6259794532474316,
+   "good_otherwise": 0.5226223453370268,
+   "tradition": "Mundane astrology \u2014 planetary cycles",
+   "title": "Not both born under Neptune\u2013Pluto in Taurus"
+  },
+  {
+   "rule": "cyclesep10_neptune_pluto_same_band",
+   "weight": 0.14251825036486182,
+   "fires": 3584,
+   "fire_rate": 0.4531546339613099,
+   "std_contrib": 0.07094568166110485,
+   "drop_one_cv_loss": 0.004553536125013191,
+   "z": 2.7609910159467734,
+   "good_when_fires": 0.6143973214285714,
+   "good_otherwise": 0.5838150289017341,
+   "tradition": "Mundane astrology \u2014 planetary cycles",
+   "title": "The Neptune\u2013Pluto angle was within the same 10\u00b0 at both births"
+  },
+  {
+   "rule": "NOT(comp_neptune_sign=Gem)",
+   "weight": 0.25207054389656647,
+   "fires": 6713,
+   "fire_rate": 0.8487798710330003,
+   "std_contrib": 0.0903076283602643,
+   "drop_one_cv_loss": 0.0036891169658892498,
+   "z": 6.132825693575117,
+   "good_when_fires": 0.6119469685684493,
+   "good_otherwise": 0.5175585284280937,
+   "tradition": "Composite chart",
+   "title": "Not: Neptune in Gemini, in the composite chart"
+  },
+  {
+   "rule": "NOT(comp_pluto_sign=Tau)",
+   "weight": 0.20337553298159353,
+   "fires": 5998,
+   "fire_rate": 0.7583765330635984,
+   "std_contrib": 0.0870584085661143,
+   "drop_one_cv_loss": 0.0035111626550712316,
+   "z": 5.740038529197831,
+   "good_when_fires": 0.6155385128376125,
+   "good_otherwise": 0.5416012558869702,
+   "tradition": "Composite chart",
+   "title": "Not: Pluto in Taurus, in the composite chart"
+  },
+  {
+   "rule": "cyclephase_neptune_pluto=DisseminatingxDisseminating",
+   "weight": 0.38148848120911133,
+   "fires": 1125,
+   "fire_rate": 0.14224301428752054,
+   "std_contrib": 0.13325362977639418,
+   "drop_one_cv_loss": 0.0029368444804755978,
+   "z": 9.231217003355168,
+   "good_when_fires": 0.7226666666666667,
+   "good_otherwise": 0.5769457547169812,
+   "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+   "title": "Both born in the Disseminating phase of Neptune\u2013Pluto"
+  },
+  {
+   "rule": "comp_pluto_sign=Pis",
+   "weight": 0.44889685527483286,
+   "fires": 609,
+   "fire_rate": 0.07700088506764445,
+   "std_contrib": 0.11967268321414849,
+   "drop_one_cv_loss": 0.0013610956241367766,
+   "z": 9.290963859932724,
+   "good_when_fires": 0.7750410509031199,
+   "good_otherwise": 0.5828767123287671,
+   "tradition": "Composite chart",
+   "title": "Pluto in Pisces, in the composite chart"
+  },
+  {
+   "rule": "NOT(cycle_neptune_pluto_phase=Ari)",
+   "weight": 0.17826181128490426,
+   "fires": 6075,
+   "fire_rate": 0.768112277152611,
+   "std_contrib": 0.07523320320639554,
+   "drop_one_cv_loss": 0.0006400150057811471,
+   "z": 6.961912545171905,
+   "good_when_fires": 0.6187654320987654,
+   "good_otherwise": 0.5278080697928026,
+   "tradition": "Mundane astrology \u2014 planetary cycles",
+   "title": "Not both born under Neptune\u2013Pluto in Aries"
+  },
+  {
+   "rule": "cyclephase_neptune_pluto=LastQtrxLastQtr",
+   "weight": 0.2708774690064422,
+   "fires": 641,
+   "fire_rate": 0.08104690858515615,
+   "std_contrib": 0.07392439478023138,
+   "drop_one_cv_loss": 0.00035486704596854324,
+   "z": 8.645328484118568,
+   "good_when_fires": 0.7581903276131046,
+   "good_otherwise": 0.583516785910842,
+   "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+   "title": "Both born in the LastQtr phase of Neptune\u2013Pluto"
+  }
+ ]
+}

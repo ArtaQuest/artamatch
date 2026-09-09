@@ -1,0 +1,74 @@
+[
+ {
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "Not both born under Neptune\u2013Pluto in Taurus",
+  "plain": "This condition does NOT hold. The slow cycle between Neptune and Pluto was passing through Taurus when both of you were born.",
+  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(cycle_neptune_pluto_phase=Tau)",
+  "weight": 0.493
+ },
+ {
+  "tradition": "Composite chart",
+  "title": "Pluto in Pisces, in the composite chart",
+  "plain": "In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Pisces.",
+  "reading": "Pluto is depth, power and the things that transform a person. Pisces is mercy and dissolving.",
+  "rule": "comp_pluto_sign=Pis",
+  "weight": 0.4522
+ },
+ {
+  "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+  "title": "Both born in the Disseminating phase of Neptune\u2013Pluto",
+  "plain": "Measure the angle from Pluto to Neptune and read it as a lunation: his birth falls in the Disseminating phase, hers in the Disseminating.",
+  "reading": "Rudhyar read every planetary pair as a cycle with the same eight phases the Moon has \u2014 new, crescent, first quarter, gibbous, full, disseminating, last quarter, balsamic. The phase says where in a long story a birth falls: the new phase begins something, the full illuminates it, the balsamic lets it go.",
+  "rule": "cyclephase_neptune_pluto=DisseminatingxDisseminating",
+  "weight": 0.3785
+ },
+ {
+  "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+  "title": "Both born in the LastQtr phase of Neptune\u2013Pluto",
+  "plain": "Measure the angle from Pluto to Neptune and read it as a lunation: his birth falls in the LastQtr phase, hers in the LastQtr.",
+  "reading": "Rudhyar read every planetary pair as a cycle with the same eight phases the Moon has \u2014 new, crescent, first quarter, gibbous, full, disseminating, last quarter, balsamic. The phase says where in a long story a birth falls: the new phase begins something, the full illuminates it, the balsamic lets it go.",
+  "rule": "cyclephase_neptune_pluto=LastQtrxLastQtr",
+  "weight": 0.2674
+ },
+ {
+  "tradition": "Composite chart",
+  "title": "Not: Neptune in Gemini, in the composite chart",
+  "plain": "This condition does NOT hold. In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Neptune sits in Gemini.",
+  "reading": "Neptune is dreams, compassion and the blur between two souls. Gemini is curiosity and talk. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(comp_neptune_sign=Gem)",
+  "weight": 0.2531
+ },
+ {
+  "tradition": "Composite chart",
+  "title": "Not: Pluto in Taurus, in the composite chart",
+  "plain": "This condition does NOT hold. In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Taurus.",
+  "reading": "Pluto is depth, power and the things that transform a person. Taurus is steadiness and the senses. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(comp_pluto_sign=Tau)",
+  "weight": 0.2016
+ },
+ {
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "Not both born under Neptune\u2013Pluto in Aries",
+  "plain": "This condition does NOT hold. The slow cycle between Neptune and Pluto was passing through Aries when both of you were born.",
+  "reading": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+  "rule": "NOT(cycle_neptune_pluto_phase=Ari)",
+  "weight": 0.1802
+ },
+ {
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "Both births fall in the same 48th of the Neptune\u2013Pluto cycle",
+  "plain": "Cut the Neptune\u2013Pluto cycle into 48 parts. Both of you were born inside the same one.",
+  "reading": "A cycle this slow moves through a part over years, so sharing one means the two of you were born into the same narrow window of a very long rhythm.",
+  "rule": "cycle48_neptune_pluto_same_part",
+  "weight": 0.1063
+ },
+ {
+  "tradition": "Mundane astrology \u2014 planetary cycles",
+  "title": "The Neptune\u2013Pluto angle was within the same 10\u00b0 at both births",
+  "plain": "Measure the angle from Pluto to Neptune at each birth; both fall in the same 10-degree band.",
+  "reading": "The raw separation, read directly rather than through a phase name \u2014 the two of you caught the same slow planets at the same distance apart.",
+  "rule": "cyclesep10_neptune_pluto_same_band",
+  "weight": 0.0867
+ }
+]

@@ -1,0 +1,143 @@
+{
+ "meta": {
+  "model": "ArtaMatch quality \u2014 oriented toward happy, Lasso-selected, non-negative",
+  "cv_auc": 0.5987,
+  "test_auc": 0.5858,
+  "base_rate": 0.5976735364774308,
+  "trained_on": 7909
+ },
+ "calibration_isotonic": {
+  "x": [
+   -0.134798663988546,
+   0.015677537327028368,
+   0.06857686899304749,
+   0.11727187990802046,
+   0.15819578769189024,
+   0.2597901302728822,
+   0.2955336911929247,
+   0.4380519415577866,
+   0.46316566325447583,
+   0.49890922417451833,
+   0.64142747453938,
+   0.8803977053836296,
+   1.0229159557484915,
+   1.2186835484557932,
+   1.471812811023324
+  ],
+  "y": [
+   0.46938775510204084,
+   0.49770642201834864,
+   0.5273037542662116,
+   0.5273037542662116,
+   0.5383399209486166,
+   0.568041237113402,
+   0.568041237113402,
+   0.5945945945945946,
+   0.6280353200883002,
+   0.6280353200883002,
+   0.6448598130841121,
+   0.7311827956989247,
+   0.7355473554735548,
+   0.7547892720306514,
+   0.98
+  ]
+ },
+ "rules": [
+  {
+   "name": "NOT(cycle_neptune_pluto_phase=Tau)",
+   "weight": 0.48323168684748985,
+   "human": "Not both born under Neptune\u2013Pluto in Taurus",
+   "tradition": "Mundane astrology \u2014 planetary cycles",
+   "what": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+   "how": "This condition does NOT hold. The slow cycle between Neptune and Pluto was passing through Taurus when both of you were born.",
+   "fires": 5743,
+   "fire_rate": 0.7261,
+   "good_when_fires": 0.626,
+   "good_otherwise": 0.5226
+  },
+  {
+   "name": "comp_pluto_sign=Pis",
+   "weight": 0.44889685527483286,
+   "human": "Pluto in Pisces, in the composite chart",
+   "tradition": "Composite chart",
+   "what": "Pluto is depth, power and the things that transform a person. Pisces is mercy and dissolving.",
+   "how": "In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Pisces.",
+   "fires": 609,
+   "fire_rate": 0.077,
+   "good_when_fires": 0.775,
+   "good_otherwise": 0.5829
+  },
+  {
+   "name": "cyclephase_neptune_pluto=DisseminatingxDisseminating",
+   "weight": 0.38148848120911133,
+   "human": "Both born in the Disseminating phase of Neptune\u2013Pluto",
+   "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+   "what": "Rudhyar read every planetary pair as a cycle with the same eight phases the Moon has \u2014 new, crescent, first quarter, gibbous, full, disseminating, last quarter, balsamic. The phase says where in a long story a birth falls: the new phase begins something, the full illuminates it, the balsamic lets it go.",
+   "how": "Measure the angle from Pluto to Neptune and read it as a lunation: his birth falls in the Disseminating phase, hers in the Disseminating.",
+   "fires": 1125,
+   "fire_rate": 0.1422,
+   "good_when_fires": 0.7227,
+   "good_otherwise": 0.5769
+  },
+  {
+   "name": "cyclephase_neptune_pluto=LastQtrxLastQtr",
+   "weight": 0.2708774690064422,
+   "human": "Both born in the LastQtr phase of Neptune\u2013Pluto",
+   "tradition": "Mundane astrology \u2014 cycle phase (Rudhyar)",
+   "what": "Rudhyar read every planetary pair as a cycle with the same eight phases the Moon has \u2014 new, crescent, first quarter, gibbous, full, disseminating, last quarter, balsamic. The phase says where in a long story a birth falls: the new phase begins something, the full illuminates it, the balsamic lets it go.",
+   "how": "Measure the angle from Pluto to Neptune and read it as a lunation: his birth falls in the LastQtr phase, hers in the LastQtr.",
+   "fires": 641,
+   "fire_rate": 0.081,
+   "good_when_fires": 0.7582,
+   "good_otherwise": 0.5835
+  },
+  {
+   "name": "NOT(comp_neptune_sign=Gem)",
+   "weight": 0.25207054389656647,
+   "human": "Not: Neptune in Gemini, in the composite chart",
+   "tradition": "Composite chart",
+   "what": "Neptune is dreams, compassion and the blur between two souls. Gemini is curiosity and talk. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+   "how": "This condition does NOT hold. In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Neptune sits in Gemini.",
+   "fires": 6713,
+   "fire_rate": 0.8488,
+   "good_when_fires": 0.6119,
+   "good_otherwise": 0.5176
+  },
+  {
+   "name": "NOT(comp_pluto_sign=Tau)",
+   "weight": 0.20337553298159353,
+   "human": "Not: Pluto in Taurus, in the composite chart",
+   "tradition": "Composite chart",
+   "what": "Pluto is depth, power and the things that transform a person. Taurus is steadiness and the senses. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+   "how": "This condition does NOT hold. In the composite chart \u2014 the midpoint of the two birth charts, read as the chart of the relationship itself, Pluto sits in Taurus.",
+   "fires": 5998,
+   "fire_rate": 0.7584,
+   "good_when_fires": 0.6155,
+   "good_otherwise": 0.5416
+  },
+  {
+   "name": "NOT(cycle_neptune_pluto_phase=Ari)",
+   "weight": 0.17826181128490426,
+   "human": "Not both born under Neptune\u2013Pluto in Aries",
+   "tradition": "Mundane astrology \u2014 planetary cycles",
+   "what": "These are generational rhythms \u2014 they change over decades, not days, so this says the two of you belong to the same long season of history. It is the part of the reading that is about your era as much as about you. Here it is its ABSENCE that the model reads, which is the same doctrine stated the other way round.",
+   "how": "This condition does NOT hold. The slow cycle between Neptune and Pluto was passing through Aries when both of you were born.",
+   "fires": 6075,
+   "fire_rate": 0.7681,
+   "good_when_fires": 0.6188,
+   "good_otherwise": 0.5278
+  },
+  {
+   "name": "cyclesep10_neptune_pluto_same_band",
+   "weight": 0.14251825036486182,
+   "human": "The Neptune\u2013Pluto angle was within the same 10\u00b0 at both births",
+   "tradition": "Mundane astrology \u2014 planetary cycles",
+   "what": "The raw separation, read directly rather than through a phase name \u2014 the two of you caught the same slow planets at the same distance apart.",
+   "how": "Measure the angle from Pluto to Neptune at each birth; both fall in the same 10-degree band.",
+   "fires": 3584,
+   "fire_rate": 0.4532,
+   "good_when_fires": 0.6144,
+   "good_otherwise": 0.5838
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+{
+ "model": "ArtaMatch quality \u2014 oriented toward happy, Lasso-selected, non-negative",
+ "cv_auc": 0.5987,
+ "test_auc": 0.5858,
+ "alpha": 0.0075,
+ "trained_on": 7909,
+ "base_rate": 0.5976735364774308,
+ "n_bank": 13408,
+ "target": "the marriage went well, judged from the record",
+ "intercept": -0.6180303508360359,
+ "weights": {
+  "NOT(cycle_neptune_pluto_phase=Ari)": 0.17826181128490426,
+  "NOT(cycle_neptune_pluto_phase=Tau)": 0.48323168684748985,
+  "NOT(comp_neptune_sign=Gem)": 0.25207054389656647,
+  "NOT(comp_pluto_sign=Tau)": 0.20337553298159353,
+  "comp_pluto_sign=Pis": 0.44889685527483286,
+  "cyclesep10_neptune_pluto_same_band": 0.14251825036486182,
+  "cyclephase_neptune_pluto=DisseminatingxDisseminating": 0.38148848120911133,
+  "cyclephase_neptune_pluto=LastQtrxLastQtr": 0.2708774690064422
+ },
+ "calibration_isotonic": {
+  "x": [
+   -0.134798663988546,
+   0.015677537327028368,
+   0.06857686899304749,
+   0.11727187990802046,
+   0.15819578769189024,
+   0.2597901302728822,
+   0.2955336911929247,
+   0.4380519415577866,
+   0.46316566325447583,
+   0.49890922417451833,
+   0.64142747453938,
+   0.8803977053836296,
+   1.0229159557484915,
+   1.2186835484557932,
+   1.471812811023324
+  ],
+  "y": [
+   0.46938775510204084,
+   0.49770642201834864,
+   0.5273037542662116,
+   0.5273037542662116,
+   0.5383399209486166,
+   0.568041237113402,
+   0.568041237113402,
+   0.5945945945945946,
+   0.6280353200883002,
+   0.6280353200883002,
+   0.6448598130841121,
+   0.7311827956989247,
+   0.7355473554735548,
+   0.7547892720306514,
+   0.98
+  ]
+ },
+ "distinct_scores": 29,
+ "benchmark": {
+  "target": "quality_good",
+  "n_test": 1395,
+  "pos_rate": 0.5978494623655914,
+  "age_gap_auc": 0.4853475508363363,
+  "auc_se": 0.01576840007011145
+ }
+}

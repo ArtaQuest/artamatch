@@ -582,6 +582,1421 @@ And the standing caveat, which is part of the method: there is no known mechanis
 could work. These are old, internally consistent ways of talking about people — reported faithfully,
 calibrated honestly, and predicting nothing.
 
+## Edition V — What the record remembers (2026-09-01)
+
+A model of his planet to hers, first harmonic, nothing else — chosen from 169 candidates, every
+planet from the Sun to Pluto carrying weight — and an account of why it is worth less than its AUC
+suggests.
+
+### The question
+
+Not "will this marriage last" — that target turned out to be unanswerable here (see *What the
+targets did*, below). The shipped question is narrower and is stated on the page in those words:
+**does the historical record list children for a couple like this?**
+
+### The corpus
+
+**93,598 finished marriages**, 47,124 of them (50.4%)
+with children recorded. Built from Wikidata `P26` spouse statements and Wikipedia prose, and filtered
+hard:
+
+- **finished only** — a recorded death or an explicit end cause, so the child count is final. A
+  marriage still running has not had its children yet.
+- **real recorded days only** — 78% of raw Wikidata birth timestamps read `1 January`, which is how a
+  year-precision date renders. Every one is demoted to year precision and then excluded, along with
+  every other partial date. A year-only date puts the Moon anywhere in the zodiac, and the fast
+  bodies are precisely what the central test below depends on. This cost 74,016 couples — of which 2,452 were later recovered whole via WikiTree (P2949): 3,720 people's exact dates, accepted only when WikiTree marks the date certain and its year equals Wikidata's own.
+- excluded too: 47 died-before-born, pairs >60 years apart, self-pairs, and 25 whose two Wikidata
+  items contradict each other about how the marriage ended.
+
+Charts are sidereal (Lahiri) at 12:00 UT from Kerykeion, **verified against pyswisseph to 0.0103°
+worst case** over 1,014 positions — every planet inside 0.0012°, the Sun inside 0.00002°.
+
+### The model
+
+    score = bias + Σ over phasors of  a·cos(k·θ) + c·sin(k·θ)
+    p     = sigmoid(score)
+
+32 phasors — 65 numbers, all of them in [`tilldeath.json`](docs/tilldeath.json). The strongest, by
+fitted amplitude √(a²+c²), on the 93,598-couple corpus:
+
+| phasor | amplitude |
+|---|---|
+| `her Neptune − her Pluto` | 0.867 |
+| `3·(his Neptune − her Neptune)` | 0.493 |
+| `2·(his Pluto − her Pluto)` | 0.240 |
+| `his Saturn − her Saturn` | 0.212 |
+| `his Neptune − her Uranus` | 0.131 |
+| …27 more, amplitudes 0.110 → 0.03 | |
+
+**Every fast body is in the model and carries weight** (operator order): the Sun in 3 terms, the
+Moon, Mercury, Venus and Jupiter in 1 each, Mars in 8, Saturn in 3 (its Saturn–Saturn synastry is
+the strongest non-outer-planet term at 0.212). The amplitudes are what the data itself supports at
+the cross-validated ridge — the hierarchy above *is* the finding: the slow bodies dominate.
+
+Each phasor pairs a cosine with a sine of the same angle, so its amplitude and phase are both free
+(`a·cos + c·sin = A·cos(θ − φ)`). Every feature is a sinusoid of an integer harmonic of a named
+angle; there is not one indicator, bucket or threshold in the model, and `web/verify_docs.py` refuses
+a file containing one.
+
+**Nested ten-fold cross-validated AUC 0.6914** on the 100,129-couple corpus, folds cut by connected component of the marriage
+graph so no person appears on both sides of a split — and *nested* meaning the stepwise selection,
+the choice of how many phasors, and the forcing-in of any missing fast body were all re-run from
+scratch inside every training fold, so the quoted number never saw its own test couples. One
+partner's chart alone, given its complete solo algebra (339 parameters), reaches 0.6733 on the same
+folds. The fixed-structure CV of the final model is 0.6925, and it is quoted only as a reference:
+a structure chosen using all ten folds and then "cross-validated" is leak-inflated (measured below).
+
+### How it was found
+
+Every feature is an angle between two of the 26 bodies of the two charts:
+
+    XY  man[i] − woman[j]   all i,j, same body included    169 angles
+    XX  man[i] − man[j]     i < j                           78
+    YY  woman[i] − woman[j] i < j                           78
+
+at harmonics k ∈ {1..10, 12, 27, 36} — the aspect itself, then the sign (30° is the 12th harmonic),
+the nakshatra (27th) and the decan (36th). 4,225 candidate phasors. Forward stepwise selection by the
+**exact** two-degree-of-freedom score statistic — every candidate is first projected onto the
+W-orthogonal complement of the columns already in the model, so a phasor that merely restates what
+the model holds scores near zero rather than near its raw strength (the marginal statistic, which
+ignores that correlation, was measured to cost 0.0023 of nested AUC: 0.6811 → 0.6834 on the same
+corpus, same folds, same everything else); the number of phasors chosen by an inner five-fold CV; every
+fit by damped Newton on a fixed penalised objective — each step an exact solve, halved until the
+loss actually falls, iterated until the gradient collapses, and checked against 4,000 steps of Adam
+on the same objective (train AUC 0.6853 both ways, max weight difference 0.002).
+
+Three numerical lessons are recorded here because each one silently corrupted a result first:
+**(1)** the fold-agreement prefix scan creeps upward forever (0.6835 at 24 terms → 0.6860 at 79)
+and never turns over — that creep is *selection on the test set*, since a term picked by even one
+fold was chosen using the other folds' data, and it is why the shipped number is nested rather than
+fixed-structure; **(2)** three fixed Newton steps, enough at 2 phasors, silently underfit at 35
+(train 0.6413 vs the true 0.6859) — convergence must be measured, not assumed; **(3)** an undamped
+Newton step on a deep design can overshoot into saturation and paint one constant — one outer fold
+scored 0.4996, exactly chance, until the steps were damped. Widening the model was then measured
+twice more, and both wideners lost: **K=64** with the damped solver holds every fold sane and still
+comes out worse under the nested estimate (0.6783 against 0.6794) while its leak-prone
+fixed-structure reference *rises* to 0.6861; and **doubling the candidate bank to 8,450 phasors**
+with the sum families (his+her composite axes `xsum`, within-chart midpoint axes `midM`/`midW`)
+lands at the same 0.6783 while the in-training reference rises to 0.6847. Extra capacity buys
+optimism, not out-of-fold signal, in both directions — so 32 phasors over the diff families stands,
+as a measurement made three times.
+
+**The second round (2026-09-02), every run the same nested procedure with one thing changed.**
+Wideners, all on the 93,598-couple corpus, against 0.6811: λ during selection 0.01 → 0.6808,
+0.001 → 0.6811; harmonics 11, 13–16, 18, 20, 24, 30, 45, 60 added → 0.6791; the four-body
+difference families `ddm`/`ddp`/`camp` (pure d-space, no calendar through a sum) → 0.6808. Nothing
+that adds candidates helps; the one thing that helped is choosing better among the candidates
+already there — the exact score test above, +0.0023. Selecting whole angles (all thirteen
+harmonics of an angle at once, a 26-degree-of-freedom score) reaches 0.6816 with twelve angles —
+a hair above plain selection at roughly eight times the weights, and below the exact score test.
+
+**The era-blocked diagnostic** (outer folds as contiguous blocks of birth years, assigned per
+family so no couple straddles a block) has two very different answers, and both are needed. With
+**ten** blocks each held-out era lies *between* trained eras and the model **interpolates**:
+0.6700, only 0.011 below random folds. With **two** blocks — trained on couples born before ~1908
+and scored on those born after, and vice versa — it must **extrapolate**, and it scores **0.41,
+below chance**: the calendar mapping does not merely fail to transfer beyond the trained eras, it
+inverts. The one-direction version — train only on couples whose groom was born before a cutoff,
+score only those born after, selection and all — is the cleanest statement of it:
+
+| trained on grooms born before | scored on those born after | AUC |
+|---|---|---|
+| 1860 | 57,882 couples | 0.5193 |
+| 1890 | 40,274 couples | 0.5279 |
+| 1910 | 25,068 couples | 0.5265 |
+
+Every cutoff lands within a hair of the Sun–Mars-only figure (0.5192): past the eras it has seen,
+the model keeps exactly what the fast bodies carry and nothing else. A modern couple on the live
+page is this case; that is why the reading carries its caveat and the era-fair percentile falls
+silent for decades the corpus does not hold.
+
+**Every ablation, with the selection re-run inside every fold.** Each row removes one thing from
+the candidate bank and re-runs the whole procedure (stepwise to 32, five outer folds, every
+remaining fast body forced in); the cost is against the baseline of that same procedure, never
+against the ten-fold deploy number. Four bodies cost anything — Neptune and Pluto an order of
+magnitude more than Uranus and Mars — and nine cost nothing, the Sun, Moon, Venus and Saturn among
+them. Of the three angle families only the cross-chart one matters: remove his-planet-to-hers and
+the model loses 0.027, more than any body; remove either chart's internal angles and nothing is
+lost, because what they carried is re-expressed across the pair. Of the harmonics only the
+fundamental matters.
+
+baseline (same procedure, 5 outer folds, K=32): **0.6805**
+
+| removed | kind | nested AUC | cost |
+|---|---|---|---|
+| neptune | body | 0.6704 | +0.0101 |
+| pluto | body | 0.6720 | +0.0085 |
+| uranus | body | 0.6793 | +0.0012 |
+| mars | body | 0.6797 | +0.0008 |
+| venus | body | 0.6804 | +0.0001 |
+| chiron | body | 0.6805 | +0.0000 |
+| jupiter | body | 0.6806 | -0.0001 |
+| sun | body | 0.6806 | -0.0001 |
+| lilith | body | 0.6807 | -0.0002 |
+| node | body | 0.6808 | -0.0003 |
+| saturn | body | 0.6808 | -0.0003 |
+| mercury | body | 0.6809 | -0.0004 |
+| moon | body | 0.6810 | -0.0005 |
+| XY | family | 0.6536 | +0.0269 |
+| XX | family | 0.6810 | -0.0005 |
+| YY | family | 0.6811 | -0.0006 |
+| k=1 | harmonic | 0.6761 | +0.0044 |
+| k=8 | harmonic | 0.6802 | +0.0003 |
+| k=27 | harmonic | 0.6803 | +0.0002 |
+| k=9 | harmonic | 0.6803 | +0.0002 |
+| k=10 | harmonic | 0.6803 | +0.0002 |
+| k=4 | harmonic | 0.6803 | +0.0002 |
+| k=12 | harmonic | 0.6804 | +0.0001 |
+| k=36 | harmonic | 0.6804 | +0.0001 |
+| k=2 | harmonic | 0.6805 | +0.0000 |
+| k=7 | harmonic | 0.6805 | +0.0000 |
+| k=5 | harmonic | 0.6807 | -0.0002 |
+| k=6 | harmonic | 0.6808 | -0.0003 |
+| k=3 | harmonic | 0.6810 | -0.0005 |
+
+**Where the record is deep: measured twice, and the second measurement corrects the first.**
+Restricting to couples whose two people are both well documented (Wikidata sitelinks as the only
+criterion, never a feature) and re-running the whole nested procedure on the subset:
+
+| subset | couples | one chart alone | full bank, plain greedy | lean bank, validated | lift (lean) |
+|---|---|---|---|---|---|
+| all | 100,129 | 0.6733 | 0.6911 | 0.6914 | +0.018 |
+| both ≥ 5 sitelinks | 13,389 | 0.6539 | 0.6514 | **0.6771** | **+0.023** |
+| both ≥ 15 sitelinks | 3,584 | 0.6762 | 0.6312 | 0.6685 | −0.008 |
+
+The first pass, with the full 4,225-phasor bank and the plain greedy, read "the lift vanishes where
+records are deep" — and that reading was an artifact: on 13,389 rows the greedy overfits its own
+selection, and the wide bank scored *below* one chart. The lean bank under validated selection, the
+procedure that actually ships, shows a pair lift on the deep-record couples at least as large as on
+the whole corpus. On the smallest subset no lift is detectable, and with fewer than 200 couples per
+decade neither is anything else — it is reported as measured and not read into. The corrected
+statement: the second chart's contribution is not confined to thinly documented couples.
+
+**The leanest model is as good as the biggest.** Restricting the bank to the cross-chart family at
+the fundamental harmonic only — 169 candidates, his planet to hers, first harmonic — and running
+the same nested procedure with the exact score test gives 0.6837 with 22 phasors chosen, against
+0.6834 for the full 4,225-phasor bank (33 phasors); adding the twelve overtones back to that
+family gives 0.6833. Every family, harmonic and body the ablation table found worthless can be
+left out of the search itself at no cost.
+
+**Every other system as a pseudo-body** (operator, 2026-09-02). Numerology's life path and
+birthday number, the Chinese year animal and stem and day stem and branch, the Nine-Star year, the
+Tzolkin sign and tone, the Lord of the Night: each system's state becomes an angle on its own
+circle (state s of N is s·360/N — a life path of 1 is 40°), so the same families produce every
+aspect, across systems too, and a harmonic that is a multiple of a discrete body's state count is
+skipped as a constant. Conventions are the lab's and are computed identically in the browser
+(`docs/tilldeath.py`, parity proven on 60 values). In the lean cross-chart, first-harmonic bank the
+ten pseudo-bodies raise the candidates from 169 to 529 and the nested AUC **falls** from 0.6914 to
+0.6904: the year-cycle systems are calendar clocks the outer planets already carry, and the
+day-cycle ones carry nothing. With the full bank as well (planets and systems, every family,
+thirteen harmonics — 12,192 candidates) the nested AUC is 0.6903, and the forcing step's picks
+show what a wide bank invites: the 36th harmonic of his Moon against her year stem. Those runs
+used the plain-calendar Chinese year; the corrected, extended set of twenty systems (Li Chun year,
+gendered Kua, Nine-Star month, nayin, yoga, dasha lord, lunar mansion, weekday, Haab month,
+attitude number) is measured below when it lands.
+
+**The inventory of systems, and what each became.** Everything in the history of astrology and
+numerology that can be computed from a birth date alone is either a body already in the bank, a
+pseudo-body added, or a quantisation of a body already there — and a few things are excluded on
+principle.
+
+| system | what it is here | why |
+|---|---|---|
+| Western / Vedic planetary positions (13 bodies) | the continuous bodies | the bank itself |
+| tropical zodiac signs, decans, terms | quantisations of the Sun etc.; decan = 36th harmonic | already carried by harmonics of the same body |
+| nakshatra, tithi, karana | Moon at k=27; Moon−Sun aspect; half-tithi | already in the bank as angles |
+| Vedic yoga (27), Vimshottari dasha lord (9) | pseudo-bodies | sum-based and lord-mapped states the diff bank cannot form |
+| Arabic lunar mansions / manzil (28) | pseudo-body | the 28-fold Moon circle is not a harmonic in the bank |
+| Chinese year animal (12), year stem (10), day stem (10), day branch (12), day nayin (30) | pseudo-bodies, year at **Li Chun** | arithmetic cycles of the day count and the solar year |
+| Chinese month branch, hour pillar | not added / impossible | month branch is the tropical Sun quantised; the hour needs a birth time |
+| Kua (9, gendered) | pseudo-body | the rule differs for men and women, applied per person |
+| Nine-Star Ki year (9) and month (9) | pseudo-bodies | year and solar-month cycles |
+| Maya Tzolkin sign (20), tone (13), Haab month (19), Lord of the Night (9) | pseudo-bodies | day-count cycles (GMT correlation 584283) |
+| Maya Long Count, kin (260) | not added | kin = sign × tone; the katun is a calendar clock |
+| numerology life path (9), birthday (31), reduced birthday (9), attitude (9) | pseudo-bodies | digit cycles of the date |
+| numerology by name (expression, soul urge), gematria | **excluded** | the page's contract is two birth dates and nothing else |
+| weekday (7): planetary days, Burmese Mahabote | pseudo-body | the seven-day cycle |
+| Celtic tree calendar, Native American totems, Japanese Rokuyō | not added | date-of-year (the Sun) or lunar-calendar quantisations already carried |
+| houses, ascendant, midheaven, planetary hours, Human Design | **impossible here** | all need a birth time; the corpus has dates only |
+
+A pseudo-body's state is an angle on its own circle, state s of N at s·360/N, so its aspects are
+formed exactly as a planet's are — with the one rule that a harmonic equal to a multiple of N is a
+constant on that circle and is never searched.
+
+**Validated selection (operator, 2026-09-02): the worst case must be the same score.** If adding
+candidates lowers the honest AUC, the selection step is overfitting the training fold: the greedy
+takes the candidate with the best in-sample score, and a larger pool hands it more spurious
+winners (the best of p null candidates scores like 2·ln p — about 10 for 169 candidates, 19 for
+12,192). The remedy is structural: the score test now only SHORTLISTS five candidates per step;
+each is judged by a five-fold cross-validation inside the training rows; the best enters only if
+it improves that inner CV, and selection stops when none does. A candidate that merely won the
+in-sample lottery cannot get in, so a superset bank can no longer score lower except by CV noise.
+The comparison that tests it, all under validated selection on the 100,129-couple corpus: planets
+alone in the lean bank **0.6914 with 20 phasors**; planets with the twenty systems (1,089
+candidates) **0.6906 with 23**; the full planet bank of 4,225 **0.6913 with 22**; with the six
+name systems as well **0.6910**. Four banks, one score, inside the nested estimate's noise — a
+wider bank no longer costs anything, and none of them finds anything the lean bank lacks. Within
+era the order is the same: lean 0.5661, names 0.5665, full bank 0.5629.
+
+**Name numerology** (operator, 2026-09-02) joins the inventory after all, as six pseudo-bodies
+computed from the name the world knows each person by (the Wikidata English label, romanised so
+every script gets a value): Pythagorean expression, soul urge and personality numbers, the
+Chaldean expression, the cornerstone letter's value, and the maturity number (life path plus
+expression). Measured under validated selection in the lean bank, planets + twenty systems + six
+name systems (1,521 candidates) score **0.6910** against 0.6914 for planets alone: names carry
+information the date does not, and it is not information about this label. Should a name term
+ever earn a place, the page will ask for both names and hold name terms at zero in the date scan,
+where a hypothetical partner has none.
+
+**Is it overfit? Three direct probes, all on the 100,129-couple corpus, lean bank.** A **vault**:
+one family in ten (10,132 couples) sealed by a fixed seed before the search, the folds, the inner CV
+or the λ sweep saw anything; the model built on the other 90% scores **0.6922** on the vault against
+0.6908 nested on the 90% — the sealed couples agree, slightly above; under validated selection the
+same vault scores 0.6927 against 0.6914 nested, again above. The **K curve**: letting the
+search run to 48 or 64 phasors gives 0.6913 and 0.6913 (the inner CV stops at 37); more terms neither
+help nor hurt. **Validated selection** reaches the same 0.6914 with **20 phasors** instead of 32.
+The model is not overfit; it is at the ceiling of what two birth dates hold about this label.
+
+**Within-era AUC — the metric "more astrology" has to move.** The AUC inside each husband birth
+decade, couple-weighted, with the decade held fixed so the calendar cannot help: the shipped model
+scores **0.5666** there against 0.6914 pooled — the 0.067 above chance is what the angles earn beyond
+the era, and it is the same figure the Sun–Saturn-only search reached from the other direction
+(0.569). Every wider bank scores lower within era as well (planets + twenty systems 0.5643, the full
+planet bank 0.5623). And within era the one-chart baselines are **chance** — his complete chart
+0.4906, hers 0.5108 — so the pair's 0.5666 is a within-era lift of **+0.056**: once the calendar
+cannot flatter a single chart, the second chart is worth three times what the pooled comparison
+suggested. Astro-Databank, the one large source of timed births, forbids crawling in its
+robots.txt and is not used; Wikidata's own timed births are being counted.
+
+**The competition (2026-09-03).** Ten independent entries, each one honest attack on the standing
+model, each run under the same nested rules (five outer folds on Kaggle T4 kernels, a same-fold
+control beside it), each then handed to an adversarial verifier whose default was to refute, and
+a judge ranking the survivors by verifier-recomputed gain. The standing best was 0.6914 pooled,
+0.5666 within era.
+
+| # | entry | nested | honest gain | within era | verdict |
+|---|---|---|---|---|---|
+| 1 | second-order phasors (sum/difference angles of each fold's own first ten picks) | **0.6927** (10 folds) | **+0.0013** | 0.5660 | real (9/10 folds up, bootstrap 0/300) — and entirely calendar |
+| 2 | multiplicity-corrected stopping rule | 0.6916 | +0.0002 | 0.5679 | same score with ~18 phasors instead of 32 |
+| 3 | Moon-uncertainty-aware bank | 0.6916 | +0.0002 | 0.5646 | inert against its own control |
+| 4 | stability-bagged selection | 0.6912 | −0.0002 | 0.5671 | matches plain stepwise within noise |
+| 5 | the traditions' own compatibility circles (trines, elements, east/west…) | 0.6903 | −0.0011 | 0.5649 | loses |
+| 6 | state-to-angle by each tradition's geometry | 0.6901 | −0.0013 | 0.5649 | loses in every fold |
+| 7 | birth-decade nuisance terms in selection | 0.6895 | −0.0019 | 0.5655 | loses once refit without them |
+| 8 | era-specialised ensemble | 0.6891 | −0.0023 | 0.5580 | loses on both metrics |
+| — | label purified by explicit child counts | 0.7308 reported | **disqualified** | — | a leak, see below |
+| — | name-numerology variants (30 pseudo-bodies) | 0.6998 / within-era 0.5885 | **disqualified** | — | finished after the judge; a proxy, see below |
+
+**The disqualification is the competition's most useful result.** The label entry kept positives at
+any record depth but negatives only where both spouses were deeply documented, so *being thinly
+documented* became a proxy for the label — the thin-record indicator alone scores 0.932 on that
+label, and the standing model's own out-of-fold scores beat the entry on its rows. Its reported
+"cleaner label, more astrology" was the depth rule, not the stars. The rule for any future label
+work follows: whatever condition defines a negative must define a positive the same way.
+
+**The names entry fell the same way.** Thirty name pseudo-bodies (first name, surname, full name;
+Pythagorean and Chaldean; master numbers; the "hidden passion") lifted the same-fold control from
+0.6914 / 0.5667 to 0.6998 / **0.5885** — the largest within-era movement of the programme, and on
+the standard corpus, labels and folds. Its first pick in every fold was surname against surname on
+the hidden-passion number, a letter-frequency statistic. The refutation is one line: **the length
+of the two names alone scores 0.650 pooled and 0.610 within era** — above the entry, above every
+astrology model — and the count of words 0.608, the count of title words and regnal numerals 0.563.
+Long, titled, many-worded names belong to well-documented aristocrats, whose children Wikidata
+records; the numerology was carrying documentation depth. (The dynastic guess — a shared surname —
+scores below chance.) Name numerology is therefore excluded from the model on the same principle as
+the label rule: a feature that reads the record's depth is not reading the couple.
+
+**Round two: every pseudo-body there is (2026-09-03).** The operator's order was to test all of
+them. Eight tradition modules were written — every system derivable from a birth date (and, where
+a system needs it, the person's own longitudes) as a pure-python state function: **387
+pseudo-bodies** across Western and Hellenistic dignities, the whole Vedic panchanga and
+Ashtakoota inputs with navamsa and dwadasamsa signs of every body, the Chinese four pillars with
+nayin, trines, Nine-Star and Kua, the Tzolkin, Haab, Long Count and Venus round, the Hebrew,
+Islamic, Jalali, Zoroastrian, Coptic, Julian and Republican calendars, numerology's every reduced
+number and the six biorhythm cycles as phase pseudo-bodies, the minor bodies from Ceres to Eris
+and the eight Uranian hypotheticals, and the Tibetan, Celtic, Burmese and medicine-wheel systems.
+Each was added **alone** to the lean planet bank and run through the nested procedure beside a
+same-run control (five outer folds, Kaggle T4 kernels, the remainder on the laptop), then every
+one was scored as a possible proxy: how well its angle alone predicts a deep record, or a husband
+born after 1900.
+
+The proxy check decided the sweep before the sweep did. **Forty-two pseudo-bodies are era
+proxies** — the Uranian hypotheticals predict "born after 1900" at AUC 0.9999 (a 700-year orbit
+is a calendar), Eris 0.994, the Long Count *may* 0.961 and katun 0.928, the tropical signs, decans
+and terms of Pluto and Neptune 0.85–0.93, Pholus 0.80 — and a single Uranian angle alone scores the
+label at 0.676, within a hair of an entire chart. Every pooled "gain" in the sweep belongs to that
+list (katun +0.0016, Hades +0.0016, Zeus +0.0015). The 345 clean pseudo-bodies — every fast
+tradition humanity has written down — sit within ±0.001 of the control on both metrics.
+
+*The twenty-five largest within-era movers (paired against each run's own control):*
+
+| pseudo-body | N | Δ pooled | Δ within-era | era AUC | flag |
+|---|---|---|---|---|---|
+| mesoamerican_lc_may | 13 | +0.0010 | +0.0010 | 0.96 | era-proxy |
+| western_element_moon | 4 | +0.0002 | +0.0010 | 0.50 | clean |
+| mb_venusmars_sum | 0 | +0.0001 | +0.0009 | 0.51 | clean |
+| vedic_varna | 4 | +0.0001 | +0.0009 | 0.50 | clean |
+| mesoamerican_tz_trecena | 20 | +0.0001 | +0.0008 | 0.50 | clean |
+| western_face_sun | 7 | +0.0000 | +0.0008 | 0.50 | clean |
+| western_gender_mars | 2 | +0.0001 | +0.0008 | 0.50 | clean |
+| western_gender_lilith | 2 | +0.0001 | +0.0008 | 0.50 | clean |
+| vedic_rashi_pluto | 12 | +0.0002 | +0.0007 | 0.93 | era-proxy |
+| vedic_antardasha_lord | 9 | +0.0002 | +0.0007 | 0.50 | clean |
+| mb_pallas | 0 | +0.0000 | +0.0007 | 0.51 | clean |
+| cycles-numerology_num_challenge1 | 9 | +0.0003 | +0.0007 | 0.50 | clean |
+| western_gender_sun | 2 | +0.0002 | +0.0007 | 0.50 | clean |
+| east-asian_month_nayin | 5 | +0.0000 | +0.0007 | 0.50 | clean |
+| western_decan_neptune | 36 | +0.0002 | +0.0007 | 0.89 | era-proxy |
+| western_modality_node | 3 | +0.0001 | +0.0007 | 0.51 | clean |
+| western_gender_chiron | 2 | +0.0002 | +0.0007 | 0.51 | clean |
+| calendars_jdn_mod9 | 9 | +0.0001 | +0.0006 | 0.50 | clean |
+| mesoamerican_lord_night | 9 | +0.0001 | +0.0006 | 0.50 | clean |
+| mesoamerican_819_phase | 819 | +0.0001 | +0.0006 | 0.50 | clean |
+| vedic_rajju | 5 | +0.0001 | +0.0006 | 0.50 | clean |
+| mesoamerican_tz_quarter | 4 | +0.0000 | +0.0006 | 0.50 | clean |
+| western_gender_node | 2 | +0.0000 | +0.0006 | 0.50 | clean |
+| vedic_d12_mercury | 12 | +0.0001 | +0.0005 | 0.50 | clean |
+| vedic_d9_neptune | 12 | +0.0001 | +0.0005 | 0.55 | clean |
+
+*The fifteen largest pooled movers:*
+
+| pseudo-body | N | Δ pooled | Δ within-era | era AUC | flag |
+|---|---|---|---|---|---|
+| mesoamerican_lc_katun | 20 | +0.0016 | +0.0004 | 0.93 | era-proxy |
+| mb_uranian_hades | 0 | +0.0016 | +0.0001 | 0.99 | era-proxy |
+| mb_uranian_zeus | 0 | +0.0015 | -0.0001 | 0.95 | era-proxy |
+| mesoamerican_venus_dresden13 | 13 | +0.0012 | -0.0001 | 0.79 | era-proxy |
+| mb_eris | 0 | +0.0012 | +0.0004 | 0.99 | era-proxy |
+| mb_uranian_cupido | 0 | +0.0012 | +0.0005 | 0.91 | era-proxy |
+| mb_uranian_kronos | 0 | +0.0011 | -0.0004 | 0.97 | era-proxy |
+| mesoamerican_lc_may | 13 | +0.0010 | +0.0010 | 0.96 | era-proxy |
+| calendars_french_republican_month | 14 | +0.0010 | +0.0002 | 0.54 | clean |
+| mb_uranian_apollon | 0 | +0.0010 | -0.0002 | 1.00 | era-proxy |
+| mb_uranian_admetos | 0 | +0.0010 | -0.0002 | 1.00 | era-proxy |
+| mb_uranian_vulkanus | 0 | +0.0010 | +0.0002 | 1.00 | era-proxy |
+| mb_uranian_poseidon | 0 | +0.0009 | -0.0003 | 1.00 | era-proxy |
+| mb_pholus | 0 | +0.0008 | -0.0008 | 0.80 | era-proxy |
+| calendars_french_republican_decade_day | 11 | +0.0007 | -0.0007 | 0.54 | clean |
+
+**The clean 345: Δ pooled mean -0.0001 (max +0.0010) · Δ within-era mean -0.0001 (max +0.0010)**
+
+**Round two, the combined models.** Planets plus the five "worthy" clean pseudo-bodies, ten folds,
+validated: 0.6928 / 0.5680 against a same-procedure control of 0.6914 / 0.5662 — and the model's
+strongest term by far (amplitude 0.57) is *his Year-Bearer round minus hers*, the Mesoamerican
+52-year calendar round, which as a difference is simply the couple's **age gap modulo 52**; the next
+two pair Neptune and Pluto with the French Republican month, a calendar that exists only before
+1806. Without the Republican flags the three clean pseudo-bodies give 0.6921 / 0.5674, the
+Year-Bearer round alone 0.6917 / 0.5669 — a thousandth either way, inside the noise. **The
+fast-body model** — the operator's question of what the fast bodies alone can do — answers itself:
+Sun to Saturn alone reaches 0.5472 pooled and 0.5447 within era with two phasors; adding the forty
+pseudo-bodies with any positive within-era delta gives 0.5516 and 0.5411. Every pseudo-body ever
+written down, added to the fast bodies, moves nothing.
+
+**A model per body, then an ensemble over them (operator 2026-09-03).** Every body gets its own
+phasor model, fitted only on the cross-chart angles it takes part in, and a ridge logistic stacks
+the scores. The stack is nested — base models are fitted on inner folds of the training rows to
+make the meta's features and refitted on all training rows to score the untouched outer fold — so
+no base learner ever scores its own fitted rows. Over the thirteen real bodies the stack reaches
+0.6854 pooled and 0.5597 within era, a little *below* the joint search's 0.6914 / 0.5666:
+partitioning the angles by owning body costs something, and the single joint fit stays the model.
+
+Its by-product is the most direct statement of the whole finding — what each body earns **alone**:
+
+| body | its own model, out-of-fold | orbital period |
+|---|---|---|
+| Neptune | **0.6877** | 165 y |
+| Pluto | 0.6756 | 248 y |
+| Uranus | 0.6306 | 84 y |
+| Chiron | 0.5874 | 50 y |
+| Saturn | 0.5541 | 29 y |
+| lunar node | 0.5274 | 18.6 y |
+| Mars | 0.5154 | 1.9 y |
+| Jupiter | 0.5031 | 11.9 y |
+| Lilith | 0.5023 | 8.9 y |
+| Mercury | 0.5020 | 88 d |
+| Moon | 0.5011 | 27 d |
+| Venus | **0.4998** | 225 d |
+
+The order is almost exactly the ordering by orbital period. Neptune alone is worth nearly the whole
+model; **Venus, the planet the tradition assigns to love, is at chance to four decimals**, and so
+are the Moon, Mercury, Jupiter and Lilith. A body's value here is its slowness, not its meaning.
+
+**The last two architectures, and the end of the search (2026-09-04).** Two ways of using all 400
+bodies at once, both nested, both against the standing 0.6914 / 0.5666:
+
+| architecture | candidates | nested | within era |
+|---|---|---|---|
+| the shipped joint search, 13 real bodies | 169 | **0.6914** | **0.5666** |
+| one greedy over every body, real and pseudo | 160,000 | 0.6884 | 0.5583 |
+| a phasor model per body, 400 stacked (10 folds) | 400 × 799 | 0.6887 | 0.5612 |
+| the same stack over the 13 real bodies only | 13 × 25 | 0.6854 | 0.5597 |
+
+Neither beats the thirteen-body joint fit. Opening the greedy to 160,000 candidate angles costs
+0.003 — selection noise, exactly as the earlier wideners did — and stacking four hundred per-body
+models costs about as much, because a weak learner per body cannot recover what a joint fit gets
+from choosing across bodies. The 160,000-candidate search needed the candidate table made lazy
+(400 bodies would hold 64 GB of angle columns; the eager version killed a Kaggle kernel before its
+first log line) and its columns are rebuilt per scoring chunk — restricted to the thirteen real
+bodies it reproduces the shipped fitter to the fourth decimal.
+
+**The per-body leaderboard is the finding.** Each body's own model, over only the angles that body
+takes part in, ranked by out-of-fold AUC:
+
+| rank | body | own model |
+|---|---|---|
+| 1 | Neptune | 0.6868 |
+| 2 | Neptune's tropical term | 0.6862 |
+| 3 | Neptune's decan | 0.6858 |
+| 4 | Cupido (Uranian, 262-year orbit) | 0.6839 |
+| 5 | the Long Count *may* (256 years) | 0.6835 |
+| … | | |
+| — | Pluto | 0.6756 |
+| — | Uranus | 0.6306 |
+| — | Chiron | 0.5874 |
+| — | Saturn | 0.5541 |
+| — | the lunar node | 0.5274 |
+| — | Mars | 0.5154 |
+| — | Jupiter | 0.5031 |
+| — | Lilith | 0.5023 |
+| — | Mercury | 0.5020 |
+| — | the Moon | 0.5011 |
+| — | Venus | 0.4998 |
+
+Neptune alone reaches what the whole thirty-three-phasor model reaches. The next four entries are
+Neptune wearing other clothes and two other clocks of the same period. Below Uranus the list falls
+to chance, and Venus — the planet the tradition would nominate first for love — scores 0.4998.
+
+**The ensemble across architectures, and the last dimension (2026-09-04).** Two closing tests.
+
+A **rank average** over every architecture measured — the lean joint fit, the full 4,225-phasor
+bank, second-order interactions, the four-hundred-body stack, validated selection — reaches 0.6927
+pooled and 0.5665 within era: the pooled figure is the interactions model's known calendar gain and
+the within-era figure does not move. A rank average fits no parameters, so unlike a stacked
+meta-model it cannot leak; the reason it gains nothing is in the correlation matrix, where every
+architecture agrees with every other at **0.95 to 0.99**. There is no diversity left to average.
+
+Then the one thing the whole programme had never tested: **every feature so far is a function of
+ecliptic longitude**. A chart holds more, and the tradition uses it — declination ("parallels" are
+declination aspects), ecliptic latitude, retrogradation, speed (station versus fast) and distance
+(perigee versus apogee). Fifty-five such pseudo-bodies over eleven bodies, entering as continuous
+circles under a fixed linear map or as states, added to the lean bank and run through the same
+nested procedure: **0.6917 pooled, 0.5649 within era**, against 0.6914 / 0.5666. Three
+ten-thousandths on the pooled number and a loss within era. The out-of-plane and out-of-longitude
+dimensions of a birth chart carry no more about this label than its longitudes do.
+
+The chosen terms say why, and they are the last word on the whole search. Twenty-five of the
+model's thirty-five phasors use one of the new dimensions, and the two strongest are *his Neptune's
+latitude against her Pluto* and *his Pluto's declination against hers*. Neptune's latitude is driven
+by the same 165-year orbit as its longitude, so its cross-chart difference carries exactly the same
+statement about the century; the new dimensions of a slow body are still slow, and of a fast body
+still noise. The terms the procedure was forced to include for the fast bodies — *his Moon's speed
+decile against her Sun*, *his Moon against her Sun's distance decile* — are the same tell as in
+every earlier round: pairings no astrologer would write, chosen because the rule demands a fast
+body and the data offers nothing better.
+
+**THE WITHIN-PERSON TEST (2026-09-04) — the strongest instrument in this corpus.** Every result
+above compares different couples, so era, documentation depth and personal fecundity are always in
+play. There is a design that removes all three: **the same person, married twice, with different
+outcomes.** His own chart is then fixed — his era, his fecundity, his record's depth cancel exactly
+— and only the partner varies. The corpus holds 11,328 people in two or more marriages, of whom
+**4,614 have discordant outcomes**, giving 5,834 paired comparisons. The fold structure makes this
+legitimate: folds are cut by connected component of the marriage graph, so both of a person's
+marriages sit in the same fold and neither was seen by the model that scored them.
+
+Read as "does the model rank the marriage that had children above the one that did not":
+
+| design | pairs (people) | the model | the era rule | difference (95% CI) |
+|---|---|---|---|---|
+| within person, partner's era free | 5,834 (4,614) | **0.6021** | 0.5755 | **+0.027 [+0.010, +0.044]** |
+| + partner's decade matched | 3,406 (2,959) | 0.5530 | 0.5327 | +0.020 [−0.000, +0.043] |
+| + partner within 5 years | 1,977 (1,777) | 0.5374 | 0.5192 | +0.018 [−0.011, +0.046] |
+| + partner within 2 years | 912 (873) | 0.5499 | 0.5170 | +0.033 [−0.007, +0.075] |
+| fast bodies only, decade matched | 3,406 (2,959) | 0.5338 | 0.5327 | +0.001 [−0.023, +0.023] |
+
+Nulls are permutations that flip a whole person's pairs together, and intervals are bootstraps over
+people, because someone married three times contributes several correlated comparisons. Against
+chance the model wins everywhere (p ≤ 0.001). Against **the era rule** — "the earlier-born partner
+is the one who had children", which is itself worth 0.52 to 0.58 — the model's edge is significant
+only when the partner's era is left free, exactly where the model is allowed to read that era more
+finely than the crude rule does. With the partner's decade matched the edge is +0.020 with an
+interval that touches zero; with the partner's birth year matched to two years it is +0.033 with an
+interval that spans zero; and the fast bodies, on their own, add **+0.001**.
+
+So the cleanest instrument available says what every other measurement said, and says it about the
+partner rather than the person: what the model reads is when the partner was born. What would settle
+the residual +0.02 to +0.03 is not a better model but roughly four times as many discordant
+same-era remarriages — a data problem, not a search problem.
+
+**The winner is not deployed.** Second-order phasors gain +0.0013 pooled and nothing within era;
+their chosen terms are outer-planet cross-angle sums and differences — a finer birth-year detector.
+The scorer, the publish gate and the exporter can carry such terms (a general linear kind), and the
+exact reproduction command is in the research repository, but a model that reads the calendar more
+finely at the cost of a harder explanation is not the model this page promises. What the
+competition establishes: 0.69 pooled and 0.567 within era is the practical ceiling of birth-date
+phasors on this corpus, flat under every honest widening tried.
+
+**Data, second round.** Three levers were tried for the couples excluded on dates. The 149,260
+couples missing a birth date altogether turned out not to be a harvest gap: Wikidata itself lacks
+the date for 97.8% of those 147,118 partners (3,252 have one, 1,936 to the day). WikiTree (P2949)
+gave 3,720 exact dates for the year-only pool; English Wikipedia `{{birth date}}` infoboxes gave
+1,123 more (only 12,293 of 90,990 such people have an article at all). Children rows were added for
+7,657 finished couples the original children harvest never covered. Together: 100,129 couples, with
+the caveat that the added couples are a different mix — 25.6% with children against 50.3% — so the
+one-chart baselines rise with them (0.6710 / 0.6733) and only the lift over one chart is comparable
+across corpora. Verified along the way: the children query's orientation is sound (0 of 400
+negatives have children in either parent order; 0% of negatives in either the standing or the added
+set have any recorded child with anyone).
+
+### THE RESULT THAT MATTERS: most of this is a calendar
+
+The same search, restricted to bodies that cannot encode a century, and then to bodies that cannot
+encode a decade:
+
+| bodies | slowest cycle | AUC | above chance |
+|---|---|---|---|
+| all 13 | 492 yr (Neptune–Pluto) | 0.6905 | 0.191 |
+| Sun–Saturn (7) | 29 yr | 0.5691 | 0.069 |
+| Sun–Mars (5) | 687 d | 0.5189 | 0.019 |
+| *birth-date gap, 2 parameters* | — | *0.5518* | *0.052* |
+
+**About 89% of what this model knows is when the two people were born.** Neptune takes 165 years to
+circle the zodiac and Pluto 248, so their positions are a statement about the decade. Strip them and
+the model falls to 0.5691; strip Jupiter and Saturn too and it reaches
+0.5189 — **less than the 0.5518 that two numbers of
+birth-date difference achieve on their own**. Every angle Venus, Mars, Mercury, the Moon and the Sun
+can form between two charts, at thirteen harmonics, in differences and midpoints, is worth less than
+knowing how far apart the two birthdays are.
+
+Leave-one-body-out says the same thing in one line. Of thirteen bodies, **two are worth keeping —
+Neptune and Pluto** — and eleven pay nothing: Uranus, Sun, Moon, Mercury, Venus, Mars, Jupiter, node,
+Lilith, Chiron, Saturn. Venus, the planet the tradition would nominate first, costs 0.0000 to remove.
+
+The page prints this decomposition inside every reading rather than in a footnote.
+
+### The success target (2026-09-03)
+
+The operator's redefinition: **a marriage succeeded if it lasted and had children** — a couple
+that split counts against, whatever their children ("separation discounts having children"), and
+the aim is to maximise both the quality (the test of time) and the quantity (children) of the
+relationship. Three corpora, all over the same finished marriages with a children row:
+
+| target | y = 1 | y = 0 |
+|---|---|---|
+| `success` | no separation evidence of any kind, and ≥ 1 child | any separation signal — an explicit end cause (P1534), an end date before either death, remarriage while the spouse lived, or a prose-judged divorce, text match or infidelity — or lasted childless |
+| `success_strict` | as above, with only the three strong separation signals counted | as above, strong signals only |
+| `prosper2` | lasted and ≥ 2 children | split, or fewer than two |
+
+The separation evidence is exactly what the divorce targets computed; the children count is the
+same P22/P25 linkage. Each corpus was built beside the standing one, charted, and run through the
+full nested procedure (lean bank, exact score test, validated selection, ten folds) with the
+one-chart baselines and the within-era metric; the primary target's decomposition was re-measured.
+
+| target | couples | positive | one chart alone | nested, both charts | lift | within era |
+|---|---|---|---|---|---|---|
+| **success** | 100,235 | 45.3% | 0.6982 | **0.7123** | +0.014 | 0.5661 |
+| success_strict | 100,235 | 45.8% | 0.6973 | 0.7118 | +0.015 | 0.5662 |
+| prosper2 | 100,235 | 26.5% | 0.6759 | 0.6883 | +0.012 | 0.5589 |
+
+The one-chart baselines rise with the new label (0.673 → 0.698) for a reason the label makes plain:
+recorded separations are modern, so a single chart's calendar reads "born late → split" and gains.
+The pair's lift over it is unchanged (+0.014) and the within-era figure is the same 0.566 as before —
+what the couple adds is not the calendar. Within era the one-chart baselines on the success corpus
+are again chance (0.4955 / 0.5116), so its within-era pair lift is +0.0545 against the children
+label's +0.0558. Decomposition on the success corpus: all thirteen bodies 0.7112, Sun–Saturn 0.5722,
+Sun–Mars 0.5236, against a 0.5517 age gap — the calendar's share of the above-chance skill rises
+from about 62% to about 66%, because separations are modern.
+
+**The decision: the children target stays.** The operator's aim is the largest astrology effect —
+what the second chart adds over one — and every measure of it is equal or larger under the children
+label: pooled lift +0.018 against +0.014, within-era lift +0.0558 against +0.0545, the fast-body
+models within noise of each other. Adding separation to the label made the label more predictable
+and the model no more astrological. The success model was measured in full and is kept on the
+record; the live page still asks whether the record lists children.
+
+### The sex of the children (2026-09-03)
+
+The operator's next question: did the couple have boys, girls, or both? For the 48,881 couples
+with children, every linked child's sex (P21) and birth date (P569) were harvested — the laptop's
+single IP was throttled to two couples a second, so the harvest ran as six Azure containers, each
+with its own egress address, returning results through blob storage. Four targets over the same
+finished marriages, nothing about the parents in any label:
+
+| target | population | y = 1 |
+|---|---|---|
+| `hadboy` | couples with ≥ 1 child of recorded sex | at least one son |
+| `hadgirl` | couples with ≥ 1 child of recorded sex | at least one daughter |
+| `bothsex` | couples with ≥ 2 children of recorded sex | both sexes present |
+| `firstboy` | couples whose earliest-dated child has a recorded sex | the firstborn is a son |
+
+Each ran the full nested procedure (lean bank, exact score test, validated selection, ten folds)
+beside its one-chart baselines and the within-era metric. The expectation stated in advance: the sex
+of a child is not something a birth date should predict, and any pooled signal here would have to
+be documentation-era again (which sex a record bothers to link).
+
+| target | couples | positive | one chart alone | nested, both charts | within era |
+|---|---|---|---|---|---|
+| had a son | 48,841 | 76.2% | 0.5493 | 0.5522 | **0.5041** |
+| had a daughter | 48,841 | 64.5% | 0.5121 | 0.5141 | **0.5005** |
+| both sexes (≥ 2 sexed children) | 28,315 | 70.1% | 0.5260 | 0.5205 | **0.4987** |
+| firstborn a son | 47,497 | 57.9% | 0.5279 | 0.5277 | **0.4983** |
+
+**This is the control the whole programme needed, and it passes.** On four targets the birth
+calendar cannot reach, the model is at chance within era on every one — 0.4983 to 0.5041, straddling
+0.5 — and the pooled figures (0.51–0.55) are exactly the documentation era they should be: the
+record links sons far more often than daughters (17,358 couples with only sons against 11,629 with
+only daughters, a 49% excess that is archival, not biological), so "had a son" carries the most
+pooled signal and "both sexes" the least. Reading both charts adds +0.003, +0.002, −0.006 and
+−0.000 over reading one. The `bothsex` fit refused its own deployment at a boundary λ — the
+cross-validation asking for maximum regularisation, which is what a model with nothing to fit
+should do.
+
+The comparison that matters: the same machinery, the same corpus, the same folds, reaches +0.056
+within era on *whether the couple had children at all* and 0.000 on *which sex those children were*.
+Whatever the children signal is, it behaves like a property of the couple and not like an artifact
+of the pipeline, because the pipeline finds nothing when nothing is there.
+
+### What the targets did
+
+Five targets were built and measured. The pattern is the finding:
+
+| target | label comes from | rows | best AUC | one chart alone |
+|---|---|---|---|---|
+| P1534 divorce | Wikidata field | 165,589 | 0.8652 | 0.8637 |
+| came apart (mixed evidence) | mixed | 175,407 | 0.7937 | 0.7877 |
+| **children listed** | Wikidata field | 93,598 | 0.6835 | 0.6644 |
+| happy, judged from prose | an LLM reading | 1,590 | 0.53 | 0.53 |
+| infidelity, judged from prose | an LLM reading | 9,924 | 0.53 | 0.53 |
+
+Every target with a high AUC is a **Wikidata structured field**, and such fields are present or
+absent according to how thoroughly a person was documented — which a birth date can identify through
+era and prominence. Both targets whose labels come from *reading a description*, and which therefore
+owe nothing to record depth, sit at chance. The divorce target reached 0.86 while gaining just
+**+0.0015** from the second chart; removing Neptune alone cost it 0.0541.
+
+The children target is the one worth shipping precisely because it is the hardest of the three
+structured ones (0.68, not 0.86) and gains the most from reading both charts (+0.0139 to +0.0189).
+
+### Honest limits
+
+- **The label is not fertility.** Wikidata lists children mainly when a notable person descends from
+  the couple, so "no children recorded" blends genuine childlessness with thin documentation.
+- **The shipped figure is the nested estimate (0.6811)**, in which the selection, the term count
+  and the forced fast bodies were all inside the loop; the fixed-structure CV (0.6866) is published
+  in the model file as a reference and is known to be leak-inflated. (The K=64 and sum-family
+  measurements quoted above were made on the pre-recovery 91,146-couple corpus and are recorded
+  as made.)
+- **Cross-corpus AUCs are not comparable.** Each filtering step changed the population; both solo
+  baselines rose ~0.05 when unfinished marriages were excluded, which made the corpus cleaner *and*
+  easier.
+- **What it cannot do.** It reads two birth dates. It knows nothing about the people.
+## Round: which four major aspects (2026-09-03)
+
+Question: of the Ptolemaic five (conjunction 0°, sextile 60°, square 90°, trine 120°,
+opposition 180°), which combination of four maximises 10-fold CV AUC? Smooth per-pair form,
+169 pairs per aspect, convex analytic ridge, standing group folds. `/tmp/combo4.py`.
+
+Answer: **all five are the same model.** Pooled 0.6893 / within-era 0.5624 for every
+combination; spread 0.00001 at lambda 100 and at lambda 10; out-of-fold scores of two
+different 4-sets rank-correlate 1.000000.
+
+The reason is algebraic, and it also explains the earlier greedy result (3rd and 4th aspect
+adding -0.00002): `cos(theta - A) = cos A * cos theta + sin A * sin theta`, so every aspect
+column lies in the 2-D span of {cos theta_p, sin theta_p}. Any two distinct angles span it;
+further angles add columns of rank zero. Ladder at lambda 100: 1 aspect (trine) 0.6867,
+2 (conj+trine) 0.6894, 3 0.6894, 4 0.6893, 5 0.6893.
+
+Consequence for the polarity question. In the four-aspect form the per-aspect weights are
+NOT identifiable — four columns of rank two, so the ridge returns the minimum-norm split and
+a change of lambda moves all four numbers without changing the fit. Therefore no traditional
+positive/negative reading may be taken from a fitted four-aspect model, and the sum-|w|
+ordering it produces (trine 1.096, opposition 0.917, sextile 0.743, square 0.672) is a
+ridge-allocation artifact, not evidence. The per-aspect univariate/joint tests recorded above
+remain the only well-posed way to ask; their verdicts are unchanged.
+
+Final fitted four-aspect model (sextile/square/trine/opposition, all data, lambda 100,
+bias +0.397138, 676 weights; `~/.artamatch-dev/final4_weights.json` holds the top 40 pairs).
+Identifiable strength is concentrated in the slowest bodies exactly as everywhere else:
+neptune-neptune 0.505 (ideal sep 282.7°), pluto-pluto 0.497 (105.5°), uranus-uranus 0.159,
+against sun-venus 0.037 and mercury-sun 0.030. Neptune and Pluto move ~2°/year, so their
+mutual angle is a birth-year clock; 0.6893 pooled vs 0.5624 within era is the same ~89%
+calendar share the programme reports throughout.
+
+### The optimal TWO aspects (2026-09-04)
+
+Since two aspects saturate the fit, which two? `/tmp/pair2.py`, `/tmp/pair2b.py`.
+
+All ten pairs of the Ptolemaic five, 169 pairs per aspect, analytic ridge, 10 group folds:
+
+| pair | angles | separation | rank | AUC (lambda 100) | within-era |
+|---|---|---|---|---|---|
+| conj+trine | 0, 120 | 120 | 2 | 0.68937 | 0.5624 |
+| conj+sextile | 0, 60 | 60 | 2 | 0.68937 | 0.5624 |
+| sextile+oppo | 60, 180 | 120 | 2 | 0.68937 | 0.5624 |
+| square+trine | 90, 120 | 30 | 2 | 0.68936 | 0.5624 |
+| trine+oppo | 120, 180 | 60 | 2 | 0.68936 | 0.5624 |
+| sextile+trine | 60, 120 | 60 | 2 | 0.68933 | 0.5624 |
+| conj+square | 0, 90 | 90 | 2 | 0.68935 | 0.5624 |
+| square+oppo | 90, 180 | 90 | 2 | 0.68935 | 0.5624 |
+| sextile+square | 60, 90 | 30 | 2 | 0.68931 | 0.5623 |
+| **conj+opposition** | 0, 180 | 180 | **1** | **0.66558** | **0.5433** |
+
+Two findings.
+
+1. **One pair is forbidden and it is a doctrinally natural one.** Conjunction and opposition are
+   antipodal, and `cos(theta - 180) = -cos theta`, so that pair has rank 1: it is a single aspect
+   wearing two names, and it costs 0.024 AUC. Any other pair of distinct majors spans the full
+   per-pair plane; the spread across those nine is 0.00006.
+
+2. **The fifth-decimal ordering is ridge bookkeeping, not information.** A separation sweep
+   (base 0, second angle 10..170) rises monotonically as the two angles CLOSE, peaking at ~10
+   separation (0.68980) rather than at the orthogonal 90 (0.68935). Two checks kill the
+   astrological reading. Pushed further toward degeneracy the "edge" reverses and collapses —
+   sep 5 -> 0.68921, sep 2 -> 0.68436, sep 1 -> 0.67604 — which is a conditioning curve, not a
+   dose-response. And tuning lambda on the ORTHOGONAL pair recovers it: {0, 90} at lambda 3000
+   reaches 0.68957 / within-era 0.5629, within 0.0002 of the best near-pair. A near-collinear
+   basis simply shrinks less in the poorly determined direction; it is a slacker ridge with a
+   nicer number.
+
+**Choice of record: conjunction 0 + square 90.** Basis condition number 1.0 (the canonical
+cos/sin plane), so lambda means what it says, the two weights per pair are identifiable as one
+amplitude and one phase, and no fifth-decimal advantage is being bought with numerical slack.
+0.68957 / 0.5629 at its own best lambda. The shipped 33-phasor model already IS this model,
+written in the equivalent (amplitude, ideal separation) parameterisation.
+
+### The best TRIPLET (2026-09-04)
+
+`/tmp/trip3.py`, `/tmp/trip3b.py`, `/tmp/trip3c.py`.
+
+All ten triples of the Ptolemaic five, harmonic 1, lambda 100: 0.68932 to 0.68936, spread
+0.00004, **every one of rank 2** — in a 2-D plane a third direction cannot exist, so the third
+term is a rank-zero column by construction.
+
+Two things were tested before accepting that.
+
+**1. The only escape from redundancy is a different harmonic, and it is closed.** `cos(k t - A)`
+with k > 1 is genuinely outside the span of {cos t, sin t}. Adding a full second-harmonic plane
+to the k=1 plane does not help, it *hurts*, and so does every harmonic up to 6:
+k=2 -0.00090, k=3 -0.00255, k=4 -0.00257, k=5 -0.00266, k=6 -0.00240 (within-era falls too,
+0.5624 -> 0.5568..0.5588). A third term carrying real new information makes the model worse.
+
+**2. The triple ordering is penalty geometry, and a duplicate-angle control proves it.** The
+three best triples all contain conjunction AND opposition — the collinear pair — i.e. they spend
+a term on a duplicate of a direction they already have. Duplicating a column halves the ridge's
+effective grip on that direction. The control `{0, 0, 90}` — literally the same angle twice,
+zero new information — reaches 0.68961, indistinguishable from the `{0, 90, 180}` triple
+(0.68961) and ABOVE the plain pair `{0, 90}` (0.68957). Conversely `{60, 90, 120}`, the only
+triple with three genuinely distinct directions and no duplicate, ranks LAST.
+
+Each contender at its own best lambda (grid 10..30000):
+
+| model | best AUC | lambda | within-era |
+|---|---|---|---|
+| pair `{0, 120}` | **0.68976** | 3000 | 0.5629 |
+| **triple `{0, 120, 180}` = conj+trine+oppo** | **0.68974** | 3000 | 0.5630 |
+| triple `{0, 90, 180}` = conj+square+oppo | 0.68961 | 3000 | 0.5629 |
+| control `{0, 0, 90}` duplicated angle | 0.68961 | 3000 | 0.5629 |
+| triple `{0, 60, 180}` = conj+sextile+oppo | 0.68959 | 3000 | 0.5631 |
+| pair `{0, 90}` orthogonal | 0.68957 | 3000 | 0.5629 |
+| quad `{0, 60, 90, 120}` | 0.68955 | 3000 | 0.5627 |
+| triple `{60, 90, 120}` no duplicate | 0.68941 | 1000 | 0.5625 |
+
+Paired component bootstrap, 600 draws resampling the marriage-graph component (the CV unit),
+against the pair `{0, 120}`:
+
+| comparison | delta | 95% CI |
+|---|---|---|
+| best triple `{0,120,180}` | -0.00002 | [-0.00008, +0.00005] |
+| control `{0,0,90}` | -0.00015 | [-0.00024, -0.00006] |
+| honest triple `{60,90,120}` | -0.00056 | [-0.00074, -0.00040] |
+
+**Verdict.** The best triplet is **conjunction 0 + trine 120 + opposition 180**, 0.68974 /
+within-era 0.5630. It is statistically indistinguishable from its own two-term subset
+`{0, 120}` (CI straddles zero) because the opposition term IS the conjunction term negated; and
+the only triplet whose three terms point in three different directions is significantly worse
+than the pair. No triplet beats a lambda-tuned pair anywhere in the family. Report the triplet
+if a third aspect is wanted for doctrinal completeness, not because it adds anything.
+
+### CORRECTION to the span argument (2026-09-04, adversarial audit)
+
+The claim recorded above — "every aspect column lies in the 2-D span of {cos t, sin t}; any two
+distinct angles span it; further angles add columns of rank zero" — was offered as the reason all
+five 4-sets are "the same model". It conflates the MODEL CLASS with the ESTIMATOR, and as an
+explanation of the fitted numbers it is wrong. Two parts, stated separately now.
+
+(a) THE MODEL CLASS. The span statement is true and is what kills the information question: no set
+of k >= 2 aspects can express anything the two-angle set cannot, which is why the ladder saturates
+at two and why the conjunction+opposition pair — ANTIPODAL, hence rank 1 — collapses to 0.6656.
+(Note the original sentence was also loose here: "any two DISTINCT angles span it" is false, since
+0 and 180 are distinct and span a line.) The non-identifiability conclusion follows from this part
+and stands.
+
+(b) THE ESTIMATOR. Ridge is NOT span-invariant, so the span does not determine the fit at lambda
+100. With the per-pair block X_p = Z_p A^T, Z_p = [cos t_p, sin t_p] and A the k x 2 matrix of rows
+(cos A_k, sin A_k), the ridge problem min ||y - sum Z_p A^T w_p||^2 + lambda sum ||w_p||^2 is EXACTLY
+the fit of beta_p = A^T w_p under the anisotropic penalty lambda beta_p^T (A^T A)^{-1} beta_p, where
+
+    A^T A = (k/2) I + (1/2) R_mat,     R = sum_k exp(2 i A_k)
+
+(per-column standardisation replaces A^T A by A^T D^{-2} A). Two aspect sets fit identically iff
+they share that matrix — for the majors, iff they share (k, R). Eigenvalues: {0,90} and {90,180}
+give (1,1), cond 1; the five |R|=1 pairs give (0.5,1.5), cond 3; {60,90} and {90,120} give
+(0.134,1.866), cond 13.9; every 4-set gives (1.5,2.5), cond 1.667; all five majors give 2.5*I,
+cond 1. The ten-pair table groups by (|R|, arg R), NOT by rank: {0,90} and {90,180} both give
+exactly 0.68935; {0,60} and {60,180} both exactly 0.68937; {60,120} gives 0.68933 and {60,90}
+0.68931 at identical rank and span. Drop-conjunction and drop-opposition 4-sets share R exactly
+and are bit-identical (max |pred diff| 0.0e+00); the other 4-sets differ.
+
+So: the five 4-sets are the same model CLASS and their fits are INDISTINGUISHABLE (spread 0.00001,
+shared anisotropy cond 1.667) — not literally the same fit, and "rank-correlate 1.000000" was
+agreement to six decimals, not identity. The separation sweep is the falsification of the span-only
+reading, not a footnote: sep 1 deg 0.67604, sep 2 deg 0.68436, sep 10 deg 0.68980, all rank 2, all
+the same span, a 0.014 range = 1400x the spread cited as confirmation. The mechanism is the penalty
+coefficients lambda/(1 +/- |cos delta|), which is also exactly what finding 2 of that round said.
+
+This correction STRENGTHENS the shipped five-aspect model rather than weakening it: the five
+Ptolemaic majors are the balanced set, R = 0, so A^T A = (5/2) I and the induced penalty is
+lambda * (2/5) * I — isotropic. Writing the model in these five privileges no direction of the sky,
+which is a property of THIS set and not of aspect bases in general.
+
+## SHIPPED: six families, five fixed aspects (2026-09-04)
+
+Operator: fix the aspect set to conjunction, sextile, square, trine and opposition and max that
+model out; then, the same day, put men-only and women-only NATAL aspects back in the bank with
+three sum families. Both done; this is what is live.
+
+**The model.**
+
+    score = bias + SUM over selected angles of SUM over A in {0, 60, 90, 120, 180} of w[angle,A] * cos(angle - A)
+    p     = sigmoid(score)
+
+The five angles are FIXED — written down before any data was read, not fitted, not searched. What
+is fitted is the weight each aspect carries on each angle, and those five weights are not five free
+numbers: w[angle,A] = (2/5) * amp * cos(A - ideal_separation), so SUM_A w[angle,A] cos(theta - A) =
+amp * cos(theta - ideal_separation) exactly (verified: worst |diff| 8.3e-16 over 3,601 angles x 28
+selected angles). Hence conjunction and opposition are always exact negatives.
+
+**Why these five and not any five.** Ridge is not invariant to the aspect basis (see the CORRECTION
+above): a set A induces the penalty lambda * beta' (A'A)^{-1} beta with A'A = (k/2)I + (1/2)R_mat,
+R = sum exp(2iA). For the five Ptolemaic majors R = 0 exactly, so A'A = (5/2)I and the penalty is
+(2/5)*lambda*I — ISOTROPIC. Writing the model in these five privileges no direction of the sky.
+That is a property of this set, not of aspect bases in general.
+
+**The bank (676 candidates).** xdiff his[i]-her[j] 169 · aspM his[i]-his[j] 78 · aspW her[i]-her[j]
+78 · xsum his[i]+her[j] 169 · midM his[i]+his[j] 91 · midW her[i]+her[j] 91. The pair-only rule of
+2026-09-01 is lifted; `pair_only` is false and the solo families are declared in the artifact.
+
+**Estimator.** Ridge-penalised logistic, damped Newton to gradient collapse (1e-7 relative). Log-loss
+plus a positive ridge is strictly convex, so the minimum is unique and independent of the start;
+each step is one Cholesky solve, halved until the penalised loss falls. A single weighted
+least-squares solve — one Newton step — costs 0.0005 AUC (0.69088 vs 0.69155 on the XY-only bank),
+which is exactly the gap that had this edition sitting under the previous one.
+
+**Nested 10-fold** — which angles enter, how many, and lambda all re-run inside every training fold,
+fast bodies forced in inside every fold:
+
+| bank | pooled AUC | within-era |
+|---|---|---|
+| XY only, 5 columns standardised separately | 0.69085 | 0.56688 |
+| XY only, identifiable isotropic basis | 0.69088 | 0.56728 |
+| XY only, logistic Newton | 0.69155 | 0.56772 |
+| **six families, logistic Newton (SHIPPED)** | **0.69279** | **0.56720** |
+
+K = 28, lambda = 300, both interior on grids taken to K = 60 and lambda = 1000. Every family earns
+selection across the ten folds: xdiff 151, aspW 36, xsum 35, aspM 28, midW 27, midM 15. Shipped
+model: 14 xdiff, 4 aspW, 4 xsum, 3 aspM, 2 midM, 1 midW.
+
+**The honest reading, and it is the important part.** The six families bought +0.00124 POOLED and
+-0.00052 WITHIN ERA. They bought more calendar, not more astrology. Decomposition on the same bank:
+all 13 bodies 0.6928, Sun..Saturn only 0.5453, Sun..Mars only 0.4965 (chance). Two parameters of the
+husband's birth year alone reach 0.6747 of the model's 0.6928. And inside a single husband-birth
+decade, couple-weighted, the model reaches 0.5672 where two plain numbers of age gap reach 0.5663 —
+handing the age gap to the model moves it to 0.5669, i.e. it adds nothing, because the model already
+contains it: the angle between two slow planets IS the gap between the two birth dates, wrapped
+around a circle. One partner's complete chart alone is chance within era (0.4950 his, 0.5133 hers).
+
+## SHIPPED: twelve angles, five aspects (2026-09-05)
+
+Operator: forget harmonics, stick with the five aspects, max out AUC and make the model as
+explainable as possible. Both halves of that were measured rather than guessed.
+
+**Maxing out, and where it stopped.** Two things were tried on top of the 0.69279 six-family model.
+(1) The generalized harmonic form — every angle carried k=1..12, harmonics doing the aspect grids
+(k=2 the conjunction/opposition axis, 3 the trine grid, 4 the square grid, 12 the sign division) over
+a bank that also held the ABSOLUTE angles his[i] and her[i]. Nested: **0.69329 / 0.56811**, the best
+figure the programme has produced, and the absolute angles earned 22 selections across the ten folds.
+Free harmonic use was k=1 109, k=2 31, k=3 15, then almost nothing. (2) With harmonics ruled out, the
+absolute families were kept and the five-aspect form re-run over 702 angles: **0.69255**, slightly
+BELOW the 676-angle model. That is consistent: an absolute angle's value lay in harmonics 2-3, which
+is the sign structure, so with k=1 only it contributes selection noise. The five-aspect maximum is
+therefore the six-family bank, and it was already deployed.
+
+**Self-sums removed.** midM/midW with i=j is a doubled longitude, not a midpoint, and it read as
+nonsense in a reading ("his pluto + his pluto"). Dropping them takes the bank 676 -> 650 and costs
+nothing measurable (0.69269 vs 0.69279 at K=28).
+
+**The size curve, and the rule used to choose.** lambda by inner CV at each K, selection re-run in
+every fold:
+
+| angles | fitted numbers | aspect weights | pooled AUC | within-era |
+|---|---|---|---|---|
+| 8 | 17 | 40 | 0.67992 | 0.55710 |
+| 10 | 21 | 50 | 0.68633 | **0.56788** |
+| **12** | **25** | **60** | **0.69115** | **0.56733** |
+| 16 | 33 | 80 | 0.69115 | 0.56664 |
+| 20 | 41 | 100 | 0.69168 | 0.56582 |
+| 24 | 49 | 120 | 0.69234 | 0.56689 |
+| 28 | 57 | 140 | 0.69269 | 0.56689 |
+| 33 | 67 | 165 | 0.69254 | 0.56618 |
+
+Pooled AUC climbs with K; the within-era figure PEAKS at 10-12 angles and then flattens. So the
+angles past the twelfth buy pooled AUC only — they buy more birth calendar. The rule applied was
+**the smallest model that loses nothing on the honest metric**: K=12 is 0.0016 below K=28 pooled and
+0.0004 ABOVE it within era, at less than half the size. A paired component bootstrap (400 draws over
+marriage-graph components) puts K=12 at -0.00155 [-0.00216, -0.00098] against K=28 pooled — a real
+but small pooled loss, deliberately taken.
+
+**The shipped model, in full.** 12 angles, 25 fitted numbers, 60 aspect weights, bias +0.94337 style
+constant, nested 0.69115 / within-era 0.56733. Each angle is two numbers — a strength and a preferred
+separation — and its five aspect weights follow by w[A] = (2/5)*amp*cos(A - ideal). Strength shares:
+his uranus - her uranus 31.0% (likes 42 deg, a wide sextile) · her neptune - her pluto 27.1% (177 deg,
+near-exact opposition) · his neptune - his pluto 18.5% (95 deg, square) · his neptune - her uranus 8.9%
+(132 deg, trine) · his saturn - her saturn 6.7% · her neptune + her pluto 3.6%, and the remaining six
+required fast-body pairs 2.9% between them. The top five angles hold 92%. All seven forced fast-body
+angles together hold 11% — which is the plainest available answer to whether fast-planet synastry
+carries anything: barely.
+
+**Decomposition at K=12.** all 13 bodies 0.69114, Sun..Saturn only 0.54855, Sun..Mars only 0.49551
+(chance). The husband's birth year in two parameters reaches 0.67469. Within a single birth decade the
+model reaches 0.56733 against 0.56625 for two numbers of age gap, and handing the age gap to the model
+moves it to 0.56705 — it adds nothing, because the model already contains it.
+
+**Rejected on the way, and why it is recorded.** A "weight per sign" model was built to operator
+specification (aspect polarity fixed by tradition, 12 sign weights per angle, 12xangles+1). Fixing the
+polarities collapses the aspect sum to ONE sinusoid of fixed phase — 2.130*cos(theta - 20.1 deg) for
+the benefic-conjunction polarity — so the per-angle preferred separation is given up. Nested it reached
+0.69051 / 0.56177, and 61% of its absolute weight sat on cells holding under 500 couples, including
++12.92 learned from THREE couples. A support floor (a sector needs 500 training couples to get its own
+number, computed inside every fold) cost 0.00035 pooled and GAINED 0.0006 within era, confirming those
+cells were noise. It is superseded by this edition, which reaches the same information with 25 numbers
+instead of 241 — and, per the harmonic identity, a weight per sign is contained in the general form
+anyway (harmonics 1..5 of an absolute angle plus a constant span the 12-sector basis exactly).
+
+### Brainstorm round: Sun sign, traditional aspects, naming the calendar (2026-09-05)
+
+Operator: improve accuracy and explainability; make the Sun sign matter; make aspects make sense.
+Three candidates, each measured on the live model's folds (12 live angles fixed, lambda by inner CV,
+logistic Newton). `~/.artamatch-dev/brainstorm.py`.
+
+| arm | pooled AUC | within-era |
+|---|---|---|
+| live model (12 angles, smooth) | 0.69118 | 0.56747 |
+| his sidereal Sun sign alone (12 cells) | 0.49882 | 0.49919 |
+| her sidereal Sun sign alone (12) | 0.49268 | 0.49223 |
+| 12 x 12 Sun-sign compatibility grid alone (144) | 0.49790 | 0.49745 |
+| 4 x 4 element grid alone (16) | 0.49717 | 0.49758 |
+| live + his sign + her sign | 0.69092 (-0.0003) | 0.56677 (-0.0007) |
+| live + 12x12 grid | 0.68993 (-0.0013) | 0.56465 (-0.0028) |
+| orb-limited aspects alone (5 per angle, 8 deg half-width, 60) | 0.62321 | 0.51077 |
+| live + orb aspects | 0.69068 (-0.0005) | 0.56522 (-0.0023) |
+| his decade + her decade, no astrology (102) | 0.67545 | 0.50802 |
+| decades + live | 0.69310 (+0.0019) | 0.56481 (-0.0027) |
+| decades + live + orb + grid | 0.69132 (+0.0001) | 0.56146 (-0.0060) |
+
+**The Sun sign is at chance every way it can be asked** — his alone, hers alone, the 144-cell
+compatibility grid (~700 couples per cell), the element grid — pooled AND within era, all within
+0.007 of 0.5. Added to the live model it costs. This is not a resolution or support problem; the
+grid is the best-supported object in the whole programme.
+
+**Traditional orb-limited aspects add nothing over the smooth wave.** Alone they reach 0.623 pooled
+(what leaks through the kernel positions is the calendar) and 0.511 within era; on top of the live
+model they cost 0.0005 / 0.0023. The reason the live model's "likes to sit at 42 deg = sextile +18"
+reads badly is structural and worth stating: with k = 1 an angle has ONE preferred bearing, and a
+bearing is not an aspect. A real aspect is a symmetric pattern with an orb, which is a harmonic
+object (k=3 the trine grid, k=4 the square grid, k=6 the sextile grid) or a bump — and the sinusoid
+rule of 2026-09-01 admits only the former.
+
+**Naming the calendar** (decade terms carrying the era) raises pooled AUC by 0.0019 and lowers
+within-era by 0.0027: the astrology terms, relieved of the calendar, lose within-era discrimination,
+which says part of their within-era signal was calendar interaction. Decade indicators are also not
+sinusoids, so they cannot ship as terms under the standing rule.
+
+Net: none of the three improves the model on the honest metric. What can be done without cost is
+presentational — stop calling a bearing an aspect, and state the Sun-sign null on the page.
+
+## Round: the seven classical bodies (2026-09-05, operator order — no slow bodies from now on)
+
+Bank: Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn; six families, self-sums removed; 182
+two-body angles, five fixed aspects; exact Gram. `~/.artamatch-dev/seven_fit.py` and friends.
+
+**The curve is flat and the model is Saturn.** Free selection, nested: K=4 0.54883, K=6 0.54912 /
+within-era 0.54653, K=8 0.54893, K=12 0.54778, K=28 0.54562. Forcing every body's own pair in
+(the earlier device) costs 0.0006 and was dropped. The K=6 model: his Saturn - her Saturn carries
+67% of the strength and prefers 87 deg, a near-exact square; the other five angles share 33%.
+Without Saturn the model is 0.5052 — chance. One chart alone: 0.5014 his, 0.5013 hers.
+
+**Saturn - Saturn IS the age gap.** Predicting the angle from the birth-date gap alone at 12.22
+deg/yr reproduces it to a median 5.6 deg (90th pct 13.1). corr(cos angle, gap) = +0.52. Age gap
+alone: 0.54370 pooled / 0.56625 within era — the gap BEATS the seven-body model within era
+(0.54653), and gap + bodies reaches 0.55678 within era, below the gap on its own. The seven bodies
+add nothing beyond the age gap.
+
+**Max-out: higher-order angles.** Every +-1 combination of 2, 3 and 4 of the 14 longitudes
+(9,646 candidates, `lin` kind, no coefficient above 1 so nothing is a harmonic), screened per fold
+to the top 400, exact greedy, nested: **0.55886 pooled / 0.54407 within era** against 0.54912 /
+0.54653 two-body. Every fold's leading additions are Jupiter-Saturn cross terms — "his Jupiter -
+his Saturn - her Jupiter + her Saturn", "his Mars - his Saturn - her Saturn" — i.e. the 20-year
+Jupiter-Saturn cycle read across the two charts. Pooled goes up, within era goes DOWN: the
+higher-order angles buy calendar, not synastry. Recorded, not shipped.
+
+**Diagnostics closed.** Every couple is already full-precision, so the noon-UT Moon question has
+no subset to test. Sun-sign grids and orb aspects: see the brainstorm round above (all cost).
+
+**Which annotated label do the seven bodies predict?** The 10,000 human-checked marriages
+(`bio/judged.csv`, 9,606 with charts), every binary label, nested 10-fold by component, read
+against birth year alone and age gap alone on the same rows:
+
+| label | n pos | seven bodies [95% CI] | within-era | birth year | age gap |
+|---|---|---|---|---|---|
+| children together | 6196 | 0.5583 [0.548, 0.572] | 0.5594 | 0.5808 | 0.5834 |
+| children recorded (corpus y) | 4913 | 0.5454 [0.535, 0.555] | 0.5499 | 0.6717 | 0.5486 |
+| infidelity | 532 | 0.5416 [0.516, 0.566] | 0.5513 | 0.4915 | 0.5182 |
+| joint creative work | 1110 | 0.5391 [0.523, 0.555] | 0.5390 | 0.6871 | 0.5518 |
+| abuse | 193 | 0.5352 [0.491, 0.576] | 0.5191 | 0.5443 | 0.5642 |
+| conflict | 679 | 0.5301 [0.507, 0.550] | 0.5320 | 0.5343 | 0.4822 |
+| toxic | 993 | 0.5300 [0.511, 0.550] | 0.5307 | 0.5095 | 0.4863 |
+| happy | 1964 | 0.5195 [0.506, 0.533] | 0.5118 | 0.5733 | 0.5307 |
+| happy vs toxic only | 1964/2957 | 0.5184 [0.496, 0.543] | 0.5238 | 0.5369 | 0.5241 |
+| joint business | 269 | 0.5154 [0.485, 0.551] | 0.5304 | 0.5944 | 0.5287 |
+| quality above median | 4803 | 0.5147 [0.504, 0.526] | 0.5112 | 0.5436 | 0.4880 |
+| good (judged2) | 5351 | 0.5136 [0.503, 0.527] | 0.5154 | 0.5947 | 0.5251 |
+| judge-confidence control | 2577 | 0.4986 [0.485, 0.512] | 0.5011 | 0.5087 | 0.5238 |
+
+Read against the calendar: the best raw number (children together, 0.558) sits BELOW both its
+calendar baselines. The one label where the seven bodies beat both birth year and age gap is
+**infidelity** — 0.5416 against 0.4915 / 0.5182, within-era 0.5513 — on 532 positives, with a CI
+that reaches down to 0.516. Happiness, goodness and quality are near chance for the charts, and
+"good" is a clock (birth year 0.595), exactly the failure the labelling pipeline's own century
+gate warns about. The control label sits at 0.499, so the machinery is not manufacturing signal.
+
+## Round: infidelity, maxed out (2026-09-05)
+
+Target: the `infidelity` annotation of the 10,000 human-checked marriages (9,606 with charts, 532
+positives; 515 of the 546 infidelity=True rows are also `toxic`). Seven classical bodies, five fixed
+aspects, k=1. Everything nested by marriage-graph component and REPEATED over three fold seeds,
+because one 10-fold run on 532 positives has an SE near 0.02 — the 0.5416 reported in the label
+survey was the lucky end of that. `~/.artamatch-dev/infid_max.py`, `infid_max2.py`, `infid_final.py`.
+
+**Levers tried (mean of three seeds):**
+
+| bank | AUC (min–max) | within-era |
+|---|---|---|
+| six families, 182 two-body angles | **0.5276** (0.521–0.536) | 0.534 |
+| + absolute placements natM/natW (196) | 0.5252 | 0.533 |
+| higher-order ±1 angles (9,646, screened) | 0.5239 (0.513–0.537) | 0.520 |
+| his chart only (49) | 0.5075 | 0.528 |
+| one-person features only (98) | 0.4957 | 0.511 |
+| cross-chart only (49) | 0.4860 | 0.493 |
+| absolute placements only (14) | 0.4929 | 0.502 |
+| her chart only (49) | 0.4750 (0.469–0.478) | 0.469 |
+
+Cross-chart angles alone are BELOW chance and her chart alone is reliably below chance — a model
+that is consistently worse than 0.5 out of sample is not an anti-signal, it is a fitted direction
+that reverses on new couples, i.e. noise. The signal that exists needs the cross AND own families
+together. The evidence text attributes only 139 cases to him and 99 to her (352 unattributed), too
+few to split the target by whose infidelity.
+
+**Closed grids (K to 20, lambda to 0.1), three seeds: mean 0.5214 (0.505–0.536), within-era
+0.528; seed-averaged out-of-fold AUC 0.5266, bootstrap 95% CI [0.4998, 0.5519].** Lambda sits at
+the floor in 15 of 30 fold fits; with at most 40 parameters on 8,600 rows the ridge is irrelevant
+there, so the floor is not hiding anything. Calendar on the same rows: birth year 0.49, age gap
+0.52 — this label is NOT a clock, which is why it was worth pursuing and why the answer is small.
+
+**What is stable, though.** Across the 30 fold fits, **his Moon + her Venus is chosen 30/30 times
+and chosen FIRST 21/30** — the one angle in this whole programme that survives every resampling.
+Then his Moon − his Saturn 22/30, his Moon + her Moon 20/30, his Venus + her Mercury 18/30. The
+model's identity is stable even though its discrimination is marginal.
+
+**Final model, all 9,606 couples: K=4, lambda 0.1, bias −2.8752 (train AUC 0.584, optimistic).**
+
+| angle | family | strength | share | prefers | stable |
+|---|---|---|---|---|---|
+| his Moon + her Venus | his + hers | 0.2443 | 28.5% | 119° — a trine, 1° off | 30/30 |
+| his Venus + her Mercury | his + hers | 0.2135 | 24.9% | 25° — conjunction +25° | 18/30 |
+| his Moon − his Saturn | his own | 0.2038 | 23.8% | 3° — conjunction, 3° off | 22/30 |
+| his Moon + her Moon | his + hers | 0.1943 | 22.7% | 73° — sextile +13° | 20/30 |
+
+Five aspect weights per angle (derived, w[A] = (2/5)·amp·cos(A − ideal)):
+
+| angle | conj | sext | square | trine | oppo |
+|---|---|---|---|---|---|
+| his Moon + her Venus | −0.0480 | +0.0497 | +0.0851 | +0.0977 | +0.0480 |
+| his Venus + her Mercury | +0.0777 | +0.0695 | +0.0355 | −0.0081 | −0.0777 |
+| his Moon − his Saturn | +0.0814 | +0.0439 | +0.0037 | −0.0375 | −0.0814 |
+| his Moon + her Moon | +0.0225 | +0.0757 | +0.0744 | +0.0532 | −0.0225 |
+
+Read plainly: the model says a marriage is likelier to be annotated with infidelity when the SUM of
+his Moon and her Venus sits near 119°, when his Venus plus her Mercury sits near 25°, when his Moon
+is near his own Saturn (a natal Moon–Saturn conjunction in the husband's chart), and when the sum
+of the two Moons sits near 73°. Three of the four are sum ("midpoint") angles, not aspects between
+planets. Nothing above 0.53 should be claimed for any of it.
+
+### Infidelity, simplified: synastry + midpoint only (2026-09-05)
+
+Operator: use synastry and midpoint (Davison) only. Bank = his[i] − her[j] (49) and his[i] + her[j]
+(49; the composite midpoint of positions, doubled — what the shipped scorer computes; a Davison chart
+cast at the mid-date would differ for the Moon). No own-chart families. Same protocol: nested by
+component, three fold seeds, closed grids. `~/.artamatch-dev/infid_couple.py`.
+
+**Nothing was lost by simplifying.** Three-seed mean **0.5267** (0.516–0.534), within-era 0.529;
+seed-averaged out-of-fold 0.5290, bootstrap 95% CI [0.5027, 0.5574] — against 0.5276 for the six-family
+bank. Modal K=2, lambda 0.1 (floor; irrelevant at five parameters).
+
+**Selection stability over 30 fold fits:** his Moon + her Venus chosen 30/30 and first 23/30; his Moon +
+her Moon 19/30; his Venus + her Mercury 17/30; his Mercury + her Mercury 11/30. No synastry DIFFERENCE
+angle is chosen more than 7/30 — the signal, such as it is, lives entirely in the midpoints.
+
+**Final model, all 9,606 couples: two angles, five fitted numbers, bias −2.8604.**
+
+| angle | strength | share | prefers | stable |
+|---|---|---|---|---|
+| his Moon + her Venus | 0.2387 | 52.7% | 120° — an exact trine on the midpoint sum | 30/30 |
+| his Venus + her Mercury | 0.2138 | 47.3% | 24° — conjunction +24° | 17/30 |
+
+| angle | conj | sext | square | trine | oppo |
+|---|---|---|---|---|---|
+| his Moon + her Venus | −0.0472 | +0.0482 | +0.0830 | **+0.0955** | +0.0472 |
+| his Venus + her Mercury | **+0.0781** | +0.0693 | +0.0349 | −0.0088 | −0.0781 |
+
+One angle alone (his Moon + her Venus, K=1, three seeds): see the line recorded beneath this entry.
+Honest ceiling for the couple-only form: about 0.53, interval [0.50, 0.56].
+One angle alone, his Moon + her Venus (K=1, three seeds): mean 0.5145 (0.506–0.523), within-era
+0.513. So the second angle is worth about +0.012 and stays; below two angles the model is at chance.
+
+### Infidelity, bare synastry only (2026-09-05)
+
+Operator: simplify to the bare bone of synastry — his planet − her planet, 49 angles, nothing else.
+Same protocol (nested by component, three fold seeds, closed grids, K from 1). `~/.artamatch-dev/infid_syn.py`.
+
+**Three-seed mean AUC 0.4863** (0.4812–0.4945), within-era 0.4890; seed-averaged
+out-of-fold 0.4863, bootstrap 95% CI [0.4593, 0.5092]. Against synastry + midpoint 0.5267 [0.503, 0.557]
+and six families 0.5276 [0.500, 0.552]: removing the midpoints removes the signal.
+
+Final fit on all 9,606 couples chose K=12, lambda 0.1, bias -2.8880, train AUC 0.593 — a
+twelve-angle model with a high training score on a target it cannot predict out of sample is the shape of
+overfitting, and it is recorded as such. Most-chosen angles over 30 fold fits: his moon - her sun 26/30; his mars - her moon 25/30; his sun - her venus 17/30; his moon - her mars 16/30.
+
+| angle | strength | share | prefers | chosen |
+|---|---|---|---|---|
+| his sun - her sun | 0.5899 | 17.7% | 160° — opposition +20° | 13/30 |
+| his mercury - her sun | 0.4745 | 14.2% | 18° — conjunction +18° | 7/30 |
+| his sun - her venus | 0.4251 | 12.7% | 79° — square +11° | 17/30 |
+| his mercury - her saturn | 0.3411 | 10.2% | 130° — trine +10° | 11/30 |
+| his venus - her saturn | 0.2880 | 8.6% | 49° — sextile +11° | 11/30 |
+| his saturn - her venus | 0.2549 | 7.6% | 150° — trine +30° | 13/30 |
+| his saturn - her sun | 0.2475 | 7.4% | 3° — conjunction +3° | 11/30 |
+| his moon - her sun | 0.1988 | 6.0% | 139° — trine +19° | 26/30 |
+| his mars - her moon | 0.1448 | 4.3% | 110° — trine +10° | 25/30 |
+| his sun - her jupiter | 0.1338 | 4.0% | 86° — square +4° | 14/30 |
+| his moon - her mars | 0.1316 | 3.9% | 63° — sextile +3° | 16/30 |
+| his jupiter - her saturn | 0.1107 | 3.3% | 112° — trine +8° | 12/30 |
+
+Verdict: on this label, bare synastry is at chance. Whatever the seven bodies know about the infidelity
+annotation is carried by the midpoints (his + hers), not by planet-to-planet differences.
+
+### CORRECTION: pooled cross-validated AUC is biased downward on rare labels (2026-09-05)
+
+Operator: "there must be something wrong." There was — in the evaluation, not the fit. Every
+infidelity figure above is the AUC of out-of-fold scores POOLED across the ten folds. When a held-out
+fold's positive rate is above average, the model trained without it carries a LOWER intercept, so that
+fold's scores are shifted down while it holds more positives; pooling then ranks a positive-rich fold
+below the others. The bias is a property of the pooling, not of any feature.
+
+**Demonstrated on a null model** — intercept only, refitted per fold, no features at all — with the
+infidelity fold base rates (4.2%–7.2%): pooled AUC 0.4551 / 0.4544 / 0.4598 over the three seeds;
+fold-averaged AUC 0.5000 exactly. A model that cannot see the charts scores 0.455 pooled. That is the
+"consistently below chance" signature reported for bare synastry and for her-chart-only, and it was
+an artifact. `~/.artamatch-dev/infid_eval.py`.
+
+**Corrected figures (AUC scored within each fold and averaged, weighted by fold size; three seeds):**
+
+| bank | pooled (as reported) | fold-averaged | pooled after per-fold centring |
+|---|---|---|---|
+| bare synastry (49) | 0.4996 | **0.4994** | 0.5012 |
+| synastry + midpoint (98) | 0.5267 | **0.5318** | 0.5297 |
+| six families (182) | 0.5214 | **0.5253** | 0.5246 |
+
+So: bare synastry is AT chance, not below it; synastry + midpoint is about 0.532, and the rankings
+between banks are unchanged. The correction is small once real features are present (the intercept
+shift is diluted by the score spread) and large only for a null model. On the 100k-couple children
+target (base rate 48.8%, fold rates nearly equal) the effect is negligible — see the line recorded
+beneath. Rule from here: report fold-averaged AUC for any label under ~10% positives, and always
+run the intercept-only null through the same evaluation.
+On the 100k-couple children target the artifact is negligible, as expected for a balanced label with
+fold base rates 48.0–49.9%: seven bodies K=6 0.54912 pooled → 0.54934 fold-averaged; twelve angles
+(live edition VIII) 0.69115 → 0.69125; six families K=28 0.69279 → 0.69288. The published headline
+numbers stand. The re-scored 10k label table follows.
+
+## Round: the complex phasor model on happy-or-not (2026-09-05)
+
+Operator's model, on the 10k judged marriages (9,606 with charts; label = `happy`, 1,964 = 20.4%):
+
+    p = sigmoid( |z|^2 + beta0 ),  z = b + SUM_i [ d_i e^{j(thM_i - thW_i)} + s_i e^{j(thM_i + thW_i)} + m_i e^{j thM_i} + w_i e^{j thW_i} ]
+
+29 complex parameters over the seven classical bodies; beta0 is a real offset added because |z|^2 >= 0
+would pin p >= 1/2. `~/.artamatch-dev/complex_fit.py`, `complex_fit2.py`.
+
+**Structure.** |z|^2 = theta^H (x x^H) theta. Every base phasor has unit modulus, so the squared terms are
+a constant and the model is 2 Re SUM_{k<l} theta_k^* theta_l e^{j(phi_l - phi_k)}: a first-order phasor on
+each of the 28 base angles with complex weight b^* theta_k (b's phase is the reference every other
+phase is read against) plus 378 second-order composite angles with weights TIED by rank one.
+The global phase is a gauge — |z|^2 is invariant to theta -> e^{j a} theta — so only phases relative
+to b are identified; arg b = 0 was fixed by choice.
+
+**Analytic route and its failure.** Lift to the Hermitian Theta = theta theta^H: the loss is convex in
+the 406 complex c_kl = theta_k^* theta_l, solved by Newton (ridge 300 by inner CV), then theta recovered
+as sqrt(lambda_1) v_1 after completing the diagonal to the nearest rank-one PSD matrix. The fitted Theta
+is only **8.6% rank one** (top eigenvalue share), so the extracted theta is a poor point: logloss 0.5093
+and train AUC 0.489, where gradient descent on the true rank-one model reaches 0.5017 (unregularised)
+/ 0.5045 (ridge 0.03). **The GD check fails the analytic solution.** At ridge 0.03, Adam from five
+random starts converges to ONE solution (implied lifted weights correlate +1.000 across starts), so the
+regularised rank-one optimum is well defined — it is simply not the lifted-and-projected point. The
+lifted convex model itself trains to 0.668 and cross-validates at 0.504: overfit.
+
+**Cross-validation (ten folds by component, fold-averaged AUC):** rank-one model 0.4966–0.5039 across
+ridges 1e-3..1 (best 0.5039 at 0.03, chance); first-order phasors only, linear, 0.5283; birth year alone,
+two parameters, 0.5763 — this label is partly a clock. The |z|^2 form cannot switch its second-order
+terms off (they are theta_k^* theta_l whenever the first-order terms b^* theta_k are non-zero), and with
+|b| = 0.0755 the first-order terms hold only 13.1% of the total strength; the model is dominated by
+composite angles it cannot learn from 1,964 positives.
+
+**The learned variables at ridge 0.03** (train AUC 0.5515, logloss 0.5045, beta0 −1.4428, |b| 0.0755;
+a term 2|b||theta_k| cos(angle_k + arg theta_k − arg b) peaks at angle_k = −arg theta_k):
+
+| param | modulus | phase | peaks at |
+|---|---|---|---|
+| d_sun / d_moon / d_mercury | 0.033 / 0.019 / 0.031 | +105° / +110° / +157° | 105° (trine +15) / 110° (trine +10) / 157° (opposition +23) |
+| d_venus / d_mars | 0.040 / 0.037 | +128° / −98° | 128° (trine +8) / 98° (square +8) |
+| d_jupiter / d_saturn | 0.073 / 0.063 | −5° / −22° | 5° (conjunction) / 22° (conjunction +22) |
+| s_sun / s_venus / s_saturn | 0.046 / 0.075 / 0.047 | +77° / +64° / +96° | midpoint Leo 21 / Leo 28 / Leo 12 (or Aquarius) |
+| s_moon / s_mars / s_mercury / s_jupiter | 0.026 / 0.018 / 0.042 / 0.039 | +164 / +155 / +100 / −105 | Cancer 8 / Cancer 13 / Leo 10 / Taurus 23 (or opposite) |
+| m_sun / m_mercury / m_venus / m_moon | 0.037 / 0.029 / 0.027 / 0.026 | −114 / −111 / −109 / −123 | his Sun Cancer 24 / Mercury Cancer 21 / Venus Cancer 19 / Moon Leo 3 |
+| m_jupiter / m_mars / m_saturn | 0.035 / 0.011 / 0.052 | −154 / −158 / +17 | his Jupiter Virgo 4 / Mars Virgo 8 / Saturn Pisces 13 |
+| w_sun / w_mercury / w_venus | 0.027 / 0.026 / 0.030 | +40 / +33 / +35 | her Sun Aquarius 20 / Mercury Aquarius 27 / Venus Aquarius 25 |
+| w_moon / w_mars / w_jupiter / w_saturn | 0.032 / 0.038 / 0.036 / 0.052 | +115 / +178 / +125 / −2 | her Moon Sagittarius 5 / Mars Libra 2 / Jupiter Scorpio 25 / Saturn Aries 2 |
+
+Top of the 406 weights: (his Venus + her Venus) midpoint Leo 28 / Aquarius 28; (his Jupiter − her
+Jupiter) conjunction; their composite; (his Saturn − her Saturn) conjunction +22; his and her Saturn
+placements. The full top-50 is in `~/.artamatch-dev/complex_fit2.json`. Because the cross-validated AUC
+is 0.504, these phases describe the training sample, not a rule.
+
+### The complex model, three forms, PyTorch + SGD (2026-09-05)
+
+`~/.artamatch-dev/complex_sgd.py`, `complex_torch.py`, `complex_real.py`. Label `happy` (20.4%), 9,606 couples.
+
+1. **sigmoid(|z|^2 + real offset)**, numpy SGD: ridge grid 1e-3..0.3, CV best 0.511 at ridge 0.1 — but at
+   that ridge every |theta| shrinks to ~0 and five seeds disagree (implied-weight correlations 0.1–0.2);
+   the phases are noise. Recorded as such.
+2. **sigmoid(|z + beta0|^2)**, the operator's exact form, PyTorch SGD (momentum 0.9, batch 512): BCE
+   0.6931 = log 2 on every seed, train AUC 0.505, CV 0.49–0.49. The failure is structural, not
+   numerical: |z + beta0|^2 >= 0 forces p >= 1/2 for every couple, and for a label with 20% positives
+   the loss is minimised by theta -> 0, p = 1/2 for everyone. The form cannot express a base rate below
+   one half.
+3. **sigmoid(Re(z + beta0))**, PyTorch SGD: convex; ridge 0.01 by ten-fold CV (fold-averaged); **CV AUC
+   0.5282** (birth year alone 0.5763); train AUC 0.566. Five seeds agree to 3e-3 in theta; exact Newton
+   on the same objective agrees to 3e-2. Re(beta0) = −1.387 is the intercept; Im(beta0) never reaches the
+   output. Each term is |theta_k| cos(phi_k + arg theta_k), peaking at phi_k = −arg theta_k — the
+   argument of a weight is the happiest angle, no reference phase needed.
+
+Shares of total |theta|: synastry aspects 32.1%, midpoints 27.8%, his placements 23.7%, her placements
+16.4%. The 28 weights, ranked:
+
+| # | term | modulus | peaks at | reading |
+|---|---|---|---|---|
+| 1 | d_saturn | 0.1358 | 29° | Saturn–Saturn conjunction +29° |
+| 2 | s_venus | 0.1190 | 289° | Venus midpoint Leo 25° / Aquarius 25° |
+| 3 | m_saturn | 0.1031 | 335° | his Saturn in Pisces 5° |
+| 4 | d_venus | 0.0618 | 195° | Venus–Venus opposition +15° |
+| 5 | m_venus | 0.0541 | 307° | his Venus in Aquarius 7° |
+| 6 | s_saturn | 0.0522 | 201° | Saturn midpoint Cancer 11° / Capricorn 11° |
+| 7 | w_sun | 0.0516 | 206° | her Sun in Libra 26° |
+| 8 | d_mars | 0.0509 | 83° | Mars–Mars square +7° |
+| 9 | s_sun | 0.0486 | 61° | Sun midpoint Taurus 0° / Scorpio 0° |
+| 10 | s_moon | 0.0435 | 157° | Moon midpoint Gemini 18° / Sagittarius 18° |
+| 11 | d_mercury | 0.0431 | 128° | Mercury–Mercury trine +8° |
+| 12 | w_saturn | 0.0430 | 73° | her Saturn in Gemini 13° |
+| 13 | m_jupiter | 0.0389 | 187° | his Jupiter in Libra 7° |
+| 14 | d_moon | 0.0353 | 69° | Moon–Moon sextile +9° |
+| 15 | s_jupiter | 0.0351 | 83° | Jupiter midpoint Taurus 11° / Scorpio 11° |
+| 16 | d_sun | 0.0342 | 356° | Sun–Sun conjunction +4° |
+| 17–28 | w_mars, m_sun, w_moon, m_mars, m_moon, d_jupiter, w_venus, w_jupiter, s_mars, s_mercury, m_mercury, w_mercury | 0.028–0.008 | | see complex_real.json |
+
+Saturn–Saturn (his − her) near conjunction at the top is the age-gap clock again: on this label
+birth year alone scores 0.576, above the model's 0.528, so the strongest "aspect" is the calendar.
+
+### The complex model without Saturn (2026-09-05)
+
+sigmoid(Re(z + beta0)), six bodies (Sun, Moon, Mercury, Venus, Mars, Jupiter), 24 complex weights,
+PyTorch SGD, ridge 0.003 by ten-fold CV. **CV AUC 0.5078** against 0.5282 with Saturn and 0.5763 for
+birth year alone. Five seeds agree to 3.5e-3. Removing Saturn removes the out-of-sample signal: the
+with-Saturn model's edge was d_saturn near conjunction, i.e. the age-gap clock. What remains at the top
+without it — Venus midpoint Leo 23 / Aquarius 23 (0.161), Sun midpoint Taurus 3 / Scorpio 3 (0.102),
+her Sun Libra 27 (0.093), Venus–Venus opposition +15 (0.083), Sun–Sun conjunction +14 (0.082) — is
+fitted in-sample (train AUC 0.552) and does not carry to held-out couples. Shares: synastry 30.9%,
+midpoints 32.8%, his placements 19.3%, hers 17.0%. `~/.artamatch-dev/complex_real6.py`.
+
+## Round: the six-body happy-or-not competition (2026-09-05)
+
+Operator: brainstorm and competitively max out the ten-fold AUC of the six bodies (Sun, Moon, Mercury,
+Venus, Mars, Jupiter — no Saturn) on the `happy` label; the only input is the six-body phases; data and
+training may be improved; no baselines, no within-era. Shared ground `~/.artamatch-dev/six_data.py`
+(9,606 judged couples, component folds, fold-averaged AUC as THE metric — pooled AUC is biased on this
+label, see the correction above). Twelve independent approaches, then adversarial re-runs and a nested
+blend. The session limit interrupted the run: eight entries reported, four never ran (kernel, training
+tricks, confidence weighting, wildcard), and the verify/blend phases are pending resume.
+
+| entry | fold-averaged AUC | what it is | status |
+|---|---|---|---|
+| data_extra | 0.5234 | judged-only ridge on cos/sin of the 144 angles; the 4,110-couple extra pool was REJECTED by inner CV in every fold at every weight | reported, unverified |
+| complex_allpairs | 0.5228 | complex linear model over all body pairs, harmonics 1–3 (k=1 alone: 0.4999) | reported, unverified |
+| harmonics | 0.5226 | 144-angle bank × harmonics with an inner-CV order cutoff (picked k≤3 in all folds); per order alone k=2 0.519 is the only repeatable trace, k≥4 noise | reported, re-run reproduced bit-for-bit by its author |
+| gbm | 0.5178 | HistGradientBoosting on raw degrees (trees on sin/cos 0.502); tuning inside folds, variant chosen on the outer number | reported, unverified |
+| traditional | 0.5160 | orb aspects, sign indicators, elements, classic synastry score; 9-block rank average | reported |
+| mlp | 0.5085 | small PyTorch MLP, fully nested | reported |
+| phasor_select | 0.5066 | five-aspect k=1 phasors, greedy selection | reported |
+| lin_higher | 0.5000 | ±1 higher-order angles, screened | reported |
+
+Reading: every approach sits between 0.50 and 0.523; the three leaders are within 0.001 of one another
+and share one ingredient — low-order harmonics (2–3) on the angle bank, i.e. sign-scale structure —
+while every k=1 form, every tree and the MLP are at or near chance. The competitors' own fold-to-fold
+spread (0.50–0.555) is wider than the gaps between them. More data did not help: the keyword-labelled
+extra pool was rejected by inner CV in every fold. Ceiling for six bodies on this label, honestly: ~0.52.
+
+
+## The couple's number (2026-09-09) — the section between the two-chart reading and "The model, precisely"
+
+The life path is the digital root of the whole date (digit sum reduced to one figure, 1-9); the
+couple's number is the two life paths added and reduced again. Because the digital root respects
+addition this equals the digital root of (Y+M+D)_a + (Y+M+D)_b, and reducing before or after the
+addition gives the same digit — verified as an identity on every row.
+
+Corpus: the same 100,129 marriages as the two-chart reading (`docs/tilldeath.json`'s corpus; both
+dates to the day). The label is CHILDREN RECORDED (n_children > 0; 48.82%), which is why the page
+says "had children written beside it" and never "lasted" or "loved". Triple-checked: an independent
+recomputation from the raw file with datetime parsing and repeated-digit-sum reduction agreed on
+every digit; identity checks; every column sums to 100,129 couples and 48,881 parents.
+P(children | number): 1 48.76 · 2 48.94 · 3 49.05 · 4 49.55 · 5 48.62 · 6 48.79 · 7 48.98 ·
+8 48.67 · 9 47.98 (percent; ~11,000 couples each).
+
+Honest size, and it is on the page: four is the maximum of nine cells chosen post hoc. Label
+permutation p for the cell alone 0.05; best-of-9 p = 0.42 (10,000 draws); chi-square across the nine
+p = 0.62. Era-standardised by husband's birth decade the highest is still 4. On the 9,913
+judged-warmth couples the same number is 20.32% vs a 20.60% base. Offered as a charm, not a forecast.
+Files: `~/.artamatch-dev/parenthood_sum_mod9_FINAL.csv`, `parenthood_100k.csv`.
+
+
+<!-- Preserved from the research/divorce-study branch at the 2026-09-09 merge: its own Edition V write-up, kept beside the edition record above. -->
+
 ## Edition V — Till Death Do Us Part (2026-09-01)
 
 A second reading on the page, from a different corpus and a different model family to everything
@@ -853,22 +2268,3 @@ lambda * (2/5) * I — isotropic. Writing the model in these five privileges no 
 which is a property of THIS set and not of aspect bases in general.
 
 
-## The couple's number (2026-09-09) — section 05 on the page
-
-The life path is the digital root of the whole date (digit sum reduced to one figure, 1-9); the
-couple's number is the two life paths added and reduced again. Because the digital root respects
-addition, this equals the digital root of (Y+M+D)_a + (Y+M+D)_b, and reducing before or after the
-addition gives the same digit — verified as an identity on every row.
-
-Corpus: the 100,129 marriages of `tilldeath_wt3/full.csv` (both dates to the day). The label there
-is CHILDREN RECORDED (y = n_children > 0; 48.82%), not relationship duration — the page says
-"had children written beside it" for that reason. Triple-checked (independent recomputation from
-the raw file with datetime parsing and repeated-digit-sum reduction; identity checks; column sums
-100,129 / 48,881): P(children | number) = 1: 48.76 · 2: 48.94 · 3: 49.05 · 4: 49.55 · 5: 48.62 ·
-6: 48.79 · 7: 48.98 · 8: 48.67 · 9: 47.98 (percent; each ~11,000 couples).
-
-Honest size: four is the maximum of nine cells chosen post hoc. Label-permutation p for the cell
-alone 0.05; best-of-9 p = 0.42 (10,000 draws); chi-square across the nine p = 0.62. Era-standardised
-by husband's birth decade the highest is still 4. On the 9,913 judged-warmth couples the same
-number 4 is 20.32% vs a 20.60% base. Every number on the page is reported as a charm, not a
-forecast, for exactly this reason. Files: `~/.artamatch-dev/parenthood_sum_mod9_FINAL.csv`.

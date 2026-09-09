@@ -1,0 +1,31 @@
+{
+ "model": "ArtaMatch quality (quality_good, doctrine-only, small-n regularised)",
+ "alpha": 0.004,
+ "cv_auc": 0.5909,
+ "test_auc": 0.5862,
+ "intercept": 0.038792241957240264,
+ "n_bank": 2159,
+ "n_surviving": 13,
+ "benchmark": {
+  "target": "quality_good",
+  "n_test": 1395,
+  "pos_rate": 0.5978494623655914,
+  "age_gap_auc": 0.4853475508363363,
+  "auc_se": 0.01576840007011145
+ },
+ "weights": {
+  "dav_pluto_sign=Pis": 0.48398902731147897,
+  "cycle_neptune_pluto_phase=Sco": 0.20825982471688462,
+  "cycle_neptune_pluto_phase=Sag": 0.7716269741732837,
+  "cycle_neptune_pluto_phase=Aqu": 0.3292000057430952,
+  "his_jupiter_square_her_venus": 0.28997604608700356,
+  "cycle24_neptune_pluto=15": 0.22694402787032059,
+  "nadipair=MadhyaxMadhya": 0.1545551547320113,
+  "tarapair=10": 0.15581257475793261,
+  "comp_pluto_sign=Ari": 0.3583372395218953,
+  "comp_pluto_sign=Pis": 0.4872324915365081,
+  "his_uranus_conj_her_uranus": 0.08864554264298011,
+  "his_pluto_conj_her_pluto": 0.08122891449267602,
+  "cycle36_neptune_pluto=23": 0.24923578765480645
+ }
+}

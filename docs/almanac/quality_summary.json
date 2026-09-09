@@ -1,0 +1,18 @@
+{
+ "cv_auc": 0.5987,
+ "test_auc": 0.5858,
+ "alpha": 0.0075,
+ "n_bank": 13408,
+ "n_statements": 8,
+ "n_negated": 4,
+ "age_gap_auc": 0.4853475508363363,
+ "auc_se": 0.01576840007011145,
+ "over_chance_se": 5.44,
+ "over_baseline_se": 6.37,
+ "audit_failures": [],
+ "full_model_cv_logistic": 0.6033521960470564,
+ "pair_only": true,
+ "interaction_gate": 0.5,
+ "systems_measured": 44,
+ "systems_above_baseline": 8
+}

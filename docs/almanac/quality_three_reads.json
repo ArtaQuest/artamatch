@@ -1,0 +1,38 @@
+{
+ "reads": [
+  {
+   "alpha": 0.0035,
+   "cv": 0.592,
+   "test": 0.563,
+   "era": 0.5556,
+   "rules": 26
+  },
+  {
+   "alpha": 0.004,
+   "cv": 0.5919,
+   "test": 0.5875,
+   "era": 0.5556,
+   "rules": 16
+  },
+  {
+   "alpha": 0.0045,
+   "cv": 0.5925,
+   "test": 0.5766,
+   "era": 0.5556,
+   "rules": 11
+  }
+ ],
+ "auc_se": 0.01576840007011145,
+ "cv_range": [
+  0.5919,
+  0.5925
+ ],
+ "test_range": [
+  0.563,
+  0.5875
+ ],
+ "test_spread_se": 1.55,
+ "shipped_alpha": 0.0035,
+ "why_shipped": "chosen on explainability, not on its test score: all three alphas tie on cross-validation and this one keeps the most non-era doctrine",
+ "bank": 5771
+}

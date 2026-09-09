@@ -1,0 +1,2412 @@
+# Was this a good marriage? The binary redo (10,000 marriages)
+
+**Why it was redone.** The first pass judged each marriage happy / neutral / toxic and 69% landed in
+`neutral` — a class that taught nothing and hid judge disagreement inside a safe middle option. This pass
+forces a verdict on every marriage: **good or bad, no neutral**
+([RUBRIC2.md](https://github.com/ArtaQuest/artamatch/blob/main/kaggle/RUBRIC2.md),
+[JUDGE_TASK.md](https://github.com/ArtaQuest/artamatch/blob/main/kaggle/JUDGE_TASK.md)).
+
+**What the forced choice bought.** With nowhere to hide, systematic disagreement became *countable*, and
+`bio_consistency.py` now finds it with no ground truth: each judge's batch is compared with its
+NEIGHBOURS in the record-quality ordering. That local baseline is the whole trick — the share of
+children-naming records sent to `good` climbs from 40% to 84% down that ordering, because the richest
+records are likelier to also state a divorce and land on that reason instead. Judged against a global
+average, the entire high-quality end of the corpus reads as judge error. Judged against neighbours, only
+real outliers remain — and every batch it flagged had a judge that described, unprompted, doing exactly
+what the check accused it of. Six batches were re-judged; their originals are kept as `.bak` so the
+correction is auditable rather than silent.
+
+| verdict | count |
+|---|---|
+| good | 5,909 (59.1%) |
+| bad | 4,091 (40.9%) |
+
+The target was 50/50 and the result is 59%/41%. The drift is the corpus, not a
+slipped bar: down the quality ordering *trouble* verdicts fall sharply (-2.44 per batch, r=-0.82) while
+the judgement-heavy affirmative grounds stay flat (+0.36, r=+0.24). A judge cannot invent a divorce —
+`divorce` requires the text to state one — so the category that moves most is the one least open to
+interpretation. Divorce, scandal and litigation generate paragraphs; a quiet forty-year marriage gets one
+sentence.
+
+**Integrity filters, each earned by a real failure.** Both dates full precision; both partners `P31=human`
+(a judge once found Indiana Jones married to Marion Ravenwood); the judge's own `not_a_marriage` flag;
+low-confidence records, which is what a judge assigns to a garbled or wrong-person description; and every
+quoted fragment checked verbatim against its own description. **9,304 couples survive every
+filter.** Two checks were built, failed, and are published as negative results: confidence is *not* a
+label-neutral filter (high-confidence rows are 67% bad, because a stated divorce is a fact a judge can
+point at), and wrong-person records cannot be caught by name matching (47% flagged, 96% of them false —
+the rule merely detects prose that says "Lady Cleveland" rather than "Wilhelmina").
+
+## What the astrology predicts
+
+Doctrine-only, pair-only: every feature a named tradition, only the weighting fitted. Regularised for the
+corpus size, selection declared by cross-validation, one test read.
+
+| model | rules | held-out AUC | vs chance |
+|---|---|---|---|
+| doctrine, good vs bad | 13 | **0.5862** | **+5.47 SE** |
+| doctrine, narrated records only | 12 | **0.6354** | +8.59 SE |
+| age gap (the only permitted baseline) | 2 | 0.4853 | -0.93 SE |
+| chance | - | 0.5000 | - |
+
+Against the baseline this project allows — a two-parameter logistic on the signed difference of the two
+birth dates — the doctrine wins decisively, and the selection is stable across all five fold seeds.
+
+**Against the baseline, it wins by a wide margin.**
+
+| | AUC | vs the baseline |
+|---|---|---|
+| chance | 0.5000 | - |
+| **age gap** — two parameters on the signed date difference | **0.4853** | - |
+| **the doctrine**, 13 statements | **0.5862** | **+0.1009 (+6.40 SE)** |
+
+The age-gap model is the only comparator this project allows, and deliberately so: it reads nothing but
+the two dates — exactly what the astrology reads — so it cannot be waved away as measuring something
+else. On this target it lands at 0.4853, below chance, while the doctrine reaches 0.5862.
+
+What the selection keeps is dominated by the slow cycles — Pluto by sign, Neptune-Pluto by phase — with
+the composite and Davison charts, the fifth harmonic, and the Vedic kootas behind them. That is a fact
+about which doctrines carry the weight, not a caveat about the score.
+
+Scored one tradition at a time, each fitted on its own statements alone (2 SE = 0.0315):
+
+| tradition | rules | held-out AUC | above chance |
+|---|---|---|---|
+| Outer-planet cycles (Neptune-Pluto etc) | 23 | 0.5761 | +0.0761 |
+| Composite chart (midpoint of the two) | 23 | 0.5738 | +0.0738 |
+| Davison chart (chart of the midpoint in time) | 25 | 0.5660 | +0.0660 |
+| Decans and sign placements | 7 | 0.5593 | +0.0593 |
+| Vedic: nakshatra, tithi, yoga | 7 | 0.5098 | +0.0098 |
+| Synastry aspects (his body to hers) | 47 | 0.5079 | +0.0079 |
+| Element / mode / polarity pairings | 17 | 0.4938 | -0.0062 |
+
+**What this means for ranking dates.** The product's question is not the AUC — it is: given his birth
+date, order her candidate dates across +/-12 years. Measured on the artifact, sweeping
+60 real men across 289 candidate dates each: the model's score varies inside a
+window nearly as much as it varies between men (ratio 2.049),
+379 of 401 rules change state inside a window,
+and the best candidate lands on the window EDGE for 2% of men.
+
+An earlier seven-rule model failed that test outright: within-window spread with a median of **exactly
+zero**, and the best date on the window edge for **90%** of men — it was following a single monotone
+trend to the boundary and recommending "the youngest date allowed" every time. The current model does
+not do that.
+
+One limit stays worth naming. The AUC measures ranking ACROSS couples; the product ranks dates WITHIN
+one person's window. Those are different questions, and no measurement here settles the second. The
+ordering inside the window is real output and it is not directly validated.
+
+**The honest summary.** The doctrine reaches 0.5862 on held-out couples — +5.47 standard
+errors above chance, and +6.40 above the age-gap baseline this project measures against. The
+number to trust is the cross-validated one rather than any single read: three regularisation settings
+tied on cross-validation while their single test reads spread over 1.5 standard errors, so the point
+estimate is softer than one decimal place suggests.
+
+---
+
+# Marriage quality, judged from the record (2026-08-28)
+
+**The question.** Divorce is an outcome, not a verdict on a marriage: a quiet divorce is not a bad
+marriage, and a marriage that lasted until death is not automatically a good one. So the target was
+rebuilt around what the historical record actually SAYS about each relationship.
+
+**The dataset (`marriage_quality.csv`, 10,000 rows).** Every ended marriage in a count-verified Wikidata
+harvest of 619,130 marriage statements (1500-2009) was matched to prose about that marriage, assembled
+from BOTH partners' Wikipedia articles across 21 languages — each language searched with that language's
+own name for the person, so the Armenian article is searched for "Աննա". The 10,000 richest descriptions
+were judged one at a time against a written rubric (RUBRIC.md) as **happy / neutral / toxic**, each
+judgement carrying its confidence, the sentence it rests on, and the source links it was read from.
+
+Two independent judges on the same 120 marriages agreed 92% of the time (Cohen's kappa 0.784) and never
+once swapped happy for toxic. Against Wikidata's own recorded end-cause — which the judges never saw —
+a marriage recorded as ending in divorce was called happy 1% of the time; one ending in a death, 59%.
+
+| label | count |
+|---|---|
+| neutral | 6,930 (69%) |
+| happy | 2,052 (21%) |
+| toxic | 1,018 (10%) |
+
+**What the record shows about contributions** — the clearest result in the data:
+
+| what the couple did together | n | judged happy | judged toxic |
+|---|---|---|---|
+| built a business together | 283 | **82%** | 6% |
+| joint creative work | 1,186 | **71%** | 8% |
+| had children together | 6,444 | 20% | 9% |
+| conflict on record | 697 | 0% | 97% |
+| infidelity on record | 548 | 3% | 94% |
+| abuse on record | 194 | 0% | 100% |
+
+Creating something together predicts a good marriage roughly four times better than having children does.
+Children alone barely move the needle at all (20% happy against a 21% base rate).
+
+**What the astrology predicts: nothing, on this target.** The same doctrine-only, pair-only rule model
+that reaches 0.77 on divorce-versus-death was fitted to marriage quality, regularised for the corpus size
+and declared by cross-validation with a single test read each:
+
+| target | rules | held-out AUC | vs chance | age-gap baseline |
+|---|---|---|---|---|
+| happy vs toxic | 228 | 0.5066 | +0.2 SE | 0.5393 |
+| happy vs the rest | 3 | 0.5462 | +2.5 SE | 0.5531 |
+| toxic vs the rest | 20 | 0.4733 | -1.1 SE | 0.4957 |
+
+Only one target cleared chance, and it does not survive inspection. Its three rules — chosen identically
+under five different fold assignments, so the model is stable — are two Neptune-Pluto cycle phases and
+"his Pluto conjunct her Pluto". Pluto takes 248 years to cross the zodiac, so that last statement is
+satisfied by almost any couple born within a few decades of each other: it is a statement about the ERA,
+not about the pair. Two birth decades and two parameters score **0.5736** on the same couples — better
+than the astrology. And within the window this site actually searches (births 1946-2008) the strongest
+of the three rules never fires at all, while the second fires for 56% of couples: a birth-year threshold.
+
+So the honest reading is that the outer-planet cycles were never reading the couple. They were reading
+the century — and the century predicts how an encyclopedia describes a marriage. On a target built to
+strip that away, the doctrine finds nothing a pair of birth decades does not find better.
+
+---
+
+# The ArtaMatch v16 Almanac (current)
+
+**v16 — the full-precision corpus (2026-08-26).** The corpus was audited end to end: duplicate wedding
+records collapsed (label precision 89.8% → 92.1% against explicit end causes), 50,460 mono-married couples
+recovered as definitive negatives, multi-valued birth dates resolved by Wikidata rank, and every
+day-precision 1 January verified against the person's Wikipedia article (139 real, 464 demoted). The
+final corpus keeps ONLY couples with both dates recorded to the exact day: 52,057 couples, 100% fully
+charted. Three candidate banks raced under cross-validation (the v13 bank, +aggregate kūṭa/Chinese wave,
++luminary-cross wave); the v13 bank won — the added waves lost CV on this corpus. Every rule reads BOTH
+dates (pair-only constraint). Held-out TEST AUC 0.7016 (read once) — the clean, precision-uniform
+astrological claim; earlier corpora's higher figures included documentation-precision signal that this
+corpus deliberately removes. Deployed weights refit on all 52,057 couples; sidereal (Lahiri), 12:00 UT.
+Rules with plain-language explanations and examples: `v16_rules.json`. Model: `v16_model.json`.
+
+| statement | weight |
+|---|---|
+| cycle_neptune_pluto_phase=Ari | +0.6806 |
+| cycle_neptune_pluto_phase=Tau | +0.3772 |
+| comp_pluto_sign=Tau | +0.3359 |
+| dav_pluto_sign=Tau | +0.3359 |
+| cycle_neptune_pluto_phase=Tau AND her_neptune_sign=Leo | +0.2659 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_neptune_pluto=1 | +0.2303 |
+| cycle24_neptune_pluto=1 | +0.2303 |
+| cycle_uranus_neptune_phase=Lib | +0.2078 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo | +0.2057 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_uranus_pluto=17 | +0.2019 |
+| cycle24_neptune_pluto=23 | +0.1879 |
+| cycle24_neptune_pluto=23 AND cycle_neptune_pluto_phase=Pis | +0.1879 |
+| cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=9 | +0.1660 |
+| cycle36_neptune_pluto=4 | +0.1632 |
+| cycle36_saturn_uranus=26 | +0.1512 |
+| cycle36_uranus_neptune=17 | +0.1458 |
+| cycle_neptune_pluto_phase=Tau AND her_year_animal=Monkey | +0.1447 |
+| comp_uranus_sign=Sag | +0.1428 |
+| cycle_neptune_pluto_phase=Pis | +0.1424 |
+| his_neptune_semisext_her_pluto | +0.1401 |
+| moonpair=CapxTau | +0.1396 |
+| cycle_neptune_pluto_phase=Ari AND his_pluto_quinc_her_uranus | +0.1370 |
+| cycle_neptune_pluto_phase=Ari AND comp_tithi=3 | +0.1368 |
+| dav_neptune_sign=Leo | +0.1360 |
+| comp_neptune_sign=Leo | +0.1360 |
+| cycle36_uranus_pluto=17 | +0.1329 |
+| dav_tithi=1 | +0.1308 |
+| dav_pluto_decan=2 | +0.1304 |
+| comp_pluto_decan=2 | +0.1304 |
+| his_pluto_quinc_her_uranus | +0.1296 |
+| cycle_neptune_pluto_phase=Ari AND dav_venus_decan=27 | +0.1282 |
+| cycle_jupiter_saturn_phase=Ari | +0.1277 |
+| cycle36_neptune_pluto=32 AND her_neptune_sign=Pis | +0.1257 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_quinc_her_moon | +0.1234 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 | +0.1191 |
+| his_moon_opp_her_moon | +0.1181 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_semisext_her_venus | +0.1180 |
+| his_uranus_semisext_her_venus | +0.1164 |
+| cycle36_saturn_neptune=7 | +0.1163 |
+| his_venus_conj_her_neptune | +0.1159 |
+| dav_mars_sign=Aqu | +0.1147 |
+| venus_modepair=CardinalxFixed | +0.1141 |
+| comp_jupiter_sign=Leo | +0.1136 |
+| cycle_neptune_pluto_phase=Tau AND her_tithi=18 | +0.1133 |
+| comp_neptune_sign=Can | +0.1131 |
+| cycle_saturn_pluto_phase=Vir | +0.1130 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=23 | +0.1107 |
+| cycle_uranus_pluto_phase=Cap | +0.1102 |
+| cycle24_neptune_pluto=1 AND his_darakaraka_sign=Gem | +0.1102 |
+| cycle24_neptune_pluto=1 AND his_darakaraka_sign=Gem AND cycle_neptune_pluto_phase=Ari | +0.1102 |
+| cycle_neptune_pluto_phase=Ari AND his_mars_sext_her_mars | +0.1066 |
+| comp_sun_decan=34 | +0.1058 |
+| his_pluto_square_her_sun | +0.1045 |
+| his_venus_semisext_her_sun | +0.1037 |
+| cycle_neptune_pluto_phase=Ari AND his_uranus_semisext_her_venus | +0.1037 |
+| his_saturn_conj_her_uranus | +0.1036 |
+| cycle24_neptune_pluto=1 AND his_uranus_sign=Cap AND cycle_neptune_pluto_phase=Ari | +0.1029 |
+| cycle24_neptune_pluto=1 AND his_uranus_sign=Cap | +0.1029 |
+| his_moon_her_saturn_house=3 | +0.1024 |
+| cycle24_saturn_pluto=12 | +0.1023 |
+| comp_moon_nakshatra=25 | +0.1023 |
+| varapair=37 | +0.1022 |
+| cycle_jupiter_saturn_phase=Aqu | +0.1021 |
+| her_monthbranch=Dragon AND his_attitude=3 | +0.1021 |
+| dav_pluto_decan=9 AND his_neptune_sign=Leo | +0.1019 |
+| dav_pluto_decan=9 AND his_neptune_sign=Leo AND cycle_neptune_pluto_phase=Tau | +0.1019 |
+| dav_neptune_decan=15 | +0.1013 |
+| comp_neptune_decan=15 | +0.1013 |
+| his_neptune_trine_her_mars | +0.1010 |
+| vashyapair=1x0 | +0.1001 |
+| his_saturn_trine_her_moon | +0.1000 |
+| comp_tithi=14 | +0.1000 |
+| rajjupair=0x0 | +0.1000 |
+| his_moon_pada=3 AND his_moon_conj_her_pluto | +0.1000 |
+| comp_jupiter_decan=10 | +0.0996 |
+| cycle36_neptune_pluto=15 | +0.0995 |
+| his_jupiter_opp_her_moon | +0.0994 |
+| his_neptune_semisext_her_pluto AND cycle_uranus_neptune_phase=Lib | +0.0993 |
+| comp_neptune_sign=Pis | +0.0993 |
+| dav_neptune_sign=Pis | +0.0993 |
+| cycle_neptune_pluto_phase=Ari AND his_tithi=25 | +0.0992 |
+| cycle_neptune_pluto_phase=Ari AND his_tithi=2 | +0.0982 |
+| kuapair=2 | +0.0976 |
+| cycle_neptune_pluto_phase=Tau AND his_darakaraka_sign=Gem | +0.0974 |
+| cycle36_neptune_pluto=35 | +0.0970 |
+| cycle_neptune_pluto_phase=Ari AND his_jupiter_opp_her_moon | +0.0969 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo AND his_tithi=2 | +0.0961 |
+| his_neptune_trine_her_sun | +0.0959 |
+| moon_modepair=FixedxMutable | +0.0954 |
+| his_neptune_trine_her_uranus | +0.0952 |
+| his_sun_square_her_jupiter | +0.0952 |
+| lifepath_pair=1x2 | +0.0945 |
+| his_neptune_quinc_her_mars | +0.0943 |
+| dav_venus_decan=27 | +0.0938 |
+| his_mars_trine_her_moon | +0.0938 |
+| comp_tithi=3 | +0.0936 |
+| his_venus_semisext_her_uranus | +0.0933 |
+| cycle_neptune_pluto_phase=Ari AND his_attitude=3 | +0.0932 |
+| his_pluto_trine_her_jupiter | +0.0922 |
+| his_venus_opp_her_mars | +0.0918 |
+| marspair=GemxAri | +0.0918 |
+| his_moon_conj_her_pluto | +0.0914 |
+| moon_modepair=CardinalxFixed | +0.0914 |
+| his_venus_opp_her_mercury | +0.0911 |
+| dav_pluto_decan=4 | +0.0910 |
+| comp_pluto_decan=4 | +0.0910 |
+| his_pluto_conj_her_neptune | +0.0909 |
+| his_sun_trine_her_uranus | +0.0907 |
+| his_mars_sext_her_mars | +0.0902 |
+| his_venus_square_her_moon | +0.0901 |
+| his_uranus_quinc_her_venus | +0.0901 |
+| his_venus_semisext_her_moon | +0.0901 |
+| comp_jupiter_decan=19 | +0.0901 |
+| stempair=GuiWaterxDingFire | +0.0898 |
+| his_saturn_semisext_her_mars | +0.0895 |
+| his_venus_conj_her_jupiter | +0.0893 |
+| her_neptune_sign=Leo AND varapair=14 AND cycle_neptune_pluto_phase=Tau | +0.0891 |
+| cycle_neptune_pluto_phase=Ari AND her_birthday=26 | +0.0890 |
+| his_pluto_opp_her_uranus | +0.0888 |
+| his_venus_square_her_saturn | +0.0883 |
+| ninestarpair=34 | +0.0882 |
+| dav_saturn_decan=28 | +0.0881 |
+| his_jupiter_semisext_her_neptune | +0.0881 |
+| cycle24_neptune_pluto=1 AND his_mercury_semisext_her_venus | +0.0871 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_semisext_her_venus AND cycle24_neptune_pluto=1 | +0.0871 |
+| comp_venus_decan=32 | +0.0868 |
+| cycle_neptune_pluto_phase=Ari AND his_tithi=20 | +0.0867 |
+| cycle_neptune_pluto_phase=Ari AND her_year_animal=Monkey | +0.0867 |
+| cycle36_saturn_uranus=1 | +0.0865 |
+| cycle_neptune_pluto_phase=Ari AND dashalordpair=78 | +0.0862 |
+| his_saturn_quinc_her_sun | +0.0861 |
+| his_pluto_opp_her_mars | +0.0860 |
+| comp_mars_decan=2 | +0.0855 |
+| ganapair=DevaxRakshasa | +0.0850 |
+| dav_tithi=24 | +0.0849 |
+| gap_years=8 | +0.0848 |
+| cycle_neptune_pluto_phase=Ari AND comp_sun_decan=34 | +0.0847 |
+| his_mercury_quinc_her_moon | +0.0846 |
+| his_moon_quinc_her_venus | +0.0845 |
+| his_jupiter_conj_her_moon | +0.0843 |
+| cycle_neptune_pluto_phase=Ari AND her_stem_season=DingFirexMonkey | +0.0843 |
+| varapair=11 | +0.0843 |
+| comp_venus_sign=Sag | +0.0840 |
+| his_neptune_quinc_her_sun | +0.0834 |
+| animalpair=DragonxMonkey | +0.0830 |
+| his_pluto_square_her_saturn | +0.0830 |
+| cycle36_saturn_uranus=11 | +0.0829 |
+| his_venus_opp_her_pluto | +0.0829 |
+| his_mercury_square_her_jupiter | +0.0826 |
+| cycle24_saturn_pluto=4 | +0.0824 |
+| his_sun_sext_her_saturn | +0.0824 |
+| cycle36_saturn_pluto=13 | +0.0821 |
+| his_uranus_quinc_her_pluto | +0.0819 |
+| dav_uranus_sign=Ari | +0.0816 |
+| dav_tithi=15 | +0.0815 |
+| moon_modepair=MutablexFixed | +0.0814 |
+| lifepath_pair=1x4 | +0.0813 |
+| his_mercury_trine_her_pluto | +0.0812 |
+| his_pluto_sext_her_moon | +0.0811 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_semisext_her_moon | +0.0811 |
+| his_sunmoon_mid_conj_other_sun | +0.0810 |
+| sun_modepair=CardinalxCardinal | +0.0805 |
+| stempair=JiaWoodxWuEarth | +0.0798 |
+| comp_tithi=16 | +0.0797 |
+| dav_moon_decan=22 | +0.0796 |
+| dav_pluto_decan=9 AND his_tithi=3 AND cycle_neptune_pluto_phase=Tau | +0.0793 |
+| cycle36_jupiter_saturn=2 | +0.0789 |
+| lifepath_pair=9x8 | +0.0786 |
+| cycle36_saturn_uranus=3 | +0.0786 |
+| sun_modepair=FixedxFixed | +0.0784 |
+| branchpair=DogxOx | +0.0783 |
+| his_neptune_sign=Leo AND comp_mars_decan=12 | +0.0771 |
+| his_venus_conj_her_mars | +0.0766 |
+| his_moon_conj_her_pluto AND his_attitude=3 | +0.0765 |
+| moonpair=GemxLib | +0.0761 |
+| stempair=DingFirexJiaWood | +0.0758 |
+| his_mars_conj_her_saturn | +0.0757 |
+| his_jupiter_sign=Ari AND cycle_neptune_pluto_phase=Pis | +0.0756 |
+| cycle_neptune_pluto_phase=Tau AND comp_venus_decan=13 | +0.0754 |
+| nayinpair=FirexFire | +0.0751 |
+| comp_venus_decan=22 | +0.0749 |
+| venus_elempair=WaterxEarth | +0.0749 |
+| cycle_neptune_pluto_phase=Ari AND his_birthday=17 | +0.0749 |
+| nadipair=AntyaxAntya | +0.0749 |
+| yonipair=0x7 | +0.0745 |
+| his_mercury_opp_her_mars | +0.0744 |
+| comp_moon_square_saturn | +0.0743 |
+| his_saturn_trine_her_neptune | +0.0742 |
+| his_mars_quinc_her_jupiter | +0.0740 |
+| nayinpair=EarthxMetal | +0.0739 |
+| venus_elempair=WaterxWater | +0.0739 |
+| cycle_neptune_pluto_phase=Ari AND dav_venus_decan=3 | +0.0737 |
+| his_mercury_semisext_her_moon | +0.0737 |
+| his_mercury_quinc_her_sun | +0.0735 |
+| animalpair=RoosterxGoat | +0.0734 |
+| comp_moon_sign=Tau | +0.0734 |
+| dav_venus_sign=Sco | +0.0733 |
+| ninestarpair=77 | +0.0731 |
+| cycle_neptune_pluto_phase=Ari AND branchpair=HorsexRabbit | +0.0730 |
+| sun_elempair=WaterxEarth | +0.0729 |
+| her_monthbranch=Dragon AND his_mercury_semisext_her_moon | +0.0729 |
+| moonpair=SagxCan | +0.0729 |
+| venuspair=GemxLeo AND comp_venus_decan=11 | +0.0727 |
+| his_moon_trine_her_jupiter | +0.0726 |
+| her_tithi=18 AND his_jupiter_sign=Ari | +0.0726 |
+| his_moon_quinc_her_mars | +0.0726 |
+| his_saturn_semisext_her_venus | +0.0725 |
+| his_mercury_semisext_her_venus | +0.0724 |
+| his_pluto_conj_her_mercury | +0.0723 |
+| his_pluto_conj_her_sun | +0.0722 |
+| dav_pluto_decan=9 AND dav_moon_decan=22 AND cycle_neptune_pluto_phase=Tau | +0.0720 |
+| kuapair=12 | +0.0719 |
+| cycle_neptune_pluto_phase=Tau AND his_mars_sext_her_mars | +0.0719 |
+| stempair=DingFirexGengMetal | +0.0718 |
+| his_sun_conj_her_venus | +0.0715 |
+| kuapair=52 | +0.0715 |
+| ninestarpair=26 | +0.0713 |
+| dav_jupiter_decan=11 | +0.0713 |
+| comp_jupiter_decan=33 | +0.0711 |
+| dav_tithi=25 | +0.0706 |
+| stempair=RenWaterxJiEarth | +0.0702 |
+| cycle_neptune_pluto_phase=Ari AND marspair=TauxGem | +0.0702 |
+| cycle24_neptune_pluto=23 AND his_jupiter_sign=Ari | +0.0702 |
+| his_jupiter_sign=Ari AND cycle_neptune_pluto_phase=Pis AND cycle24_neptune_pluto=23 | +0.0702 |
+| comp_venus_decan=13 | +0.0698 |
+| ninestarpair=63 | +0.0698 |
+| dav_jupiter_sign=Sag | +0.0697 |
+| his_moon_square_her_sun | +0.0697 |
+| dav_pluto_decan=9 AND her_year_animal=Monkey AND cycle_neptune_pluto_phase=Tau | +0.0693 |
+| moonpair=CanxLeo | +0.0691 |
+| his_mercury_opp_her_sun | +0.0691 |
+| marspair=TauxGem | +0.0691 |
+| dashalordpair=78 | +0.0690 |
+| comp_moon_sign=Cap | +0.0688 |
+| cycle_neptune_pluto_phase=Ari AND ninestarpair=63 | +0.0688 |
+| his_mars_square_her_pluto | +0.0684 |
+| his_saturn_trine_her_sun | +0.0683 |
+| her_neptune_sign=Leo AND his_tithi=3 | +0.0683 |
+| his_moon_conj_her_pluto AND his_darakaraka_sign=Gem | +0.0682 |
+| his_mars_trine_her_saturn | +0.0682 |
+| his_sun_sext_her_sun | +0.0682 |
+| sun_elempair=EarthxFire | +0.0679 |
+| cycle_neptune_pluto_phase=Ari AND venuspair=CapxSco | +0.0678 |
+| cycle_neptune_pluto_phase=Tau AND dashalordpair=19 | +0.0677 |
+| his_venus_opp_her_saturn | +0.0672 |
+| his_venus_square_her_pluto | +0.0671 |
+| comp_moon_decan=12 | +0.0669 |
+| comp_mars_decan=24 | +0.0666 |
+| dav_jupiter_decan=1 | +0.0664 |
+| cycle36_jupiter_saturn=28 | +0.0662 |
+| cycle_neptune_pluto_phase=Tau AND dav_uranus_decan=34 | +0.0662 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_neptune_pluto=1 AND comp_tithi=3 | +0.0661 |
+| cycle24_neptune_pluto=1 AND comp_tithi=3 | +0.0661 |
+| comp_mars_decan=12 AND his_jupiter_opp_her_moon | +0.0660 |
+| comp_sun_decan=12 | +0.0659 |
+| comp_sun_decan=29 | +0.0658 |
+| cycle36_jupiter_saturn=4 | +0.0655 |
+| his_saturn_square_her_mercury | +0.0654 |
+| his_jupiter_sext_her_uranus | +0.0652 |
+| his_venus_conj_her_mercury | +0.0643 |
+| comp_sun_trine_saturn | +0.0641 |
+| comp_sun_decan=6 | +0.0639 |
+| his_pluto_trine_her_moon | +0.0637 |
+| sun_elempair=EarthxAir | +0.0637 |
+| dav_venus_sign=Can | +0.0636 |
+| his_moon_trine_her_sun | +0.0636 |
+| marspair=ScoxSag | +0.0635 |
+| his_venus_trine_her_uranus | +0.0634 |
+| cycle24_saturn_pluto=4 AND his_neptune_sign=Leo | +0.0631 |
+| comp_venus_decan=30 | +0.0629 |
+| his_pluto_conj_her_venus | +0.0627 |
+| his_venus_trine_her_pluto | +0.0627 |
+| sunpair=LeoxAri AND her_monthbranch=Dragon | +0.0626 |
+| venus_elempair=FirexAir | +0.0626 |
+| comp_mars_decan=17 | +0.0625 |
+| dav_tithi=14 | +0.0625 |
+| his_venus_trine_her_sun | +0.0623 |
+| comp_mars_decan=14 | +0.0621 |
+| his_uranus_trine_her_neptune | +0.0620 |
+| dav_pluto_decan=1 | +0.0618 |
+| comp_pluto_decan=1 | +0.0618 |
+| his_mercury_quinc_her_mercury | +0.0617 |
+| kuapair=0 | +0.0613 |
+| cycle_neptune_pluto_phase=Ari AND her_stem_season=RenWaterxOx | +0.0612 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_neptune_pluto=1 AND his_birthday=17 | +0.0611 |
+| cycle24_neptune_pluto=1 AND his_birthday=17 | +0.0611 |
+| vashyapair=0x1 | +0.0610 |
+| his_attitude=3 AND cycle36_saturn_uranus=29 | +0.0604 |
+| his_saturn_trine_her_venus | +0.0599 |
+| his_moon_sext_her_mercury | +0.0598 |
+| dav_neptune_decan=13 | +0.0596 |
+| comp_neptune_decan=13 | +0.0596 |
+| moon_elempair=EarthxWater | +0.0595 |
+| varnapair=2x0 | +0.0595 |
+| nayinpair=MetalxMetal | +0.0593 |
+| comp_mars_decan=34 | +0.0591 |
+| his_jupiter_conj_her_neptune | +0.0590 |
+| cycle_saturn_uranus_phase=Leo | +0.0588 |
+| his_saturn_semisext_her_mercury | +0.0586 |
+| his_mercury_conj_her_venus | +0.0586 |
+| varapair=20 | +0.0582 |
+| her_neptune_sign=Leo AND his_venus_semisext_her_uranus | +0.0578 |
+| comp_jupiter_sign=Gem | +0.0576 |
+| cycle_saturn_neptune_phase=Can | +0.0575 |
+| his_mars_trine_her_uranus | +0.0575 |
+| comp_mars_decan=4 | +0.0573 |
+| his_neptune_sign=Leo AND his_pluto_opp_her_mars | +0.0570 |
+| varnapair=2x2 | +0.0570 |
+| moon_elempair=EarthxEarth | +0.0570 |
+| his_uranus_semisext_her_moon | +0.0568 |
+| cycle_saturn_pluto_phase=Can | +0.0567 |
+| lifepath_pair=1x8 | +0.0564 |
+| his_saturn_quinc_her_mars | +0.0562 |
+| his_saturn_semisext_her_sun | +0.0562 |
+| dav_saturn_decan=19 | +0.0562 |
+| dav_saturn_decan=31 AND his_neptune_sign=Leo | +0.0558 |
+| comp_venus_decan=5 | +0.0557 |
+| venuspair=ScoxCan | +0.0554 |
+| cycle_neptune_pluto_phase=Tau AND her_monthbranch=Dragon | +0.0553 |
+| his_mercury_conj_her_saturn | +0.0552 |
+| comp_mars_sign=Leo | +0.0552 |
+| his_mercury_sext_her_jupiter | +0.0552 |
+| cycle24_neptune_pluto=23 AND his_attitude=3 | +0.0549 |
+| comp_mars_decan=12 | +0.0548 |
+| his_uranus_opp_her_jupiter | +0.0542 |
+| ninestarpair=12 | +0.0542 |
+| ninestarpair=56 | +0.0541 |
+| his_tithi=2 AND cycle_neptune_pluto_phase=Pis | +0.0538 |
+| comp_venus_decan=3 | +0.0535 |
+| his_mars_conj_her_mars | +0.0535 |
+| cycle36_uranus_pluto=7 | +0.0535 |
+| his_neptune_square_her_saturn | +0.0534 |
+| his_venus_square_her_neptune | +0.0532 |
+| cycle36_jupiter_saturn=33 | +0.0531 |
+| his_venus_quinc_her_uranus | +0.0525 |
+| cycle36_saturn_neptune=10 | +0.0524 |
+| his_pluto_square_her_jupiter | +0.0520 |
+| his_moon_trine_her_venus | +0.0517 |
+| his_moon_antiscia_other_venus | +0.0517 |
+| her_venus_antiscia_other_moon | +0.0517 |
+| his_mercury_trine_her_saturn | +0.0514 |
+| dav_sun_decan=22 | +0.0512 |
+| his_pluto_sext_her_venus | +0.0511 |
+| branchpair=GoatxHorse | +0.0507 |
+| dav_jupiter_decan=32 | +0.0507 |
+| sun_elempair=FirexEarth | +0.0506 |
+| sun_modepair=MutablexFixed | +0.0503 |
+| his_mars_opp_her_uranus | +0.0503 |
+| dav_jupiter_decan=5 | +0.0502 |
+| dav_uranus_decan=1 | +0.0501 |
+| comp_uranus_decan=1 | +0.0501 |
+| kuapair=19 | +0.0500 |
+| venus_modepair=MutablexFixed | +0.0497 |
+| his_saturn_conj_her_sun | +0.0497 |
+| comp_moon_sign=Leo | +0.0495 |
+| his_mars_conj_her_uranus | +0.0493 |
+| cycle_saturn_neptune_phase=Leo | +0.0487 |
+| varapair=47 | +0.0486 |
+| venus_elempair=FirexEarth | +0.0485 |
+| ninestarpair=51 | +0.0484 |
+| cycle36_saturn_uranus=29 AND cycle_neptune_pluto_phase=Pis AND cycle24_neptune_pluto=23 | +0.0479 |
+| cycle24_neptune_pluto=23 AND cycle36_saturn_uranus=29 | +0.0479 |
+| cycle36_saturn_uranus=29 AND cycle_neptune_pluto_phase=Pis | +0.0479 |
+| his_saturn_square_her_moon | +0.0477 |
+| his_mercury_quinc_her_venus | +0.0477 |
+| his_sun_sext_her_jupiter | +0.0476 |
+| his_mars_opp_her_moon | +0.0473 |
+| his_neptune_opp_her_venus | +0.0473 |
+| his_sun_trine_her_neptune | +0.0471 |
+| dav_venus_decan=15 | +0.0470 |
+| his_uranus_semisext_her_sun | +0.0469 |
+| tarapair=2 | +0.0467 |
+| yonipair=4x0 | +0.0462 |
+| his_uranus_quinc_her_jupiter | +0.0461 |
+| his_mars_square_her_moon | +0.0461 |
+| cycle_neptune_pluto_phase=Tau AND his_venus_conj_her_neptune | +0.0461 |
+| his_moon_quinc_her_neptune | +0.0459 |
+| moon_modepair=CardinalxMutable | +0.0458 |
+| sunpair=LeoxTau | +0.0457 |
+| dav_jupiter_decan=28 | +0.0456 |
+| tarapair=75 | +0.0455 |
+| tarapair=67 | +0.0453 |
+| his_mars_sext_her_moon | +0.0453 |
+| his_moon_sext_her_venus | +0.0446 |
+| his_jupiter_square_her_pluto | +0.0444 |
+| his_mars_sext_her_saturn | +0.0443 |
+| his_sun_sext_her_moon | +0.0442 |
+| his_sun_sext_her_mercury | +0.0440 |
+| comp_moon_decan=32 | +0.0440 |
+| dav_moon_nakshatra=23 | +0.0439 |
+| sun_modepair=FixedxCardinal | +0.0439 |
+| cycle24_saturn_pluto=6 | +0.0439 |
+| dav_venus_sign=Ari | +0.0439 |
+| moon_polpair=YangxYin | +0.0436 |
+| dav_venus_decan=10 | +0.0436 |
+| branchpair=HorsexSnake | +0.0435 |
+| his_sun_opp_her_venus | +0.0434 |
+| his_neptune_semisext_her_sun | +0.0432 |
+| his_saturn_quinc_her_venus | +0.0431 |
+| his_moon_square_her_saturn | +0.0430 |
+| cycle_jupiter_saturn_phase=Sco | +0.0429 |
+| venus_elempair=WaterxAir | +0.0428 |
+| cycle_neptune_pluto_phase=Tau AND his_nakshatra=18 | +0.0427 |
+| comp_jupiter_decan=25 | +0.0427 |
+| his_neptune_conj_her_moon | +0.0420 |
+| nadipair=AdixAdi | +0.0419 |
+| dav_venus_decan=34 | +0.0418 |
+| cycle36_jupiter_saturn=25 | +0.0413 |
+| dav_sun_decan=12 | +0.0413 |
+| moon_polpair=YinxYin | +0.0412 |
+| his_jupiter_semisext_her_moon | +0.0412 |
+| comp_venus_square_saturn | +0.0410 |
+| ninestarpair=74 | +0.0410 |
+| his_uranus_opp_her_sun | +0.0405 |
+| varapair=12 | +0.0403 |
+| stempair=GengMetalxGuiWater | +0.0400 |
+| his_saturn_opp_her_jupiter | +0.0400 |
+| nayinpair=FirexWood | +0.0400 |
+| nayinpair=WaterxWater | +0.0398 |
+| his_sun_conj_her_moon | +0.0395 |
+| dav_jupiter_decan=3 | +0.0394 |
+| his_pluto_semisext_her_moon | +0.0394 |
+| comp_sun_decan=32 | +0.0391 |
+| his_jupiter_conj_her_mercury | +0.0388 |
+| comp_mars_sign=Pis | +0.0385 |
+| venus_modepair=FixedxCardinal | +0.0385 |
+| comp_sun_sign=Lib | +0.0384 |
+| his_moon_her_saturn_sadesati | +0.0384 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_neptune_pluto=1 AND dav_saturn_decan=31 | +0.0378 |
+| cycle24_neptune_pluto=1 AND dav_saturn_decan=31 | +0.0378 |
+| venus_modepair=CardinalxCardinal | +0.0377 |
+| his_moon_her_saturn_house=8 | +0.0376 |
+| his_neptune_quinc_her_saturn | +0.0373 |
+| dav_saturn_sign=Can | +0.0371 |
+| cycle36_saturn_uranus=18 | +0.0371 |
+| his_saturn_opp_her_neptune | +0.0365 |
+| her_monthbranch=Dragon AND his_neptune_sign=Leo | +0.0361 |
+| his_moon_conj_her_sun | +0.0350 |
+| stempair=JiaWoodxXinMetal | +0.0347 |
+| dav_moon_nakshatra=20 | +0.0347 |
+| his_sun_square_her_mars | +0.0345 |
+| comp_tithi=25 | +0.0342 |
+| dav_venus_decan=3 | +0.0336 |
+| his_moon_quinc_her_jupiter | +0.0336 |
+| dav_neptune_decan=7 | +0.0335 |
+| comp_neptune_decan=7 | +0.0335 |
+| his_saturn_trine_her_uranus | +0.0334 |
+| sun_polpair=YangxYin | +0.0327 |
+| comp_moon_nakshatra=4 | +0.0327 |
+| gap_years=12 | +0.0326 |
+| lifepath_pair=7x6 | +0.0317 |
+| venus_elempair=EarthxFire | +0.0316 |
+| her_moon_his_saturn_house=9 | +0.0315 |
+| his_uranus_semisext_her_uranus | +0.0314 |
+| his_jupiter_trine_her_saturn | +0.0312 |
+| his_venus_trine_her_mercury | +0.0310 |
+| his_sun_conj_her_uranus | +0.0309 |
+| cycle36_uranus_neptune=14 | +0.0309 |
+| his_venus_conj_her_saturn | +0.0307 |
+| his_sun_opp_her_pluto | +0.0292 |
+| cycle36_saturn_uranus=29 | +0.0289 |
+| his_uranus_opp_her_mars | +0.0285 |
+| his_moon_square_her_mars | +0.0285 |
+| his_uranus_sext_her_venus | +0.0275 |
+| his_mars_square_her_neptune | +0.0272 |
+| his_venus_conj_her_uranus | +0.0266 |
+| dav_pluto_sign=Ari | +0.0263 |
+| comp_pluto_sign=Ari | +0.0263 |
+| moon_modepair=MutablexCardinal | +0.0256 |
+| his_neptune_sext_her_pluto | +0.0255 |
+| his_mercury_conj_her_mars | +0.0254 |
+| comp_jupiter_sign=Pis | +0.0248 |
+| dav_mars_sign=Pis | +0.0246 |
+| cycle36_saturn_uranus=30 | +0.0245 |
+| moon_elempair=WaterxFire | +0.0244 |
+| varnapair=0x1 | +0.0244 |
+| his_mars_trine_her_venus | +0.0239 |
+| dav_mars_sign=Gem | +0.0239 |
+| his_venus_sext_her_sun | +0.0237 |
+| cycle24_uranus_pluto=6 | +0.0233 |
+| cycle_saturn_neptune_phase=Ari | +0.0231 |
+| his_moon_sext_her_mars | +0.0223 |
+| his_pluto_opp_her_venus | +0.0221 |
+| his_venus_sext_her_pluto | +0.0213 |
+| his_jupiter_trine_her_uranus | +0.0210 |
+| dav_venus_sign=Pis | +0.0200 |
+| comp_sun_sign=Can | +0.0190 |
+| his_moon_quinc_her_pluto | +0.0182 |
+| his_mars_trine_her_mercury | +0.0178 |
+| his_neptune_square_her_uranus | +0.0166 |
+| his_uranus_square_her_mercury | +0.0165 |
+| his_moon_her_saturn_house=1 | +0.0154 |
+| varapair=24 | +0.0153 |
+| his_venus_opp_her_neptune | +0.0152 |
+| her_moon_his_saturn_house=11 | +0.0146 |
+| nadipair=AdixAntya | +0.0146 |
+| comp_sun_conj_saturn | +0.0138 |
+| dav_tithi=26 | +0.0137 |
+| his_uranus_square_her_venus | +0.0135 |
+| cycle_neptune_pluto_phase=Aqu | +0.0116 |
+| his_mercury_trine_her_neptune | +0.0073 |
+| sun_modepair=MutablexCardinal | +0.0055 |
+| dav_uranus_sign=Aqu | +0.0053 |
+| gap_years=7 | +0.0053 |
+| comp_saturn_sign=Vir | +0.0033 |
+| comp_venus_sign=Can | +0.0011 |
+| vashyapair=0x2 | +0.0001 |
+
+---
+
+# The ArtaMatch v13 Almanac (current)
+
+**v13 — the pair-only rule model (2026-08-25).** Every rule reads BOTH birth dates: a statement about one
+person alone may appear only inside a conjunction whose clauses span both partners. 405 rules survived a
+non-negative sparse regression (with relaxed refit) over 9,602 candidates — 6,098 single doctrine statements
+plus two- and three-clause conjunctions. Held-out TEST AUC 0.7709 (read once), statistically level with the
+best trained black-box ensemble (0.7747; paired-bootstrap 95% CI of the difference [-0.0066, +0.0144]).
+Deployed weights refit on all 56,621 couples; signs sidereal (Lahiri), charts 12:00 UT.
+Full rules with plain-language explanations and examples: `v13_rules.json`. Model: `v13_model.json`.
+
+| statement | weight |
+|---|---|
+| cycle_neptune_pluto_phase=Ari | +0.6712 |
+| comp_pluto_sign=Tau | +0.4924 |
+| cycle_neptune_pluto_phase=Tau | +0.3841 |
+| comp_pluto_sign=Gem | +0.2165 |
+| comp_pluto_decan=2 | +0.2140 |
+| cycle_neptune_pluto_phase=Tau AND comp_pluto_decan=9 | +0.2059 |
+| his_moon_conj_her_pluto AND his_moon_decan=1 | +0.1995 |
+| comp_neptune_sign=Tau | +0.1989 |
+| comp_neptune_sign=Pis | +0.1944 |
+| comp_pluto_sign=Tau AND cycle_neptune_pluto_phase=Pis | +0.1937 |
+| cycle24_neptune_pluto=1 | +0.1884 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_neptune_pluto=1 | +0.1884 |
+| cycle36_uranus_neptune=16 AND cycle36_uranus_pluto=17 | +0.1810 |
+| cycle36_uranus_neptune=16 AND cycle36_uranus_pluto=17 AND cycle_neptune_pluto_phase=Ari | +0.1810 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_uranus_neptune=17 | +0.1804 |
+| his_moon_conj_her_pluto AND his_moon_decan=1 AND his_moon_pada=3 | +0.1791 |
+| his_moon_pada=3 AND his_moon_conj_her_pluto | +0.1791 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo | +0.1759 |
+| his_neptune_semisext_her_pluto | +0.1715 |
+| comp_pluto_decan=9 AND his_pluto_sign=Can AND cycle_neptune_pluto_phase=Tau | +0.1688 |
+| his_tithi=17 AND his_moon_conj_her_pluto | +0.1655 |
+| his_neptune_conj_her_pluto | +0.1581 |
+| cycle_neptune_pluto_phase=Ari AND his_chiron_sign=Sco | +0.1531 |
+| cycle_neptune_pluto_phase=Ari AND cycle_jupiter_saturn_phase=Aqu | +0.1518 |
+| cycle_neptune_pluto_phase=Tau AND her_pluto_sign=Gem | +0.1514 |
+| comp_pluto_sign=Ari | +0.1465 |
+| comp_pluto_sign=Tau AND his_neptune_sign=Ari AND cycle_neptune_pluto_phase=Pis | +0.1460 |
+| cycle36_uranus_neptune=23 AND his_pluto_sign=Can AND cycle_neptune_pluto_phase=Tau | +0.1446 |
+| his_sun_decan=15 AND his_moon_conj_her_pluto | +0.1441 |
+| cycle36_neptune_pluto=32 AND her_neptune_sign=Pis | +0.1378 |
+| his_moon_conj_her_pluto AND his_year_animal=Ox | +0.1376 |
+| his_stem_season=GengMetalxRooster AND his_moon_conj_her_pluto | +0.1359 |
+| his_uranus_semisext_her_venus | +0.1349 |
+| cycle36_uranus_neptune=17 | +0.1333 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 AND comp_pluto_sign=Tau | +0.1320 |
+| moonpair=CapxTau | +0.1297 |
+| his_venus_square_her_saturn | +0.1293 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 | +0.1286 |
+| cycle24_neptune_pluto=2 | +0.1274 |
+| cycle_neptune_pluto_phase=Tau AND cycle24_neptune_pluto=2 | +0.1274 |
+| dav_tithi=1 | +0.1260 |
+| cycle_neptune_pluto_phase=Tau AND her_chiron_sign=Leo | +0.1221 |
+| cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=9 | +0.1217 |
+| cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=9 AND comp_pluto_decan=9 | +0.1217 |
+| his_stem_season=GengMetalxRooster AND cycle36_neptune_pluto=31 | +0.1214 |
+| his_moon_conj_her_jupiter | +0.1213 |
+| cycle24_neptune_pluto=1 AND her_year_animal=Goat AND her_saturn_sign=Aqu | +0.1204 |
+| his_jupiter_sign=Can AND her_saturn_sign=Aqu | +0.1199 |
+| his_venus_opp_her_pluto | +0.1194 |
+| comp_pluto_sign=Tau AND his_tithi=14 | +0.1178 |
+| his_pluto_quinc_her_uranus | +0.1173 |
+| cycle_neptune_pluto_phase=Ari AND his_year_animal=Ox | +0.1173 |
+| his_mars_square_her_pluto | +0.1170 |
+| cycle_neptune_pluto_phase=Ari AND his_uranus_semisext_her_venus | +0.1151 |
+| animalpair=DragonxTiger | +0.1150 |
+| comp_neptune_sign=Ari | +0.1150 |
+| dav_mars_sign=Aqu | +0.1144 |
+| cycle24_neptune_pluto=23 | +0.1142 |
+| comp_pluto_sign=Tau AND cycle24_neptune_pluto=23 | +0.1142 |
+| comp_pluto_sign=Tau AND her_neptune_sign=Tau | +0.1140 |
+| his_pluto_opp_her_uranus | +0.1138 |
+| cycle_uranus_neptune_phase=Lib | +0.1131 |
+| his_pluto_trine_her_jupiter | +0.1130 |
+| cycle36_uranus_neptune=23 | +0.1129 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_uranus_neptune=12 | +0.1127 |
+| cycle24_neptune_pluto=1 AND cycle24_uranus_neptune=12 | +0.1127 |
+| cycle_neptune_pluto_phase=Ari AND cycle24_uranus_neptune=12 AND cycle24_neptune_pluto=1 | +0.1127 |
+| his_venus_conj_her_jupiter | +0.1124 |
+| his_mercury_trine_her_pluto | +0.1115 |
+| his_mercury_square_her_uranus | +0.1106 |
+| gap_years=8 | +0.1087 |
+| cycle24_neptune_pluto=23 AND dav_pluto_decan=4 AND her_neptune_sign=Tau | +0.1067 |
+| cycle36_uranus_neptune=16 AND comp_neptune_decan=5 AND cycle_neptune_pluto_phase=Ari | +0.1062 |
+| cycle36_neptune_pluto=4 AND cycle_neptune_pluto_phase=Tau | +0.1061 |
+| cycle36_neptune_pluto=4 | +0.1061 |
+| his_neptune_sign=Ari AND cycle36_uranus_neptune=11 | +0.1058 |
+| varapair=20 | +0.1054 |
+| comp_neptune_sign=Leo | +0.1054 |
+| comp_tithi=3 | +0.1052 |
+| comp_pluto_sign=Tau AND her_birthday=26 AND cycle_neptune_pluto_phase=Ari | +0.1048 |
+| dav_tithi=24 | +0.1047 |
+| his_neptune_trine_her_uranus | +0.1041 |
+| his_jupiter_sign=Can AND her_pluto_sign=Gem AND cycle_uranus_neptune_phase=Lib | +0.1031 |
+| his_venus_semisext_her_uranus | +0.1025 |
+| his_neptune_quinc_her_mars | +0.1011 |
+| cycle_neptune_pluto_phase=Tau AND his_jupiter_sign=Can | +0.1003 |
+| his_pluto_conj_her_mercury | +0.0999 |
+| his_pluto_opp_her_mars | +0.0994 |
+| his_mercury_square_her_pluto | +0.0994 |
+| vashyapair=1x0 | +0.0987 |
+| cycle_jupiter_saturn_phase=Ari | +0.0985 |
+| comp_pluto_sign=Tau AND her_birthday=21 | +0.0982 |
+| his_saturn_sext_her_saturn | +0.0978 |
+| his_moon_trine_her_jupiter | +0.0978 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_semisext_her_venus | +0.0977 |
+| kuapair=52 | +0.0976 |
+| cycle_neptune_pluto_phase=Ari AND comp_uranus_decan=24 AND comp_pluto_sign=Tau | +0.0970 |
+| cycle36_neptune_pluto=14 AND her_neptune_sign=Ari | +0.0962 |
+| dav_pluto_sign=Gem | +0.0955 |
+| comp_jupiter_decan=10 | +0.0951 |
+| his_jupiter_semisext_her_neptune | +0.0949 |
+| cycle24_saturn_pluto=17 | +0.0949 |
+| comp_uranus_sign=Ari | +0.0948 |
+| cycle_neptune_pluto_phase=Ari AND his_pluto_quinc_her_uranus | +0.0946 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=32 AND cycle36_uranus_neptune=16 | +0.0945 |
+| his_pluto_conj_her_venus | +0.0945 |
+| comp_pluto_sign=Tau AND his_tithi=2 | +0.0941 |
+| his_jupiter_opp_her_moon | +0.0941 |
+| comp_jupiter_decan=19 | +0.0929 |
+| cycle_neptune_pluto_phase=Ari AND comp_jupiter_decan=23 | +0.0925 |
+| venus_modepair=CardinalxFixed | +0.0922 |
+| comp_pluto_sign=Tau AND comp_saturn_decan=31 | +0.0921 |
+| lifepath_pair=1x2 | +0.0912 |
+| his_mercury_opp_her_uranus | +0.0910 |
+| his_moon_square_her_uranus | +0.0903 |
+| cycle36_uranus_pluto=12 | +0.0901 |
+| his_sun_decan=15 AND his_mercury_square_her_uranus | +0.0900 |
+| comp_pluto_sign=Tau AND his_sun_trine_her_uranus AND cycle_neptune_pluto_phase=Ari | +0.0900 |
+| dav_pluto_sign=Tau | +0.0900 |
+| cycle_neptune_pluto_phase=Ari AND dav_tithi=1 | +0.0898 |
+| cycle_neptune_pluto_phase=Ari AND her_stem_season=DingFirexMonkey | +0.0898 |
+| his_nityayoga=12 AND her_saturn_sign=Aqu | +0.0896 |
+| cycle_neptune_pluto_phase=Ari AND his_year_animal=Ox AND comp_pluto_sign=Tau | +0.0895 |
+| cycle_neptune_pluto_phase=Tau AND dav_tithi=24 | +0.0893 |
+| comp_neptune_sign=Can | +0.0893 |
+| his_jupiter_sign=Can AND her_pluto_sign=Gem | +0.0890 |
+| his_mars_conj_her_saturn | +0.0889 |
+| cycle_neptune_pluto_phase=Tau AND his_tithi=2 | +0.0886 |
+| his_mercury_quinc_her_moon | +0.0885 |
+| cycle36_saturn_neptune=10 | +0.0884 |
+| his_mercury_conj_her_saturn | +0.0882 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo AND dav_tithi=24 | +0.0880 |
+| cycle_saturn_pluto_phase=Sco | +0.0876 |
+| his_moon_opp_her_moon | +0.0875 |
+| comp_pluto_sign=Tau AND his_sun_trine_her_uranus | +0.0873 |
+| his_venus_conj_her_neptune | +0.0872 |
+| comp_uranus_sign=Tau | +0.0867 |
+| his_neptune_quinc_her_sun | +0.0864 |
+| dav_jupiter_sign=Sag | +0.0860 |
+| cycle_jupiter_saturn_phase=Sco | +0.0859 |
+| his_venus_square_her_moon | +0.0858 |
+| cycle24_uranus_pluto=4 | +0.0853 |
+| comp_mars_decan=5 | +0.0850 |
+| cycle_neptune_pluto_phase=Ari AND kuapair=0 | +0.0848 |
+| cycle36_saturn_neptune=7 | +0.0843 |
+| cycle_uranus_pluto_phase=Cap | +0.0842 |
+| his_uranus_quinc_her_venus | +0.0841 |
+| comp_pluto_sign=Tau AND comp_uranus_decan=24 | +0.0835 |
+| dav_jupiter_decan=3 | +0.0833 |
+| his_uranus_quinc_her_pluto | +0.0832 |
+| his_saturn_semisext_her_venus | +0.0831 |
+| cycle_saturn_neptune_phase=Leo | +0.0825 |
+| cycle_neptune_pluto_phase=Aqu | +0.0823 |
+| comp_tithi=16 | +0.0821 |
+| comp_pluto_sign=Tau AND kuapair=52 | +0.0821 |
+| cycle36_saturn_uranus=26 | +0.0819 |
+| his_moon_square_her_sun | +0.0817 |
+| his_moon_her_saturn_house=3 | +0.0814 |
+| his_moon_square_her_saturn | +0.0810 |
+| comp_sun_decan=34 | +0.0809 |
+| his_pluto_sext_her_moon | +0.0809 |
+| cycle36_neptune_pluto=4 AND his_neptune_sign=Leo | +0.0808 |
+| cycle36_neptune_pluto=4 AND his_neptune_sign=Leo AND cycle_neptune_pluto_phase=Tau | +0.0808 |
+| her_tithi=18 AND his_pluto_sign=Can AND cycle_neptune_pluto_phase=Tau | +0.0807 |
+| his_mars_sext_her_mars | +0.0806 |
+| cycle24_saturn_pluto=4 | +0.0803 |
+| cycle_neptune_pluto_phase=Tau AND his_year_animal=Ox AND comp_pluto_decan=9 | +0.0802 |
+| her_tithi=18 AND his_pluto_sign=Can AND dav_pluto_decan=9 | +0.0801 |
+| his_venus_quinc_her_uranus | +0.0799 |
+| cycle_neptune_pluto_phase=Tau AND his_neptune_sign=Leo AND his_tithi=2 | +0.0798 |
+| dav_pluto_decan=5 | +0.0796 |
+| his_pluto_square_her_sun | +0.0795 |
+| his_neptune_trine_her_sun | +0.0795 |
+| his_venus_opp_her_moon | +0.0794 |
+| his_neptune_sext_her_sun | +0.0793 |
+| comp_tithi=14 | +0.0784 |
+| his_jupiter_conj_her_saturn | +0.0783 |
+| his_jupiter_conj_her_moon | +0.0780 |
+| kuapair=12 | +0.0779 |
+| cycle_jupiter_saturn_phase=Lib | +0.0774 |
+| varapair=20 AND her_pluto_sign=Gem | +0.0773 |
+| cycle24_saturn_pluto=12 | +0.0769 |
+| cycle36_neptune_pluto=4 AND his_neptune_sign=Leo AND dav_tithi=24 | +0.0765 |
+| her_moon_his_saturn_house=3 | +0.0764 |
+| his_venus_opp_her_saturn | +0.0762 |
+| comp_saturn_decan=31 | +0.0761 |
+| his_jupiter_sext_her_uranus | +0.0757 |
+| his_jupiter_square_her_pluto | +0.0757 |
+| kuapair=0 | +0.0756 |
+| stempair=GuiWaterxDingFire | +0.0754 |
+| his_sun_trine_her_uranus | +0.0751 |
+| marspair=GemxAri | +0.0750 |
+| his_saturn_trine_her_sun | +0.0748 |
+| kuapair=2 | +0.0746 |
+| his_pluto_conj_her_jupiter | +0.0745 |
+| animalpair=DragonxMonkey | +0.0742 |
+| dav_saturn_decan=25 | +0.0741 |
+| branchpair=GoatxRat | +0.0741 |
+| cycle36_uranus_neptune=17 AND cycle36_saturn_neptune=7 | +0.0741 |
+| her_neptune_sign=Pis AND his_pluto_sext_her_moon | +0.0736 |
+| comp_pluto_sign=Tau AND kuapair=52 AND cycle_neptune_pluto_phase=Ari | +0.0734 |
+| his_venus_opp_her_mercury | +0.0733 |
+| comp_jupiter_decan=23 | +0.0732 |
+| vashyapair=0x1 | +0.0732 |
+| varnapair=2x2 | +0.0726 |
+| moon_elempair=EarthxEarth | +0.0726 |
+| cycle_neptune_pluto_phase=Ari AND his_moon_pada=98 | +0.0726 |
+| his_neptune_square_her_jupiter | +0.0724 |
+| his_sun_semisext_her_mercury | +0.0723 |
+| nadipair=AntyaxAntya | +0.0721 |
+| cycle_jupiter_saturn_phase=Tau | +0.0719 |
+| his_uranus_opp_her_sun | +0.0718 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_jupiter_saturn=2 AND comp_pluto_sign=Tau | +0.0717 |
+| his_sunmoon_mid_conj_other_sun | +0.0715 |
+| dav_venus_decan=15 | +0.0714 |
+| dav_saturn_decan=11 | +0.0712 |
+| his_uranus_conj_her_sun | +0.0711 |
+| cycle_neptune_pluto_phase=Ari AND his_moon_decan=1 AND his_neptune_conj_her_pluto | +0.0711 |
+| moonpair=PisxAqu | +0.0710 |
+| his_pluto_trine_her_saturn | +0.0709 |
+| cycle24_neptune_pluto=23 AND his_neptune_quinc_her_mars AND comp_pluto_sign=Tau | +0.0708 |
+| cycle24_neptune_pluto=23 AND his_neptune_quinc_her_mars | +0.0708 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_square_her_uranus AND his_neptune_conj_her_pluto | +0.0708 |
+| his_tithi=2 AND her_saturn_sign=Aqu | +0.0700 |
+| his_pluto_sign=Can AND his_sun_trine_her_uranus AND dav_pluto_decan=9 | +0.0699 |
+| his_jupiter_conj_her_neptune | +0.0696 |
+| dav_pluto_decan=9 AND his_neptune_sign=Leo | +0.0695 |
+| comp_mars_decan=24 | +0.0695 |
+| dav_venus_decan=27 | +0.0694 |
+| her_moon_his_saturn_house=0 | +0.0693 |
+| his_pluto_quinc_her_uranus AND his_neptune_conj_her_pluto | +0.0692 |
+| his_neptune_semisext_her_moon | +0.0691 |
+| animalpair=GoatxRabbit | +0.0688 |
+| her_neptune_sign=Tau AND kuapair=52 | +0.0688 |
+| his_jupiter_sext_her_saturn | +0.0687 |
+| his_mars_quinc_her_jupiter | +0.0687 |
+| his_neptune_trine_her_mars | +0.0679 |
+| cycle_neptune_pluto_phase=Tau AND his_jupiter_sign=Can AND her_saturn_sign=Aqu | +0.0676 |
+| cycle_neptune_pluto_phase=Ari AND his_mercury_square_her_uranus | +0.0675 |
+| his_mars_opp_her_saturn | +0.0675 |
+| ninestarpair=76 | +0.0672 |
+| his_mercury_semisext_her_venus | +0.0671 |
+| her_neptune_sign=Pis AND gap_years=8 | +0.0670 |
+| comp_jupiter_sign=Leo | +0.0669 |
+| her_neptune_sign=Tau AND dav_pluto_decan=4 | +0.0669 |
+| her_neptune_sign=Tau AND dav_pluto_decan=4 AND comp_pluto_sign=Tau | +0.0669 |
+| comp_mars_decan=2 | +0.0667 |
+| cycle_neptune_pluto_phase=Ari AND cycle36_uranus_neptune=17 AND his_chiron_sign=Sco | +0.0659 |
+| his_moon_pada=18 AND his_moon_conj_her_pluto AND cycle_neptune_pluto_phase=Ari | +0.0656 |
+| her_neptune_sign=Tau AND cycle_jupiter_saturn_phase=Aqu | +0.0654 |
+| cycle24_neptune_pluto=1 AND cycle_jupiter_saturn_phase=Aqu | +0.0654 |
+| cycle_neptune_pluto_phase=Ari AND cycle_jupiter_saturn_phase=Aqu AND cycle24_neptune_pluto=1 | +0.0654 |
+| his_neptune_square_her_saturn | +0.0652 |
+| cycle36_saturn_uranus=13 | +0.0650 |
+| cycle_neptune_pluto_phase=Ari AND his_moon_decan=1 | +0.0650 |
+| comp_pluto_sign=Tau AND her_moon_pada=22 | +0.0649 |
+| his_jupiter_sext_her_jupiter | +0.0640 |
+| his_mercury_opp_her_sun | +0.0638 |
+| cycle36_jupiter_saturn=15 | +0.0635 |
+| cycle_saturn_uranus_phase=Leo | +0.0634 |
+| comp_venus_sign=Sco | +0.0634 |
+| cycle24_neptune_pluto=23 AND comp_jupiter_decan=10 AND comp_pluto_sign=Tau | +0.0633 |
+| cycle24_neptune_pluto=23 AND comp_jupiter_decan=10 | +0.0633 |
+| his_venus_trine_her_uranus | +0.0631 |
+| lifepath_pair=1x4 | +0.0630 |
+| comp_saturn_decan=31 AND his_neptune_sign=Leo | +0.0629 |
+| comp_mars_decan=14 | +0.0629 |
+| his_mars_trine_her_saturn | +0.0628 |
+| his_jupiter_semisext_her_moon | +0.0627 |
+| dav_tithi=25 | +0.0624 |
+| his_mars_sext_her_moon | +0.0622 |
+| his_saturn_square_her_venus | +0.0621 |
+| her_neptune_sign=Tau AND comp_neptune_decan=5 | +0.0621 |
+| his_venus_semisext_her_sun | +0.0619 |
+| his_jupiter_trine_her_moon | +0.0618 |
+| venus_elempair=EarthxFire | +0.0617 |
+| comp_pluto_sign=Tau AND her_moon_decan=32 | +0.0611 |
+| tarapair=2 | +0.0611 |
+| varapair=5 | +0.0607 |
+| varapair=37 | +0.0605 |
+| his_neptune_opp_her_jupiter | +0.0598 |
+| cycle36_jupiter_saturn=0 | +0.0590 |
+| cycle36_neptune_pluto=4 AND dav_neptune_decan=13 | +0.0586 |
+| cycle_neptune_pluto_phase=Tau AND dav_neptune_decan=13 | +0.0586 |
+| cycle36_neptune_pluto=4 AND cycle_neptune_pluto_phase=Tau AND dav_neptune_decan=13 | +0.0586 |
+| cycle_neptune_pluto_phase=Ari AND dashalordpair=78 | +0.0582 |
+| comp_sun_decan=12 | +0.0581 |
+| comp_moon_sign=Tau | +0.0580 |
+| his_mercury_square_her_saturn | +0.0580 |
+| his_saturn_trine_her_venus | +0.0578 |
+| comp_pluto_sign=Tau AND comp_uranus_decan=24 AND his_neptune_conj_her_pluto | +0.0575 |
+| his_mercury_quinc_her_sun | +0.0573 |
+| his_jupiter_semisext_her_sun | +0.0573 |
+| rajjupair=0x0 | +0.0572 |
+| comp_uranus_decan=1 | +0.0571 |
+| his_moon_opp_her_uranus | +0.0569 |
+| cycle_uranus_pluto_phase=Can | +0.0568 |
+| his_sun_quinc_her_mercury | +0.0564 |
+| comp_pluto_sign=Tau AND her_neptune_sign=Tau AND comp_jupiter_decan=10 | +0.0564 |
+| his_sun_sext_her_moon | +0.0564 |
+| nayinpair=EarthxMetal | +0.0563 |
+| comp_uranus_decan=27 AND cycle24_uranus_neptune=12 AND cycle_uranus_neptune_phase=Lib | +0.0562 |
+| cycle36_saturn_uranus=26 AND her_pluto_sign=Gem | +0.0562 |
+| gap_years=3 | +0.0557 |
+| dav_jupiter_decan=11 | +0.0557 |
+| venus_elempair=WaterxWater | +0.0554 |
+| ninestarpair=34 | +0.0552 |
+| cycle_jupiter_saturn_phase=Aqu | +0.0551 |
+| comp_jupiter_sign=Gem | +0.0547 |
+| sunpair=LeoxTau | +0.0545 |
+| comp_pluto_sign=Tau AND dav_moon_decan=5 AND cycle_neptune_pluto_phase=Ari | +0.0542 |
+| comp_tithi=2 | +0.0537 |
+| cycle36_saturn_pluto=7 | +0.0530 |
+| dashalordpair=78 | +0.0530 |
+| his_saturn_trine_her_jupiter | +0.0529 |
+| comp_pluto_sign=Tau AND comp_saturn_decan=31 AND cycle_neptune_pluto_phase=Ari | +0.0527 |
+| his_saturn_sext_her_neptune | +0.0522 |
+| yonipair=10x2 | +0.0521 |
+| cycle_saturn_neptune_phase=Can | +0.0515 |
+| cycle36_jupiter_saturn=32 | +0.0512 |
+| dav_mars_decan=20 | +0.0510 |
+| dav_venus_decan=10 | +0.0510 |
+| his_sun_sext_her_mercury | +0.0509 |
+| his_pluto_trine_her_moon | +0.0506 |
+| sun_polpair=YangxYin | +0.0504 |
+| comp_pluto_sign=Tau AND dav_moon_decan=5 | +0.0500 |
+| his_sun_square_her_jupiter | +0.0499 |
+| animalpair=DragonxGoat AND her_year_animal=Goat | +0.0497 |
+| animalpair=DragonxGoat | +0.0497 |
+| comp_saturn_decan=33 | +0.0493 |
+| dav_moon_decan=5 | +0.0491 |
+| branchpair=TigerxTiger | +0.0490 |
+| cycle_uranus_neptune_phase=Lib AND comp_uranus_decan=27 | +0.0489 |
+| his_venus_opp_her_mars | +0.0486 |
+| cycle36_jupiter_saturn=8 | +0.0483 |
+| cycle36_neptune_pluto=4 AND cycle_neptune_pluto_phase=Tau AND dav_pluto_decan=8 | +0.0483 |
+| cycle36_neptune_pluto=4 AND dav_pluto_decan=8 | +0.0483 |
+| dav_sun_decan=23 | +0.0479 |
+| ninestarpair=55 | +0.0478 |
+| dav_pluto_decan=8 | +0.0477 |
+| comp_jupiter_decan=25 | +0.0476 |
+| his_sun_conj_her_jupiter | +0.0472 |
+| his_moon_her_saturn_house=8 | +0.0469 |
+| cycle36_jupiter_saturn=29 | +0.0463 |
+| cycle_neptune_pluto_phase=Tau AND his_sun_semisext_her_mercury | +0.0456 |
+| comp_saturn_decan=19 | +0.0453 |
+| kuapair=33 | +0.0452 |
+| his_uranus_conj_her_saturn | +0.0451 |
+| his_mars_conj_her_sun | +0.0450 |
+| dav_tithi=14 | +0.0440 |
+| comp_pluto_sign=Tau AND cycle36_jupiter_saturn=0 | +0.0438 |
+| cycle36_uranus_neptune=5 AND his_neptune_sign=Leo | +0.0438 |
+| cycle36_jupiter_saturn=2 | +0.0436 |
+| his_pluto_sext_her_uranus | +0.0430 |
+| his_jupiter_trine_her_uranus | +0.0430 |
+| her_neptune_sign=Tau AND his_neptune_sign=Ari AND cycle36_saturn_neptune=7 | +0.0429 |
+| dav_venus_decan=3 | +0.0421 |
+| his_jupiter_opp_her_saturn | +0.0419 |
+| ninestarpair=16 | +0.0418 |
+| dav_moon_sign=Tau | +0.0413 |
+| kuapair=7 | +0.0412 |
+| his_neptune_trine_her_mercury | +0.0411 |
+| his_saturn_opp_her_neptune | +0.0403 |
+| cycle36_jupiter_saturn=25 | +0.0403 |
+| his_moon_trine_her_sun | +0.0402 |
+| kuapair=34 | +0.0401 |
+| his_jupiter_trine_her_saturn | +0.0400 |
+| cycle24_saturn_pluto=15 | +0.0393 |
+| cycle24_neptune_pluto=23 AND his_neptune_sign=Ari AND her_neptune_sign=Tau | +0.0390 |
+| vashyapair=0x3 | +0.0387 |
+| his_neptune_conj_her_neptune | +0.0385 |
+| cycle_saturn_pluto_phase=Sag | +0.0382 |
+| his_jupiter_opp_her_venus | +0.0381 |
+| comp_pluto_sign=Tau AND his_pluto_conj_her_mercury | +0.0380 |
+| kuapair=10 | +0.0379 |
+| cycle24_uranus_pluto=15 | +0.0374 |
+| his_jupiter_square_her_neptune | +0.0370 |
+| his_saturn_trine_her_uranus | +0.0368 |
+| venus_elempair=FirexEarth | +0.0366 |
+| his_venus_sext_her_pluto | +0.0359 |
+| comp_jupiter_decan=31 | +0.0353 |
+| his_pluto_trine_her_uranus | +0.0348 |
+| cycle36_saturn_uranus=31 | +0.0325 |
+| comp_pluto_sign=Tau AND his_pluto_sext_her_moon | +0.0320 |
+| cycle_saturn_uranus_phase=Sag | +0.0314 |
+| his_venus_opp_her_jupiter | +0.0303 |
+| comp_saturn_sign=Lib | +0.0301 |
+| his_mercury_square_her_neptune | +0.0279 |
+| his_mars_square_her_neptune | +0.0278 |
+| cycle24_uranus_neptune=3 | +0.0266 |
+| cycle_uranus_pluto_phase=Leo | +0.0263 |
+| cycle36_saturn_neptune=35 | +0.0246 |
+| his_venus_square_her_jupiter | +0.0242 |
+| cycle36_uranus_neptune=5 | +0.0216 |
+| her_neptune_sign=Tau AND his_neptune_sign=Ari | +0.0195 |
+| dav_sun_sign=Gem | +0.0193 |
+| his_moon_quinc_her_uranus | +0.0191 |
+| gap_years=2 | +0.0179 |
+| his_venus_sext_her_moon | +0.0178 |
+| his_moon_trine_her_venus | +0.0178 |
+| comp_uranus_decan=27 | +0.0169 |
+| cycle24_uranus_neptune=9 | +0.0151 |
+| his_moon_square_her_mars | +0.0076 |
+| cycle36_saturn_uranus=6 | +0.0067 |
+| cycle_saturn_neptune_phase=Ari | +0.0025 |
+
+---
+
+# The ArtaMatch v5 Almanac
+
+Every line is a tradition's own statement and the weight five centuries of recorded marriages give it (positive = toward divorce).
+
+| statement | weight |
+|---|---|
+| cycle_neptune_pluto_phase=Ari | +0.4041 |
+| cycle_neptune_pluto_phase=Tau | +0.2922 |
+| his_pluto_sign=Tau | +0.2427 |
+| her_pluto_sign=Tau | +0.2372 |
+| her_pluto_sign=Gem | +0.2086 |
+| his_pluto_sign=Gem | +0.1685 |
+| his_neptune_sign=Gem | +0.1587 |
+| dav_pluto_sign=Tau | +0.1480 |
+| her_pluto_sign=Can | +0.1465 |
+| his_neptune_sign=Leo | +0.1439 |
+| cycle_uranus_neptune_phase=Vir | +0.1410 |
+| her_neptune_sign=Tau | +0.1401 |
+| dav_neptune_sign=Leo | +0.1383 |
+| cycle_neptune_pluto_phase=Pis | +0.1318 |
+| her_neptune_sign=Leo | +0.1190 |
+| dav_pluto_sign=Can | +0.1140 |
+| her_neptune_sign=Gem | +0.1085 |
+| cycle_uranus_neptune_phase=Lib | +0.1077 |
+| her_tithi=18 | +0.1038 |
+| his_jupiter_sign=Can | +0.1001 |
+| dav_pluto_sign=Gem | +0.0990 |
+| his_pluto_sign=Can | +0.0989 |
+| his_venus_square_her_saturn | +0.0976 |
+| moonpair=CapxTau | +0.0964 |
+| his_sun_sign=Vir | +0.0951 |
+| her_true_node_sign=Tau | +0.0936 |
+| his_tithi=2 | +0.0930 |
+| his_venus_sign=Lib | +0.0910 |
+| dav_mars_sign=Aqu | +0.0898 |
+| his_uranus_sign=Ari | +0.0860 |
+| his_daybranch=Goat | +0.0855 |
+| her_moon_sign=Tau | +0.0854 |
+| his_tithi=17 | +0.0845 |
+| her_venus_sign=Aqu | +0.0841 |
+| her_moon_sign=Aqu | +0.0828 |
+| cycle_uranus_pluto_phase=Cap | +0.0819 |
+| dav_uranus_sign=Ari | +0.0814 |
+| cycle_saturn_uranus_phase=Leo | +0.0789 |
+| his_lifepath=1 | +0.0784 |
+| her_saturn_sign=Aqu | +0.0784 |
+| dav_jupiter_sign=Sag | +0.0765 |
+| his_moon_square_her_sun | +0.0752 |
+| cycle_uranus_pluto_phase=Lib | +0.0750 |
+| his_venus_square_her_moon | +0.0743 |
+| his_moon_sign=Ari | +0.0739 |
+| her_daybranch=Horse | +0.0737 |
+| dav_neptune_sign=Tau | +0.0734 |
+| his_neptune_sign=Ari | +0.0732 |
+| his_jupiter_opp_her_moon | +0.0731 |
+| his_nakshatra=0 | +0.0731 |
+| animalpair=DragonxTiger | +0.0727 |
+| his_moon_square_her_saturn | +0.0714 |
+| her_sun_sign=Aqu | +0.0714 |
+| her_sun_sign=Tau | +0.0703 |
+| his_mars_sign=Sco | +0.0694 |
+| his_nakshatra=21 | +0.0692 |
+| his_saturn_conj_her_sun | +0.0691 |
+| her_neptune_sign=Pis | +0.0689 |
+| her_mercury_sign=Ari | +0.0687 |
+| cycle_saturn_pluto_phase=Gem | +0.0681 |
+| dav_uranus_sign=Sag | +0.0676 |
+| his_tithi=14 | +0.0675 |
+| his_neptune_sign=Tau | +0.0667 |
+| his_saturn_sext_her_saturn | +0.0664 |
+| lifepath_pair=1x2 | +0.0664 |
+| dav_venus_sign=Sco | +0.0656 |
+| his_daystem=DingFire | +0.0655 |
+| his_mars_sext_her_mars | +0.0646 |
+| cycle_saturn_neptune_phase=Leo | +0.0645 |
+| her_mars_sign=Ari | +0.0641 |
+| his_jupiter_conj_her_moon | +0.0640 |
+| her_nakshatra=24 | +0.0639 |
+| his_saturn_trine_her_sun | +0.0639 |
+| her_uranus_sign=Sag | +0.0638 |
+| cycle_uranus_neptune_phase=Leo | +0.0627 |
+| cycle_uranus_neptune_phase=Sco | +0.0624 |
+| her_daybranch=Dragon | +0.0623 |
+| her_chiron_sign=Leo | +0.0620 |
+| his_venus_opp_her_moon | +0.0614 |
+| his_moon_opp_her_moon | +0.0611 |
+| her_neptune_sign=Can | +0.0610 |
+| his_saturn_sign=Tau | +0.0607 |
+| dav_moon_sign=Tau | +0.0606 |
+| his_mercury_sign=Leo | +0.0602 |
+| dav_neptune_sign=Pis | +0.0600 |
+| his_year_animal=Dragon | +0.0596 |
+| cycle_saturn_pluto_phase=Sco | +0.0594 |
+| his_mercury_sign=Cap | +0.0593 |
+| his_year_animal=Ox | +0.0592 |
+| cycle_saturn_uranus_phase=Sag | +0.0590 |
+| her_venus_sign=Sag | +0.0588 |
+| his_mars_sign=Sag | +0.0584 |
+| his_neptune_sign=Pis | +0.0582 |
+| her_nakshatra=13 | +0.0578 |
+| dav_saturn_sign=Can | +0.0577 |
+| cycle_saturn_pluto_phase=Lib | +0.0575 |
+| her_mars_sign=Pis | +0.0574 |
+| his_true_node_sign=Sco | +0.0574 |
+| cycle_uranus_pluto_phase=Leo | +0.0573 |
+| his_daystem=RenWater | +0.0573 |
+| moonpair=CanxLeo | +0.0564 |
+| her_lifepath=4 | +0.0564 |
+| her_nakshatra=8 | +0.0563 |
+| cycle_saturn_neptune_phase=Can | +0.0561 |
+| her_venus_sign=Sco | +0.0560 |
+| her_daystem=WuEarth | +0.0557 |
+| his_venus_sign=Ari | +0.0557 |
+| his_tithi=10 | +0.0556 |
+| his_lifepath=7 | +0.0545 |
+| his_venus_sign=Sco | +0.0545 |
+| animalpair=GoatxRabbit | +0.0542 |
+| his_mars_sext_her_moon | +0.0542 |
+| his_tithi=25 | +0.0540 |
+| her_lifepath=8 | +0.0539 |
+| her_tithi=5 | +0.0535 |
+| his_mercury_sign=Ari | +0.0533 |
+| her_neptune_sign=Ari | +0.0530 |
+| his_daystem=WuEarth | +0.0527 |
+| her_true_node_sign=Lib | +0.0526 |
+| her_jupiter_sign=Vir | +0.0525 |
+| her_daystem=DingFire | +0.0521 |
+| his_nakshatra=26 | +0.0519 |
+| her_chiron_sign=Gem | +0.0516 |
+| her_nakshatra=26 | +0.0511 |
+| his_saturn_trine_her_moon | +0.0506 |
+| his_mercury_sign=Can | +0.0503 |
+| his_daystem=GengMetal | +0.0503 |
+| moonpair=SagxCan | +0.0502 |
+| his_lifepath=8 | +0.0501 |
+| his_venus_opp_her_mars | +0.0501 |
+| her_daybranch=Pig | +0.0497 |
+| his_saturn_trine_her_venus | +0.0496 |
+| her_sun_sign=Lib | +0.0492 |
+| his_venus_opp_her_saturn | +0.0491 |
+| her_daybranch=Rabbit | +0.0489 |
+| her_tithi=3 | +0.0485 |
+| her_tithi=9 | +0.0482 |
+| cycle_jupiter_saturn_phase=Sco | +0.0482 |
+| his_jupiter_trine_her_moon | +0.0482 |
+| his_chiron_sign=Cap | +0.0481 |
+| her_mercury_sign=Vir | +0.0481 |
+| his_moon_trine_her_moon | +0.0479 |
+| his_sun_sext_her_moon | +0.0476 |
+| his_true_node_sign=Lib | +0.0475 |
+| her_mercury_sign=Tau | +0.0473 |
+| his_moon_sign=Vir | +0.0472 |
+| her_moon_sign=Sco | +0.0470 |
+| her_mercury_sign=Cap | +0.0467 |
+| his_nakshatra=4 | +0.0465 |
+| her_nakshatra=17 | +0.0459 |
+| her_nakshatra=2 | +0.0459 |
+| cycle_uranus_pluto_phase=Vir | +0.0458 |
+| her_tithi=21 | +0.0457 |
+| dav_saturn_sign=Sag | +0.0457 |
+| his_sun_sign=Cap | +0.0455 |
+| his_lifepath=3 | +0.0454 |
+| her_saturn_sign=Sco | +0.0450 |
+| her_nakshatra=3 | +0.0450 |
+| his_daybranch=Tiger | +0.0449 |
+| lifepath_pair=9x8 | +0.0449 |
+| sunpair=LeoxTau | +0.0449 |
+| his_moon_sign=Cap | +0.0444 |
+| his_moon_trine_her_sun | +0.0440 |
+| his_venus_sign=Can | +0.0436 |
+| his_saturn_square_her_venus | +0.0435 |
+| his_tithi=24 | +0.0432 |
+| her_daybranch=Rat | +0.0431 |
+| his_tithi=21 | +0.0428 |
+| his_mars_conj_her_mars | +0.0426 |
+| her_tithi=26 | +0.0425 |
+| lifepath_pair=4x3 | +0.0425 |
+| his_mars_sign=Can | +0.0425 |
+| his_sun_sign=Ari | +0.0418 |
+| his_neptune_sign=Can | +0.0415 |
+| his_moon_sign=Sco | +0.0413 |
+| dav_jupiter_sign=Tau | +0.0411 |
+| animalpair=MonkeyxPig | +0.0410 |
+| her_lifepath=2 | +0.0410 |
+| his_pluto_sign=Ari | +0.0410 |
+| her_year_animal=Goat | +0.0409 |
+| his_uranus_sign=Cap | +0.0409 |
+| cycle_jupiter_saturn_phase=Lib | +0.0408 |
+| cycle_jupiter_saturn_phase=Ari | +0.0408 |
+| his_sun_sext_her_sun | +0.0403 |
+| her_sun_sign=Sco | +0.0402 |
+| his_tithi=20 | +0.0401 |
+| animalpair=TigerxRooster | +0.0401 |
+| his_mars_sign=Vir | +0.0400 |
+| her_daystem=YiWood | +0.0395 |
+| his_uranus_sign=Lib | +0.0394 |
+| her_year_animal=Rat | +0.0394 |
+| his_saturn_square_her_moon | +0.0391 |
+| his_daybranch=Horse | +0.0391 |
+| his_nakshatra=8 | +0.0390 |
+| cycle_jupiter_saturn_phase=Aqu | +0.0390 |
+| animalpair=OxxOx | +0.0388 |
+| cycle_uranus_pluto_phase=Can | +0.0387 |
+| sunpair=LibxAri | +0.0386 |
+| his_chiron_sign=Sco | +0.0386 |
+| her_year_animal=Monkey | +0.0385 |
+| animalpair=DragonxMonkey | +0.0384 |
+| his_mars_sign=Gem | +0.0380 |
+| her_venus_sign=Can | +0.0379 |
+| moonpair=PisxAqu | +0.0379 |
+| her_daystem=BingFire | +0.0376 |
+| her_mercury_sign=Can | +0.0374 |
+| animalpair=MonkeyxDog | +0.0373 |
+| dav_venus_sign=Can | +0.0373 |
+| his_lifepath=4 | +0.0372 |
+| her_nakshatra=22 | +0.0370 |
+| his_venus_sign=Cap | +0.0367 |
+| animalpair=RabbitxPig | +0.0367 |
+| his_tithi=1 | +0.0367 |
+| lifepath_pair=1x4 | +0.0363 |
+| dav_neptune_sign=Gem | +0.0362 |
+| moonpair=GemxLib | +0.0361 |
+| his_nakshatra=14 | +0.0360 |
+| his_nakshatra=15 | +0.0360 |
+| moonpair=TauxVir | +0.0359 |
+| animalpair=DogxDog | +0.0359 |
+| animalpair=RoosterxSnake | +0.0355 |
+| her_tithi=15 | +0.0354 |
+| his_tithi=4 | +0.0352 |
+| dav_mars_sign=Sag | +0.0351 |
+| dav_uranus_sign=Gem | +0.0350 |
+| her_daystem=GuiWater | +0.0350 |
+| sunpair=ArixCan | +0.0349 |
+| her_sun_sign=Pis | +0.0349 |
+| lifepath_pair=6x2 | +0.0348 |
+| her_lifepath=1 | +0.0348 |
+| her_sun_sign=Ari | +0.0348 |
+| lifepath_pair=2x6 | +0.0342 |
+| his_daystem=JiaWood | +0.0342 |
+| animalpair=SnakexDragon | +0.0342 |
+| his_daybranch=Rabbit | +0.0341 |
+| lifepath_pair=8x1 | +0.0339 |
+| her_venus_sign=Lib | +0.0339 |
+| his_jupiter_opp_her_venus | +0.0337 |
+| moonpair=VirxAqu | +0.0337 |
+| her_venus_sign=Leo | +0.0335 |
+| animalpair=RatxMonkey | +0.0333 |
+| sunpair=ArixSco | +0.0329 |
+| cycle_uranus_pluto_phase=Sco | +0.0328 |
+| cycle_saturn_uranus_phase=Aqu | +0.0328 |
+| his_mars_opp_her_moon | +0.0326 |
+| his_uranus_sign=Pis | +0.0326 |
+| his_mars_square_her_moon | +0.0325 |
+| moonpair=PisxCan | +0.0320 |
+| her_lifepath=5 | +0.0319 |
+| his_mars_trine_her_moon | +0.0315 |
+| his_year_animal=Horse | +0.0314 |
+| her_lifepath=9 | +0.0312 |
+| dav_saturn_sign=Ari | +0.0311 |
+| his_mercury_sign=Tau | +0.0310 |
+| lifepath_pair=2x8 | +0.0309 |
+| his_mars_sign=Lib | +0.0308 |
+| sunpair=CapxSag | +0.0306 |
+| sunpair=AquxPis | +0.0306 |
+| her_tithi=20 | +0.0305 |
+| cycle_saturn_uranus_phase=Can | +0.0305 |
+| her_mars_sign=Sag | +0.0304 |
+| dav_saturn_sign=Lib | +0.0304 |
+| her_moon_sign=Pis | +0.0303 |
+| her_daybranch=Ox | +0.0303 |
+| sunpair=TauxLib | +0.0299 |
+| moonpair=SagxSco | +0.0299 |
+| dav_moon_sign=Cap | +0.0298 |
+| sunpair=SagxLib | +0.0298 |
+| lifepath_pair=4x5 | +0.0292 |
+| his_saturn_sign=Sag | +0.0291 |
+| her_mars_sign=Leo | +0.0290 |
+| sunpair=VirxLeo | +0.0286 |
+| lifepath_pair=8x5 | +0.0286 |
+| her_tithi=12 | +0.0284 |
+| animalpair=GoatxDog | +0.0283 |
+| moonpair=CapxPis | +0.0279 |
+| his_year_animal=Rooster | +0.0279 |
+| his_moon_trine_her_venus | +0.0278 |
+| his_venus_conj_her_mars | +0.0277 |
+| moonpair=VirxCan | +0.0276 |
+| his_mars_conj_her_moon | +0.0274 |
+| her_mars_sign=Lib | +0.0271 |
+| lifepath_pair=7x8 | +0.0269 |
+| moonpair=AquxCap | +0.0268 |
+| animalpair=SnakexOx | +0.0266 |
+| dav_neptune_sign=Can | +0.0265 |
+| his_moon_sign=Pis | +0.0265 |
+| her_uranus_sign=Ari | +0.0264 |
+| her_daystem=JiaWood | +0.0263 |
+| her_uranus_sign=Can | +0.0263 |
+| his_lifepath=9 | +0.0261 |
+| dav_venus_sign=Tau | +0.0260 |
+| her_sun_sign=Can | +0.0259 |
+| her_tithi=17 | +0.0258 |
+| dav_sun_sign=Can | +0.0257 |
+| his_nakshatra=11 | +0.0254 |
+| her_moon_sign=Vir | +0.0254 |
+| her_venus_sign=Tau | +0.0253 |
+| dav_mars_sign=Pis | +0.0251 |
+| his_daybranch=Dog | +0.0250 |
+| his_sun_sign=Tau | +0.0249 |
+| cycle_saturn_neptune_phase=Vir | +0.0247 |
+| her_lifepath=3 | +0.0247 |
+| her_tithi=7 | +0.0246 |
+| animalpair=RabbitxRat | +0.0246 |
+| cycle_jupiter_saturn_phase=Vir | +0.0246 |
+| animalpair=GoatxHorse | +0.0245 |
+| moonpair=SagxAri | +0.0245 |
+| his_tithi=7 | +0.0245 |
+| animalpair=HorsexDog | +0.0242 |
+| her_mercury_sign=Pis | +0.0242 |
+| her_mercury_sign=Sag | +0.0242 |
+| animalpair=DragonxGoat | +0.0242 |
+| animalpair=RatxHorse | +0.0237 |
+| his_mars_sign=Aqu | +0.0237 |
+| moonpair=AquxSco | +0.0237 |
+| his_nakshatra=10 | +0.0235 |
+| cycle_uranus_neptune_phase=Can | +0.0232 |
+| lifepath_pair=3x1 | +0.0232 |
+| his_jupiter_sign=Lib | +0.0230 |
+| lifepath_pair=8x7 | +0.0229 |
+| her_true_node_sign=Can | +0.0228 |
+| his_chiron_sign=Gem | +0.0226 |
+| her_moon_sign=Can | +0.0225 |
+| dav_jupiter_sign=Lib | +0.0224 |
+| lifepath_pair=6x3 | +0.0223 |
+| dav_sun_sign=Gem | +0.0223 |
+| lifepath_pair=2x7 | +0.0223 |
+| lifepath_pair=8x4 | +0.0222 |
+| moonpair=ScoxLib | +0.0222 |
+| her_chiron_sign=Pis | +0.0222 |
+| dav_saturn_sign=Aqu | +0.0221 |
+| her_tithi=8 | +0.0221 |
+| moonpair=CanxAqu | +0.0220 |
+| dav_sun_sign=Sco | +0.0220 |
+| animalpair=OxxSnake | +0.0220 |
+| his_nakshatra=22 | +0.0220 |
+| his_sun_sext_her_saturn | +0.0220 |
+| his_sun_sign=Can | +0.0220 |
+| lifepath_pair=3x7 | +0.0219 |
+| his_daystem=XinMetal | +0.0218 |
+| his_mercury_sign=Lib | +0.0218 |
+| his_mercury_sign=Aqu | +0.0217 |
+| sunpair=ScoxCap | +0.0217 |
+| her_mars_sign=Can | +0.0215 |
+| dav_moon_sign=Leo | +0.0214 |
+| animalpair=PigxGoat | +0.0214 |
+| her_daystem=XinMetal | +0.0213 |
+| her_mercury_sign=Lib | +0.0213 |
+| her_uranus_sign=Gem | +0.0213 |
+| his_daystem=YiWood | +0.0212 |
+| his_tithi=29 | +0.0212 |
+| sunpair=PisxLib | +0.0211 |
+| his_jupiter_sign=Leo | +0.0211 |
+| moonpair=ArixCan | +0.0210 |
+| moonpair=LeoxSco | +0.0209 |
+| sunpair=CanxCan | +0.0209 |
+| his_nakshatra=18 | +0.0209 |
+| dav_jupiter_sign=Vir | +0.0208 |
+| dav_mars_sign=Lib | +0.0206 |
+| his_daybranch=Rat | +0.0206 |
+| animalpair=MonkeyxRat | +0.0205 |
+| his_daybranch=Monkey | +0.0205 |
+| moonpair=VirxPis | +0.0204 |
+| sunpair=LeoxAri | +0.0203 |
+| sunpair=AquxLeo | +0.0203 |
+| his_saturn_conj_her_moon | +0.0203 |
+| his_jupiter_sign=Sag | +0.0203 |
+| sunpair=PisxPis | +0.0203 |
+| his_jupiter_sign=Gem | +0.0201 |
+| his_year_animal=Rat | +0.0201 |
+| her_true_node_sign=Pis | +0.0200 |
+| her_daybranch=Snake | +0.0198 |
+| his_sun_sign=Sco | +0.0197 |
+| cycle_neptune_pluto_phase=Aqu | +0.0196 |
+| animalpair=MonkeyxGoat | +0.0195 |
+| lifepath_pair=8x2 | +0.0194 |
+| his_moon_trine_her_saturn | +0.0193 |
+| lifepath_pair=4x6 | +0.0193 |
+| his_true_node_sign=Aqu | +0.0192 |
+| his_sun_sign=Lib | +0.0192 |
+| cycle_saturn_neptune_phase=Gem | +0.0191 |
+| his_chiron_sign=Tau | +0.0191 |
+| sunpair=GemxSco | +0.0190 |
+| his_venus_sext_her_moon | +0.0190 |
+| his_mars_sign=Cap | +0.0190 |
+| her_jupiter_sign=Aqu | +0.0189 |
+| dav_sun_sign=Ari | +0.0188 |
+| lifepath_pair=1x8 | +0.0188 |
+| dav_moon_sign=Aqu | +0.0188 |
+| animalpair=RoosterxRat | +0.0187 |
+| her_saturn_sign=Gem | +0.0187 |
+| lifepath_pair=5x5 | +0.0187 |
+| dav_uranus_sign=Vir | +0.0186 |
+| moonpair=SagxVir | +0.0184 |
+| her_nakshatra=10 | +0.0184 |
+| his_moon_conj_her_saturn | +0.0184 |
+| animalpair=RoosterxTiger | +0.0183 |
+| dav_sun_sign=Leo | +0.0182 |
+| his_true_node_sign=Sag | +0.0182 |
+| her_jupiter_sign=Can | +0.0180 |
+| sunpair=AquxAqu | +0.0179 |
+| animalpair=HorsexGoat | +0.0178 |
+| his_moon_sign=Can | +0.0177 |
+| sunpair=ScoxCan | +0.0177 |
+| animalpair=RoosterxGoat | +0.0175 |
+| lifepath_pair=7x3 | +0.0175 |
+| his_mars_trine_her_venus | +0.0175 |
+| moonpair=LibxVir | +0.0174 |
+| sunpair=VirxCan | +0.0173 |
+| sunpair=VirxAqu | +0.0173 |
+| lifepath_pair=5x9 | +0.0172 |
+| moonpair=ArixLib | +0.0170 |
+| animalpair=HorsexPig | +0.0167 |
+| his_venus_conj_her_saturn | +0.0167 |
+| animalpair=RoosterxHorse | +0.0166 |
+| her_mars_sign=Aqu | +0.0165 |
+| his_nakshatra=13 | +0.0165 |
+| moonpair=CanxCap | +0.0164 |
+| his_tithi=22 | +0.0164 |
+| lifepath_pair=1x3 | +0.0164 |
+| her_nakshatra=0 | +0.0164 |
+| dav_sun_sign=Aqu | +0.0164 |
+| dav_venus_sign=Aqu | +0.0163 |
+| his_saturn_sign=Gem | +0.0161 |
+| lifepath_pair=4x9 | +0.0161 |
+| her_year_animal=Rabbit | +0.0161 |
+| his_jupiter_sign=Ari | +0.0160 |
+| her_mars_sign=Tau | +0.0160 |
+| sunpair=VirxGem | +0.0160 |
+| her_nakshatra=18 | +0.0153 |
+| his_moon_conj_her_sun | +0.0153 |
+| dav_moon_sign=Can | +0.0153 |
+| cycle_jupiter_saturn_phase=Tau | +0.0152 |
+| sunpair=GemxAqu | +0.0151 |
+| sunpair=GemxCap | +0.0151 |
+| his_mercury_sign=Gem | +0.0151 |
+| her_moon_sign=Sag | +0.0151 |
+| his_venus_sign=Sag | +0.0150 |
+| lifepath_pair=2x4 | +0.0150 |
+| animalpair=SnakexGoat | +0.0149 |
+| lifepath_pair=7x1 | +0.0149 |
+| sunpair=LibxVir | +0.0149 |
+| moonpair=LeoxPis | +0.0148 |
+| animalpair=OxxRat | +0.0148 |
+| animalpair=OxxDog | +0.0148 |
+| sunpair=ScoxVir | +0.0147 |
+| dav_venus_sign=Gem | +0.0147 |
+| sunpair=LeoxLeo | +0.0147 |
+| dav_venus_sign=Pis | +0.0147 |
+| animalpair=SnakexSnake | +0.0146 |
+| her_nakshatra=16 | +0.0144 |
+| his_moon_opp_her_sun | +0.0144 |
+| sunpair=ScoxSag | +0.0144 |
+| dav_mars_sign=Tau | +0.0142 |
+| her_mars_sign=Gem | +0.0141 |
+| sunpair=LeoxCap | +0.0141 |
+| her_tithi=23 | +0.0141 |
+| moonpair=CanxTau | +0.0141 |
+| dav_sun_sign=Cap | +0.0140 |
+| his_sun_conj_her_moon | +0.0140 |
+| his_moon_sign=Aqu | +0.0140 |
+| animalpair=PigxRabbit | +0.0139 |
+| lifepath_pair=6x9 | +0.0139 |
+| sunpair=ArixVir | +0.0138 |
+| moonpair=ArixCap | +0.0138 |
+| his_true_node_sign=Ari | +0.0137 |
+| his_saturn_sext_her_sun | +0.0137 |
+| animalpair=MonkeyxSnake | +0.0136 |
+| sunpair=PisxCap | +0.0135 |
+| animalpair=HorsexRat | +0.0135 |
+| sunpair=ScoxAqu | +0.0134 |
+| sunpair=ArixPis | +0.0134 |
+| her_tithi=10 | +0.0133 |
+| dav_uranus_sign=Aqu | +0.0133 |
+| sunpair=SagxGem | +0.0132 |
+| cycle_saturn_pluto_phase=Sag | +0.0131 |
+| moonpair=ScoxAri | +0.0130 |
+| sunpair=GemxPis | +0.0130 |
+| animalpair=RatxTiger | +0.0129 |
+| dav_mars_sign=Ari | +0.0129 |
+| animalpair=DogxHorse | +0.0129 |
+| animalpair=GoatxTiger | +0.0128 |
+| dav_jupiter_sign=Leo | +0.0128 |
+| animalpair=DogxRabbit | +0.0128 |
+| his_sun_opp_her_saturn | +0.0127 |
+| sunpair=ScoxGem | +0.0127 |
+| lifepath_pair=3x9 | +0.0127 |
+| dav_moon_sign=Ari | +0.0126 |
+| her_sun_sign=Leo | +0.0126 |
+| sunpair=SagxPis | +0.0126 |
+| moonpair=TauxTau | +0.0125 |
+| moonpair=ScoxVir | +0.0125 |
+| his_tithi=5 | +0.0125 |
+| moonpair=GemxSco | +0.0123 |
+| moonpair=LibxLeo | +0.0122 |
+| sunpair=ArixAqu | +0.0122 |
+| his_sun_sign=Aqu | +0.0122 |
+| moonpair=ScoxSag | +0.0121 |
+| his_saturn_conj_her_saturn | +0.0120 |
+| dav_sun_sign=Sag | +0.0120 |
+| moonpair=LibxPis | +0.0119 |
+| sunpair=ScoxLib | +0.0119 |
+| cycle_saturn_neptune_phase=Sco | +0.0117 |
+| her_jupiter_sign=Tau | +0.0115 |
+| his_tithi=18 | +0.0115 |
+| moonpair=TauxCap | +0.0113 |
+| dav_neptune_sign=Vir | +0.0111 |
+| her_daystem=RenWater | +0.0110 |
+| sunpair=GemxVir | +0.0109 |
+| her_chiron_sign=Ari | +0.0109 |
+| sunpair=TauxGem | +0.0109 |
+| sunpair=CapxTau | +0.0109 |
+| his_venus_trine_her_moon | +0.0108 |
+| moonpair=LeoxAqu | +0.0108 |
+| her_nakshatra=7 | +0.0107 |
+| dav_saturn_sign=Pis | +0.0107 |
+| lifepath_pair=7x6 | +0.0106 |
+| lifepath_pair=7x4 | +0.0105 |
+| sunpair=SagxVir | +0.0104 |
+| animalpair=RatxRooster | +0.0104 |
+| animalpair=TigerxRabbit | +0.0104 |
+| his_daybranch=Snake | +0.0103 |
+| sunpair=LibxTau | +0.0102 |
+| his_daybranch=Dragon | +0.0102 |
+| his_nakshatra=6 | +0.0102 |
+| his_jupiter_square_her_venus | +0.0102 |
+| animalpair=RatxOx | +0.0101 |
+| lifepath_pair=9x6 | +0.0100 |
+| moonpair=GemxAri | +0.0099 |
+| her_tithi=29 | +0.0099 |
+| moonpair=CanxPis | +0.0099 |
+| dav_mars_sign=Gem | +0.0099 |
+| cycle_saturn_pluto_phase=Can | +0.0099 |
+| her_saturn_sign=Pis | +0.0098 |
+| moonpair=LibxSag | +0.0098 |
+| dav_jupiter_sign=Gem | +0.0098 |
+| his_tithi=3 | +0.0096 |
+| his_nakshatra=3 | +0.0096 |
+| moonpair=AquxSag | +0.0095 |
+| his_nakshatra=16 | +0.0095 |
+| his_tithi=28 | +0.0095 |
+| moonpair=AquxGem | +0.0095 |
+| his_tithi=12 | +0.0094 |
+| animalpair=OxxMonkey | +0.0094 |
+| sunpair=SagxTau | +0.0094 |
+| her_saturn_sign=Vir | +0.0093 |
+| her_tithi=11 | +0.0093 |
+| her_moon_sign=Gem | +0.0091 |
+| his_moon_opp_her_saturn | +0.0091 |
+| sunpair=GemxLeo | +0.0089 |
+| animalpair=PigxHorse | +0.0088 |
+| animalpair=DragonxPig | +0.0087 |
+| sunpair=ArixTau | +0.0087 |
+| his_saturn_trine_her_saturn | +0.0087 |
+| animalpair=DragonxSnake | +0.0086 |
+| cycle_saturn_uranus_phase=Tau | +0.0086 |
+| sunpair=PisxSag | +0.0085 |
+| animalpair=DragonxRat | +0.0084 |
+| his_mercury_sign=Sag | +0.0084 |
+| dav_saturn_sign=Leo | +0.0084 |
+| lifepath_pair=5x1 | +0.0084 |
+| sunpair=CapxSco | +0.0084 |
+| animalpair=DogxTiger | +0.0083 |
+| his_moon_sign=Gem | +0.0082 |
+| dav_uranus_sign=Pis | +0.0081 |
+| moonpair=VirxSco | +0.0081 |
+| her_mercury_sign=Aqu | +0.0080 |
+| sunpair=SagxCap | +0.0079 |
+| her_true_node_sign=Sag | +0.0078 |
+| animalpair=OxxRooster | +0.0078 |
+| moonpair=CanxAri | +0.0077 |
+| lifepath_pair=4x2 | +0.0076 |
+| sunpair=PisxLeo | +0.0075 |
+| moonpair=VirxTau | +0.0075 |
+| moonpair=ArixAqu | +0.0073 |
+| animalpair=GoatxDragon | +0.0073 |
+| moonpair=VirxAri | +0.0073 |
+| his_sun_opp_her_sun | +0.0073 |
+| her_mars_sign=Cap | +0.0073 |
+| sunpair=CanxTau | +0.0073 |
+| his_venus_trine_her_venus | +0.0072 |
+| his_chiron_sign=Ari | +0.0071 |
+| his_true_node_sign=Tau | +0.0070 |
+| her_sun_sign=Cap | +0.0069 |
+| his_jupiter_conj_her_venus | +0.0069 |
+| his_tithi=16 | +0.0069 |
+| his_saturn_opp_her_saturn | +0.0069 |
+| her_jupiter_sign=Gem | +0.0069 |
+| moonpair=GemxPis | +0.0068 |
+| his_mars_sign=Ari | +0.0068 |
+| lifepath_pair=5x7 | +0.0068 |
+| moonpair=GemxCap | +0.0068 |
+| moonpair=TauxPis | +0.0068 |
+| dav_venus_sign=Leo | +0.0066 |
+| dav_jupiter_sign=Can | +0.0066 |
+| moonpair=CanxGem | +0.0066 |
+| dav_venus_sign=Ari | +0.0066 |
+| dav_jupiter_sign=Ari | +0.0065 |
+| sunpair=CapxCan | +0.0065 |
+| sunpair=ScoxLeo | +0.0065 |
+| moonpair=ArixLeo | +0.0064 |
+| sunpair=GemxTau | +0.0063 |
+| sunpair=CanxCap | +0.0062 |
+| his_venus_square_her_mars | +0.0062 |
+| moonpair=PisxSag | +0.0058 |
+| moonpair=PisxVir | +0.0057 |
+| sunpair=LeoxAqu | +0.0056 |
+| sunpair=AquxAri | +0.0056 |
+| moonpair=LibxLib | +0.0056 |
+| her_mars_sign=Sco | +0.0054 |
+| moonpair=CapxAri | +0.0054 |
+| sunpair=CapxPis | +0.0054 |
+| his_venus_sign=Gem | +0.0053 |
+| animalpair=RoosterxRooster | +0.0050 |
+| his_moon_sign=Tau | +0.0050 |
+| animalpair=OxxPig | +0.0050 |
+| her_tithi=22 | +0.0049 |
+| his_venus_sign=Leo | +0.0049 |
+| lifepath_pair=6x4 | +0.0049 |
+| lifepath_pair=1x5 | +0.0047 |
+| animalpair=PigxTiger | +0.0046 |
+| his_moon_sign=Leo | +0.0045 |
+| her_tithi=4 | +0.0045 |
+| dav_mars_sign=Leo | +0.0045 |
+| lifepath_pair=8x3 | +0.0044 |
+| her_tithi=16 | +0.0043 |
+| her_nakshatra=6 | +0.0043 |
+| his_daystem=JiEarth | +0.0041 |
+| animalpair=PigxRooster | +0.0041 |
+| moonpair=CapxSco | +0.0041 |
+| cycle_saturn_pluto_phase=Leo | +0.0041 |
+| sunpair=TauxCap | +0.0041 |
+| his_venus_sext_her_venus | +0.0040 |
+| lifepath_pair=9x2 | +0.0040 |
+| animalpair=RabbitxRooster | +0.0039 |
+| her_daybranch=Rooster | +0.0039 |
+| animalpair=RoosterxMonkey | +0.0039 |
+| moonpair=AquxAqu | +0.0039 |
+| her_nakshatra=21 | +0.0038 |
+| dav_moon_sign=Vir | +0.0037 |
+| animalpair=DogxMonkey | +0.0036 |
+| moonpair=PisxPis | +0.0036 |
+| sunpair=ScoxTau | +0.0035 |
+| animalpair=HorsexHorse | +0.0034 |
+| his_nakshatra=25 | +0.0034 |
+| animalpair=HorsexMonkey | +0.0033 |
+| moonpair=CapxSag | +0.0033 |
+| dav_moon_sign=Sco | +0.0033 |
+| dav_moon_sign=Lib | +0.0033 |
+| moonpair=CanxSag | +0.0033 |
+| sunpair=ScoxSco | +0.0032 |
+| her_daystem=JiEarth | +0.0032 |
+| cycle_jupiter_saturn_phase=Cap | +0.0032 |
+| moonpair=ArixGem | +0.0032 |
+| his_jupiter_sext_her_venus | +0.0031 |
+| moonpair=PisxLeo | +0.0031 |
+| moonpair=LeoxLeo | +0.0030 |
+| sunpair=TauxSag | +0.0030 |
+| cycle_uranus_pluto_phase=Sag | +0.0029 |
+| sunpair=LibxPis | +0.0029 |
+| his_daybranch=Rooster | +0.0028 |
+| his_jupiter_trine_her_venus | +0.0028 |
+| lifepath_pair=6x6 | +0.0027 |
+| moonpair=SagxAqu | +0.0026 |
+| sunpair=SagxSag | +0.0026 |
+| his_venus_sign=Pis | +0.0026 |
+| animalpair=OxxHorse | +0.0025 |
+| animalpair=RatxRat | +0.0025 |
+| lifepath_pair=3x2 | +0.0024 |
+| cycle_saturn_pluto_phase=Vir | +0.0024 |
+| cycle_saturn_neptune_phase=Ari | +0.0024 |
+| lifepath_pair=7x5 | +0.0022 |
+| cycle_saturn_uranus_phase=Cap | +0.0022 |
+| dav_mars_sign=Sco | +0.0020 |
+| sunpair=LeoxSco | +0.0020 |
+| animalpair=HorsexSnake | +0.0020 |
+| sunpair=CapxAqu | +0.0019 |
+| moonpair=LibxCan | +0.0018 |
+| sunpair=CapxAri | +0.0018 |
+| sunpair=VirxAri | +0.0016 |
+| animalpair=DogxOx | +0.0016 |
+| sunpair=VirxSag | +0.0015 |
+| sunpair=ArixGem | +0.0015 |
+| moonpair=ScoxPis | +0.0014 |
+| animalpair=RoosterxRabbit | +0.0013 |
+| his_saturn_sign=Can | +0.0013 |
+| his_saturn_square_her_sun | +0.0013 |
+| animalpair=DogxPig | +0.0009 |
+| moonpair=LibxGem | +0.0008 |
+| his_moon_opp_her_venus | +0.0008 |
+| sunpair=CanxAri | +0.0007 |
+| moonpair=ScoxCan | +0.0007 |
+| animalpair=HorsexDragon | +0.0007 |
+| sunpair=LibxLib | +0.0006 |
+| his_sun_sign=Pis | +0.0006 |
+| his_chiron_sign=Sag | +0.0005 |
+| her_year_animal=Tiger | +0.0005 |
+| moonpair=VirxGem | +0.0005 |
+| her_uranus_sign=Sco | +0.0005 |
+| her_chiron_sign=Sag | +0.0004 |
+| sunpair=LibxLeo | +0.0004 |
+| moonpair=TauxGem | +0.0004 |
+| sunpair=CanxLeo | +0.0003 |
+| his_year_animal=Goat | +0.0003 |
+| his_sun_square_her_sun | +0.0003 |
+| moonpair=ArixSco | +0.0002 |
+| his_moon_sign=Sag | +0.0001 |
+| moonpair=CapxLib | +0.0001 |
+| moonpair=LeoxGem | +0.0001 |
+| animalpair=DragonxHorse | -0.0000 |
+| sunpair=ArixAri | -0.0002 |
+| lifepath_pair=8x6 | -0.0002 |
+| animalpair=TigerxOx | -0.0003 |
+| moonpair=LeoxCan | -0.0004 |
+| animalpair=RatxGoat | -0.0004 |
+| animalpair=RabbitxGoat | -0.0006 |
+| sunpair=LeoxPis | -0.0006 |
+| his_nakshatra=2 | -0.0006 |
+| dav_sun_sign=Lib | -0.0007 |
+| lifepath_pair=9x7 | -0.0008 |
+| dav_sun_sign=Vir | -0.0009 |
+| her_venus_sign=Ari | -0.0010 |
+| moonpair=AquxTau | -0.0010 |
+| animalpair=DogxDragon | -0.0010 |
+| her_jupiter_sign=Leo | -0.0010 |
+| her_moon_sign=Cap | -0.0011 |
+| sunpair=CanxAqu | -0.0011 |
+| her_tithi=13 | -0.0012 |
+| moonpair=TauxAqu | -0.0013 |
+| animalpair=TigerxDog | -0.0014 |
+| her_daybranch=Goat | -0.0014 |
+| animalpair=SnakexMonkey | -0.0015 |
+| his_mars_square_her_mars | -0.0015 |
+| sunpair=VirxTau | -0.0015 |
+| sunpair=TauxCan | -0.0015 |
+| dav_pluto_sign=Sco | -0.0017 |
+| moonpair=SagxGem | -0.0018 |
+| her_nakshatra=23 | -0.0018 |
+| sunpair=AquxSag | -0.0019 |
+| her_lifepath=6 | -0.0020 |
+| sunpair=LeoxLib | -0.0020 |
+| his_jupiter_sign=Cap | -0.0021 |
+| sunpair=SagxCan | -0.0021 |
+| animalpair=SnakexRooster | -0.0022 |
+| moonpair=PisxSco | -0.0023 |
+| moonpair=AquxLib | -0.0023 |
+| moonpair=CapxVir | -0.0023 |
+| animalpair=PigxMonkey | -0.0024 |
+| animalpair=OxxGoat | -0.0025 |
+| her_uranus_sign=Pis | -0.0025 |
+| his_daybranch=Pig | -0.0026 |
+| sunpair=TauxTau | -0.0026 |
+| sunpair=AquxCan | -0.0027 |
+| moonpair=GemxAqu | -0.0027 |
+| moonpair=ScoxCap | -0.0028 |
+| moonpair=ScoxLeo | -0.0029 |
+| sunpair=CapxCap | -0.0029 |
+| sunpair=AquxSco | -0.0030 |
+| animalpair=RatxRabbit | -0.0030 |
+| sunpair=LibxSco | -0.0031 |
+| lifepath_pair=3x4 | -0.0031 |
+| lifepath_pair=7x9 | -0.0032 |
+| sunpair=CanxSag | -0.0033 |
+| dav_saturn_sign=Vir | -0.0033 |
+| sunpair=CanxVir | -0.0034 |
+| his_saturn_sign=Cap | -0.0034 |
+| sunpair=ArixLib | -0.0036 |
+| lifepath_pair=3x8 | -0.0037 |
+| animalpair=TigerxDragon | -0.0037 |
+| lifepath_pair=9x5 | -0.0037 |
+| animalpair=PigxRat | -0.0037 |
+| sunpair=GemxLib | -0.0037 |
+| his_moon_square_her_venus | -0.0038 |
+| sunpair=PisxSco | -0.0039 |
+| his_sun_sign=Gem | -0.0039 |
+| moonpair=CanxVir | -0.0039 |
+| animalpair=DragonxRabbit | -0.0040 |
+| his_nakshatra=24 | -0.0041 |
+| animalpair=TigerxPig | -0.0041 |
+| his_saturn_sign=Sco | -0.0041 |
+| his_mars_conj_her_venus | -0.0042 |
+| cycle_saturn_neptune_phase=Tau | -0.0042 |
+| her_saturn_sign=Lib | -0.0042 |
+| moonpair=TauxSco | -0.0044 |
+| his_saturn_sign=Ari | -0.0045 |
+| his_sun_square_her_moon | -0.0045 |
+| his_uranus_sign=Sag | -0.0045 |
+| animalpair=RatxDog | -0.0045 |
+| moonpair=ArixTau | -0.0046 |
+| animalpair=TigerxGoat | -0.0046 |
+| sunpair=CapxLib | -0.0046 |
+| her_chiron_sign=Can | -0.0046 |
+| his_tithi=8 | -0.0047 |
+| his_lifepath=2 | -0.0047 |
+| her_uranus_sign=Cap | -0.0047 |
+| his_sun_sign=Leo | -0.0048 |
+| his_sun_sign=Sag | -0.0050 |
+| her_saturn_sign=Ari | -0.0050 |
+| dav_neptune_sign=Cap | -0.0050 |
+| moonpair=LibxTau | -0.0050 |
+| cycle_saturn_uranus_phase=Ari | -0.0051 |
+| sunpair=SagxAri | -0.0051 |
+| moonpair=SagxLib | -0.0052 |
+| moonpair=LeoxCap | -0.0053 |
+| his_lifepath=6 | -0.0054 |
+| his_saturn_opp_her_venus | -0.0054 |
+| his_saturn_sign=Vir | -0.0057 |
+| moonpair=LeoxLib | -0.0057 |
+| his_mars_opp_her_venus | -0.0058 |
+| moonpair=ScoxTau | -0.0058 |
+| his_daystem=GuiWater | -0.0058 |
+| animalpair=TigerxTiger | -0.0058 |
+| animalpair=RabbitxDragon | -0.0059 |
+| her_nakshatra=15 | -0.0059 |
+| lifepath_pair=7x7 | -0.0059 |
+| sunpair=LeoxCan | -0.0059 |
+| sunpair=VirxLib | -0.0059 |
+| moonpair=GemxSag | -0.0060 |
+| sunpair=TauxSco | -0.0061 |
+| animalpair=RabbitxRabbit | -0.0061 |
+| dav_saturn_sign=Cap | -0.0061 |
+| her_jupiter_sign=Pis | -0.0061 |
+| her_daybranch=Tiger | -0.0062 |
+| her_pluto_sign=Ari | -0.0062 |
+| sunpair=AquxGem | -0.0062 |
+| cycle_uranus_neptune_phase=Tau | -0.0062 |
+| his_moon_sext_her_sun | -0.0062 |
+| moonpair=AquxPis | -0.0063 |
+| animalpair=RabbitxSnake | -0.0064 |
+| animalpair=PigxPig | -0.0064 |
+| moonpair=SagxTau | -0.0064 |
+| sunpair=VirxSco | -0.0064 |
+| animalpair=DragonxDragon | -0.0065 |
+| sunpair=SagxSco | -0.0065 |
+| his_mars_trine_her_mars | -0.0065 |
+| his_chiron_sign=Aqu | -0.0065 |
+| moonpair=AquxAri | -0.0066 |
+| lifepath_pair=2x9 | -0.0066 |
+| moonpair=AquxCan | -0.0067 |
+| animalpair=TigerxMonkey | -0.0067 |
+| moonpair=LeoxTau | -0.0068 |
+| her_jupiter_sign=Cap | -0.0068 |
+| cycle_uranus_pluto_phase=Gem | -0.0068 |
+| moonpair=SagxCap | -0.0068 |
+| animalpair=MonkeyxOx | -0.0068 |
+| moonpair=LeoxSag | -0.0070 |
+| moonpair=GemxVir | -0.0070 |
+| animalpair=RabbitxHorse | -0.0071 |
+| cycle_uranus_neptune_phase=Gem | -0.0072 |
+| animalpair=GoatxRat | -0.0072 |
+| his_jupiter_square_her_moon | -0.0073 |
+| animalpair=OxxDragon | -0.0074 |
+| his_saturn_conj_her_venus | -0.0074 |
+| her_tithi=28 | -0.0075 |
+| his_moon_sext_her_venus | -0.0077 |
+| animalpair=PigxDragon | -0.0078 |
+| his_saturn_sign=Lib | -0.0079 |
+| cycle_saturn_pluto_phase=Tau | -0.0080 |
+| animalpair=GoatxSnake | -0.0080 |
+| moonpair=VirxVir | -0.0080 |
+| his_jupiter_sext_her_moon | -0.0082 |
+| his_year_animal=Monkey | -0.0082 |
+| sunpair=LibxAqu | -0.0082 |
+| his_sun_opp_her_moon | -0.0082 |
+| dav_mars_sign=Can | -0.0083 |
+| his_venus_sext_her_mars | -0.0084 |
+| sunpair=GemxSag | -0.0085 |
+| moonpair=ArixAri | -0.0085 |
+| moonpair=GemxCan | -0.0085 |
+| his_uranus_sign=Sco | -0.0086 |
+| his_true_node_sign=Vir | -0.0087 |
+| dav_uranus_sign=Leo | -0.0087 |
+| animalpair=MonkeyxMonkey | -0.0087 |
+| animalpair=HorsexRabbit | -0.0087 |
+| his_nakshatra=17 | -0.0088 |
+| her_nakshatra=11 | -0.0090 |
+| sunpair=AquxCap | -0.0090 |
+| moonpair=AquxLeo | -0.0091 |
+| her_true_node_sign=Vir | -0.0091 |
+| sunpair=SagxAqu | -0.0091 |
+| dav_moon_sign=Sag | -0.0091 |
+| sunpair=ScoxAri | -0.0092 |
+| her_neptune_sign=Vir | -0.0093 |
+| animalpair=RatxDragon | -0.0093 |
+| sunpair=TauxAri | -0.0095 |
+| lifepath_pair=5x8 | -0.0095 |
+| his_mars_square_her_venus | -0.0095 |
+| his_venus_sign=Vir | -0.0097 |
+| animalpair=SnakexRabbit | -0.0098 |
+| his_tithi=13 | -0.0098 |
+| her_venus_sign=Gem | -0.0100 |
+| moonpair=LibxAri | -0.0100 |
+| her_venus_sign=Vir | -0.0101 |
+| lifepath_pair=2x3 | -0.0101 |
+| her_uranus_sign=Lib | -0.0103 |
+| dav_venus_sign=Sag | -0.0104 |
+| his_chiron_sign=Pis | -0.0104 |
+| sunpair=CanxSco | -0.0104 |
+| moonpair=LibxSco | -0.0104 |
+| sunpair=AquxVir | -0.0104 |
+| his_true_node_sign=Cap | -0.0105 |
+| animalpair=GoatxOx | -0.0105 |
+| moonpair=ScoxAqu | -0.0105 |
+| moonpair=PisxLib | -0.0105 |
+| her_moon_sign=Leo | -0.0106 |
+| moonpair=LibxCap | -0.0106 |
+| sunpair=VirxPis | -0.0107 |
+| her_year_animal=Dog | -0.0108 |
+| sunpair=AquxTau | -0.0108 |
+| moonpair=GemxGem | -0.0108 |
+| animalpair=RoosterxDragon | -0.0109 |
+| lifepath_pair=9x9 | -0.0110 |
+| sunpair=CanxGem | -0.0110 |
+| his_tithi=9 | -0.0111 |
+| sunpair=LibxCap | -0.0111 |
+| moonpair=PisxTau | -0.0113 |
+| animalpair=DogxRat | -0.0114 |
+| sunpair=VirxVir | -0.0114 |
+| sunpair=TauxPis | -0.0114 |
+| her_saturn_sign=Tau | -0.0115 |
+| animalpair=SnakexDog | -0.0115 |
+| sunpair=PisxVir | -0.0115 |
+| animalpair=RoosterxPig | -0.0116 |
+| moonpair=PisxGem | -0.0116 |
+| moonpair=SagxLeo | -0.0117 |
+| sunpair=ArixSag | -0.0117 |
+| moonpair=CapxGem | -0.0117 |
+| lifepath_pair=2x5 | -0.0118 |
+| animalpair=MonkeyxDragon | -0.0119 |
+| dav_venus_sign=Cap | -0.0119 |
+| her_nakshatra=19 | -0.0121 |
+| animalpair=PigxOx | -0.0122 |
+| his_mars_sign=Pis | -0.0122 |
+| animalpair=OxxRabbit | -0.0123 |
+| his_nakshatra=1 | -0.0124 |
+| moonpair=ScoxSco | -0.0124 |
+| her_sun_sign=Sag | -0.0125 |
+| dav_pluto_sign=Aqu | -0.0127 |
+| her_tithi=2 | -0.0129 |
+| his_mercury_sign=Vir | -0.0130 |
+| moonpair=TauxAri | -0.0130 |
+| sunpair=TauxAqu | -0.0130 |
+| moonpair=AquxVir | -0.0131 |
+| moonpair=ArixSag | -0.0131 |
+| lifepath_pair=8x8 | -0.0131 |
+| lifepath_pair=5x2 | -0.0132 |
+| animalpair=HorsexOx | -0.0133 |
+| her_year_animal=Snake | -0.0134 |
+| sunpair=PisxTau | -0.0134 |
+| sunpair=LibxCan | -0.0135 |
+| animalpair=HorsexTiger | -0.0135 |
+| his_mars_sext_her_venus | -0.0135 |
+| lifepath_pair=9x3 | -0.0136 |
+| cycle_neptune_pluto_phase=Gem | -0.0136 |
+| her_true_node_sign=Sco | -0.0137 |
+| moonpair=LeoxVir | -0.0137 |
+| her_chiron_sign=Tau | -0.0138 |
+| animalpair=RabbitxMonkey | -0.0138 |
+| his_venus_trine_her_mars | -0.0139 |
+| dav_saturn_sign=Gem | -0.0141 |
+| dav_jupiter_sign=Aqu | -0.0142 |
+| her_chiron_sign=Lib | -0.0143 |
+| sunpair=CapxGem | -0.0143 |
+| sunpair=GemxAri | -0.0145 |
+| her_uranus_sign=Leo | -0.0146 |
+| his_lifepath=5 | -0.0146 |
+| moonpair=ScoxGem | -0.0147 |
+| his_sun_conj_her_sun | -0.0148 |
+| animalpair=DogxSnake | -0.0148 |
+| animalpair=HorsexRooster | -0.0148 |
+| her_nakshatra=25 | -0.0150 |
+| sunpair=CapxLeo | -0.0151 |
+| lifepath_pair=3x5 | -0.0151 |
+| his_mars_sign=Tau | -0.0152 |
+| her_mercury_sign=Gem | -0.0152 |
+| her_nakshatra=20 | -0.0152 |
+| sunpair=LibxSag | -0.0153 |
+| her_chiron_sign=Aqu | -0.0155 |
+| dav_pluto_sign=Ari | -0.0155 |
+| lifepath_pair=6x1 | -0.0156 |
+| his_moon_sign=Lib | -0.0157 |
+| dav_uranus_sign=Cap | -0.0157 |
+| his_chiron_sign=Can | -0.0158 |
+| animalpair=GoatxRooster | -0.0159 |
+| sunpair=LeoxVir | -0.0159 |
+| his_venus_sign=Tau | -0.0159 |
+| lifepath_pair=2x1 | -0.0160 |
+| moonpair=SagxSag | -0.0160 |
+| dav_uranus_sign=Lib | -0.0160 |
+| moonpair=TauxSag | -0.0160 |
+| her_tithi=0 | -0.0161 |
+| lifepath_pair=9x4 | -0.0161 |
+| his_true_node_sign=Pis | -0.0162 |
+| her_venus_sign=Cap | -0.0164 |
+| lifepath_pair=9x1 | -0.0164 |
+| his_venus_sign=Aqu | -0.0165 |
+| moonpair=CapxCap | -0.0165 |
+| his_saturn_sext_her_moon | -0.0166 |
+| her_year_animal=Pig | -0.0166 |
+| his_sun_conj_her_saturn | -0.0166 |
+| his_uranus_sign=Leo | -0.0166 |
+| dav_neptune_sign=Ari | -0.0167 |
+| her_lifepath=7 | -0.0168 |
+| his_year_animal=Dog | -0.0172 |
+| his_mercury_sign=Sco | -0.0173 |
+| moonpair=VirxSag | -0.0174 |
+| his_nakshatra=23 | -0.0176 |
+| moonpair=VirxLib | -0.0176 |
+| sunpair=VirxCap | -0.0177 |
+| animalpair=MonkeyxTiger | -0.0177 |
+| moonpair=CapxCan | -0.0177 |
+| his_saturn_square_her_saturn | -0.0178 |
+| animalpair=SnakexTiger | -0.0178 |
+| lifepath_pair=8x9 | -0.0178 |
+| lifepath_pair=1x7 | -0.0178 |
+| sunpair=CapxVir | -0.0179 |
+| animalpair=DragonxOx | -0.0180 |
+| animalpair=RabbitxOx | -0.0180 |
+| sunpair=PisxAqu | -0.0182 |
+| moonpair=TauxLib | -0.0182 |
+| lifepath_pair=3x3 | -0.0184 |
+| sunpair=GemxCan | -0.0186 |
+| sunpair=SagxLeo | -0.0186 |
+| dav_venus_sign=Vir | -0.0187 |
+| her_mercury_sign=Leo | -0.0190 |
+| dav_uranus_sign=Can | -0.0192 |
+| her_moon_sign=Lib | -0.0192 |
+| moonpair=TauxCan | -0.0193 |
+| animalpair=RabbitxDog | -0.0194 |
+| lifepath_pair=4x1 | -0.0195 |
+| his_uranus_sign=Gem | -0.0196 |
+| dav_sun_sign=Pis | -0.0196 |
+| his_nakshatra=12 | -0.0197 |
+| her_chiron_sign=Cap | -0.0197 |
+| dav_jupiter_sign=Pis | -0.0198 |
+| moonpair=TauxLeo | -0.0198 |
+| his_moon_conj_her_venus | -0.0199 |
+| his_moon_square_her_moon | -0.0199 |
+| sunpair=LeoxSag | -0.0200 |
+| lifepath_pair=6x5 | -0.0200 |
+| sunpair=TauxLeo | -0.0201 |
+| animalpair=MonkeyxRooster | -0.0202 |
+| lifepath_pair=2x2 | -0.0202 |
+| animalpair=GoatxMonkey | -0.0202 |
+| her_tithi=25 | -0.0202 |
+| animalpair=SnakexRat | -0.0202 |
+| cycle_saturn_neptune_phase=Lib | -0.0203 |
+| moonpair=VirxCap | -0.0204 |
+| his_uranus_sign=Vir | -0.0206 |
+| his_jupiter_sign=Sco | -0.0207 |
+| dav_saturn_sign=Sco | -0.0208 |
+| his_moon_conj_her_moon | -0.0211 |
+| moonpair=CapxLeo | -0.0211 |
+| animalpair=TigerxRat | -0.0211 |
+| sunpair=ArixCap | -0.0213 |
+| animalpair=PigxSnake | -0.0214 |
+| his_moon_sext_her_moon | -0.0215 |
+| his_pluto_sign=Lib | -0.0216 |
+| moonpair=GemxTau | -0.0217 |
+| her_jupiter_sign=Sag | -0.0217 |
+| cycle_neptune_pluto_phase=Cap | -0.0218 |
+| cycle_saturn_uranus_phase=Vir | -0.0218 |
+| sunpair=AquxLib | -0.0218 |
+| her_true_node_sign=Gem | -0.0221 |
+| her_year_animal=Dragon | -0.0221 |
+| her_daybranch=Dog | -0.0222 |
+| dav_uranus_sign=Tau | -0.0226 |
+| sunpair=CanxLib | -0.0227 |
+| animalpair=DogxRooster | -0.0229 |
+| moonpair=GemxLeo | -0.0230 |
+| moonpair=LeoxAri | -0.0231 |
+| animalpair=GoatxGoat | -0.0233 |
+| his_daybranch=Ox | -0.0233 |
+| moonpair=PisxCap | -0.0234 |
+| her_nakshatra=5 | -0.0235 |
+| dav_pluto_sign=Cap | -0.0235 |
+| his_mercury_sign=Pis | -0.0236 |
+| his_nakshatra=5 | -0.0238 |
+| his_nakshatra=19 | -0.0238 |
+| her_saturn_sign=Cap | -0.0239 |
+| lifepath_pair=1x9 | -0.0239 |
+| sunpair=LeoxGem | -0.0240 |
+| moonpair=VirxLeo | -0.0241 |
+| his_tithi=27 | -0.0241 |
+| sunpair=LibxGem | -0.0245 |
+| her_tithi=14 | -0.0246 |
+| her_sun_sign=Vir | -0.0247 |
+| dav_jupiter_sign=Sco | -0.0247 |
+| cycle_saturn_pluto_phase=Ari | -0.0247 |
+| her_nakshatra=12 | -0.0248 |
+| sunpair=GemxGem | -0.0250 |
+| lifepath_pair=3x6 | -0.0251 |
+| her_nakshatra=9 | -0.0252 |
+| lifepath_pair=6x7 | -0.0253 |
+| sunpair=CanxPis | -0.0255 |
+| her_jupiter_sign=Lib | -0.0257 |
+| animalpair=DragonxRooster | -0.0258 |
+| lifepath_pair=6x8 | -0.0258 |
+| his_venus_conj_her_moon | -0.0258 |
+| moonpair=CanxSco | -0.0260 |
+| his_saturn_opp_her_moon | -0.0261 |
+| animalpair=RoosterxOx | -0.0263 |
+| cycle_neptune_pluto_phase=Leo | -0.0265 |
+| her_daystem=GengMetal | -0.0267 |
+| sunpair=ArixLeo | -0.0268 |
+| lifepath_pair=7x2 | -0.0269 |
+| his_saturn_sign=Aqu | -0.0269 |
+| sunpair=PisxAri | -0.0269 |
+| animalpair=PigxDog | -0.0270 |
+| moonpair=ArixVir | -0.0272 |
+| moonpair=LibxAqu | -0.0272 |
+| animalpair=RatxSnake | -0.0275 |
+| his_jupiter_sign=Vir | -0.0280 |
+| his_year_animal=Pig | -0.0281 |
+| animalpair=RatxPig | -0.0281 |
+| her_year_animal=Ox | -0.0282 |
+| his_moon_sext_her_saturn | -0.0283 |
+| her_nakshatra=1 | -0.0283 |
+| his_saturn_opp_her_sun | -0.0284 |
+| her_jupiter_sign=Ari | -0.0287 |
+| her_nakshatra=14 | -0.0291 |
+| dav_moon_sign=Pis | -0.0291 |
+| his_venus_sext_her_saturn | -0.0292 |
+| cycle_neptune_pluto_phase=Vir | -0.0294 |
+| lifepath_pair=5x3 | -0.0297 |
+| cycle_saturn_uranus_phase=Sco | -0.0302 |
+| her_true_node_sign=Aqu | -0.0302 |
+| his_true_node_sign=Can | -0.0302 |
+| her_year_animal=Rooster | -0.0304 |
+| moonpair=ArixPis | -0.0307 |
+| cycle_saturn_neptune_phase=Sag | -0.0308 |
+| her_uranus_sign=Tau | -0.0308 |
+| moonpair=CapxAqu | -0.0308 |
+| lifepath_pair=1x6 | -0.0309 |
+| dav_sun_sign=Tau | -0.0309 |
+| her_true_node_sign=Cap | -0.0310 |
+| sunpair=PisxGem | -0.0313 |
+| dav_pluto_sign=Leo | -0.0316 |
+| her_moon_sign=Ari | -0.0316 |
+| animalpair=TigerxSnake | -0.0316 |
+| sunpair=PisxCan | -0.0317 |
+| cycle_jupiter_saturn_phase=Gem | -0.0318 |
+| his_tithi=11 | -0.0318 |
+| her_tithi=6 | -0.0322 |
+| lifepath_pair=1x1 | -0.0322 |
+| lifepath_pair=5x6 | -0.0323 |
+| his_saturn_sign=Leo | -0.0324 |
+| animalpair=MonkeyxRabbit | -0.0326 |
+| her_tithi=1 | -0.0327 |
+| lifepath_pair=5x4 | -0.0329 |
+| his_saturn_sext_her_venus | -0.0330 |
+| his_uranus_sign=Can | -0.0330 |
+| his_uranus_sign=Tau | -0.0331 |
+| dav_moon_sign=Gem | -0.0332 |
+| her_year_animal=Horse | -0.0335 |
+| his_mars_opp_her_mars | -0.0336 |
+| animalpair=OxxTiger | -0.0337 |
+| moonpair=PisxAri | -0.0338 |
+| her_mars_sign=Vir | -0.0338 |
+| animalpair=SnakexPig | -0.0338 |
+| his_mars_sign=Leo | -0.0341 |
+| her_pluto_sign=Sco | -0.0341 |
+| his_daystem=BingFire | -0.0342 |
+| her_uranus_sign=Aqu | -0.0345 |
+| dav_neptune_sign=Sco | -0.0346 |
+| her_pluto_sign=Cap | -0.0350 |
+| her_saturn_sign=Leo | -0.0361 |
+| cycle_saturn_neptune_phase=Pis | -0.0362 |
+| moonpair=SagxPis | -0.0362 |
+| animalpair=SnakexHorse | -0.0366 |
+| her_mercury_sign=Sco | -0.0367 |
+| moonpair=CanxCan | -0.0367 |
+| his_nakshatra=7 | -0.0367 |
+| cycle_saturn_pluto_phase=Pis | -0.0367 |
+| cycle_saturn_neptune_phase=Cap | -0.0367 |
+| dav_neptune_sign=Lib | -0.0369 |
+| his_nakshatra=20 | -0.0369 |
+| dav_pluto_sign=Lib | -0.0370 |
+| her_venus_sign=Pis | -0.0371 |
+| her_jupiter_sign=Sco | -0.0373 |
+| his_chiron_sign=Leo | -0.0374 |
+| her_saturn_sign=Sag | -0.0375 |
+| sunpair=TauxVir | -0.0379 |
+| cycle_jupiter_saturn_phase=Can | -0.0382 |
+| his_venus_square_her_venus | -0.0384 |
+| his_sun_trine_her_saturn | -0.0385 |
+| her_chiron_sign=Sco | -0.0386 |
+| her_true_node_sign=Ari | -0.0392 |
+| animalpair=TigerxHorse | -0.0399 |
+| animalpair=RoosterxDog | -0.0403 |
+| lifepath_pair=4x4 | -0.0403 |
+| moonpair=CanxLib | -0.0406 |
+| dav_jupiter_sign=Cap | -0.0406 |
+| sunpair=ScoxPis | -0.0406 |
+| animalpair=RabbitxTiger | -0.0407 |
+| his_nakshatra=9 | -0.0412 |
+| her_nakshatra=4 | -0.0413 |
+| animalpair=GoatxPig | -0.0417 |
+| his_saturn_sign=Pis | -0.0419 |
+| animalpair=MonkeyxHorse | -0.0423 |
+| his_chiron_sign=Lib | -0.0425 |
+| his_tithi=15 | -0.0428 |
+| his_chiron_sign=Vir | -0.0430 |
+| animalpair=DogxGoat | -0.0431 |
+| his_year_animal=Snake | -0.0431 |
+| his_tithi=19 | -0.0440 |
+| cycle_jupiter_saturn_phase=Leo | -0.0442 |
+| cycle_jupiter_saturn_phase=Sag | -0.0445 |
+| dav_uranus_sign=Sco | -0.0446 |
+| dav_pluto_sign=Sag | -0.0454 |
+| her_daybranch=Monkey | -0.0469 |
+| animalpair=DragonxDog | -0.0472 |
+| dav_pluto_sign=Vir | -0.0478 |
+| lifepath_pair=4x7 | -0.0479 |
+| cycle_saturn_uranus_phase=Gem | -0.0481 |
+| his_true_node_sign=Gem | -0.0485 |
+| dav_pluto_sign=Pis | -0.0486 |
+| lifepath_pair=4x8 | -0.0495 |
+| dav_venus_sign=Lib | -0.0495 |
+| dav_mars_sign=Vir | -0.0500 |
+| his_pluto_sign=Sag | -0.0503 |
+| her_tithi=19 | -0.0505 |
+| cycle_uranus_pluto_phase=Tau | -0.0507 |
+| dav_neptune_sign=Sag | -0.0508 |
+| cycle_uranus_neptune_phase=Sag | -0.0518 |
+| his_sun_trine_her_sun | -0.0518 |
+| his_tithi=0 | -0.0522 |
+| her_tithi=24 | -0.0524 |
+| his_year_animal=Rabbit | -0.0527 |
+| his_tithi=23 | -0.0528 |
+| his_jupiter_sign=Aqu | -0.0529 |
+| his_pluto_sign=Sco | -0.0535 |
+| her_sun_sign=Gem | -0.0541 |
+| cycle_saturn_uranus_phase=Pis | -0.0560 |
+| his_neptune_sign=Vir | -0.0561 |
+| his_venus_trine_her_saturn | -0.0563 |
+| her_pluto_sign=Sag | -0.0565 |
+| his_jupiter_sign=Pis | -0.0573 |
+| his_venus_opp_her_venus | -0.0577 |
+| dav_mars_sign=Cap | -0.0585 |
+| his_jupiter_sign=Tau | -0.0594 |
+| her_chiron_sign=Vir | -0.0602 |
+| her_uranus_sign=Vir | -0.0604 |
+| his_tithi=6 | -0.0604 |
+| her_saturn_sign=Can | -0.0628 |
+| his_pluto_sign=Cap | -0.0640 |
+| her_tithi=27 | -0.0641 |
+| dav_saturn_sign=Tau | -0.0646 |
+| cycle_uranus_neptune_phase=Aqu | -0.0655 |
+| his_true_node_sign=Leo | -0.0685 |
+| his_year_animal=Tiger | -0.0687 |
+| cycle_saturn_neptune_phase=Aqu | -0.0700 |
+| cycle_saturn_uranus_phase=Lib | -0.0703 |
+| her_pluto_sign=Vir | -0.0707 |
+| her_true_node_sign=Leo | -0.0712 |
+| his_sun_trine_her_moon | -0.0715 |
+| cycle_saturn_pluto_phase=Cap | -0.0718 |
+| cycle_jupiter_saturn_phase=Pis | -0.0727 |
+| his_tithi=26 | -0.0730 |
+| his_sun_square_her_saturn | -0.0735 |
+| his_pluto_sign=Leo | -0.0738 |
+| his_neptune_sign=Aqu | -0.0772 |
+| her_pluto_sign=Leo | -0.0784 |
+| his_uranus_sign=Aqu | -0.0826 |
+| his_pluto_sign=Vir | -0.0827 |
+| his_pluto_sign=Aqu | -0.0836 |
+| her_pluto_sign=Lib | -0.0867 |
+| cycle_uranus_neptune_phase=Cap | -0.0872 |
+| her_neptune_sign=Sag | -0.0873 |
+| cycle_saturn_pluto_phase=Aqu | -0.0929 |
+| cycle_neptune_pluto_phase=Can | -0.0944 |
+| his_venus_conj_her_venus | -0.0960 |
+| cycle_uranus_pluto_phase=Aqu | -0.0966 |
+| cycle_uranus_neptune_phase=Ari | -0.0975 |
+| his_neptune_sign=Sag | -0.0978 |
+| cycle_uranus_pluto_phase=Ari | -0.0986 |
+| cycle_uranus_pluto_phase=Pis | -0.1012 |
+| cycle_uranus_neptune_phase=Pis | -0.1012 |
+| her_pluto_sign=Aqu | -0.1023 |
+| dav_neptune_sign=Aqu | -0.1042 |
+| his_neptune_sign=Cap | -0.1042 |
+| her_neptune_sign=Sco | -0.1067 |
+| his_neptune_sign=Sco | -0.1089 |
+| her_neptune_sign=Aqu | -0.1136 |
+| his_neptune_sign=Lib | -0.1176 |
+| her_neptune_sign=Cap | -0.1218 |
+| her_neptune_sign=Lib | -0.1313 |
+| his_pluto_sign=Pis | -0.1411 |
+| her_pluto_sign=Pis | -0.1418 |
+| cycle_neptune_pluto_phase=Lib | -0.1497 |
+| cycle_neptune_pluto_phase=Sag | -0.2124 |
+| cycle_neptune_pluto_phase=Sco | -0.3196 |

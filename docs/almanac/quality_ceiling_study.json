@@ -1,0 +1,35 @@
+{
+ "conclusion": "the cross-validated ceiling for this bank and target is about 0.597",
+ "deployed_cv": 0.5969,
+ "deployed_test": 0.5872,
+ "selection_rules": {
+  "lasso": 0.5967,
+  "elastic_net_l1_0.7": 0.5968,
+  "elastic_net_l1_0.4": 0.5895,
+  "stability_selection": 0.5935,
+  "stability_selection_enet": 0.5953,
+  "adaptive_lasso": 0.5951
+ },
+ "feature_engineering": {
+  "shrunk_compatibility_tables": 0.5962,
+  "tables_surviving_selection_at_best_k": 0,
+  "note": "15 almanac tables, each collapsed from ~144 sparse binary cells to one continuous statement whose cells borrow strength from their row and column marginals. Selected only at weak shrinkage, where they overfit; at the CV-winning shrinkage none survives."
+ },
+ "refits": {
+  "nonneg L2=1e-3 (incumbent)": 0.5967394205054158,
+  "nonneg L2=1e-4": 0.5968222368515587,
+  "nonneg L2=1e-2": 0.5956308848194158,
+  "nonneg L2=1e-1": 0.5907011071860699,
+  "logistic (signed)": 0.5968717449375323,
+  "logistic C=1": 0.5968211177117461,
+  "logistic C=0.1": 0.5967487836058294,
+  "equal weights (control)": 0.5730666217060558
+ },
+ "equal_weights_control": 0.5730666217060558,
+ "weights_are_worth": 0.0237,
+ "spread_across_every_lever": [
+  0.5895,
+  0.5969
+ ],
+ "selection_rules_note": "adaptive Lasso first returned zero rules at every alpha: scaling the design by the first-pass coefficients shrinks it by their mean, so an unscaled alpha annihilates it. Rescaled, it measures 0.5951 \u2014 a harness bug, not a verdict on the method."
+}

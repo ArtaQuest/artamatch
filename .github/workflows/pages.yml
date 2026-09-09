@@ -85,7 +85,10 @@ jobs:
 
   deploy:
     needs: verify
-    if: github.event_name != 'pull_request'
+    # The github-pages environment's branch policy admits ONLY feature/artamatch, and rejects any other
+    # branch before a single step runs. main carries the same tree (merged 2026-09-09) and must still be
+    # VERIFIED on every push, so the gate above runs for both — but only the admitted branch deploys.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/feature/artamatch'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
